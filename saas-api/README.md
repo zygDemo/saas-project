@@ -11,7 +11,7 @@
 - Cache: Redis + ioredis
 - Queue: BullMQ
 - Auth: JWT + Passport
-- Docs: Swagger, available at `/api/docs`
+- Docs: Swagger, available at `/saas/api/docs`
 
 ## 目录结构
 
@@ -34,11 +34,11 @@ saas-api/
 
 | 前端调用 | 后端接口 | 说明 |
 | --- | --- | --- |
-| `fetchLogin` | `POST /api/auth/login` | 返回 `token`、`refreshToken` |
-| `fetchGetUserInfo` | `GET /api/user/info` | 返回用户角色、按钮权限、基础资料 |
-| `fetchGetUserList` | `GET /api/user/list` | 返回 `records/current/size/total` |
-| `fetchGetRoleList` | `GET /api/role/list` | 返回角色分页 |
-| `fetchGetMenuList` | `GET /api/v3/system/menus` | 返回 `AppRouteRecord[]` 菜单树 |
+| `fetchLogin` | `POST /saas/api/auth/login` | 返回 `token`、`refreshToken` |
+| `fetchGetUserInfo` | `GET /saas/api/user/info` | 返回用户角色、按钮权限、基础资料 |
+| `fetchGetUserList` | `GET /saas/api/user/list` | 返回 `records/current/size/total` |
+| `fetchGetRoleList` | `GET /saas/api/role/list` | 返回角色分页 |
+| `fetchGetMenuList` | `GET /saas/api/v3/system/menus` | 返回 `AppRouteRecord[]` 菜单树 |
 
 所有接口都返回前端期望的统一格式：
 
@@ -99,11 +99,11 @@ pnpm dev
 `saas-web/.env.development` 中将代理目标指向 API：
 
 ```env
-VITE_API_URL=
+VITE_API_URL=/saas/api
 VITE_API_PROXY_URL=http://localhost:3000
 ```
 
-前端会请求 `/api/...`，Vite proxy 会转发到 NestJS。
+前端会请求 `/saas/api/...`，Vite proxy 会转发到 NestJS。
 
 ## 下一步建议
 

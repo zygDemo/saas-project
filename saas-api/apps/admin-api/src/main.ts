@@ -10,7 +10,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
   const config = app.get(ConfigService)
-  const apiPrefix = config.get<string>('API_PREFIX', 'api')
+  const apiPrefix = config.get<string>('API_PREFIX', 'saas/api')
 
   app.setGlobalPrefix(apiPrefix)
   app.enableCors({

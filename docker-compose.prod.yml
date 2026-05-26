@@ -4,13 +4,14 @@ services:
       context: ./saas-web
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: /
+        VITE_BASE_URL: /saas/
+        VITE_API_URL: /saas/api
     container_name: saas-web
     restart: unless-stopped
     depends_on:
       - admin-api
     ports:
-      - "80:80"
+      - "127.0.0.1:${SAAS_WEB_PORT:-8080}:80"
 
   admin-api:
     build:
@@ -23,7 +24,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      API_PREFIX: api
+      API_PREFIX: saas/api
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-https://www.yugui.store}
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-change-me}@postgres:5432/saas_prod?schema=public
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -35,6 +37,8 @@ services:
         condition: service_healthy
     expose:
       - "3000"
+    ports:
+      - "127.0.0.1:${SAAS_API_PORT:-3000}:3000"
 
   postgres:
     image: postgres:16-alpine

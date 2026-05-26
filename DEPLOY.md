@@ -1,17 +1,30 @@
-# Deployment
+# SaaS Deployment
 
-This is the simplest single-server production setup for the SaaS project.
+This setup keeps the existing H5 site at `/` and mounts the new SaaS app under `/saas`.
 
-## 1. Server prerequisites
+```text
+https://www.yugui.store/           -> existing H5
+https://www.yugui.store/saas       -> SaaS web
+https://www.yugui.store/saas/api/* -> SaaS API
+```
 
-Install Docker and Docker Compose on the cloud server, then open ports `80` and `443` in the cloud firewall.
+## 1. Server Prerequisites
 
-## 2. Production environment
+Install Docker and Docker Compose on the cloud server. Keep ports `80` and `443` open for the existing host Nginx.
+
+The Docker stack binds only to localhost:
+
+```text
+127.0.0.1:8080 -> SaaS web container
+127.0.0.1:3000 -> SaaS API container
+```
+
+## 2. Production Environment
 
 Edit `saas-api/apps/admin-api/env/.env.production` before deployment:
 
 ```env
-FRONTEND_ORIGIN=http://your-domain-or-server-ip
+FRONTEND_ORIGIN=https://www.yugui.store
 JWT_ACCESS_SECRET=replace-with-a-long-random-string
 JWT_REFRESH_SECRET=replace-with-another-long-random-string
 ```
@@ -20,9 +33,12 @@ Create a root `.env` file for Docker Compose:
 
 ```env
 POSTGRES_PASSWORD=replace-with-a-strong-password
+FRONTEND_ORIGIN=https://www.yugui.store
+SAAS_WEB_PORT=8080
+SAAS_API_PORT=3000
 ```
 
-## 3. Build and start
+## 3. Build And Start
 
 Run from the repository root:
 
@@ -30,7 +46,7 @@ Run from the repository root:
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-## 4. Initialize the database
+## 4. Initialize The Database
 
 Run migrations and seed data inside the API container:
 
@@ -39,20 +55,30 @@ docker compose -f docker-compose.prod.yml exec admin-api pnpm exec prisma migrat
 docker compose -f docker-compose.prod.yml exec admin-api pnpm exec tsx prisma/seed.ts
 ```
 
-## 5. Check services
+## 5. Host Nginx
+
+Add the locations from `deploy/nginx-yugui-saas.conf` to the existing HTTPS `server` block for `www.yugui.store`. Do not replace the current `/` location for the existing H5 site.
+
+Then reload Nginx:
+
+```bash
+nginx -t
+systemctl reload nginx
+```
+
+## 6. Check Services
 
 ```bash
 docker compose -f docker-compose.prod.yml ps
 docker compose -f docker-compose.prod.yml logs -f admin-api
+curl http://127.0.0.1:8080/saas/
+curl http://127.0.0.1:3000/saas/api/health
 ```
 
 Visit:
 
 ```text
-http://your-server-ip
-http://your-server-ip/api/health
+https://www.yugui.store/saas/
+https://www.yugui.store/saas/api/health
+https://www.yugui.store/saas/api/docs
 ```
-
-## 6. HTTPS
-
-For HTTPS, put Caddy, Nginx with Certbot, or a cloud load balancer in front of this stack and forward traffic to the `web` container.

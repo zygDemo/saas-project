@@ -24,13 +24,11 @@
   import { useUserStore } from '@/store/modules/user'
   import EmojiText from '@/utils/ui/emojo'
   import { IDomEditor, IToolbarConfig, IEditorConfig } from '@wangeditor/editor'
-  import request from '@/utils/http'
+  import request, { API_BASE_URL } from '@/utils/http'
 
   defineOptions({ name: 'ArtWangEditor' })
 
   type InsertFnType = (url: string, alt: string, href: string) => void
-
-  const { VITE_API_URL } = import.meta.env
 
   // Props 定义
   interface Props {
@@ -80,7 +78,7 @@
 
   // 计算属性：上传服务器地址
   const uploadServer = computed(
-    () => props.uploadConfig?.server || `${VITE_API_URL}/api/common/upload/wangeditor`
+    () => props.uploadConfig?.server || `${API_BASE_URL}/common/upload/wangeditor`
   )
 
   // 合并上传配置

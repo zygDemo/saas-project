@@ -83,6 +83,7 @@
   import { PageModeEnum } from '@/enums/formEnum'
   import axios from 'axios'
   import { useCommon } from '@/hooks/core/useCommon'
+  import { API_BASE_URL } from '@/utils/http'
 
   defineOptions({ name: 'ArticlePublish' })
 
@@ -113,7 +114,7 @@
   const userStore = useUserStore()
   const { accessToken } = userStore
 
-  const uploadImageUrl = `${import.meta.env.VITE_API_URL}/api/common/upload`
+  const uploadImageUrl = `${API_BASE_URL}/common/upload`
   const uploadHeaders = { Authorization: accessToken }
 
   const pageMode = ref<PageModeEnum>(PageModeEnum.Add)
