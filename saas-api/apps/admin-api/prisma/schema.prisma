@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ONLINE
+  OFFLINE
+  ABNORMAL
+  DISABLED
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  userName     String     @unique
+  passwordHash String
+  nickName     String
+  gender       String     @default("未知")
+  phone        String?
+  email        String     @unique
+  avatar       String?
+  status       UserStatus @default(ONLINE)
+  createdBy    String     @default("system")
+  updatedBy    String     @default("system")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  roles        UserRole[]
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String
+  code        String           @unique
+  description String           @default("")
+  enabled     Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  users       UserRole[]
+  menus       RoleMenu[]
+  permissions RolePermission[]
+}
+
+model UserRole {
+  userId Int
+  roleId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model Menu {
+  id          Int        @id @default(autoincrement())
+  parentId    Int?
+  path        String
+  name        String     @unique
+  component   String     @default("")
+  title       String
+  icon        String?
+  sort        Int        @default(0)
+  keepAlive   Boolean    @default(false)
+  hidden      Boolean    @default(false)
+  hiddenTab   Boolean    @default(false)
+  link        String?
+  iframe      Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  parent      Menu?      @relation("MenuTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Menu[]     @relation("MenuTree")
+  roles       RoleMenu[]
+  permissions Permission[]
+}
+
+model RoleMenu {
+  roleId Int
+  menuId Int
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  menu   Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, menuId])
+}
+
+model Permission {
+  id        Int              @id @default(autoincrement())
+  menuId    Int
+  title     String
+  authMark  String
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  menu      Menu             @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  roles     RolePermission[]
+
+  @@unique([menuId, authMark])
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}

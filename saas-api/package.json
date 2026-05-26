@@ -1,0 +1,27 @@
+{
+  "name": "saas-api-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm --filter @saas/admin-api start:dev",
+    "dev:sit": "pnpm --filter @saas/admin-api start:sit",
+    "build": "pnpm --filter @saas/shared build && pnpm --filter @saas/admin-api build",
+    "start": "pnpm --filter @saas/admin-api start",
+    "start:prod": "pnpm --filter @saas/admin-api start:prod",
+    "lint": "pnpm --filter @saas/admin-api lint",
+    "format": "prettier --write \"**/*.{ts,json,md,yml,yaml}\"",
+    "prisma:generate": "pnpm --filter @saas/admin-api prisma:generate",
+    "prisma:migrate": "pnpm --filter @saas/admin-api prisma:migrate",
+    "prisma:migrate:sit": "pnpm --filter @saas/admin-api prisma:migrate:sit",
+    "prisma:migrate:prod": "pnpm --filter @saas/admin-api prisma:migrate:prod",
+    "prisma:seed": "pnpm --filter @saas/admin-api prisma:seed",
+    "prisma:seed:sit": "pnpm --filter @saas/admin-api prisma:seed:sit",
+    "prisma:seed:prod": "pnpm --filter @saas/admin-api prisma:seed:prod",
+    "db:studio": "pnpm --filter @saas/admin-api db:studio"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3"
+  }
+}
