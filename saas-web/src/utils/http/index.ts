@@ -39,7 +39,10 @@ interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
 }
 
 const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
-export const API_BASE_URL = VITE_API_URL || '/saas/api'
+const normalizedApiRoot = (VITE_API_URL || '/saas').replace(/\/+$/, '')
+export const API_BASE_URL = normalizedApiRoot.endsWith('/api')
+  ? normalizedApiRoot
+  : `${normalizedApiRoot}/api`
 
 /** Axios实例 */
 const axiosInstance = axios.create({

@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_BASE_URL: /saas/
-        VITE_API_URL: /saas/api
+        VITE_API_URL: /saas
     container_name: saas-web
     restart: unless-stopped
     depends_on:
