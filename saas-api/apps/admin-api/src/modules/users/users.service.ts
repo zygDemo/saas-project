@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma, UserStatus } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
+import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PaginatedResponse } from '../../common/types/pagination'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
@@ -26,8 +27,9 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getUserInfo(userId: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+    const tenantId = getCurrentTenantId()
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, ...(tenantId ? { tenantId } : {}) },
       include: {
         roles: {
           include: {

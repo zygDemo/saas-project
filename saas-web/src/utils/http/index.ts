@@ -38,11 +38,12 @@ interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   showSuccessMessage?: boolean
 }
 
-const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
+const { VITE_API_URL, VITE_WITH_CREDENTIALS, VITE_TENANT_ID } = import.meta.env
 const normalizedApiRoot = (VITE_API_URL || '/saas').replace(/\/+$/, '')
 export const API_BASE_URL = normalizedApiRoot.endsWith('/api')
   ? normalizedApiRoot
   : `${normalizedApiRoot}/api`
+const TENANT_ID = VITE_TENANT_ID || '1'
 
 /** Axios实例 */
 const axiosInstance = axios.create({
@@ -70,6 +71,7 @@ axiosInstance.interceptors.request.use(
   (request: InternalAxiosRequestConfig) => {
     const { accessToken } = useUserStore()
     if (accessToken) request.headers.set('Authorization', accessToken)
+    if (TENANT_ID) request.headers.set('x-tenant-id', TENANT_ID)
 
     if (request.data && !(request.data instanceof FormData) && !request.headers['Content-Type']) {
       request.headers.set('Content-Type', 'application/json')
