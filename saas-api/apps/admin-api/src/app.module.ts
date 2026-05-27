@@ -1,6 +1,7 @@
 import { BullModule } from '@nestjs/bullmq'
-import { Module } from '@nestjs/common'
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
+import { TenantMiddleware } from './common/tenant/tenant.middleware'
 import { AuthModule } from './modules/auth/auth.module'
 import { HealthModule } from './modules/health/health.module'
 import { MenusModule } from './modules/menus/menus.module'
@@ -41,4 +42,8 @@ const appEnv = process.env.NODE_ENV || 'development'
     HealthModule
   ]
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TenantMiddleware).forRoutes('*')
+  }
+}

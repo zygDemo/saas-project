@@ -10,6 +10,13 @@ const statusMap = {
 } as const
 
 async function main() {
+  // 创建默认租户（多租户基础数据）
+  const tenant = await prisma.tenant.upsert({
+    where: { code: 'default' },
+    update: {},
+    create: { name: 'Default Tenant', code: 'default' }
+  })
+
   const passwordHash = await bcrypt.hash('123456', 10)
 
   const roles = await Promise.all(
@@ -19,9 +26,9 @@ async function main() {
       { name: 'User', code: 'R_USER', description: 'Basic access' }
     ].map((role) =>
       prisma.role.upsert({
-        where: { code: role.code },
+        where: { tenantId_code: { tenantId: tenant.id, code: role.code } },
         update: role,
-        create: role
+        create: { ...role, tenantId: tenant.id }
       })
     )
   )
@@ -56,7 +63,7 @@ async function main() {
       }
     ].map(async (user) => {
       const saved = await prisma.user.upsert({
-        where: { userName: user.userName },
+        where: { tenantId_userName: { tenantId: tenant.id, userName: user.userName } },
         update: {
           nickName: user.nickName,
           email: user.email,
@@ -66,6 +73,7 @@ async function main() {
           passwordHash
         },
         create: {
+          tenantId: tenant.id,
           userName: user.userName,
           nickName: user.nickName,
           email: user.email,
@@ -92,7 +100,7 @@ async function main() {
     })
   )
 
-  const menus = await seedMenus()
+  const menus = await seedMenus(tenant.id)
   await connectRoleMenus(roleByCode.R_SUPER.id, menus.map((menu) => menu.id))
   await connectRoleMenus(
     roleByCode.R_ADMIN.id,
@@ -104,7 +112,7 @@ async function main() {
   )
 
   const menuPermission = await prisma.permission.findFirst({
-    where: { authMark: 'add', menu: { name: 'Menus' } }
+    where: { tenantId: tenant.id, authMark: 'add', menu: { name: 'Menus' } }
   })
   if (menuPermission) {
     await prisma.rolePermission.upsert({
@@ -123,8 +131,8 @@ async function main() {
   }
 }
 
-async function seedMenus() {
-  const dashboard = await upsertMenu({
+async function seedMenus(tenantId: number) {
+  const dashboard = await upsertMenu(tenantId, {
     path: '/dashboard',
     name: 'Dashboard',
     component: '/index/index',
@@ -132,7 +140,7 @@ async function seedMenus() {
     icon: 'ri:dashboard-line',
     sort: 10
   })
-  const consoleMenu = await upsertMenu({
+  const consoleMenu = await upsertMenu(tenantId, {
     parentId: dashboard.id,
     path: 'console',
     name: 'Console',
@@ -142,7 +150,7 @@ async function seedMenus() {
     sort: 11,
     keepAlive: true
   })
-  const analysis = await upsertMenu({
+  const analysis = await upsertMenu(tenantId, {
     parentId: dashboard.id,
     path: 'analysis',
     name: 'Analysis',
@@ -152,7 +160,7 @@ async function seedMenus() {
     sort: 12,
     keepAlive: true
   })
-  const system = await upsertMenu({
+  const system = await upsertMenu(tenantId, {
     path: '/system',
     name: 'System',
     component: '/index/index',
@@ -160,7 +168,7 @@ async function seedMenus() {
     icon: 'ri:user-3-line',
     sort: 20
   })
-  const user = await upsertMenu({
+  const user = await upsertMenu(tenantId, {
     parentId: system.id,
     path: 'user',
     name: 'User',
@@ -170,7 +178,7 @@ async function seedMenus() {
     sort: 21,
     keepAlive: true
   })
-  const role = await upsertMenu({
+  const role = await upsertMenu(tenantId, {
     parentId: system.id,
     path: 'role',
     name: 'Role',
@@ -180,7 +188,7 @@ async function seedMenus() {
     sort: 22,
     keepAlive: true
   })
-  const menu = await upsertMenu({
+  const menu = await upsertMenu(tenantId, {
     parentId: system.id,
     path: 'menu',
     name: 'Menus',
@@ -194,9 +202,9 @@ async function seedMenus() {
   await Promise.all(
     ['add', 'edit', 'delete'].map((authMark) =>
       prisma.permission.upsert({
-        where: { menuId_authMark: { menuId: menu.id, authMark } },
+        where: { tenantId_menuId_authMark: { tenantId, menuId: menu.id, authMark } },
         update: { title: permissionTitle(authMark) },
-        create: { menuId: menu.id, authMark, title: permissionTitle(authMark) }
+        create: { tenantId, menuId: menu.id, authMark, title: permissionTitle(authMark) }
       })
     )
   )
@@ -208,20 +216,23 @@ function permissionTitle(authMark: string) {
   return ({ add: 'Add', edit: 'Edit', delete: 'Delete' } as Record<string, string>)[authMark]
 }
 
-async function upsertMenu(data: {
-  parentId?: number
-  path: string
-  name: string
-  component: string
-  title: string
-  icon: string
-  sort: number
-  keepAlive?: boolean
-}) {
+async function upsertMenu(
+  tenantId: number,
+  data: {
+    parentId?: number
+    path: string
+    name: string
+    component: string
+    title: string
+    icon: string
+    sort: number
+    keepAlive?: boolean
+  }
+) {
   return prisma.menu.upsert({
-    where: { name: data.name },
+    where: { tenantId_name: { tenantId, name: data.name } },
     update: data,
-    create: data
+    create: { ...data, tenantId }
   })
 }
 

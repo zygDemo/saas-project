@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Injectable } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
+import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PrismaService } from '../prisma/prisma.service'
 import { LoginDto } from './dto/login.dto'
 
@@ -15,8 +16,13 @@ export class AuthService {
   ) {}
 
   async login(dto: LoginDto) {
+    const tenantId = getCurrentTenantId()
+    if (!tenantId) {
+      throw new UnauthorizedException('Tenant ID is required')
+    }
+
     const user = await this.prisma.user.findFirst({
-      where: { userName: { equals: dto.userName, mode: 'insensitive' } },
+      where: { tenantId, userName: { equals: dto.userName, mode: 'insensitive' } },
       include: { roles: { include: { role: true } } }
     })
 
@@ -26,7 +32,7 @@ export class AuthService {
     if (!matched) throw new UnauthorizedException('Invalid username or password')
 
     const roles = user.roles.map(({ role }) => role.code)
-    const payload = { sub: user.id, userName: user.userName, roles }
+    const payload = { sub: user.id, userName: user.userName, tenantId, roles }
 
     return {
       token: `Bearer ${await this.jwt.signAsync(payload)}`,

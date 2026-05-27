@@ -14,34 +14,58 @@ enum UserStatus {
   DISABLED
 }
 
+model Tenant {
+  id          Int          @id @default(autoincrement())
+  name        String
+  code        String       @unique
+  status      String       @default("active")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  users       User[]
+  roles       Role[]
+  menus       Menu[]
+  permissions Permission[]
+}
+
 model User {
   id           Int        @id @default(autoincrement())
-  userName     String     @unique
+  tenantId     Int
+  userName     String
   passwordHash String
   nickName     String
   gender       String     @default("未知")
   phone        String?
-  email        String     @unique
+  email        String
   avatar       String?
   status       UserStatus @default(ONLINE)
   createdBy    String     @default("system")
   updatedBy    String     @default("system")
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  tenant       Tenant     @relation(fields: [tenantId], references: [id])
   roles        UserRole[]
+
+  @@unique([tenantId, userName])
+  @@unique([tenantId, email])
+  @@index([tenantId])
 }
 
 model Role {
   id          Int              @id @default(autoincrement())
+  tenantId    Int
   name        String
-  code        String           @unique
+  code        String
   description String           @default("")
   enabled     Boolean          @default(true)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+  tenant      Tenant           @relation(fields: [tenantId], references: [id])
   users       UserRole[]
   menus       RoleMenu[]
   permissions RolePermission[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
 }
 
 model UserRole {
@@ -55,9 +79,10 @@ model UserRole {
 
 model Menu {
   id          Int        @id @default(autoincrement())
+  tenantId    Int
   parentId    Int?
   path        String
-  name        String     @unique
+  name        String
   component   String     @default("")
   title       String
   icon        String?
@@ -69,10 +94,14 @@ model Menu {
   iframe      Boolean    @default(false)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+  tenant      Tenant     @relation(fields: [tenantId], references: [id])
   parent      Menu?      @relation("MenuTree", fields: [parentId], references: [id], onDelete: Cascade)
   children    Menu[]     @relation("MenuTree")
   roles       RoleMenu[]
   permissions Permission[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
 }
 
 model RoleMenu {
@@ -85,16 +114,19 @@ model RoleMenu {
 }
 
 model Permission {
-  id        Int              @id @default(autoincrement())
-  menuId    Int
-  title     String
-  authMark  String
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  menu      Menu             @relation(fields: [menuId], references: [id], onDelete: Cascade)
-  roles     RolePermission[]
+  id          Int              @id @default(autoincrement())
+  tenantId    Int
+  menuId      Int
+  title       String
+  authMark    String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  tenant      Tenant           @relation(fields: [tenantId], references: [id])
+  menu        Menu             @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  roles       RolePermission[]
 
-  @@unique([menuId, authMark])
+  @@unique([tenantId, menuId, authMark])
+  @@index([tenantId])
 }
 
 model RolePermission {

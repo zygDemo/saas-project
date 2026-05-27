@@ -225,7 +225,7 @@ export class MenusService {
   }
 
   private async assertMenuNameAvailable(name: string, excludeId?: number) {
-    const existedMenu = await this.prisma.menu.findUnique({ where: { name } })
+    const existedMenu = await this.prisma.menu.findFirst({ where: { name } })
     if (existedMenu && existedMenu.id !== excludeId) {
       throw new ConflictException('Menu name already exists')
     }

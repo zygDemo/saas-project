@@ -134,7 +134,7 @@ export class RolesService {
   }
 
   private async assertRoleCodeAvailable(roleCode: string, excludeId?: number) {
-    const existedRole = await this.prisma.role.findUnique({ where: { code: roleCode } })
+    const existedRole = await this.prisma.role.findFirst({ where: { code: roleCode } })
     if (existedRole && existedRole.id !== excludeId) {
       throw new ConflictException('Role code already exists')
     }
