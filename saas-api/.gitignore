@@ -6,6 +6,5 @@ coverage
 *.log
 .DS_Store
 
-# 环境文件（含子目录）
-env/.env.*
-apps/**/env/.env.*
+# 生产环境文件（含敏感信息）
+apps/**/env/.env.production
