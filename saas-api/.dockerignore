@@ -1,0 +1,25 @@
+# 依赖和构建产物
+node_modules
+dist
+coverage
+*.log
+.DS_Store
+
+# 所有环境配置文件（全局匹配，包括子目录）
+.env
+.env.*
+env/.env.*
+apps/**/env/.env.*
+packages/**/env/.env.*
+
+# 测试
+test
+*.test.ts
+*.spec.ts
+
+# 开发工具配置
+.git
+.github
+.vscode
+.idea
+*.md

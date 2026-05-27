@@ -5,3 +5,7 @@ coverage
 .env.local
 *.log
 .DS_Store
+
+# 环境文件（含子目录）
+env/.env.*
+apps/**/env/.env.*
