@@ -1,15 +1,16 @@
-import { Injectable } from '@nestjs/common'
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { PaginatedResponse } from '../../common/types/pagination'
+import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
+import { CreateRoleDto, SaveRolePermissionDto, UpdateRoleDto } from './dto/role.dto'
 
 @Injectable()
 export class RolesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getRoleList(query: Record<string, string | undefined>): Promise<PaginatedResponse<unknown>> {
-    const current = Number(query.current ?? 1)
-    const size = Number(query.size ?? 20)
+    const pagination = getPagination(query)
     const where: Prisma.RoleWhereInput = {
       id: query.roleId ? Number(query.roleId) : undefined,
       name: query.roleName ? { contains: query.roleName, mode: 'insensitive' } : undefined,
@@ -30,25 +31,125 @@ export class RolesService {
     const [records, total] = await this.prisma.$transaction([
       this.prisma.role.findMany({
         where,
-        skip: (current - 1) * size,
-        take: size,
+        skip: pagination.skip,
+        take: pagination.take,
         orderBy: { id: 'asc' }
       }),
       this.prisma.role.count({ where })
     ])
 
-    return {
-      records: records.map((role) => ({
-        roleId: role.id,
-        roleName: role.name,
-        roleCode: role.code,
-        description: role.description,
-        enabled: role.enabled,
-        createTime: role.createdAt.toISOString().replace('T', ' ').slice(0, 19)
-      })),
-      current,
-      size,
-      total
+    return toPaginatedResponse(records.map(mapRoleListItem), total, pagination)
+  }
+
+  async createRole(dto: CreateRoleDto) {
+    await this.assertRoleCodeAvailable(dto.roleCode)
+
+    const role = await this.prisma.role.create({
+      data: {
+        name: dto.roleName,
+        code: dto.roleCode,
+        description: dto.description ?? '',
+        enabled: dto.enabled ?? true
+      }
+    })
+
+    return mapRoleListItem(role)
+  }
+
+  async updateRole(id: number, dto: UpdateRoleDto) {
+    const role = await this.prisma.role.findUnique({ where: { id } })
+    if (!role) throw new NotFoundException('Role not found')
+
+    if (dto.roleCode && dto.roleCode !== role.code) {
+      await this.assertRoleCodeAvailable(dto.roleCode, id)
     }
+
+    const updatedRole = await this.prisma.role.update({
+      where: { id },
+      data: {
+        name: dto.roleName,
+        code: dto.roleCode,
+        description: dto.description,
+        enabled: dto.enabled
+      }
+    })
+
+    return mapRoleListItem(updatedRole)
+  }
+
+  async deleteRole(id: number) {
+    const role = await this.prisma.role.findUnique({ where: { id } })
+    if (!role) throw new NotFoundException('Role not found')
+
+    await this.prisma.role.delete({ where: { id } })
+    return { id }
+  }
+
+  async getRolePermission(id: number) {
+    const role = await this.prisma.role.findUnique({
+      where: { id },
+      include: {
+        menus: { select: { menuId: true } },
+        permissions: { select: { permissionId: true } }
+      }
+    })
+    if (!role) throw new NotFoundException('Role not found')
+
+    return {
+      roleId: role.id,
+      menuIds: role.menus.map((item) => item.menuId),
+      permissionIds: role.permissions.map((item) => item.permissionId)
+    }
+  }
+
+  async saveRolePermission(id: number, dto: SaveRolePermissionDto) {
+    const role = await this.prisma.role.findUnique({ where: { id } })
+    if (!role) throw new NotFoundException('Role not found')
+
+    const menuIds = dto.menuIds ?? []
+    const permissionIds = dto.permissionIds ?? []
+
+    await this.prisma.$transaction([
+      this.prisma.roleMenu.deleteMany({ where: { roleId: id } }),
+      this.prisma.rolePermission.deleteMany({ where: { roleId: id } }),
+      ...(menuIds.length
+        ? [
+            this.prisma.roleMenu.createMany({
+              data: menuIds.map((menuId) => ({ roleId: id, menuId })),
+              skipDuplicates: true
+            })
+          ]
+        : []),
+      ...(permissionIds.length
+        ? [
+            this.prisma.rolePermission.createMany({
+              data: permissionIds.map((permissionId) => ({ roleId: id, permissionId })),
+              skipDuplicates: true
+            })
+          ]
+        : [])
+    ])
+
+    return this.getRolePermission(id)
+  }
+
+  private async assertRoleCodeAvailable(roleCode: string, excludeId?: number) {
+    const existedRole = await this.prisma.role.findUnique({ where: { code: roleCode } })
+    if (existedRole && existedRole.id !== excludeId) {
+      throw new ConflictException('Role code already exists')
+    }
+  }
+}
+
+type RoleListItem = Prisma.RoleGetPayload<Record<string, never>>
+
+function mapRoleListItem(role: RoleListItem) {
+  return {
+    roleId: role.id,
+    roleName: role.name,
+    roleCode: role.code,
+    description: role.description,
+    enabled: role.enabled,
+    createTime: role.createdAt.toISOString().replace('T', ' ').slice(0, 19)
   }
 }

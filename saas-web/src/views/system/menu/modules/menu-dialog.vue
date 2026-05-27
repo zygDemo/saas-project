@@ -315,10 +315,12 @@
       form.isFullPage = row.meta?.isFullPage ?? false
     } else {
       const row = props.editData
-      form.authName = row.title || ''
+      form.id = row.id || 0
+      form.authName = formatMenuTitle(row.title || '')
       form.authLabel = row.authMark || ''
       form.authIcon = row.icon || ''
       form.authSort = row.sort || 1
+      form.roles = row.roles || []
     }
   }
 

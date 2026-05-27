@@ -2,8 +2,10 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { Prisma, UserStatus } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 import { PaginatedResponse } from '../../common/types/pagination'
+import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateUserDto } from './dto/create-user.dto'
+import { UpdateUserDto } from './dto/update-user.dto'
 
 const statusCodeMap: Record<UserStatus, string> = {
   ONLINE: '1',
@@ -57,8 +59,7 @@ export class UsersService {
   }
 
   async getUserList(query: Record<string, string | undefined>): Promise<PaginatedResponse<unknown>> {
-    const current = Number(query.current ?? 1)
-    const size = Number(query.size ?? 20)
+    const pagination = getPagination(query)
     const where: Prisma.UserWhereInput = {
       userName: query.userName ? { contains: query.userName, mode: 'insensitive' } : undefined,
       gender: query.userGender ? query.userGender : undefined,
@@ -70,34 +71,15 @@ export class UsersService {
     const [records, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({
         where,
-        skip: (current - 1) * size,
-        take: size,
+        skip: pagination.skip,
+        take: pagination.take,
         orderBy: { id: 'asc' },
         include: { roles: { include: { role: true } } }
       }),
       this.prisma.user.count({ where })
     ])
 
-    return {
-      records: records.map((user) => ({
-        id: user.id,
-        avatar: user.avatar ?? '',
-        status: statusCodeMap[user.status],
-        userName: user.userName,
-        userGender: user.gender,
-        nickName: user.nickName,
-        userPhone: user.phone ?? '',
-        userEmail: user.email,
-        userRoles: user.roles.map(({ role }) => role.code),
-        createBy: user.createdBy,
-        createTime: formatDate(user.createdAt),
-        updateBy: user.updatedBy,
-        updateTime: formatDate(user.updatedAt)
-      })),
-      current,
-      size,
-      total
-    }
+    return toPaginatedResponse(records.map(mapUserListItem), total, pagination)
   }
 
   async createUser(dto: CreateUserDto, operator = 'system') {
@@ -115,16 +97,7 @@ export class UsersService {
       throw new ConflictException('Email already exists')
     }
 
-    const roles = await this.prisma.role.findMany({
-      where: { code: { in: dto.roleCodes } },
-      select: { id: true, code: true }
-    })
-    const roleCodeSet = new Set(roles.map((role) => role.code))
-    const missingRoleCodes = dto.roleCodes.filter((roleCode) => !roleCodeSet.has(roleCode))
-
-    if (missingRoleCodes.length > 0) {
-      throw new BadRequestException(`Role not found: ${missingRoleCodes.join(', ')}`)
-    }
+    const roles = await this.getRolesByCodes(dto.roleCodes)
 
     const user = await this.prisma.user.create({
       data: {
@@ -146,26 +119,108 @@ export class UsersService {
       include: { roles: { include: { role: true } } }
     })
 
-    return {
-      id: user.id,
-      avatar: user.avatar ?? '',
-      status: statusCodeMap[user.status],
-      userName: user.userName,
-      userGender: user.gender,
-      nickName: user.nickName,
-      userPhone: user.phone ?? '',
-      userEmail: user.email,
-      userRoles: user.roles.map(({ role }) => role.code),
-      createBy: user.createdBy,
-      createTime: formatDate(user.createdAt),
-      updateBy: user.updatedBy,
-      updateTime: formatDate(user.updatedAt)
+    return mapUserListItem(user)
+  }
+
+  async updateUser(id: number, dto: UpdateUserDto, operator = 'system') {
+    const user = await this.prisma.user.findUnique({ where: { id } })
+    if (!user) throw new NotFoundException('User not found')
+
+    if (dto.userName || dto.email) {
+      const existedUser = await this.prisma.user.findFirst({
+        where: {
+          id: { not: id },
+          OR: [
+            ...(dto.userName ? [{ userName: dto.userName }] : []),
+            ...(dto.email ? [{ email: dto.email }] : [])
+          ]
+        }
+      })
+
+      if (existedUser?.userName === dto.userName) {
+        throw new ConflictException('Username already exists')
+      }
+
+      if (existedUser?.email === dto.email) {
+        throw new ConflictException('Email already exists')
+      }
     }
+
+    const roles = dto.roleCodes ? await this.getRolesByCodes(dto.roleCodes) : undefined
+    const passwordHash = dto.password ? await bcrypt.hash(dto.password, 10) : undefined
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: {
+        userName: dto.userName,
+        nickName: dto.nickName,
+        passwordHash,
+        email: dto.email,
+        phone: dto.phone,
+        gender: dto.gender ? normalizeGender(dto.gender) : undefined,
+        status: dto.status ? queryStatusMap[dto.status] : undefined,
+        updatedBy: operator,
+        roles: roles
+          ? {
+              deleteMany: {},
+              create: roles.map((role) => ({
+                role: { connect: { id: role.id } }
+              }))
+            }
+          : undefined
+      },
+      include: { roles: { include: { role: true } } }
+    })
+
+    return mapUserListItem(updatedUser)
+  }
+
+  async deleteUser(id: number) {
+    const user = await this.prisma.user.findUnique({ where: { id } })
+    if (!user) throw new NotFoundException('User not found')
+
+    await this.prisma.user.delete({ where: { id } })
+    return { id }
+  }
+
+  private async getRolesByCodes(roleCodes: string[]) {
+    const roles = await this.prisma.role.findMany({
+      where: { code: { in: roleCodes } },
+      select: { id: true, code: true }
+    })
+    const roleCodeSet = new Set(roles.map((role) => role.code))
+    const missingRoleCodes = roleCodes.filter((roleCode) => !roleCodeSet.has(roleCode))
+
+    if (missingRoleCodes.length > 0) {
+      throw new BadRequestException(`Role not found: ${missingRoleCodes.join(', ')}`)
+    }
+
+    return roles
   }
 }
 
 function formatDate(date: Date) {
   return date.toISOString().replace('T', ' ').slice(0, 19)
+}
+
+type UserWithRoles = Prisma.UserGetPayload<{ include: { roles: { include: { role: true } } } }>
+
+function mapUserListItem(user: UserWithRoles) {
+  return {
+    id: user.id,
+    avatar: user.avatar ?? '',
+    status: statusCodeMap[user.status],
+    userName: user.userName,
+    userGender: user.gender,
+    nickName: user.nickName,
+    userPhone: user.phone ?? '',
+    userEmail: user.email,
+    userRoles: user.roles.map(({ role }) => role.code),
+    createBy: user.createdBy,
+    createTime: formatDate(user.createdAt),
+    updateBy: user.updatedBy,
+    updateTime: formatDate(user.updatedAt)
+  }
 }
 
 function normalizeGender(gender?: string) {

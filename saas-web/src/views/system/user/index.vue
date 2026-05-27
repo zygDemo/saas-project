@@ -45,7 +45,12 @@
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { ACCOUNT_TABLE_DATA } from '@/mock/temp/formData'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchCreateUser, fetchGetUserList } from '@/api/system-manage'
+  import {
+    fetchCreateUser,
+    fetchDeleteUser,
+    fetchGetUserList,
+    fetchUpdateUser
+  } from '@/api/system-manage'
   import UserSearch from './modules/user-search.vue'
   import UserDialog from './modules/user-dialog.vue'
   import { ElTag, ElMessageBox, ElImage } from 'element-plus'
@@ -232,7 +237,9 @@
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'error'
-    }).then(() => {
+    }).then(async () => {
+      await fetchDeleteUser(row.id)
+      await refreshData()
       ElMessage.success('注销成功')
     })
   }
@@ -244,9 +251,12 @@
     try {
       if (dialogType.value === 'add') {
         await fetchCreateUser(params)
-        await refreshData()
+      } else if (currentUserData.value.id) {
+        const { password, ...updateParams } = params
+        await fetchUpdateUser(currentUserData.value.id, updateParams)
       }
 
+      await refreshData()
       dialogVisible.value = false
       currentUserData.value = {}
     } catch (error) {

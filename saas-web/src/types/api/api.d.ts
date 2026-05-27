@@ -125,6 +125,8 @@ declare namespace Api {
       roleCodes: string[]
     }
 
+    type UpdateUserParams = Partial<CreateUserParams>
+
     /** 角色列表 */
     type RoleList = Api.Common.PaginatedResponse<RoleListItem>
 
@@ -146,5 +148,55 @@ declare namespace Api {
           endTime: string | null
         }
     >
+
+    interface CreateRoleParams {
+      roleName: string
+      roleCode: string
+      description?: string
+      enabled?: boolean
+    }
+
+    type UpdateRoleParams = Partial<CreateRoleParams>
+
+    interface RolePermission {
+      roleId: number
+      menuIds: number[]
+      permissionIds: number[]
+    }
+
+    interface SaveRolePermissionParams {
+      menuIds: number[]
+      permissionIds: number[]
+    }
+
+    interface SaveMenuParams {
+      parentId?: number | null
+      path: string
+      name: string
+      component?: string
+      title: string
+      icon?: string
+      sort?: number
+      keepAlive?: boolean
+      hidden?: boolean
+      hiddenTab?: boolean
+      link?: string
+      iframe?: boolean
+      roleCodes?: string[]
+    }
+
+    interface PermissionItem {
+      id: number
+      menuId: number
+      title: string
+      authMark: string
+      roles: string[]
+    }
+
+    interface SavePermissionParams {
+      title: string
+      authMark: string
+      roleCodes?: string[]
+    }
   }
 }

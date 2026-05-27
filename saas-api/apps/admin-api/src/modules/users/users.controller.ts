@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { RequestUser } from '../../common/types/request-user'
 import { CreateUserDto } from './dto/create-user.dto'
+import { UpdateUserDto } from './dto/update-user.dto'
 import { UsersService } from './users.service'
 
 @ApiTags('用户管理')
@@ -32,5 +33,21 @@ export class UsersController {
   @ApiOperation({ summary: '新增用户', description: '创建用户并绑定角色' })
   create(@Body() dto: CreateUserDto, @CurrentUser() user: RequestUser) {
     return this.usersService.createUser(dto, user.userName)
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update user' })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateUserDto,
+    @CurrentUser() user: RequestUser
+  ) {
+    return this.usersService.updateUser(id, dto, user.userName)
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete user' })
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.deleteUser(id)
   }
 }

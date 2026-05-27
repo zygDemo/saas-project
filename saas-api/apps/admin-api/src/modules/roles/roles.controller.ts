@@ -1,6 +1,7 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
+import { CreateRoleDto, SaveRolePermissionDto, UpdateRoleDto } from './dto/role.dto'
 import { RolesService } from './roles.service'
 
 @ApiTags('角色管理')
@@ -17,5 +18,35 @@ export class RolesController {
   @ApiQuery({ name: 'keyword', description: '搜索关键字（角色名称）', required: false })
   list(@Query() query: Record<string, string | undefined>) {
     return this.rolesService.getRoleList(query)
+  }
+
+  @Post('create')
+  @ApiOperation({ summary: 'Create role' })
+  create(@Body() dto: CreateRoleDto) {
+    return this.rolesService.createRole(dto)
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update role' })
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRoleDto) {
+    return this.rolesService.updateRole(id, dto)
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete role' })
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.rolesService.deleteRole(id)
+  }
+
+  @Get(':id/permissions')
+  @ApiOperation({ summary: 'Get role permissions' })
+  getPermissions(@Param('id', ParseIntPipe) id: number) {
+    return this.rolesService.getRolePermission(id)
+  }
+
+  @Put(':id/permissions')
+  @ApiOperation({ summary: 'Save role permissions' })
+  savePermissions(@Param('id', ParseIntPipe) id: number, @Body() dto: SaveRolePermissionDto) {
+    return this.rolesService.saveRolePermission(id, dto)
   }
 }
