@@ -1,0 +1,21 @@
+# 依赖和构建产物
+node_modules
+dist
+coverage
+*.log
+.DS_Store
+
+# 生产环境文件（含敏感信息，不进镜像）
+apps/**/env/.env.production
+
+# 测试
+test
+*.test.ts
+*.spec.ts
+
+# 开发工具配置
+.git
+.github
+.vscode
+.idea
+*.md
