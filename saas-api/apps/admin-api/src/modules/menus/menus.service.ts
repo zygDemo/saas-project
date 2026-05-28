@@ -250,7 +250,7 @@ export class MenusService {
       where: { name: { equals: name, mode: 'insensitive' } }
     })
     if (existedMenu && existedMenu.id !== excludeId) {
-      throw new ConflictException('Menu name already exists')
+      throw new ConflictException('菜单标识已存在，请换一个')
     }
   }
 
@@ -259,13 +259,13 @@ export class MenusService {
       where: { menuId, authMark: { equals: authMark, mode: 'insensitive' } }
     })
     if (existedPermission && existedPermission.id !== excludeId) {
-      throw new ConflictException('Permission auth mark already exists')
+      throw new ConflictException('权限标识已存在，请换一个')
     }
   }
 
   private async assertParentExists(parentId?: number | null, currentId?: number) {
     if (!parentId) return
-    if (parentId === currentId) throw new ConflictException('Menu parent cannot be itself')
+    if (parentId === currentId) throw new ConflictException('不能选择自己作为上级菜单')
 
     const parent = await this.prisma.menu.findUnique({ where: { id: parentId } })
     if (!parent) throw new NotFoundException('Parent menu not found')

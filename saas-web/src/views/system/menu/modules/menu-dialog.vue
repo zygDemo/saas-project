@@ -71,6 +71,7 @@
 
   interface MenuFormData {
     id: number
+    parentId: number | null
     name: string
     path: string
     label: string
@@ -101,6 +102,8 @@
     editData?: AppRouteRecord | any
     type?: 'menu' | 'button'
     lockType?: boolean
+    parentId?: number | null
+    menuTree?: AppRouteRecord[]
   }
 
   interface Emits {
@@ -111,7 +114,9 @@
   const props = withDefaults(defineProps<Props>(), {
     visible: false,
     type: 'menu',
-    lockType: false
+    lockType: false,
+    parentId: null,
+    menuTree: () => []
   })
 
   const emit = defineEmits<Emits>()
@@ -122,6 +127,7 @@
   const form = reactive<MenuFormData & { menuType: 'menu' | 'button' }>({
     menuType: 'menu',
     id: 0,
+    parentId: null,
     name: '',
     path: '',
     label: '',
@@ -147,6 +153,38 @@
     authSort: 1
   })
 
+  interface ParentMenuOption {
+    label: string
+    value: number | null
+    disabled?: boolean
+    children?: ParentMenuOption[]
+  }
+
+  const buildParentMenuOptions = (
+    menus: AppRouteRecord[],
+    excludeId?: number | null
+  ): ParentMenuOption[] => {
+    return menus
+      .filter((menu) => !menu.meta?.isAuthButton)
+      .map((menu) => {
+        const id = Number(menu.id)
+        const disabled = !!excludeId && id === excludeId
+        const children = buildParentMenuOptions(menu.children || [], excludeId)
+
+        return {
+          label: formatMenuTitle(String(menu.meta?.title || menu.name || '')),
+          value: id,
+          disabled,
+          ...(children.length ? { children } : {})
+        }
+      })
+  }
+
+  const parentMenuOptions = computed<ParentMenuOption[]>(() => [
+    { label: '顶级菜单', value: null },
+    ...buildParentMenuOptions(props.menuTree, isEdit.value ? form.id : null)
+  ])
+
   const rules = reactive<FormRules>({
     name: [
       { required: true, message: '请输入菜单名称', trigger: 'blur' },
@@ -170,6 +208,19 @@
     if (form.menuType === 'menu') {
       return [
         ...baseItems,
+        {
+          label: '父级菜单',
+          key: 'parentId',
+          type: 'treeselect',
+          props: {
+            data: parentMenuOptions.value,
+            clearable: true,
+            checkStrictly: true,
+            defaultExpandAll: true,
+            placeholder: '请选择父级菜单',
+            style: { width: '100%' }
+          }
+        },
         { label: '菜单名称', key: 'name', type: 'input', props: { placeholder: '菜单名称' } },
         {
           label: createLabelTooltip(
@@ -281,6 +332,7 @@
   const resetForm = (): void => {
     formRef.value?.reset()
     form.menuType = 'menu'
+    form.parentId = null
   }
 
   /**
@@ -294,6 +346,7 @@
     if (form.menuType === 'menu') {
       const row = props.editData
       form.id = row.id || 0
+      form.parentId = row.parentId ?? null
       form.name = formatMenuTitle(row.meta?.title || '')
       form.path = row.path || ''
       form.label = row.name || ''
@@ -361,6 +414,7 @@
     (newVal) => {
       if (newVal) {
         form.menuType = props.type
+        form.parentId = props.parentId ?? null
         nextTick(() => {
           if (props.editData) {
             loadFormData()

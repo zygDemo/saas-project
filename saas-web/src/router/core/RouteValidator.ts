@@ -126,7 +126,7 @@ export class RouteValidator {
 
       // 非一级菜单：如果既不是外链、iframe，也没有子路由，则必须配置 component
       if (!hasExternalLink && !isIframe && !hasChildren) {
-        errors.push(`路由(${routePath}) 缺少 component 配置`)
+        warnings.push(`路由(${routePath}) 缺少 component 配置`)
       }
 
       // 递归检查子路由

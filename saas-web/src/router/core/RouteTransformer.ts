@@ -117,9 +117,7 @@ export class RouteTransformer {
    * 处理普通路由
    */
   private handleNormalRoute(converted: ConvertedRoute, component: string | undefined): void {
-    if (component) {
-      converted.component = this.componentLoader.load(component)
-    }
+    converted.component = this.componentLoader.load(component || '')
   }
 
   /**

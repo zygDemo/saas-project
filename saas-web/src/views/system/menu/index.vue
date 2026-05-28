@@ -43,6 +43,8 @@
         :type="dialogType"
         :editData="editData"
         :lockType="lockMenuType"
+        :parentId="dialogParentId"
+        :menuTree="tableData"
         @submit="handleSubmit"
       />
     </ElCard>
@@ -56,6 +58,7 @@
   import type { AppRouteRecord } from '@/types/router'
   import MenuDialog from './modules/menu-dialog.vue'
   import { useMenuStore } from '@/store/modules/menu'
+  import { MenuProcessor } from '@/router/core'
   import {
     fetchCreateMenu,
     fetchCreatePermission,
@@ -70,6 +73,7 @@
   defineOptions({ name: 'Menus' })
 
   const menuStore = useMenuStore()
+  const menuProcessor = new MenuProcessor()
 
   // 状态管理
   const loading = ref(false)
@@ -82,6 +86,7 @@
   const editData = ref<AppRouteRecord | any>(null)
   const currentMenuRow = ref<AppRouteRecord | null>(null)
   const lockMenuType = ref(false)
+  const dialogParentId = ref<number | null>(null)
 
   // 搜索相关
   const initialSearchState = {
@@ -120,7 +125,7 @@
     try {
       const list = await fetchGetMenuList()
       tableData.value = list
-      menuStore.setMenuList(list)
+      menuStore.setMenuList(menuProcessor.processMenuList(list))
     } catch (error) {
       throw error instanceof Error ? error : new Error('获取菜单失败')
     } finally {
@@ -226,8 +231,8 @@
         return h('div', buttonStyle, [
           h(ArtButtonTable, {
             type: 'add',
-            onClick: () => handleAddAuth(row),
-            title: '新增权限'
+            onClick: () => handleAddChildMenu(row),
+            title: '新增子菜单'
           }),
           h(ArtButtonTable, {
             type: 'edit',
@@ -372,7 +377,18 @@
    */
   const handleAddMenu = (): void => {
     dialogType.value = 'menu'
+    currentMenuRow.value = null
     editData.value = null
+    dialogParentId.value = null
+    lockMenuType.value = true
+    dialogVisible.value = true
+  }
+
+  const handleAddChildMenu = (row: AppRouteRecord): void => {
+    dialogType.value = 'menu'
+    currentMenuRow.value = row
+    editData.value = null
+    dialogParentId.value = Number(row.id)
     lockMenuType.value = true
     dialogVisible.value = true
   }
@@ -384,6 +400,7 @@
     dialogType.value = 'button'
     currentMenuRow.value = row
     editData.value = null
+    dialogParentId.value = null
     lockMenuType.value = false
     dialogVisible.value = true
   }
@@ -396,6 +413,7 @@
     currentMenuRow.value = row
     dialogType.value = 'menu'
     editData.value = row
+    dialogParentId.value = null
     lockMenuType.value = true
     dialogVisible.value = true
   }
@@ -407,6 +425,7 @@
   const handleEditAuth = (row: AppRouteRecord): void => {
     currentMenuRow.value = row
     dialogType.value = 'button'
+    dialogParentId.value = null
     editData.value = {
       id: row.meta?.id,
       parentId: row.meta?.parentId,
@@ -476,6 +495,7 @@
     dialogVisible.value = false
     editData.value = null
     currentMenuRow.value = null
+    dialogParentId.value = null
     ElMessage.success('保存成功')
   }
 

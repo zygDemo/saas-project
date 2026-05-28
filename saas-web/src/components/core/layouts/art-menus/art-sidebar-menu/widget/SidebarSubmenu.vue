@@ -129,7 +129,7 @@
     return !!(
       !item.meta.isHide &&
       ((item.path && item.path.trim()) || item.meta.link || item.meta.isIframe === true) &&
-      (item.component || item.meta.link || item.meta.isIframe === true)
+      (item.path || item.component || item.meta.link || item.meta.isIframe === true)
     )
   }
 
