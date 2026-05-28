@@ -58,7 +58,7 @@
   import type { AppRouteRecord } from '@/types/router'
   import MenuDialog from './modules/menu-dialog.vue'
   import { useMenuStore } from '@/store/modules/menu'
-  import { MenuProcessor } from '@/router/core'
+  import { MenuProcessor } from '@/router/core/MenuProcessor'
   import {
     fetchCreateMenu,
     fetchCreatePermission,

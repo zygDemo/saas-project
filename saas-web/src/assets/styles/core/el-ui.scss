@@ -517,3 +517,53 @@ html.dark .el-card {
     height: calc((var(--el-component-size) / 2)) !important;
   }
 }
+
+.app-update-notice {
+  .el-notification__title {
+    font-weight: 600;
+  }
+
+  .app-update-notice__description {
+    margin: 6px 0 14px;
+    color: var(--el-text-color-regular);
+    line-height: 1.6;
+  }
+
+  .app-update-notice__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .app-update-notice__button {
+    height: 30px;
+    padding: 0 13px;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 28px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .app-update-notice__button--text {
+    color: var(--el-text-color-regular);
+    background: var(--el-bg-color);
+    border: 1px solid var(--el-border-color);
+
+    &:hover {
+      color: var(--el-color-primary);
+      border-color: var(--el-color-primary-light-5);
+    }
+  }
+
+  .app-update-notice__button--primary {
+    color: #fff;
+    background: var(--el-color-primary);
+    border: 1px solid var(--el-color-primary);
+
+    &:hover {
+      background: var(--el-color-primary-light-3);
+      border-color: var(--el-color-primary-light-3);
+    }
+  }
+}

@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import type { PluginOption } from 'vite'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import viteCompression from 'vite-plugin-compression'
 import Components from 'unplugin-vue-components/vite'
@@ -98,6 +99,7 @@ export default ({ mode }: { mode: string }) => {
         threshold: 10240, // 只有大小大于该值的资源会被处理 10240B = 10KB
         deleteOriginFile: false // 压缩后是否删除原文件
       }),
+      createVersionFilePlugin(VITE_VERSION),
       vueDevTools()
       // 打包分析
       // visualizer({
@@ -154,4 +156,28 @@ export default ({ mode }: { mode: string }) => {
 
 function resolvePath(paths: string) {
   return path.resolve(__dirname, paths)
+}
+
+function createVersionFilePlugin(version: string): PluginOption {
+  const buildVersion = version || String(Date.now())
+
+  return {
+    name: 'saas-version-file',
+    apply: 'build',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'version.json',
+        source: JSON.stringify(
+          {
+            version: buildVersion,
+            hash: `${buildVersion}-${Date.now()}`,
+            buildTime: new Date().toISOString()
+          },
+          null,
+          2
+        )
+      })
+    }
+  }
 }
