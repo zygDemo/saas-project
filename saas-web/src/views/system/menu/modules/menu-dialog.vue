@@ -333,8 +333,6 @@
     try {
       await formRef.value.validate()
       emit('submit', { ...form })
-      ElMessage.success(`${isEdit.value ? '编辑' : '新增'}成功`)
-      handleCancel()
     } catch {
       ElMessage.error('表单校验失败，请检查输入')
     }

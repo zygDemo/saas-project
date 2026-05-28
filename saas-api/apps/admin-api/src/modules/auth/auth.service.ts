@@ -1,7 +1,6 @@
-import { UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
-import { Injectable } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PrismaService } from '../prisma/prisma.service'
@@ -18,7 +17,7 @@ export class AuthService {
   async login(dto: LoginDto) {
     const tenantId = getCurrentTenantId()
     if (!tenantId) {
-      throw new UnauthorizedException('Tenant ID is required')
+      throw new BadRequestException('X-Tenant-ID header is required')
     }
 
     const user = await this.prisma.user.findFirst({

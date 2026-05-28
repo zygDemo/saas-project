@@ -63,6 +63,7 @@ export class UsersService {
   async getUserList(query: Record<string, string | undefined>): Promise<PaginatedResponse<unknown>> {
     const pagination = getPagination(query)
     const where: Prisma.UserWhereInput = {
+      id: query.id ? Number(query.id) : undefined,
       userName: query.userName ? { contains: query.userName, mode: 'insensitive' } : undefined,
       gender: query.userGender ? query.userGender : undefined,
       phone: query.userPhone ? { contains: query.userPhone } : undefined,
@@ -87,15 +88,18 @@ export class UsersService {
   async createUser(dto: CreateUserDto, operator = 'system') {
     const existedUser = await this.prisma.user.findFirst({
       where: {
-        OR: [{ userName: dto.userName }, { email: dto.email }]
+        OR: [
+          { userName: { equals: dto.userName, mode: 'insensitive' } },
+          { email: { equals: dto.email, mode: 'insensitive' } }
+        ]
       }
     })
 
-    if (existedUser?.userName === dto.userName) {
+    if (existedUser?.userName.toLowerCase() === dto.userName.toLowerCase()) {
       throw new ConflictException('Username already exists')
     }
 
-    if (existedUser?.email === dto.email) {
+    if (existedUser?.email.toLowerCase() === dto.email.toLowerCase()) {
       throw new ConflictException('Email already exists')
     }
 
@@ -133,17 +137,17 @@ export class UsersService {
         where: {
           id: { not: id },
           OR: [
-            ...(dto.userName ? [{ userName: dto.userName }] : []),
-            ...(dto.email ? [{ email: dto.email }] : [])
+            ...(dto.userName ? [{ userName: { equals: dto.userName, mode: 'insensitive' as const } }] : []),
+            ...(dto.email ? [{ email: { equals: dto.email, mode: 'insensitive' as const } }] : [])
           ]
         }
       })
 
-      if (existedUser?.userName === dto.userName) {
+      if (dto.userName && existedUser?.userName.toLowerCase() === dto.userName.toLowerCase()) {
         throw new ConflictException('Username already exists')
       }
 
-      if (existedUser?.email === dto.email) {
+      if (dto.email && existedUser?.email.toLowerCase() === dto.email.toLowerCase()) {
         throw new ConflictException('Email already exists')
       }
     }
@@ -186,12 +190,13 @@ export class UsersService {
   }
 
   private async getRolesByCodes(roleCodes: string[]) {
+    const uniqueRoleCodes = [...new Set(roleCodes)]
     const roles = await this.prisma.role.findMany({
-      where: { code: { in: roleCodes } },
+      where: { code: { in: uniqueRoleCodes } },
       select: { id: true, code: true }
     })
     const roleCodeSet = new Set(roles.map((role) => role.code))
-    const missingRoleCodes = roleCodes.filter((roleCode) => !roleCodeSet.has(roleCode))
+    const missingRoleCodes = uniqueRoleCodes.filter((roleCode) => !roleCodeSet.has(roleCode))
 
     if (missingRoleCodes.length > 0) {
       throw new BadRequestException(`Role not found: ${missingRoleCodes.join(', ')}`)

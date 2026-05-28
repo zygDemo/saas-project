@@ -1,5 +1,6 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
+import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateMenuDto, CreatePermissionDto, UpdateMenuDto, UpdatePermissionDto } from './dto/menu.dto'
 
@@ -28,18 +29,20 @@ export interface AppRouteRecord {
 export class MenusService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getMenuTree(roleCodes: string[]): Promise<AppRouteRecord[]> {
+  async getMenuTree(roleCodes?: string[]): Promise<AppRouteRecord[]> {
     const menus = await this.prisma.menu.findMany({
-      where: {
-        roles: {
-          some: {
-            role: {
-              code: { in: roleCodes },
-              enabled: true
+      where: roleCodes?.length
+        ? {
+            roles: {
+              some: {
+                role: {
+                  code: { in: roleCodes },
+                  enabled: true
+                }
+              }
             }
           }
-        }
-      },
+        : undefined,
       include: menuInclude(roleCodes),
       orderBy: [{ sort: 'asc' }, { id: 'asc' }]
     })
@@ -48,12 +51,14 @@ export class MenusService {
   }
 
   async createMenu(dto: CreateMenuDto) {
+    const tenantId = getRequiredTenantId()
     await this.assertMenuNameAvailable(dto.name)
     await this.assertParentExists(dto.parentId)
 
     const menu = await this.prisma.menu.create({
       data: {
-        parentId: dto.parentId,
+        tenantId,
+        parentId: dto.parentId ?? null,
         path: dto.path,
         name: dto.name,
         component: dto.component ?? '',
@@ -115,11 +120,14 @@ export class MenusService {
   }
 
   async createPermission(menuId: number, dto: CreatePermissionDto) {
+    const tenantId = getRequiredTenantId()
     const menu = await this.prisma.menu.findUnique({ where: { id: menuId } })
     if (!menu) throw new NotFoundException('Menu not found')
+    await this.assertPermissionMarkAvailable(menuId, dto.authMark)
 
     const permission = await this.prisma.permission.create({
       data: {
+        tenantId,
         menuId,
         title: dto.title,
         authMark: dto.authMark
@@ -133,6 +141,9 @@ export class MenusService {
   async updatePermission(id: number, dto: UpdatePermissionDto) {
     const permission = await this.prisma.permission.findUnique({ where: { id } })
     if (!permission) throw new NotFoundException('Permission not found')
+    if (dto.authMark && dto.authMark !== permission.authMark) {
+      await this.assertPermissionMarkAvailable(permission.menuId, dto.authMark, id)
+    }
 
     await this.prisma.permission.update({
       where: { id },
@@ -185,10 +196,7 @@ export class MenusService {
   private async syncMenuRoles(menuId: number, roleCodes?: string[]) {
     if (!roleCodes) return
 
-    const roles = await this.prisma.role.findMany({
-      where: { code: { in: roleCodes } },
-      select: { id: true }
-    })
+    const roles = await this.getRolesByCodes(roleCodes)
 
     await this.prisma.$transaction([
       this.prisma.roleMenu.deleteMany({ where: { menuId } }),
@@ -206,10 +214,7 @@ export class MenusService {
   private async syncPermissionRoles(permissionId: number, roleCodes?: string[]) {
     if (!roleCodes) return
 
-    const roles = await this.prisma.role.findMany({
-      where: { code: { in: roleCodes } },
-      select: { id: true }
-    })
+    const roles = await this.getRolesByCodes(roleCodes)
 
     await this.prisma.$transaction([
       this.prisma.rolePermission.deleteMany({ where: { permissionId } }),
@@ -224,20 +229,53 @@ export class MenusService {
     ])
   }
 
+  private async getRolesByCodes(roleCodes: string[]) {
+    const uniqueRoleCodes = [...new Set(roleCodes)]
+    const roles = await this.prisma.role.findMany({
+      where: { code: { in: uniqueRoleCodes } },
+      select: { id: true, code: true }
+    })
+    const roleCodeSet = new Set(roles.map((role) => role.code))
+    const missingRoleCodes = uniqueRoleCodes.filter((roleCode) => !roleCodeSet.has(roleCode))
+
+    if (missingRoleCodes.length > 0) {
+      throw new BadRequestException(`Role not found: ${missingRoleCodes.join(', ')}`)
+    }
+
+    return roles
+  }
+
   private async assertMenuNameAvailable(name: string, excludeId?: number) {
-    const existedMenu = await this.prisma.menu.findFirst({ where: { name } })
+    const existedMenu = await this.prisma.menu.findFirst({
+      where: { name: { equals: name, mode: 'insensitive' } }
+    })
     if (existedMenu && existedMenu.id !== excludeId) {
       throw new ConflictException('Menu name already exists')
     }
   }
 
-  private async assertParentExists(parentId?: number, currentId?: number) {
+  private async assertPermissionMarkAvailable(menuId: number, authMark: string, excludeId?: number) {
+    const existedPermission = await this.prisma.permission.findFirst({
+      where: { menuId, authMark: { equals: authMark, mode: 'insensitive' } }
+    })
+    if (existedPermission && existedPermission.id !== excludeId) {
+      throw new ConflictException('Permission auth mark already exists')
+    }
+  }
+
+  private async assertParentExists(parentId?: number | null, currentId?: number) {
     if (!parentId) return
     if (parentId === currentId) throw new ConflictException('Menu parent cannot be itself')
 
     const parent = await this.prisma.menu.findUnique({ where: { id: parentId } })
     if (!parent) throw new NotFoundException('Parent menu not found')
   }
+}
+
+function getRequiredTenantId() {
+  const tenantId = getCurrentTenantId()
+  if (!tenantId) throw new BadRequestException('X-Tenant-ID header is required')
+  return tenantId
 }
 
 function menuInclude(roleCodes?: string[]) {

@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { PaginatedResponse } from '../../common/types/pagination'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
@@ -106,8 +106,11 @@ export class RolesService {
     const role = await this.prisma.role.findUnique({ where: { id } })
     if (!role) throw new NotFoundException('Role not found')
 
-    const menuIds = dto.menuIds ?? []
-    const permissionIds = dto.permissionIds ?? []
+    const menuIds = [...new Set(dto.menuIds ?? [])]
+    const permissionIds = [...new Set(dto.permissionIds ?? [])]
+
+    await this.assertMenusExist(menuIds)
+    await this.assertPermissionsExist(permissionIds)
 
     await this.prisma.$transaction([
       this.prisma.roleMenu.deleteMany({ where: { roleId: id } }),
@@ -134,9 +137,41 @@ export class RolesService {
   }
 
   private async assertRoleCodeAvailable(roleCode: string, excludeId?: number) {
-    const existedRole = await this.prisma.role.findFirst({ where: { code: roleCode } })
+    const existedRole = await this.prisma.role.findFirst({
+      where: { code: { equals: roleCode, mode: 'insensitive' } }
+    })
     if (existedRole && existedRole.id !== excludeId) {
       throw new ConflictException('Role code already exists')
+    }
+  }
+
+  private async assertMenusExist(menuIds: number[]) {
+    if (!menuIds.length) return
+
+    const menus = await this.prisma.menu.findMany({
+      where: { id: { in: menuIds } },
+      select: { id: true }
+    })
+    const menuIdSet = new Set(menus.map((menu) => menu.id))
+    const missingMenuIds = menuIds.filter((menuId) => !menuIdSet.has(menuId))
+
+    if (missingMenuIds.length > 0) {
+      throw new BadRequestException(`Menu not found: ${missingMenuIds.join(', ')}`)
+    }
+  }
+
+  private async assertPermissionsExist(permissionIds: number[]) {
+    if (!permissionIds.length) return
+
+    const permissions = await this.prisma.permission.findMany({
+      where: { id: { in: permissionIds } },
+      select: { id: true }
+    })
+    const permissionIdSet = new Set(permissions.map((permission) => permission.id))
+    const missingPermissionIds = permissionIds.filter((permissionId) => !permissionIdSet.has(permissionId))
+
+    if (missingPermissionIds.length > 0) {
+      throw new BadRequestException(`Permission not found: ${missingPermissionIds.join(', ')}`)
     }
   }
 }

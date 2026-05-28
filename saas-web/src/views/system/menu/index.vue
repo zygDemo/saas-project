@@ -55,6 +55,7 @@
   import { useTableColumns } from '@/hooks/core/useTableColumns'
   import type { AppRouteRecord } from '@/types/router'
   import MenuDialog from './modules/menu-dialog.vue'
+  import { useMenuStore } from '@/store/modules/menu'
   import {
     fetchCreateMenu,
     fetchCreatePermission,
@@ -67,6 +68,8 @@
   import { ElTag, ElMessageBox } from 'element-plus'
 
   defineOptions({ name: 'Menus' })
+
+  const menuStore = useMenuStore()
 
   // 状态管理
   const loading = ref(false)
@@ -117,6 +120,7 @@
     try {
       const list = await fetchGetMenuList()
       tableData.value = list
+      menuStore.setMenuList(list)
     } catch (error) {
       throw error instanceof Error ? error : new Error('获取菜单失败')
     } finally {
@@ -469,6 +473,10 @@
     }
 
     await getMenuList()
+    dialogVisible.value = false
+    editData.value = null
+    currentMenuRow.value = null
+    ElMessage.success('保存成功')
   }
 
   /**
@@ -482,8 +490,8 @@
         type: 'warning'
       })
       await fetchDeleteMenu(Number(row.id))
+      await getMenuList()
       ElMessage.success('删除成功')
-      getMenuList()
     } catch (error) {
       if (error !== 'cancel') {
         ElMessage.error('删除失败')
@@ -502,8 +510,8 @@
         type: 'warning'
       })
       await fetchDeletePermission(Number(row.meta?.id))
+      await getMenuList()
       ElMessage.success('删除成功')
-      getMenuList()
     } catch (error) {
       if (error !== 'cancel') {
         ElMessage.error('删除失败')

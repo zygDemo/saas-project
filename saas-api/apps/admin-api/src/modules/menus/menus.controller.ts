@@ -6,7 +6,7 @@ import { RequestUser } from '../../common/types/request-user'
 import { CreateMenuDto, CreatePermissionDto, UpdateMenuDto, UpdatePermissionDto } from './dto/menu.dto'
 import { MenusService } from './menus.service'
 
-@ApiTags('菜单管理')
+@ApiTags('Menu management')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('v3/system/menus')
@@ -14,9 +14,9 @@ export class MenusController {
   constructor(private readonly menusService: MenusService) {}
 
   @Get()
-  @ApiOperation({ summary: '获取菜单树', description: '根据当前用户角色获取菜单树结构，用于前端动态路由和菜单展示' })
+  @ApiOperation({ summary: 'Get menu tree' })
   findAll(@CurrentUser() user: RequestUser) {
-    return this.menusService.getMenuTree(user.roles)
+    return this.menusService.getMenuTree(user.roles.includes('R_SUPER') ? undefined : user.roles)
   }
 
   @Post()
@@ -39,19 +39,13 @@ export class MenusController {
 
   @Post(':menuId/permissions')
   @ApiOperation({ summary: 'Create menu permission' })
-  createPermission(
-    @Param('menuId', ParseIntPipe) menuId: number,
-    @Body() dto: CreatePermissionDto
-  ) {
+  createPermission(@Param('menuId', ParseIntPipe) menuId: number, @Body() dto: CreatePermissionDto) {
     return this.menusService.createPermission(menuId, dto)
   }
 
   @Put('permissions/:id')
   @ApiOperation({ summary: 'Update menu permission' })
-  updatePermission(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdatePermissionDto
-  ) {
+  updatePermission(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePermissionDto) {
     return this.menusService.updatePermission(id, dto)
   }
 

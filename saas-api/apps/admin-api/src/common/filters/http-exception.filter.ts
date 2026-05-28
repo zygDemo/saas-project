@@ -1,4 +1,5 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common'
+import { Prisma } from '@prisma/client'
 import { Response } from 'express'
 import { ApiStatus } from '../constants/api-status'
 
@@ -6,15 +7,39 @@ import { ApiStatus } from '../constants/api-status'
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse<Response>()
-    const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR
+    const status = getStatus(exception)
     const body = exception instanceof HttpException ? exception.getResponse() : null
 
     response.status(status).json({
       code: statusToApiCode(status),
-      msg: extractMessage(body) ?? 'Internal server error',
+      msg: extractMessage(body) ?? extractPrismaMessage(exception) ?? 'Internal server error',
       data: null
     })
   }
+}
+
+function getStatus(exception: unknown) {
+  if (exception instanceof HttpException) return exception.getStatus()
+  if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+    if (exception.code === 'P2002') return HttpStatus.CONFLICT
+    if (exception.code === 'P2003') return HttpStatus.BAD_REQUEST
+    if (exception.code === 'P2025') return HttpStatus.NOT_FOUND
+  }
+  return HttpStatus.INTERNAL_SERVER_ERROR
+}
+
+function extractPrismaMessage(exception: unknown) {
+  if (!(exception instanceof Prisma.PrismaClientKnownRequestError)) return undefined
+  if (exception.code === 'P2002') return `Unique constraint failed: ${formatPrismaMeta(exception.meta?.target)}`
+  if (exception.code === 'P2003') return 'Foreign key constraint failed'
+  if (exception.code === 'P2025') return 'Record not found'
+  return undefined
+}
+
+function formatPrismaMeta(value: unknown) {
+  if (Array.isArray(value)) return value.join(', ')
+  if (typeof value === 'string') return value
+  return 'unknown field'
 }
 
 function extractMessage(body: unknown) {

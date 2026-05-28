@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
-import { IsArray, IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator'
+import { IsArray, IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator'
 
 export class CreateRoleDto {
   @ApiProperty({ description: 'Role name', example: 'Operator' })
@@ -34,10 +34,12 @@ export class SaveRolePermissionDto {
   @ApiPropertyOptional({ description: 'Menu ids assigned to role', example: [1, 2, 3] })
   @IsOptional()
   @IsArray()
+  @IsInt({ each: true })
   menuIds?: number[]
 
   @ApiPropertyOptional({ description: 'Permission ids assigned to role', example: [1, 2, 3] })
   @IsOptional()
   @IsArray()
+  @IsInt({ each: true })
   permissionIds?: number[]
 }

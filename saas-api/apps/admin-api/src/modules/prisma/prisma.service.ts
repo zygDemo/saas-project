@@ -4,6 +4,10 @@ import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 
 const TENANT_MODELS = ['user', 'role', 'menu', 'permission']
 
+function isTenantModel(model: string | undefined): boolean {
+  return !!model && TENANT_MODELS.includes(model.toLowerCase())
+}
+
 // 只对列表/批量查询自动注入 tenantId
 // findUnique/findUniqueOrThrow/update/delete/upsert 涉及精确 ID，由 Service 层手动校验
 const AUTO_TENANT_OPS = [
@@ -40,7 +44,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
             const tenantId = getCurrentTenantId()
 
             // 非租户模型 或 无租户上下文 → 直通
-            if (!TENANT_MODELS.includes(model) || tenantId == null) {
+            if (!isTenantModel(model) || tenantId == null) {
               return query(args)
             }
 

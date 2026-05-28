@@ -5,7 +5,7 @@ export class CreateMenuDto {
   @ApiPropertyOptional({ description: 'Parent menu id' })
   @IsOptional()
   @IsInt()
-  parentId?: number
+  parentId?: number | null
 
   @ApiProperty({ description: 'Route path', example: '/system' })
   @IsString()
