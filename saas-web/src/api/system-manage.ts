@@ -17,7 +17,7 @@ export function fetchCreateUser(params: Api.SystemManage.CreateUserParams) {
 }
 
 export function fetchUpdateUser(id: number, params: Api.SystemManage.UpdateUserParams) {
-  return request.put<Api.SystemManage.UserListItem>({
+  return request.post<Api.SystemManage.UserListItem>({
     url: `/user/${id}`,
     params,
     showSuccessMessage: true
@@ -25,8 +25,8 @@ export function fetchUpdateUser(id: number, params: Api.SystemManage.UpdateUserP
 }
 
 export function fetchDeleteUser(id: number) {
-  return request.del<{ id: number }>({
-    url: `/user/${id}`,
+  return request.post<{ id: number }>({
+    url: `/user/${id}/delete`,
     showSuccessMessage: true
   })
 }
@@ -47,7 +47,7 @@ export function fetchCreateRole(params: Api.SystemManage.CreateRoleParams) {
 }
 
 export function fetchUpdateRole(id: number, params: Api.SystemManage.UpdateRoleParams) {
-  return request.put<Api.SystemManage.RoleListItem>({
+  return request.post<Api.SystemManage.RoleListItem>({
     url: `/role/${id}`,
     params,
     showSuccessMessage: true
@@ -55,8 +55,8 @@ export function fetchUpdateRole(id: number, params: Api.SystemManage.UpdateRoleP
 }
 
 export function fetchDeleteRole(id: number) {
-  return request.del<{ id: number }>({
-    url: `/role/${id}`,
+  return request.post<{ id: number }>({
+    url: `/role/${id}/delete`,
     showSuccessMessage: true
   })
 }
@@ -71,7 +71,7 @@ export function fetchSaveRolePermissions(
   id: number,
   params: Api.SystemManage.SaveRolePermissionParams
 ) {
-  return request.put<Api.SystemManage.RolePermission>({
+  return request.post<Api.SystemManage.RolePermission>({
     url: `/role/${id}/permissions`,
     params,
     showSuccessMessage: true
@@ -93,7 +93,7 @@ export function fetchCreateMenu(params: Api.SystemManage.SaveMenuParams) {
 }
 
 export function fetchUpdateMenu(id: number, params: Api.SystemManage.SaveMenuParams) {
-  return request.put<AppRouteRecord>({
+  return request.post<AppRouteRecord>({
     url: `/v3/system/menus/${id}`,
     params,
     showSuccessMessage: true
@@ -101,8 +101,8 @@ export function fetchUpdateMenu(id: number, params: Api.SystemManage.SaveMenuPar
 }
 
 export function fetchDeleteMenu(id: number) {
-  return request.del<{ id: number }>({
-    url: `/v3/system/menus/${id}`,
+  return request.post<{ id: number }>({
+    url: `/v3/system/menus/${id}/delete`,
     showSuccessMessage: true
   })
 }
@@ -122,7 +122,7 @@ export function fetchUpdatePermission(
   id: number,
   params: Api.SystemManage.SavePermissionParams
 ) {
-  return request.put<Api.SystemManage.PermissionItem>({
+  return request.post<Api.SystemManage.PermissionItem>({
     url: `/v3/system/menus/permissions/${id}`,
     params,
     showSuccessMessage: true
@@ -130,8 +130,8 @@ export function fetchUpdatePermission(
 }
 
 export function fetchDeletePermission(id: number) {
-  return request.del<{ id: number }>({
-    url: `/v3/system/menus/permissions/${id}`,
+  return request.post<{ id: number }>({
+    url: `/v3/system/menus/permissions/${id}/delete`,
     showSuccessMessage: true
   })
 }

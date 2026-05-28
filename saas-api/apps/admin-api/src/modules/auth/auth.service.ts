@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcryptjs'
+import { ApiStatus } from '../../common/constants/api-status'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PrismaService } from '../prisma/prisma.service'
 import { LoginDto } from './dto/login.dto'
@@ -33,12 +34,19 @@ export class AuthService {
     const roles = user.roles.map(({ role }) => role.code)
     const payload = { sub: user.id, userName: user.userName, tenantId, roles }
 
-    return {
-      token: `Bearer ${await this.jwt.signAsync(payload)}`,
-      refreshToken: `Bearer ${await this.jwt.signAsync(payload, {
+    const token = `Bearer ${await this.jwt.signAsync(payload)}`
+    const refreshToken = `Bearer ${await this.jwt.signAsync(payload, {
         secret: this.config.get<string>('JWT_REFRESH_SECRET', 'change-me-refresh-secret'),
         expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN', '7d')
       })}`
+
+    return {
+      code: ApiStatus.success,
+      msg: 'success',
+      data: {
+        token,
+        refreshToken
+      }
     }
   }
 }

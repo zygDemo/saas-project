@@ -5,10 +5,10 @@ export function ApiTenantHeader() {
   return applyDecorators(
     ApiHeader({
       name: 'X-Tenant-ID',
-      description: 'Tenant ID used to scope the request',
+      description: '租户 ID，用于区分当前请求所属租户',
       required: true,
       example: 1
     }),
-    ApiBadRequestResponse({ description: 'Tenant ID is required or invalid' })
+    ApiBadRequestResponse({ description: '租户 ID 必填或格式不正确' })
   )
 }

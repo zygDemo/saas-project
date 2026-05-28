@@ -4,7 +4,7 @@ import { ApiTenantHeader } from '../../common/decorators/tenant-header.decorator
 import { AuthService } from './auth.service'
 import { LoginDto } from './dto/login.dto'
 
-@ApiTags('Auth')
+@ApiTags('认证管理')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -12,8 +12,8 @@ export class AuthController {
   @Post('login')
   @ApiTenantHeader()
   @ApiOperation({
-    summary: 'Login',
-    description: 'Login with userName, password, and X-Tenant-ID header.'
+    summary: '用户登录',
+    description: '使用用户名、密码和租户 ID 登录系统'
   })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto)
