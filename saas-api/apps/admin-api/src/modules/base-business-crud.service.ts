@@ -1,5 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { getPagination, toPaginatedResponse } from '../common/utils/pagination'
+import { getCurrentTenantId } from '../common/tenant/tenant-context'
 
 type ModelDelegate = any
 
@@ -17,6 +18,7 @@ interface CrudOptions<TCreate, TUpdate, TQuery> {
   validateCreate?: (dto: TCreate) => Promise<void> | void
   validateUpdate?: (id: number, dto: TUpdate) => Promise<void> | void
   buildWhere?: (query: TQuery) => Record<string, unknown>
+  skipTenantFilter?: boolean
 }
 
 function hasValue(value: unknown) {
@@ -46,7 +48,8 @@ export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate ex
   }
 
   async getDetail(id: number) {
-    const args: Record<string, unknown> = { where: { id } }
+    const where = this.addTenantFilter({ id })
+    const args: Record<string, unknown> = { where }
     if (this.options.detailInclude ?? this.options.include) args.include = this.options.detailInclude ?? this.options.include
     const item = await this.options.model.findUnique(args)
     if (!item) throw new NotFoundException('数据不存在')
@@ -55,7 +58,12 @@ export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate ex
 
   async create(dto: TCreate) {
     await this.options.validateCreate?.(dto)
-    const data = (await this.options.beforeCreate?.(dto)) ?? dto
+    let data = (await this.options.beforeCreate?.(dto)) ?? dto
+    // 自动添加当前租户ID
+    const tenantId = getCurrentTenantId()
+    if (tenantId && !this.options.skipTenantFilter) {
+      data = { ...(data as object), tenantId } as TCreate
+    }
     return this.options.model.create({ data })
   }
 
@@ -63,17 +71,20 @@ export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate ex
     await this.ensureExists(id)
     await this.options.validateUpdate?.(id, dto)
     const data = (await this.options.beforeUpdate?.(dto)) ?? dto
-    return this.options.model.update({ where: { id }, data })
+    const where = this.addTenantFilter({ id })
+    return this.options.model.update({ where, data })
   }
 
   async remove(id: number) {
     await this.ensureExists(id)
-    await this.options.model.delete({ where: { id } })
+    const where = this.addTenantFilter({ id })
+    await this.options.model.delete({ where })
     return { id }
   }
 
   protected async ensureExists(id: number) {
-    const item = await this.options.model.findUnique({ where: { id } })
+    const where = this.addTenantFilter({ id })
+    const item = await this.options.model.findUnique({ where })
     if (!item) throw new NotFoundException('数据不存在')
     return item
   }
@@ -82,26 +93,36 @@ export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate ex
     if (!hasValue(id)) return
     const item = await model.findUnique({ where: { id } })
     if (!item) throw new BadRequestException(message)
+    return item
+  }
+
+  private addTenantFilter(where: Record<string, unknown>): Record<string, unknown> {
+    if (this.options.skipTenantFilter) return where
+    const tenantId = getCurrentTenantId()
+    if (!tenantId) return where
+    return { ...where, tenantId }
   }
 
   private buildWhere(query: TQuery) {
-    if (this.options.buildWhere) return this.options.buildWhere(query)
-    const where: Record<string, unknown> = {}
-    const source = query as Record<string, unknown>
+    let where: Record<string, unknown> = {}
+    if (this.options.buildWhere) {
+      where = this.options.buildWhere(query)
+    } else {
+      const source = query as Record<string, unknown>
+      for (const field of this.options.searchableFields ?? []) {
+        if (hasValue(source[field])) {
+          where[field] = { contains: source[field], mode: 'insensitive' }
+        }
+      }
 
-    for (const field of this.options.searchableFields ?? []) {
-      if (hasValue(source[field])) {
-        where[field] = { contains: source[field], mode: 'insensitive' }
+      for (const field of this.options.exactFields ?? []) {
+        if (hasValue(source[field])) {
+          where[field] = source[field]
+        }
       }
     }
-
-    for (const field of this.options.exactFields ?? []) {
-      if (hasValue(source[field])) {
-        where[field] = source[field]
-      }
-    }
-
-    return where
+    // 自动添加租户过滤
+    return this.addTenantFilter(where)
   }
 }
 

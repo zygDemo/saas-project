@@ -17,67 +17,133 @@ export const businessRoutes: AppRouteRecord = {
       path: 'org',
       name: 'BusinessOrg',
       component: businessPage,
-      meta: { title: '机构管理', icon: 'ri:building-2-line', keepAlive: true, roles, businessModule: 'org' }
+      meta: {
+        title: '机构管理',
+        icon: 'ri:building-2-line',
+        keepAlive: true,
+        roles,
+        businessModule: 'org'
+      }
     },
     {
       path: 'dept',
       name: 'BusinessDept',
       component: businessPage,
-      meta: { title: '部门管理', icon: 'ri:organization-chart', keepAlive: true, roles, businessModule: 'dept' }
+      meta: {
+        title: '部门管理',
+        icon: 'ri:organization-chart',
+        keepAlive: true,
+        roles,
+        businessModule: 'dept'
+      }
     },
     {
       path: 'product',
       name: 'BusinessProduct',
       component: businessPage,
-      meta: { title: '产品管理', icon: 'ri:box-3-line', keepAlive: true, roles, businessModule: 'product' }
+      meta: {
+        title: '产品管理',
+        icon: 'ri:box-3-line',
+        keepAlive: true,
+        roles,
+        businessModule: 'product'
+      }
     },
     {
       path: 'funder',
       name: 'BusinessFunder',
       component: businessPage,
-      meta: { title: '资方管理', icon: 'ri:bank-line', keepAlive: true, roles, businessModule: 'funder' }
+      meta: {
+        title: '资方管理',
+        icon: 'ri:bank-line',
+        keepAlive: true,
+        roles,
+        businessModule: 'funder'
+      }
     },
     {
       path: 'lead',
       name: 'BusinessLead',
       component: businessPage,
-      meta: { title: '线索管理', icon: 'ri:customer-service-2-line', keepAlive: true, roles, businessModule: 'lead' }
+      meta: {
+        title: '线索管理',
+        icon: 'ri:customer-service-2-line',
+        keepAlive: true,
+        roles,
+        businessModule: 'lead'
+      }
     },
     {
       path: 'customer',
       name: 'BusinessCustomer',
       component: businessPage,
-      meta: { title: '客户管理', icon: 'ri:user-heart-line', keepAlive: true, roles, businessModule: 'customer' }
+      meta: {
+        title: '客户管理',
+        icon: 'ri:user-heart-line',
+        keepAlive: true,
+        roles,
+        businessModule: 'customer'
+      }
     },
     {
       path: 'application',
       name: 'BusinessApplication',
       component: businessPage,
-      meta: { title: '进件管理', icon: 'ri:file-list-3-line', keepAlive: true, roles, businessModule: 'application' }
+      meta: {
+        title: '进件管理',
+        icon: 'ri:file-list-3-line',
+        keepAlive: true,
+        roles,
+        businessModule: 'application'
+      }
     },
     {
       path: 'approval',
       name: 'BusinessApproval',
       component: businessPage,
-      meta: { title: '审批管理', icon: 'ri:shield-check-line', keepAlive: true, roles, businessModule: 'approval' }
+      meta: {
+        title: '审批管理',
+        icon: 'ri:shield-check-line',
+        keepAlive: true,
+        roles,
+        businessModule: 'approval'
+      }
     },
     {
       path: 'signing',
       name: 'BusinessSigning',
       component: businessPage,
-      meta: { title: '签约管理', icon: 'ri:contract-line', keepAlive: true, roles, businessModule: 'signing' }
+      meta: {
+        title: '签约管理',
+        icon: 'ri:contract-line',
+        keepAlive: true,
+        roles,
+        businessModule: 'signing'
+      }
     },
     {
       path: 'disbursement',
       name: 'BusinessDisbursement',
       component: businessPage,
-      meta: { title: '放款管理', icon: 'ri:money-cny-circle-line', keepAlive: true, roles, businessModule: 'disbursement' }
+      meta: {
+        title: '放款管理',
+        icon: 'ri:money-cny-circle-line',
+        keepAlive: true,
+        roles,
+        businessModule: 'disbursement'
+      }
     },
     {
       path: 'repayment',
       name: 'BusinessRepayment',
       component: businessPage,
-      meta: { title: '还款管理', icon: 'ri:refund-2-line', keepAlive: true, roles, businessModule: 'repayment' }
+      meta: {
+        title: '还款管理',
+        icon: 'ri:refund-2-line',
+        keepAlive: true,
+        roles,
+        businessModule: 'repayment'
+      }
     }
   ]
 }

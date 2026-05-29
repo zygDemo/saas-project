@@ -107,6 +107,18 @@ model Tenant {
   roles       Role[]
   menus       Menu[]
   permissions Permission[]
+  organizations Organization[]
+  departments Department[]
+  products Product[]
+  funders Funder[]
+  leads Lead[]
+  customers Customer[]
+  applications Application[]
+  approvalRecords ApprovalRecord[]
+  signRecords SignRecord[]
+  disbursements Disbursement[]
+  repaymentPlans RepaymentPlan[]
+  repaymentRecords RepaymentRecord[]
 }
 
 model User {
@@ -233,6 +245,7 @@ model RolePermission {
 
 model Organization {
   id            Int          @id @default(autoincrement())
+  tenantId      Int
   name          String
   code          String       @unique
   creditCode    String?      @unique // 统一社会信用代码
@@ -246,6 +259,7 @@ model Organization {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
+  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   departments   Department[]
   products      Product[]
   funders       Funder[]
@@ -253,11 +267,13 @@ model Organization {
   customers     Customer[]
   applications  Application[]
 
+  @@index([tenantId])
   @@index([status])
 }
 
 model Department {
   id          Int          @id @default(autoincrement())
+  tenantId    Int
   orgId       Int
   parentId    Int?
   name        String
@@ -266,12 +282,14 @@ model Department {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   parent      Department?  @relation("DeptTree", fields: [parentId], references: [id], onDelete: Cascade)
   children    Department[] @relation("DeptTree")
   users       User[]
 
   @@unique([orgId, name])
+  @@index([tenantId])
   @@index([orgId])
 }
 
@@ -279,6 +297,7 @@ model Department {
 
 model Product {
   id              Int          @id @default(autoincrement())
+  tenantId        Int
   orgId           Int
   name            String
   productType     String       // 抵押贷、信用贷、融资租赁等
@@ -301,15 +320,18 @@ model Product {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
+  tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   applications    Application[]
 
+  @@index([tenantId])
   @@index([orgId])
   @@index([status])
 }
 
 model Funder {
   id            Int          @id @default(autoincrement())
+  tenantId      Int
   orgId         Int
   name          String
   code          String
@@ -322,10 +344,12 @@ model Funder {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
+  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   applications  Application[]
 
   @@unique([orgId, code])
+  @@index([tenantId])
   @@index([orgId])
 }
 
@@ -333,6 +357,7 @@ model Funder {
 
 model Lead {
   id            Int          @id @default(autoincrement())
+  tenantId      Int
   orgId         Int
   source        String       // 来源: SELF, IMPORT, EXTERNAL, SCAN, REFERRAL
   name          String
@@ -349,10 +374,12 @@ model Lead {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
+  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   assignee      User?        @relation(fields: [assigneeId], references: [id])
   followUps     LeadFollowUp[]
 
+  @@index([tenantId])
   @@index([orgId])
   @@index([phone])
   @@index([status])
@@ -377,6 +404,7 @@ model LeadFollowUp {
 
 model Customer {
   id              Int          @id @default(autoincrement())
+  tenantId        Int
   orgId           Int
   name            String
   phone           String
@@ -395,6 +423,7 @@ model Customer {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
+  tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   contacts        CustomerContact[]
   vehicles        Vehicle[]
@@ -402,6 +431,7 @@ model Customer {
   applications    Application[]
 
   @@unique([orgId, phone])
+  @@index([tenantId])
   @@index([orgId])
   @@index([idCard])
 }
@@ -462,6 +492,7 @@ model BankCard {
 
 model Application {
   id              Int               @id @default(autoincrement())
+  tenantId        Int
   orgId           Int
   customerId      Int
   productId       Int?
@@ -484,6 +515,7 @@ model Application {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   org             Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
   customer        Customer          @relation(fields: [customerId], references: [id])
   product         Product?          @relation(fields: [productId], references: [id])
@@ -495,6 +527,7 @@ model Application {
   disbursement    Disbursement?
   repayments      RepaymentPlan[]
 
+  @@index([tenantId])
   @@index([orgId])
   @@index([customerId])
   @@index([status])
@@ -522,6 +555,7 @@ model ApplicationFile {
 
 model ApprovalRecord {
   id            Int            @id @default(autoincrement())
+  tenantId      Int
   applicationId Int
   approverId    Int
   stage         String         // FIRST_REVIEW, FINAL_REVIEW, FUNDER_REVIEW
@@ -532,9 +566,11 @@ model ApprovalRecord {
   rate          Decimal?       @db.Decimal(5, 4) // 核定利率
   createdAt     DateTime       @default(now())
 
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   application   Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   approver      User           @relation(fields: [approverId], references: [id])
 
+  @@index([tenantId])
   @@index([applicationId])
   @@index([approverId])
   @@index([stage])
@@ -544,6 +580,7 @@ model ApprovalRecord {
 
 model SignRecord {
   id              Int        @id @default(autoincrement())
+  tenantId        Int
   applicationId   Int        @unique
   status          SignStatus @default(PENDING)
   contractUrl     String?    // 合同文件URL
@@ -554,13 +591,17 @@ model SignRecord {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
+  tenant          Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
 }
 
 // ==================== 放款模型 ====================
 
 model Disbursement {
   id              Int                @id @default(autoincrement())
+  tenantId        Int
   applicationId   Int                @unique
   status          DisbursementStatus @default(PENDING_APPLICATION)
   gpsDeviceNo     String?            // GPS设备号
@@ -578,13 +619,17 @@ model Disbursement {
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
+  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   application     Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
 }
 
 // ==================== 还款模型 ====================
 
 model RepaymentPlan {
   id              Int             @id @default(autoincrement())
+  tenantId        Int
   applicationId   Int
   period          Int             // 期数
   dueDate         DateTime        // 应还日期
@@ -601,10 +646,12 @@ model RepaymentPlan {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   application     Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   records         RepaymentRecord[]
 
   @@unique([applicationId, period])
+  @@index([tenantId])
   @@index([applicationId])
   @@index([status])
   @@index([dueDate])
@@ -612,6 +659,7 @@ model RepaymentPlan {
 
 model RepaymentRecord {
   id              Int      @id @default(autoincrement())
+  tenantId        Int
   planId          Int
   amount          Decimal  @db.Decimal(15, 2) // 本次还款金额
   principal       Decimal  @db.Decimal(15, 2)
@@ -624,8 +672,10 @@ model RepaymentRecord {
   createdBy       Int?     // 登记人
   createdAt       DateTime @default(now())
 
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   plan            RepaymentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([planId])
 }
 

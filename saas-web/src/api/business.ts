@@ -13,7 +13,10 @@ export interface BusinessPage<T = Record<string, unknown>> {
   size: number
 }
 
-export function fetchBusinessList<T = Record<string, unknown>>(module: string, params: BusinessQuery) {
+export function fetchBusinessList<T = Record<string, unknown>>(
+  module: string,
+  params: BusinessQuery
+) {
   return request.get<BusinessPage<T>>({
     url: `/${module}/list`,
     params
@@ -26,33 +29,39 @@ export function fetchBusinessDetail<T = Record<string, unknown>>(module: string,
   })
 }
 
-export function fetchBusinessCreate<T = Record<string, unknown>>(module: string, params: Record<string, unknown>) {
+export function fetchBusinessCreate<T = Record<string, unknown>>(
+  module: string,
+  params: Record<string, unknown>
+) {
   return request.post<T>({
     url: `/${module}`,
-    params,
-    showSuccessMessage: true
+    params
   })
 }
 
-export function fetchBusinessUpdate<T = Record<string, unknown>>(module: string, id: number, params: Record<string, unknown>) {
-  return request.put<T>({
+export function fetchBusinessUpdate<T = Record<string, unknown>>(
+  module: string,
+  id: number,
+  params: Record<string, unknown>
+) {
+  return request.post<T>({
     url: `/${module}/${id}`,
-    params,
-    showSuccessMessage: true
+    params
   })
 }
 
 export function fetchBusinessDelete(module: string, id: number) {
-  return request.del<{ id: number }>({
-    url: `/${module}/${id}`,
-    showSuccessMessage: true
+  return request.post<{ id: number }>({
+    url: `/${module}/${id}/delete`
   })
 }
 
-export function fetchBusinessAction<T = Record<string, unknown>>(url: string, params?: Record<string, unknown>) {
+export function fetchBusinessAction<T = Record<string, unknown>>(
+  url: string,
+  params?: Record<string, unknown>
+) {
   return request.post<T>({
     url,
-    params: params || {},
-    showSuccessMessage: true
+    params: params || {}
   })
 }

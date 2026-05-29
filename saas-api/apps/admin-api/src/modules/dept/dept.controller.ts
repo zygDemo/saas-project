@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { DeptService } from './dept.service'
@@ -29,16 +29,15 @@ export class DeptController {
     return this.service.create(dto)
   }
 
-  @Put(':id')
+  @Post(':id')
   @ApiOperation({ summary: '编辑' })
   update(@Param('id') id: string, @Body() dto: UpdateDeptDto) {
     return this.service.update(Number(id), dto)
   }
 
-  @Delete(':id')
+  @Post(':id/delete')
   @ApiOperation({ summary: '删除' })
   remove(@Param('id') id: string) {
     return this.service.remove(Number(id))
   }
 }
-

@@ -11,15 +11,50 @@
         </div>
       </template>
       <ElSpace wrap>
-        <ElInput v-model="keyword" clearable placeholder="关键词/编号" style="width: 220px" @keyup.enter="loadData" />
-        <ElSelect v-model="status" clearable filterable placeholder="状态" style="width: 190px">
+        <ElInput
+          v-if="config.keywordField"
+          v-model="keyword"
+          clearable
+          placeholder="关键词/编号"
+          style="width: 220px"
+          @keyup.enter="loadData"
+        />
+        <ElSelect
+          v-if="statusFilterOptions.length"
+          v-model="status"
+          clearable
+          filterable
+          placeholder="状态"
+          style="width: 190px"
+        >
           <ElOption
-            v-for="option in statusOptions"
+            v-for="option in statusFilterOptions"
             :key="String(option.value)"
             :label="option.label"
             :value="option.value"
           />
         </ElSelect>
+        <template v-for="filter in extraFilters" :key="filter.prop">
+          <ElInputNumber
+            v-if="filter.type === 'number'"
+            v-model="extraFilterModel[filter.prop] as number | undefined"
+            :placeholder="filter.label"
+            :min="1"
+            controls-position="right"
+            style="width: 160px"
+            @keyup.enter="loadData"
+          />
+          <ElSelect
+            v-else
+            v-model="extraFilterModel[filter.prop]"
+            clearable
+            filterable
+            :placeholder="filter.label"
+            style="width: 160px"
+          >
+            <ElOption v-for="opt in filter.options" :key="String(opt.value)" :label="opt.label" :value="opt.value" />
+          </ElSelect>
+        </template>
         <ElButton type="primary" @click="loadData">查询</ElButton>
         <ElButton @click="resetSearch">重置</ElButton>
       </ElSpace>
@@ -65,19 +100,20 @@
         </ElTableColumn>
         <ElTableColumn label="操作" width="360" fixed="right">
           <template #default="{ row }">
-            <ElSpace wrap>
-              <ElButton link type="primary" @click="openDetail(row)">详情</ElButton>
-              <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
-              <ElButton
-                v-for="action in rowActions(row)"
-                :key="action.name"
-                link
-                :type="action.type || 'success'"
-                @click="openAction(row, action)"
-              >
-                {{ action.label }}
-              </ElButton>
-            </ElSpace>
+      <ElSpace wrap>
+        <ElButton link type="primary" @click="openDetail(row)">详情</ElButton>
+        <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
+        <ElButton link type="danger" @click="handleDelete(row)">删除</ElButton>
+        <ElButton
+          v-for="action in rowActions(row)"
+          :key="action.name"
+          link
+          :type="action.type || 'success'"
+          @click="openAction(row, action)"
+        >
+          {{ action.label }}
+        </ElButton>
+      </ElSpace>
           </template>
         </ElTableColumn>
       </ElTable>
@@ -171,12 +207,13 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, reactive, ref, watch } from 'vue'
+  import { computed, onActivated, onMounted, reactive, ref } from 'vue'
   import { useRoute } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import {
     fetchBusinessAction,
     fetchBusinessCreate,
+    fetchBusinessDelete,
     fetchBusinessDetail,
     fetchBusinessList,
     fetchBusinessUpdate
@@ -215,6 +252,8 @@
   }
 
   const route = useRoute()
+  const pageRouteName = String(route.name || '')
+  const pageModuleName = String(route.meta.businessModule || 'application')
   const loading = ref(false)
   const submitting = ref(false)
   const keyword = ref('')
@@ -285,7 +324,12 @@
   ]
   const orgStatusOptions = ['ACTIVE', 'INACTIVE', 'SUSPENDED'].map(toOption)
   const activeStatusOptions = ['ACTIVE', 'INACTIVE'].map(toOption)
+  const leadStatusOptions = ['PENDING_ASSIGN', 'PENDING_FOLLOW', 'FOLLOWING', 'CONVERTED', 'INVALID', 'DORMANT', 'PUBLIC_POOL'].map(toOption)
   const genderOptions = ['MALE', 'FEMALE', 'UNKNOWN'].map(toOption)
+  const signingStatusOptions = ['PENDING', 'SENT', 'SIGNED', 'CANCELLED', 'EXPIRED'].map(toOption)
+  const disbursementStatusOptions = ['PENDING_APPLICATION', 'PENDING_APPROVAL', 'GPS_INSTALLED', 'MORTGAGE_DONE', 'DISBURSED', 'FAILED'].map(toOption)
+  const repaymentStatusOptions = ['NOT_DUE', 'PENDING', 'PARTIAL', 'PAID', 'OVERDUE', 'SETTLED'].map(toOption)
+  const approvalActionOptions = ['PASS', 'REJECT', 'SUPPLEMENT', 'RETURN'].map(toOption)
   const applicationStatusOptions = [
     'DRAFT',
     'PENDING_FIRST_REVIEW',
@@ -419,9 +463,9 @@
       keywordField: 'name',
       columns: [
         { prop: 'name', label: '部门名称' },
-        { prop: 'orgId', label: '机构ID' },
-        { prop: 'parentId', label: '上级部门ID' },
-        { prop: 'managerId', label: '负责人ID' }
+        { prop: 'orgName', label: '所属机构', width: 160 },
+        { prop: 'parentName', label: '上级部门', width: 160 },
+        { prop: 'managerId', label: '负责人ID', width: 120 }
       ],
       formFields: [
         { prop: 'orgId', label: '机构ID', type: 'number', required: true },
@@ -439,10 +483,10 @@
       keywordField: 'name',
       columns: [
         { prop: 'name', label: '产品名称' },
-        { prop: 'productType', label: '产品类型' },
-        { prop: 'minAmount', label: '最低金额' },
-        { prop: 'maxAmount', label: '最高金额' },
-        { prop: 'status', label: '状态' }
+        { prop: 'productType', label: '产品类型', width: 120 },
+        { prop: 'minAmount', label: '最低金额', width: 120 },
+        { prop: 'maxAmount', label: '最高金额', width: 120 },
+        { prop: 'status', label: '状态', width: 100 }
       ],
       formFields: [
         { prop: 'orgId', label: '机构ID', type: 'number', required: true },
@@ -466,10 +510,10 @@
       keywordField: 'name',
       columns: [
         { prop: 'name', label: '资方名称' },
-        { prop: 'code', label: '资方编码' },
-        { prop: 'funderType', label: '类型' },
-        { prop: 'contactName', label: '联系人' },
-        { prop: 'status', label: '状态' }
+        { prop: 'code', label: '资方编码', width: 140 },
+        { prop: 'funderType', label: '类型', width: 120 },
+        { prop: 'contactName', label: '联系人', width: 120 },
+        { prop: 'status', label: '状态', width: 100 }
       ],
       formFields: [
         { prop: 'orgId', label: '机构ID', type: 'number', required: true },
@@ -488,12 +532,13 @@
       description: '线索分配、跟进、转化和公海池。',
       api: 'lead',
       keywordField: 'name',
+      statusMap: commonStatusMap,
       columns: [
-        { prop: 'name', label: '客户姓名' },
-        { prop: 'phone', label: '手机号' },
-        { prop: 'source', label: '来源' },
-        { prop: 'loanAmount', label: '意向金额' },
-        { prop: 'status', label: '状态' }
+        { prop: 'name', label: '客户姓名', width: 120 },
+        { prop: 'phone', label: '手机号', width: 140 },
+        { prop: 'source', label: '来源', width: 120 },
+        { prop: 'loanAmount', label: '意向金额', width: 120 },
+        { prop: 'status', label: '状态', width: 120 }
       ],
       formFields: [
         { prop: 'orgId', label: '机构ID', type: 'number', required: true },
@@ -505,6 +550,7 @@
         { prop: 'carModel', label: '车型' },
         { prop: 'loanAmount', label: '意向金额', type: 'number', precision: 2 },
         { prop: 'assigneeId', label: '负责人ID', type: 'number' },
+        { prop: 'status', label: '状态', type: 'select', options: leadStatusOptions, defaultValue: 'PENDING_ASSIGN' },
         { prop: 'remark', label: '备注', type: 'textarea' }
       ],
       actions: []
@@ -515,11 +561,11 @@
       api: 'customer',
       keywordField: 'name',
       columns: [
-        { prop: 'name', label: '客户姓名' },
-        { prop: 'phone', label: '手机号' },
-        { prop: 'gender', label: '性别' },
-        { prop: 'companyName', label: '单位' },
-        { prop: 'status', label: '状态' }
+        { prop: 'name', label: '客户姓名', width: 120 },
+        { prop: 'phone', label: '手机号', width: 140 },
+        { prop: 'gender', label: '性别', width: 80 },
+        { prop: 'companyName', label: '单位', width: 160 },
+        { prop: 'status', label: '状态', width: 100 }
       ],
       formFields: [
         { prop: 'orgId', label: '机构ID', type: 'number', required: true },
@@ -541,12 +587,15 @@
       description: '进件资料、审批流、签约、放款与还款的核心入口。',
       api: 'application',
       keywordField: 'applicationNo',
+      statusMap: commonStatusMap,
       columns: [
         { prop: 'applicationNo', label: '申请编号', width: 200 },
-        { prop: 'customerId', label: '客户ID' },
-        { prop: 'amount', label: '申请金额' },
-        { prop: 'term', label: '期限' },
-        { prop: 'status', label: '状态', width: 180 }
+        { prop: 'customerName', label: '客户姓名', width: 120 },
+        { prop: 'productName', label: '产品', width: 140 },
+        { prop: 'funderName', label: '资方', width: 140 },
+        { prop: 'amount', label: '申请金额', width: 120 },
+        { prop: 'term', label: '期限(月)', width: 100 },
+        { prop: 'status', label: '状态', width: 160 }
       ],
       formFields: [
         { prop: 'orgId', label: '机构ID', type: 'number', required: true },
@@ -653,7 +702,7 @@
     }
   }
 
-  const moduleName = computed(() => String(route.meta.businessModule || 'application'))
+  const moduleName = computed(() => pageModuleName)
   const config = computed(() => configs[moduleName.value] || configs.application)
   const formFields = computed(() => config.value.formFields)
   const actionFields = computed(() => activeAction.value?.fields || [])
@@ -663,14 +712,54 @@
     { prop: 'createdAt', label: '创建时间' },
     { prop: 'updatedAt', label: '更新时间' }
   ])
-  const statusOptions = computed(() => {
-    const keys = new Set<string>()
-    for (const item of records.value) {
-      if (item.status) keys.add(String(item.status))
+  const statusFilterOptions = computed(() => {
+    const optionsMap: Record<string, OptionConfig[]> = {
+      org: orgStatusOptions,
+      product: activeStatusOptions,
+      funder: activeStatusOptions,
+      lead: leadStatusOptions,
+      customer: activeStatusOptions,
+      application: applicationStatusOptions,
+      signing: signingStatusOptions,
+      disbursement: disbursementStatusOptions,
+      repayment: repaymentStatusOptions
     }
-    const candidates = moduleName.value === 'application' ? applicationStatusOptions : Array.from(keys).map(toOption)
-    return candidates.length ? candidates : activeStatusOptions
+    return optionsMap[moduleName.value] || []
   })
+
+  const extraFilters = computed(() => {
+    const m = moduleName.value
+    const filters: { prop: string; label: string; type: 'select' | 'number'; options?: OptionConfig[] }[] = []
+    if (['org', 'dept', 'product', 'funder', 'lead', 'customer', 'application'].includes(m)) {
+      filters.push({ prop: 'orgId', label: '机构ID', type: 'number' })
+    }
+    if (m === 'application') {
+      filters.push({ prop: 'customerId', label: '客户ID', type: 'number' })
+      filters.push({ prop: 'creatorId', label: '创建人ID', type: 'number' })
+    }
+    if (['approval', 'signing', 'disbursement', 'repayment'].includes(m)) {
+      filters.push({ prop: 'applicationId', label: '进件ID', type: 'number' })
+    }
+    if (m === 'approval') {
+      filters.push({ prop: 'stage', label: '审批阶段', type: 'select', options: ['FIRST_REVIEW', 'FINAL_REVIEW', 'FUNDER_REVIEW', 'SUPPLEMENT'].map(toOption) })
+      filters.push({ prop: 'action', label: '审批动作', type: 'select', options: approvalActionOptions })
+    }
+    if (m === 'lead') {
+      filters.push({ prop: 'assigneeId', label: '负责人ID', type: 'number' })
+    }
+    if (m === 'dept') {
+      filters.push({ prop: 'parentId', label: '上级部门ID', type: 'number' })
+    }
+    if (m === 'product') {
+      filters.push({ prop: 'productType', label: '产品类型', type: 'select', options: [{ label: '车贷', value: 'CAR_LOAN' }] })
+    }
+    if (m === 'funder') {
+      filters.push({ prop: 'funderType', label: '资方类型', type: 'select', options: [{ label: '银行', value: 'BANK' }, { label: '消金', value: 'CONSUMER_FINANCE' }, { label: '租赁', value: 'LEASE' }, { label: '小贷', value: 'MICRO_LOAN' }] })
+    }
+    return filters
+  })
+
+  const extraFilterModel = reactive<FormModel>({})
 
   async function loadData() {
     loading.value = true
@@ -680,9 +769,14 @@
         size: pagination.value.size
       }
       if (keyword.value && config.value.keywordField) params[config.value.keywordField] = keyword.value
-      if (status.value) params.status = status.value
+      if (status.value && statusFilterOptions.value.length) params.status = status.value
+      for (const filter of extraFilters.value) {
+        const v = extraFilterModel[filter.prop]
+        if (v !== undefined && v !== null && v !== '') params[filter.prop] = v
+      }
       const result = await fetchBusinessList(config.value.api, params)
-      records.value = (result.records || []) as Record<string, unknown>[]
+      const rawRecords = (result.records || []) as Record<string, unknown>[]
+      records.value = rawRecords.map((r) => flattenRelations(r))
       pagination.value.total = result.total || 0
     } finally {
       loading.value = false
@@ -692,6 +786,7 @@
   function resetSearch() {
     keyword.value = ''
     status.value = ''
+    for (const key of Object.keys(extraFilterModel)) delete extraFilterModel[key]
     pagination.value.current = 1
     loadData()
   }
@@ -797,11 +892,29 @@
     return field ? `请填写${field.label}` : ''
   }
 
+  async function handleDelete(row: Record<string, unknown>) {
+    try {
+      await ElMessageBox.confirm(`确认删除该${config.value.title}记录？`, '删除确认', { type: 'warning' })
+      await fetchBusinessDelete(config.value.api, Number(row.id))
+      ElMessage.success('删除成功')
+      await loadData()
+    } catch {
+      // cancel
+    }
+  }
+
   function formatCell(row: Record<string, unknown>, prop: string) {
     const value = row[prop]
     if (value === undefined || value === null || value === '') return '-'
     if (prop === 'status' || prop === 'gender' || prop === 'action') return config.value.statusMap?.[String(value)] || commonStatusMap[String(value)] || String(value)
     if (typeof value === 'object') {
+      if (Array.isArray(value)) {
+        if (value.length === 0) return '-'
+        if (value.every((v) => v && typeof v === 'object' && 'name' in v)) {
+          return value.map((v: any) => v.name).join(', ')
+        }
+        return `共${value.length}项`
+      }
       if ('name' in value) return String((value as { name?: unknown }).name)
       if ('userName' in value) return String((value as { userName?: unknown }).userName)
       return JSON.stringify(value)
@@ -821,13 +934,38 @@
     return { label: commonStatusMap[value] || value, value }
   }
 
-  watch(() => route.fullPath, () => {
-    pagination.value.current = 1
-    records.value = []
-    loadData()
-  })
+  function flattenRelations(row: Record<string, unknown>) {
+    const flat = { ...row }
+    const relationMap: Record<string, string> = {
+      customer: 'customerName',
+      product: 'productName',
+      funder: 'funderName',
+      org: 'orgName',
+      assignee: 'assigneeName',
+      creator: 'creatorName',
+      parent: 'parentName'
+    }
+    for (const [key, alias] of Object.entries(relationMap)) {
+      const rel = row[key]
+      if (rel && typeof rel === 'object' && !Array.isArray(rel)) {
+        const name = (rel as any).name ?? (rel as any).userName ?? (rel as any).realName
+        if (name !== undefined) flat[alias] = name
+      }
+    }
+    return flat
+  }
 
-  onMounted(loadData)
+  let hasLoaded = false
+
+  async function loadCurrentPageData() {
+    if (pageRouteName && String(route.name || '') !== pageRouteName) return
+    if (hasLoaded) return
+    hasLoaded = true
+    await loadData()
+  }
+
+  onMounted(loadCurrentPageData)
+  onActivated(loadCurrentPageData)
 </script>
 
 <style scoped>

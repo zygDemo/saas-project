@@ -112,6 +112,9 @@ docker logs --tail=100 saas-api
 重启后端
 docker restart saas-api
 
+接口文档
+http://localhost:3000/saas/api/docs
+
 
 ## 下一步建议
 

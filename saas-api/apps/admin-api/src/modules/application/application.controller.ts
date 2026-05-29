@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { ApplicationService } from './application.service'
@@ -39,10 +39,16 @@ export class ApplicationController {
     return this.service.create(dto)
   }
 
-  @Put(':id')
+  @Post(':id')
   @ApiOperation({ summary: '编辑' })
   update(@Param('id') id: string, @Body() dto: UpdateApplicationDto) {
     return this.service.update(Number(id), dto)
+  }
+
+  @Post(':id/delete')
+  @ApiOperation({ summary: '删除' })
+  remove(@Param('id') id: string) {
+    return this.service.remove(Number(id))
   }
 
   @Post(':id/submit')
@@ -105,4 +111,3 @@ export class ApplicationController {
     return this.service.registerRepayment(Number(planId), dto)
   }
 }
-
