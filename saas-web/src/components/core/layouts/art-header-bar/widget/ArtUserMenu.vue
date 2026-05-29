@@ -33,7 +33,7 @@
           </div>
         </div>
         <ul class="py-4 mt-3 border-t border-g-300/80">
-          <li class="btn-item" @click="goPage('/system/user-center')">
+          <li class="btn-item" @click="goPage('UserCenter')">
             <ArtSvgIcon icon="ri:user-3-line" />
             <span>{{ $t('topBar.user.userCenter') }}</span>
           </li>
@@ -78,10 +78,11 @@
 
   /**
    * 页面跳转
-   * @param {string} path - 目标路径
+   * @param {string} name - 目标路由名称
    */
-  const goPage = (path: string): void => {
-    router.push(path)
+  const goPage = (name: string): void => {
+    closeUserMenu()
+    router.push({ name })
   }
 
   /**

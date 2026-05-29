@@ -54,7 +54,9 @@ jobs:
             echo "$ACR_PASS" | docker login crpi-zkwf5wpoov74u7f3-vpc.cn-beijing.personal.cr.aliyuncs.com -u "$ACR_USER" --password-stdin
             cd /opt/saas/api
             docker compose pull api
-            docker compose up -d
+            docker compose up -d postgres redis
+            docker compose run --rm --no-deps api pnpm prisma migrate deploy
+            docker compose up -d api
             echo "===== 容器状态 ====="
             docker ps | grep saas
             docker image prune -f

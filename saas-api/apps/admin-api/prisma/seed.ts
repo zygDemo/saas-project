@@ -198,6 +198,18 @@ async function seedMenus(tenantId: number) {
     sort: 23,
     keepAlive: true
   })
+  const userCenter = await upsertMenu(tenantId, {
+    parentId: system.id,
+    path: 'user-center',
+    name: 'UserCenter',
+    component: '/system/user-center',
+    title: 'menus.system.userCenter',
+    icon: 'ri:user-line',
+    sort: 24,
+    keepAlive: true,
+    hidden: true,
+    hiddenTab: true
+  })
 
   await Promise.all(
     ['add', 'edit', 'delete'].map((authMark) =>
@@ -209,7 +221,7 @@ async function seedMenus(tenantId: number) {
     )
   )
 
-  return [dashboard, consoleMenu, analysis, system, user, role, menu]
+  return [dashboard, consoleMenu, analysis, system, user, role, menu, userCenter]
 }
 
 function permissionTitle(authMark: string) {
@@ -227,6 +239,8 @@ async function upsertMenu(
     icon: string
     sort: number
     keepAlive?: boolean
+    hidden?: boolean
+    hiddenTab?: boolean
   }
 ) {
   return prisma.menu.upsert({

@@ -105,6 +105,14 @@ VITE_API_PROXY_URL=http://localhost:3000
 
 前端会请求 `/saas/api/...`，Vite proxy 会转发到 NestJS。
 
+
+查看实时日志
+docker logs --tail=100 saas-api
+
+重启后端
+docker restart saas-api
+
+
 ## 下一步建议
 
 - 为用户、角色、菜单补齐新增、编辑、删除接口。

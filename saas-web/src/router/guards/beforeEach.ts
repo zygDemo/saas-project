@@ -45,6 +45,7 @@ import { setWorktab } from '@/utils/navigation'
 import { setPageTitle } from '@/utils/router'
 import { RoutesAlias } from '../routesAlias'
 import { staticRoutes } from '../routes/staticRoutes'
+import { privateRoutes } from '../routes/privateRoutes'
 import { loadingService } from '@/utils/ui'
 import { useCommon } from '@/hooks/core/useCommon'
 import { useWorktabStore } from '@/store/modules/worktab'
@@ -224,6 +225,14 @@ function handleLoginStatus(
  * 检查路由是否为静态路由
  */
 function isStaticRoute(path: string): boolean {
+  return isPathInRoutes(staticRoutes, path)
+}
+
+function isPrivateRoute(path: string): boolean {
+  return isPathInRoutes(privateRoutes, path)
+}
+
+function isPathInRoutes(routes: any[], path: string): boolean {
   const checkRoute = (routes: any[], targetPath: string): boolean => {
     return routes.some((route) => {
       // 404 catch-all 路由不应视为可匿名访问的静态页，
@@ -247,7 +256,25 @@ function isStaticRoute(path: string): boolean {
     })
   }
 
-  return checkRoute(staticRoutes, path)
+  return checkRoute(routes, path)
+}
+
+function getRouteNames(routes: Array<{ name?: unknown; children?: any[] }>): Set<unknown> {
+  const names = new Set<unknown>()
+
+  const collect = (items: Array<{ name?: unknown; children?: any[] }>) => {
+    items.forEach((item) => {
+      if (item.name) {
+        names.add(item.name)
+      }
+      if (item.children?.length) {
+        collect(item.children)
+      }
+    })
+  }
+
+  collect(routes)
+  return names
 }
 
 /**
@@ -270,7 +297,10 @@ async function handleDynamicRoutes(
     await fetchUserInfo()
 
     // 2. 获取菜单数据
-    const menuList = await menuProcessor.getMenuList()
+    const backendMenuList = await menuProcessor.getMenuList()
+    const backendRouteNames = getRouteNames(backendMenuList)
+    const fallbackPrivateRoutes = privateRoutes.filter((route) => !backendRouteNames.has(route.name))
+    const menuList = [...fallbackPrivateRoutes, ...backendMenuList]
 
     // 3. 验证菜单数据
     if (!menuProcessor.validateMenuList(menuList)) {
@@ -292,7 +322,7 @@ async function handleDynamicRoutes(
     useWorktabStore().validateWorktabs(router)
 
     // 8. 静态路由不依赖菜单权限，初始化后直接恢复目标地址。
-    if (isStaticRoute(to.path)) {
+    if (isStaticRoute(to.path) || isPrivateRoute(to.path)) {
       routeInitInProgress = false
       next({
         path: to.path,

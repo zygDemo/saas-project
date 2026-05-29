@@ -33,18 +33,6 @@ export const systemRoutes: AppRouteRecord = {
       }
     },
     {
-      path: 'user-center',
-      name: 'UserCenter',
-      component: '/system/user-center',
-      meta: {
-        title: 'menus.system.userCenter',
-        icon: 'ri:user-line',
-        isHide: true,
-        keepAlive: true,
-        isHideTab: true
-      }
-    },
-    {
       path: 'menu',
       name: 'Menus',
       component: '/system/menu',
