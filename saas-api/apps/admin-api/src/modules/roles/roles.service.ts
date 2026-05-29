@@ -97,8 +97,8 @@ export class RolesService {
 
     return {
       roleId: role.id,
-      menuIds: role.menus.map((item) => item.menuId),
-      permissionIds: role.permissions.map((item) => item.permissionId)
+      menuIds: role.menus.map((item: any) => item.menuId),
+      permissionIds: role.permissions.map((item: any) => item.permissionId)
     }
   }
 
@@ -152,7 +152,7 @@ export class RolesService {
       where: { id: { in: menuIds } },
       select: { id: true }
     })
-    const menuIdSet = new Set(menus.map((menu) => menu.id))
+    const menuIdSet = new Set(menus.map((menu: any) => menu.id))
     const missingMenuIds = menuIds.filter((menuId) => !menuIdSet.has(menuId))
 
     if (missingMenuIds.length > 0) {
@@ -167,7 +167,7 @@ export class RolesService {
       where: { id: { in: permissionIds } },
       select: { id: true }
     })
-    const permissionIdSet = new Set(permissions.map((permission) => permission.id))
+    const permissionIdSet = new Set(permissions.map((permission: any) => permission.id))
     const missingPermissionIds = permissionIds.filter((permissionId) => !permissionIdSet.has(permissionId))
 
     if (missingPermissionIds.length > 0) {

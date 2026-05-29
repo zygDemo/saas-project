@@ -1,0 +1,112 @@
+import { BadRequestException, NotFoundException } from '@nestjs/common'
+import { getPagination, toPaginatedResponse } from '../common/utils/pagination'
+
+type ModelDelegate = any
+
+type PrismaWithTransaction = any
+
+interface CrudOptions<TCreate, TUpdate, TQuery> {
+  model: ModelDelegate
+  prisma: PrismaWithTransaction
+  searchableFields?: string[]
+  exactFields?: string[]
+  include?: unknown
+  detailInclude?: unknown
+  beforeCreate?: (dto: TCreate) => Promise<unknown> | unknown
+  beforeUpdate?: (dto: TUpdate) => Promise<unknown> | unknown
+  validateCreate?: (dto: TCreate) => Promise<void> | void
+  validateUpdate?: (id: number, dto: TUpdate) => Promise<void> | void
+  buildWhere?: (query: TQuery) => Record<string, unknown>
+}
+
+function hasValue(value: unknown) {
+  return value !== undefined && value !== null && value !== ''
+}
+
+export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate extends object, TQuery extends object> {
+  protected constructor(private readonly options: CrudOptions<TCreate, TUpdate, TQuery>) {}
+
+  async getList(query: TQuery) {
+    const pagination = getPagination(query)
+    const where = this.buildWhere(query)
+    const findArgs: Record<string, unknown> = {
+      where,
+      skip: pagination.skip,
+      take: pagination.take,
+      orderBy: { id: 'desc' }
+    }
+    if (this.options.include) findArgs.include = this.options.include
+
+    const [records, total] = await this.options.prisma.$transaction([
+      this.options.model.findMany(findArgs),
+      this.options.model.count({ where })
+    ])
+
+    return toPaginatedResponse(records, total, pagination)
+  }
+
+  async getDetail(id: number) {
+    const args: Record<string, unknown> = { where: { id } }
+    if (this.options.detailInclude ?? this.options.include) args.include = this.options.detailInclude ?? this.options.include
+    const item = await this.options.model.findUnique(args)
+    if (!item) throw new NotFoundException('数据不存在')
+    return item
+  }
+
+  async create(dto: TCreate) {
+    await this.options.validateCreate?.(dto)
+    const data = (await this.options.beforeCreate?.(dto)) ?? dto
+    return this.options.model.create({ data })
+  }
+
+  async update(id: number, dto: TUpdate) {
+    await this.ensureExists(id)
+    await this.options.validateUpdate?.(id, dto)
+    const data = (await this.options.beforeUpdate?.(dto)) ?? dto
+    return this.options.model.update({ where: { id }, data })
+  }
+
+  async remove(id: number) {
+    await this.ensureExists(id)
+    await this.options.model.delete({ where: { id } })
+    return { id }
+  }
+
+  protected async ensureExists(id: number) {
+    const item = await this.options.model.findUnique({ where: { id } })
+    if (!item) throw new NotFoundException('数据不存在')
+    return item
+  }
+
+  protected async ensureRelatedExists(model: ModelDelegate, id: number | undefined, message: string) {
+    if (!hasValue(id)) return
+    const item = await model.findUnique({ where: { id } })
+    if (!item) throw new BadRequestException(message)
+  }
+
+  private buildWhere(query: TQuery) {
+    if (this.options.buildWhere) return this.options.buildWhere(query)
+    const where: Record<string, unknown> = {}
+    const source = query as Record<string, unknown>
+
+    for (const field of this.options.searchableFields ?? []) {
+      if (hasValue(source[field])) {
+        where[field] = { contains: source[field], mode: 'insensitive' }
+      }
+    }
+
+    for (const field of this.options.exactFields ?? []) {
+      if (hasValue(source[field])) {
+        where[field] = source[field]
+      }
+    }
+
+    return where
+  }
+}
+
+export function omitNested<T extends Record<string, unknown>>(dto: T, keys: string[]) {
+  const data: Record<string, unknown> = { ...dto }
+  for (const key of keys) delete data[key]
+  return data
+}

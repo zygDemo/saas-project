@@ -11,6 +11,19 @@ import { RedisModule } from './modules/redis/redis.module'
 import { RolesModule } from './modules/roles/roles.module'
 import { UsersModule } from './modules/users/users.module'
 
+// 车贷 SaaS 业务模块
+import { OrganizationModule } from './modules/org/org.module'
+import { DeptModule } from './modules/dept/dept.module'
+import { ProductModule } from './modules/product/product.module'
+import { FunderModule } from './modules/funder/funder.module'
+import { LeadModule } from './modules/lead/lead.module'
+import { CustomerModule } from './modules/customer/customer.module'
+import { ApplicationModule } from './modules/application/application.module'
+import { ApprovalModule } from './modules/approval/approval.module'
+import { SigningModule } from './modules/signing/signing.module'
+import { DisbursementModule } from './modules/disbursement/disbursement.module'
+import { RepaymentModule } from './modules/repayment/repayment.module'
+
 const appEnv = process.env.NODE_ENV || 'development'
 
 @Module({
@@ -39,7 +52,19 @@ const appEnv = process.env.NODE_ENV || 'development'
     UsersModule,
     RolesModule,
     MenusModule,
-    HealthModule
+    HealthModule,
+    // 业务模块
+    OrganizationModule,
+    DeptModule,
+    ProductModule,
+    FunderModule,
+    LeadModule,
+    CustomerModule,
+    ApplicationModule,
+    ApprovalModule,
+    SigningModule,
+    DisbursementModule,
+    RepaymentModule
   ]
 })
 export class AppModule implements NestModule {

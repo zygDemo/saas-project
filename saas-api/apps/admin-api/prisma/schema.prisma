@@ -7,12 +7,94 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==================== 枚举定义 ====================
+
 enum UserStatus {
   ONLINE
   OFFLINE
   ABNORMAL
   DISABLED
 }
+
+enum OrgStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum LeadStatus {
+  PENDING_ASSIGN
+  PENDING_FOLLOW
+  FOLLOWING
+  CONVERTED
+  INVALID
+  DORMANT
+  PUBLIC_POOL
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  PENDING_FIRST_REVIEW
+  FIRST_REVIEW_PASSED
+  FIRST_REVIEW_REJECTED
+  PENDING_SUPPLEMENT
+  PENDING_FINAL_REVIEW
+  FINAL_REVIEW_PASSED
+  FINAL_REVIEW_REJECTED
+  PENDING_FUNDER_REVIEW
+  FUNDER_REVIEW_PASSED
+  FUNDER_REVIEW_REJECTED
+  PENDING_SIGN
+  SIGNED
+  PENDING_DISBURSEMENT
+  DISBURSED
+  CANCELLED
+}
+
+enum ApprovalAction {
+  PASS
+  REJECT
+  SUPPLEMENT
+  TRANSFER
+  RETURN
+  REMARK
+}
+
+enum SignStatus {
+  PENDING
+  SENT
+  SIGNED
+  VIDEO_INTERVIEW_DONE
+  EXPIRED
+  CANCELLED
+}
+
+enum DisbursementStatus {
+  PENDING_APPLICATION
+  PENDING_APPROVAL
+  GPS_INSTALLED
+  MORTGAGE_DONE
+  DISBURSED
+  FAILED
+}
+
+enum RepaymentStatus {
+  NOT_DUE
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+  SETTLED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+// ==================== 基础租户/权限模型 ====================
 
 model Tenant {
   id          Int          @id @default(autoincrement())
@@ -30,6 +112,7 @@ model Tenant {
 model User {
   id           Int        @id @default(autoincrement())
   tenantId     Int
+  deptId       Int?
   userName     String
   passwordHash String
   nickName     String
@@ -43,11 +126,18 @@ model User {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   tenant       Tenant     @relation(fields: [tenantId], references: [id])
+  dept         Department? @relation(fields: [deptId], references: [id])
   roles        UserRole[]
+
+  // 业务关联
+  leads        Lead[]
+  applications Application[] @relation("ApplicationCreator")
+  approvals    ApprovalRecord[]
 
   @@unique([tenantId, userName])
   @@unique([tenantId, email])
   @@index([tenantId])
+  @@index([deptId])
 }
 
 model Role {
@@ -57,6 +147,7 @@ model Role {
   code        String
   description String           @default("")
   enabled     Boolean          @default(true)
+  dataScope   String           @default("ALL") // ALL, DEPT, SELF, CUSTOM
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   tenant      Tenant           @relation(fields: [tenantId], references: [id])
@@ -136,4 +227,426 @@ model RolePermission {
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
+}
+
+// ==================== 机构/部门模型 ====================
+
+model Organization {
+  id            Int          @id @default(autoincrement())
+  name          String
+  code          String       @unique
+  creditCode    String?      @unique // 统一社会信用代码
+  contactName   String?
+  contactPhone  String?
+  address       String?
+  status        OrgStatus    @default(ACTIVE)
+  packageType   String?      // 套餐类型
+  expireAt      DateTime?    // 到期时间
+  apiEnabled    Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  departments   Department[]
+  products      Product[]
+  funders       Funder[]
+  leads         Lead[]
+  customers     Customer[]
+  applications  Application[]
+
+  @@index([status])
+}
+
+model Department {
+  id          Int          @id @default(autoincrement())
+  orgId       Int
+  parentId    Int?
+  name        String
+  managerId   Int?         // 部门负责人用户ID
+  sort        Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  parent      Department?  @relation("DeptTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Department[] @relation("DeptTree")
+  users       User[]
+
+  @@unique([orgId, name])
+  @@index([orgId])
+}
+
+// ==================== 产品/资方模型 ====================
+
+model Product {
+  id              Int          @id @default(autoincrement())
+  orgId           Int
+  name            String
+  productType     String       // 抵押贷、信用贷、融资租赁等
+  minRate         Decimal      @db.Decimal(5, 4) // 最低年利率
+  maxRate         Decimal      @db.Decimal(5, 4) // 最高年利率
+  minAmount       Decimal      @db.Decimal(15, 2)
+  maxAmount       Decimal      @db.Decimal(15, 2)
+  minTerm         Int          // 最短期限（月）
+  maxTerm         Int          // 最长期限（月）
+  repaymentMethod String       // 等额本息、等额本金、先息后本
+  minAge          Int?
+  maxAge          Int?
+  maxCarAge       Int?         // 最大车龄
+  maxMileage      Int?         // 最大里程
+  ltvLimit        Decimal?     @db.Decimal(5, 4) // 最高贷款价值比
+  minDownPayment  Decimal?     @db.Decimal(5, 4) // 最低首付比例
+  regions         String?      // 适用区域，JSON或逗号分隔
+  status          String       @default("DRAFT") // DRAFT, ACTIVE, INACTIVE, ARCHIVED
+  fileChecklist   Json?        // 所需文件清单
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  applications    Application[]
+
+  @@index([orgId])
+  @@index([status])
+}
+
+model Funder {
+  id            Int          @id @default(autoincrement())
+  orgId         Int
+  name          String
+  code          String
+  funderType    String       // BANK, CONSUMER_FINANCE, LEASING, MICRO_LOAN
+  contactName   String?
+  contactPhone  String?
+  apiConfig     Json?        // 对接配置
+  priority      Int          @default(0)
+  status        String       @default("ACTIVE")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  applications  Application[]
+
+  @@unique([orgId, code])
+  @@index([orgId])
+}
+
+// ==================== 线索模型 ====================
+
+model Lead {
+  id            Int          @id @default(autoincrement())
+  orgId         Int
+  source        String       // 来源: SELF, IMPORT, EXTERNAL, SCAN, REFERRAL
+  name          String
+  phone         String
+  idCard        String?      // 身份证号（脱敏存储）
+  carBrand      String?
+  carModel      String?
+  loanAmount    Decimal?     @db.Decimal(15, 2)
+  remark        String?
+  status        LeadStatus   @default(PENDING_ASSIGN)
+  assigneeId    Int?         // 分配给的业务员
+  nextFollowAt  DateTime?    // 下次跟进时间
+  createdBy     Int?         // 创建人
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  assignee      User?        @relation(fields: [assigneeId], references: [id])
+  followUps     LeadFollowUp[]
+
+  @@index([orgId])
+  @@index([phone])
+  @@index([status])
+  @@index([assigneeId])
+}
+
+model LeadFollowUp {
+  id          Int      @id @default(autoincrement())
+  leadId      Int
+  followType  String   // PHONE, WECHAT, VISIT, OTHER
+  content     String
+  nextFollowAt DateTime?
+  createdBy   Int?
+  createdAt   DateTime @default(now())
+
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+}
+
+// ==================== 客户模型 ====================
+
+model Customer {
+  id              Int          @id @default(autoincrement())
+  orgId           Int
+  name            String
+  phone           String
+  idCard          String?      // 身份证号
+  gender          Gender       @default(UNKNOWN)
+  birthDate       DateTime?
+  maritalStatus   String?
+  education       String?
+  occupation      String?
+  companyName     String?
+  monthlyIncome   Decimal?     @db.Decimal(15, 2)
+  address         String?
+  emergencyName   String?
+  emergencyPhone  String?
+  status          String       @default("ACTIVE")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  contacts        CustomerContact[]
+  vehicles        Vehicle[]
+  bankCards       BankCard[]
+  applications    Application[]
+
+  @@unique([orgId, phone])
+  @@index([orgId])
+  @@index([idCard])
+}
+
+model CustomerContact {
+  id          Int      @id @default(autoincrement())
+  customerId  Int
+  name        String
+  relation    String   // 配偶、父母、同事等
+  phone       String
+  address     String?
+  isEmergency Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+model Vehicle {
+  id            Int      @id @default(autoincrement())
+  customerId    Int
+  vin           String?  // 车架号
+  plateNumber   String?  // 车牌号
+  brand         String?
+  model         String?
+  color         String?
+  year          Int?
+  mileage       Int?
+  purchasePrice Decimal? @db.Decimal(15, 2)
+  estimateValue Decimal? @db.Decimal(15, 2) // 评估价
+  isMortgaged   Boolean  @default(false)
+  mortgageInfo  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([vin])
+}
+
+model BankCard {
+  id          Int      @id @default(autoincrement())
+  customerId  Int
+  bankName    String
+  cardNo      String   // 卡号（加密存储）
+  cardType    String   // 借记卡/信用卡
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+// ==================== 进件模型 ====================
+
+model Application {
+  id              Int               @id @default(autoincrement())
+  orgId           Int
+  customerId      Int
+  productId       Int?
+  funderId        Int?
+  applicationNo   String            @unique // 申请编号
+  amount          Decimal           @db.Decimal(15, 2)
+  term            Int               // 期限（月）
+  rate            Decimal           @db.Decimal(5, 4) // 年利率
+  repaymentMethod String
+  purpose         String?           // 贷款用途
+  status          ApplicationStatus @default(DRAFT)
+  creatorId       Int               // 创建人（业务员）
+  sourceLeadId    Int?              // 来源线索
+  supplementReason String?          // 补件原因
+  supplementDeadline DateTime?      // 补件截止时间
+  approvedAmount  Decimal?          @db.Decimal(15, 2) // 审批通过金额
+  approvedTerm    Int?              // 审批通过期限
+  approvedRate    Decimal?          @db.Decimal(5, 4) // 审批通过利率
+  remark          String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  org             Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  customer        Customer          @relation(fields: [customerId], references: [id])
+  product         Product?          @relation(fields: [productId], references: [id])
+  funder          Funder?           @relation(fields: [funderId], references: [id])
+  creator         User              @relation("ApplicationCreator", fields: [creatorId], references: [id])
+  files           ApplicationFile[]
+  approvals       ApprovalRecord[]
+  signRecord      SignRecord?
+  disbursement    Disbursement?
+  repayments      RepaymentPlan[]
+
+  @@index([orgId])
+  @@index([customerId])
+  @@index([status])
+  @@index([creatorId])
+  @@index([applicationNo])
+}
+
+model ApplicationFile {
+  id            Int      @id @default(autoincrement())
+  applicationId Int
+  fileType      String   // 身份证正面、身份证反面、行驶证、银行卡等
+  fileUrl       String
+  fileName      String?
+  ocrResult     Json?    // OCR识别结果
+  isValid       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([fileType])
+}
+
+// ==================== 审批模型 ====================
+
+model ApprovalRecord {
+  id            Int            @id @default(autoincrement())
+  applicationId Int
+  approverId    Int
+  stage         String         // FIRST_REVIEW, FINAL_REVIEW, FUNDER_REVIEW
+  action        ApprovalAction
+  opinion       String?        // 审批意见
+  amount        Decimal?       @db.Decimal(15, 2) // 核定金额
+  term          Int?           // 核定期限
+  rate          Decimal?       @db.Decimal(5, 4) // 核定利率
+  createdAt     DateTime       @default(now())
+
+  application   Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  approver      User           @relation(fields: [approverId], references: [id])
+
+  @@index([applicationId])
+  @@index([approverId])
+  @@index([stage])
+}
+
+// ==================== 签约模型 ====================
+
+model SignRecord {
+  id              Int        @id @default(autoincrement())
+  applicationId   Int        @unique
+  status          SignStatus @default(PENDING)
+  contractUrl     String?    // 合同文件URL
+  signedAt        DateTime?
+  videoUrl        String?    // 面签视频/录屏
+  expiredAt       DateTime?  // 签约过期时间
+  cancelledReason String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+// ==================== 放款模型 ====================
+
+model Disbursement {
+  id              Int                @id @default(autoincrement())
+  applicationId   Int                @unique
+  status          DisbursementStatus @default(PENDING_APPLICATION)
+  gpsDeviceNo     String?            // GPS设备号
+  gpsInstallImg   String?            // GPS安装照片
+  gpsInstallAt    DateTime?
+  mortgageStatus  String?            // 抵押状态
+  mortgageImg     String?            // 抵押回执
+  mortgageAt      DateTime?
+  disburseAmount  Decimal?           @db.Decimal(15, 2) // 实际放款金额
+  disburseAccount String?            // 放款账户
+  disburseAt      DateTime?
+  transactionNo   String?            // 流水号
+  voucherUrl      String?            // 放款凭证
+  remark          String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  application     Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+// ==================== 还款模型 ====================
+
+model RepaymentPlan {
+  id              Int             @id @default(autoincrement())
+  applicationId   Int
+  period          Int             // 期数
+  dueDate         DateTime        // 应还日期
+  principal       Decimal         @db.Decimal(15, 2) // 应还本金
+  interest        Decimal         @db.Decimal(15, 2) // 应还利息
+  totalAmount     Decimal         @db.Decimal(15, 2) // 应还总额
+  paidPrincipal   Decimal         @default(0) @db.Decimal(15, 2)
+  paidInterest    Decimal         @default(0) @db.Decimal(15, 2)
+  paidTotal       Decimal         @default(0) @db.Decimal(15, 2)
+  status          RepaymentStatus @default(NOT_DUE)
+  overdueDays     Int             @default(0)
+  penaltyAmount   Decimal         @default(0) @db.Decimal(15, 2) // 违约金
+  paidAt          DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  application     Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  records         RepaymentRecord[]
+
+  @@unique([applicationId, period])
+  @@index([applicationId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model RepaymentRecord {
+  id              Int      @id @default(autoincrement())
+  planId          Int
+  amount          Decimal  @db.Decimal(15, 2) // 本次还款金额
+  principal       Decimal  @db.Decimal(15, 2)
+  interest        Decimal  @db.Decimal(15, 2)
+  penalty         Decimal  @default(0) @db.Decimal(15, 2)
+  paymentMethod   String   // 支付方式
+  transactionNo   String?  // 交易流水号
+  voucherUrl      String?  // 凭证
+  remark          String?
+  createdBy       Int?     // 登记人
+  createdAt       DateTime @default(now())
+
+  plan            RepaymentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+}
+
+// ==================== 操作日志/审计 ====================
+
+model OperationLog {
+  id          Int      @id @default(autoincrement())
+  orgId       Int?
+  userId      Int?
+  userName    String?
+  module      String   // 模块
+  action      String   // 操作类型
+  description String?  // 操作描述
+  requestData Json?    // 请求数据
+  responseData Json?   // 响应数据
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([module])
+  @@index([createdAt])
 }

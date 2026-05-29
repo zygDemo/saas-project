@@ -45,9 +45,9 @@ export class UsersService {
 
     if (!user) throw new NotFoundException('User not found')
 
-    const roles = user.roles.map(({ role }) => role.code)
-    const buttons = user.roles.flatMap(({ role }) =>
-      role.permissions.map(({ permission }) => permission.authMark)
+    const roles = user.roles.map(({ role }: any) => role.code)
+    const buttons = user.roles.flatMap(({ role }: any) =>
+      role.permissions.map(({ permission }: any) => permission.authMark)
     )
 
     return {
@@ -117,7 +117,7 @@ export class UsersService {
         createdBy: operator,
         updatedBy: operator,
         roles: {
-          create: roles.map((role) => ({
+          create: roles.map((role: any) => ({
             role: { connect: { id: role.id } }
           }))
         }
@@ -169,7 +169,7 @@ export class UsersService {
         roles: roles
           ? {
               deleteMany: {},
-              create: roles.map((role) => ({
+              create: roles.map((role: any) => ({
                 role: { connect: { id: role.id } }
               }))
             }
@@ -195,7 +195,7 @@ export class UsersService {
       where: { code: { in: uniqueRoleCodes } },
       select: { id: true, code: true }
     })
-    const roleCodeSet = new Set(roles.map((role) => role.code))
+    const roleCodeSet = new Set(roles.map((role: any) => role.code))
     const missingRoleCodes = uniqueRoleCodes.filter((roleCode) => !roleCodeSet.has(roleCode))
 
     if (missingRoleCodes.length > 0) {
@@ -222,7 +222,7 @@ function mapUserListItem(user: UserWithRoles) {
     nickName: user.nickName,
     userPhone: user.phone ?? '',
     userEmail: user.email,
-    userRoles: user.roles.map(({ role }) => role.code),
+    userRoles: user.roles.map(({ role }: any) => role.code),
     createBy: user.createdBy,
     createTime: formatDate(user.createdAt),
     updateBy: user.updatedBy,

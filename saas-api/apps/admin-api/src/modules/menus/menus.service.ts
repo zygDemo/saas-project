@@ -189,7 +189,7 @@ export class MenusService {
       menuId: permission.menuId,
       title: permission.title,
       authMark: permission.authMark,
-      roles: permission.roles.map(({ role }) => role.code)
+      roles: permission.roles.map(({ role }: any) => role.code)
     }
   }
 
@@ -203,7 +203,7 @@ export class MenusService {
       ...(roles.length
         ? [
             this.prisma.roleMenu.createMany({
-              data: roles.map((role) => ({ menuId, roleId: role.id })),
+              data: roles.map((role: any) => ({ menuId, roleId: role.id })),
               skipDuplicates: true
             })
           ]
@@ -221,7 +221,7 @@ export class MenusService {
       ...(roles.length
         ? [
             this.prisma.rolePermission.createMany({
-              data: roles.map((role) => ({ permissionId, roleId: role.id })),
+              data: roles.map((role: any) => ({ permissionId, roleId: role.id })),
               skipDuplicates: true
             })
           ]
@@ -235,7 +235,7 @@ export class MenusService {
       where: { code: { in: uniqueRoleCodes } },
       select: { id: true, code: true }
     })
-    const roleCodeSet = new Set(roles.map((role) => role.code))
+    const roleCodeSet = new Set(roles.map((role: any) => role.code))
     const missingRoleCodes = uniqueRoleCodes.filter((roleCode) => !roleCodeSet.has(roleCode))
 
     if (missingRoleCodes.length > 0) {
@@ -329,12 +329,12 @@ function mapMenu(menu: MenuWithRelations): AppRouteRecord {
       isHideTab: menu.hiddenTab,
       link: menu.link,
       isIframe: menu.iframe,
-      roles: menu.roles.map(({ role }) => role.code),
+      roles: menu.roles.map(({ role }: any) => role.code),
       authList: menu.permissions.map((permission) => ({
         id: permission.id,
         title: permission.title,
         authMark: permission.authMark,
-        roles: permission.roles.map(({ role }) => role.code)
+        roles: permission.roles.map(({ role }: any) => role.code)
       }))
     }
   }

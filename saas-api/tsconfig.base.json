@@ -15,7 +15,10 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@saas/shared": ["packages/shared/src"]
-    }
+      "@saas/shared": [
+        "packages/shared/src"
+      ]
+    },
+    "strictPropertyInitialization": false
   }
 }

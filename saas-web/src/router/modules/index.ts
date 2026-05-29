@@ -1,4 +1,5 @@
 import { AppRouteRecord } from '@/types/router'
+import { businessRoutes } from './business'
 import { dashboardRoutes } from './dashboard'
 import { templateRoutes } from './template'
 import { widgetsRoutes } from './widgets'
@@ -15,6 +16,7 @@ import { helpRoutes } from './help'
  */
 export const routeModules: AppRouteRecord[] = [
   dashboardRoutes,
+  businessRoutes,
   templateRoutes,
   widgetsRoutes,
   examplesRoutes,

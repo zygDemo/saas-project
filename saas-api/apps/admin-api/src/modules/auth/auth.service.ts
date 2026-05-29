@@ -31,7 +31,7 @@ export class AuthService {
     const matched = await bcrypt.compare(dto.password, user.passwordHash)
     if (!matched) throw new UnauthorizedException('Invalid username or password')
 
-    const roles = user.roles.map(({ role }) => role.code)
+    const roles = user.roles.map(({ role }: any) => role.code)
     const payload = { sub: user.id, userName: user.userName, tenantId, roles }
 
     const token = `Bearer ${await this.jwt.signAsync(payload)}`
