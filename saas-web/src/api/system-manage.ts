@@ -87,23 +87,20 @@ export function fetchGetMenuList() {
 export function fetchCreateMenu(params: Api.SystemManage.SaveMenuParams) {
   return request.post<AppRouteRecord>({
     url: '/v3/system/menus',
-    params,
-    showSuccessMessage: true
+    params
   })
 }
 
 export function fetchUpdateMenu(id: number, params: Api.SystemManage.SaveMenuParams) {
   return request.post<AppRouteRecord>({
     url: `/v3/system/menus/${id}`,
-    params,
-    showSuccessMessage: true
+    params
   })
 }
 
 export function fetchDeleteMenu(id: number) {
   return request.post<{ id: number }>({
-    url: `/v3/system/menus/${id}/delete`,
-    showSuccessMessage: true
+    url: `/v3/system/menus/${id}/delete`
   })
 }
 
@@ -113,25 +110,19 @@ export function fetchCreatePermission(
 ) {
   return request.post<Api.SystemManage.PermissionItem>({
     url: `/v3/system/menus/${menuId}/permissions`,
-    params,
-    showSuccessMessage: true
+    params
   })
 }
 
-export function fetchUpdatePermission(
-  id: number,
-  params: Api.SystemManage.SavePermissionParams
-) {
+export function fetchUpdatePermission(id: number, params: Api.SystemManage.SavePermissionParams) {
   return request.post<Api.SystemManage.PermissionItem>({
     url: `/v3/system/menus/permissions/${id}`,
-    params,
-    showSuccessMessage: true
+    params
   })
 }
 
 export function fetchDeletePermission(id: number) {
   return request.post<{ id: number }>({
-    url: `/v3/system/menus/permissions/${id}/delete`,
-    showSuccessMessage: true
+    url: `/v3/system/menus/permissions/${id}/delete`
   })
 }
