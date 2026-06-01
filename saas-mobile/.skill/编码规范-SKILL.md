@@ -739,7 +739,7 @@ export const httpInterceptor: RequestInterceptor = {
     // 2. 注入 Token
     const localStore = useLocalStore();
     if (localStore.token) {
-      config.header["M-Authorization"] = `Bearer ${localStore.token}`;
+      config.header["Authorization"] = `Bearer ${localStore.token}`;
     }
 
     return config;

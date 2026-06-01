@@ -4,17 +4,18 @@ import type {
   RequestMeta,
   RequestOptions,
 } from "uview-pro";
+import { API_BASE_URL, TENANT_ID } from "@/common/env";
 import { useLocalStore } from "@/stores/local";
 import { useSessionStore } from "@/stores/session";
 
 // 基础配置
-const baseUrl =
-  import.meta.env.VITE_API_BASE_URL || "";
+const baseUrl = API_BASE_URL;
 
 export const httpRequestConfig: RequestConfig = {
   baseUrl,
   header: {
     "content-type": "application/json",
+    "X-Tenant-ID": TENANT_ID,
   },
   meta: {
     originalData: true,
@@ -27,6 +28,7 @@ export const httpInterceptor: RequestInterceptor = {
   request: (config: RequestOptions) => {
     const meta: RequestMeta = config.meta || {};
     config.header = config.header || {};
+    config.header["X-Tenant-ID"] = TENANT_ID;
 
     // 1. 显示 Loading
     if (meta.loading) {
@@ -40,8 +42,6 @@ export const httpInterceptor: RequestInterceptor = {
     const token = getRequestToken();
     if (token) {
       config.header.Authorization = `Bearer ${token}`;
-      // 兼容现有移动端后端接口，后续统一切换到 Authorization。
-      config.header["M-Authorization"] = `Bearer ${token}`;
     }
 
     const localStore = useLocalStore();
@@ -209,9 +209,9 @@ function getRequestToken() {
 function buildUploadAuthHeader(token: string) {
   const localStore = useLocalStore();
   const header: Record<string, string> = {};
+  header["X-Tenant-ID"] = TENANT_ID;
   if (token) {
     header.Authorization = `Bearer ${token}`;
-    header["M-Authorization"] = `Bearer ${token}`;
   }
   const orgId = localStore.currentOrgId;
   if (orgId) {

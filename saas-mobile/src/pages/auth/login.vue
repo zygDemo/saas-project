@@ -47,8 +47,8 @@ const authApi = useAuthApi();
 const localStore = useLocalStore();
 const sessionStore = useSessionStore();
 // const userStore = useUserStore();
-const username = ref("");
-const password = ref("");
+const username = ref("Super");
+const password = ref("123456");
 const loading = ref(false);
 const showDemoTip = computed(() => isDev);
 
@@ -70,7 +70,7 @@ const handleLogin = async () => {
   loading.value = true;
   try {
     const res = await authApi.login({
-      username: username.value,
+      userName: username.value,
       password: password.value,
     });
     if (res.code === 200) {

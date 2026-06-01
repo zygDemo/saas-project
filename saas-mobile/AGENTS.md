@@ -216,7 +216,7 @@ pnpm lint:fix               # ESLint 自动修复
 
 **请求拦截器**：
 1. 根据 `meta.loading` 显示/隐藏 `uni.showLoading`
-2. 从 `useLocalStore()` 读取 `token`，注入 `M-Authorization: Bearer <token>` 请求头
+2. 从 `useLocalStore()` 读取 `token`，注入 `Authorization: Bearer <token>` 请求头
 
 **响应拦截器**：
 1. 关闭 Loading

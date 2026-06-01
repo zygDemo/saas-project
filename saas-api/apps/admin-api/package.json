@@ -16,6 +16,9 @@
     "prisma:seed": "dotenv -e env/.env.development -- tsx prisma/seed.ts",
     "prisma:seed:sit": "dotenv -e env/.env.sit -- tsx prisma/seed.ts",
     "prisma:seed:prod": "dotenv -e env/.env.production -- tsx prisma/seed.ts",
+    "db:sync-roles": "dotenv -e env/.env.development -- tsx prisma/migrate-roles-menus.ts",
+    "db:sync-roles:sit": "dotenv -e env/.env.sit -- tsx prisma/migrate-roles-menus.ts",
+    "db:sync-roles:prod": "dotenv -e env/.env.production -- tsx prisma/migrate-roles-menus.ts",
     "db:studio": "dotenv -e env/.env.development -- prisma studio"
   },
   "dependencies": {

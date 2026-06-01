@@ -1,9 +1,11 @@
 import { http } from "uview-pro";
 
+const LOGIN_URL = "/auth/login";
+
 export function useAuthApi() {
   return {
     // 登录
-    login: (data: LoginData) => http.post<LoginResult>("/m/login", data),
+    login: (data: LoginData) => http.post<LoginResult>(LOGIN_URL, data),
     logout: () => http.post("/auth/logout"),
     sendSmsCode: (phone: string, type: "login" | "register" = "login") =>
       http.post("/auth/sms/send", { phone, type }),
@@ -21,7 +23,7 @@ export interface GetTokenResult {
 }
 
 export interface LoginData {
-  username?: string;
+  userName: string;
   phone?: string;
   password: string;
   code?: string;

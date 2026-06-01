@@ -88,7 +88,7 @@
 | 技术栈 | uni-app 3、Vue 3.4、TypeScript 5.9、Vite 5.2.8、uview-pro、Pinia |
 | 页面 | 已注册工作台、登录、线索、客户、车辆、进件、补件、审批、签约、订单、典当、个人中心等页面 |
 | API 风格 | `src/api/business.ts` 和 `src/api/auth.ts` 使用 `useXxxApi()` composable 风格 |
-| 鉴权 | HTTP 拦截器读取本地 Token，当前主要注入 `M-Authorization`；客户扫码场景支持 session token |
+| 鉴权 | HTTP 拦截器读取本地 Token，当前主要注入 `Authorization`；客户扫码场景支持 session token |
 | 存储 | `useLocalStore` 持久化 token、refreshToken、userInfo、登录时间、过期时间 |
 | 工作台 | 已有快捷入口、二维码入口、功能分组；需要补充 SaaS 待办和统计能力 |
 | 文档 | 已有 `PRD-嗨车无忧-需求文档.md`，本次升级为 SaaS 平台对齐版本 |
@@ -877,7 +877,7 @@ Organization 机构
 ### 11.4 接口安全
 
 1. 后台和移动端登录态接口需携带 `Authorization: Bearer ***`。
-2. 为兼容旧移动端，短期内继续兼容 `M-Authorization: Bearer ***`。
+2. 为兼容旧移动端，短期内继续兼容 `Authorization: Bearer ***`。
 3. Token 有效期默认 2 小时，RefreshToken 有效期默认 7 天。
 4. 敏感接口增加签名验证、二次确认或短信验证码。
 5. 接口限流：单用户默认 100 次/分钟，登录和短信接口单独限流。
@@ -996,7 +996,7 @@ Organization 机构
 |--------|------|----------|
 | 登录结果兼容 | 兼容 `data.token`、`token`、`accessToken`、`salesman/userInfo/user` 返回结构 | `src/pages/auth/login.vue` |
 | 用户上下文增强 | 保存 orgId、deptId、roles、roleKeys、permissions，提供权限判断方法 | `src/stores/local.ts` |
-| 鉴权 Header 对齐 | 请求同时携带 `Authorization` 与旧 `M-Authorization`，上传同样处理 | `src/common/http.interceptor.ts` |
+| 鉴权 Header 对齐 | 请求同时携带 `Authorization` 与旧 `Authorization`，上传同样处理 | `src/common/http.interceptor.ts` |
 | 工作台统计 | 调用 `/m/statistics/overview` 展示业务统计和待办 | `src/pages/business/workbench.vue`、`src/api/business.ts` |
 | PRD 完善 | 将 SaaS v1.3 中移动端、客户扫码、多租户、状态机、验收标准同步到本文件 | 本文件 |
 
@@ -1030,7 +1030,7 @@ Organization 机构
 ### 14.1 功能验收
 
 1. 登录成功后能进入工作台，localStore 中存在 token、userInfo、orgId/role/permission 上下文。
-2. 请求头同时兼容 `Authorization` 与 `M-Authorization`，客户扫码短期 Token 仍按客户 session 使用。
+2. 请求头同时兼容 `Authorization` 与 `Authorization`，客户扫码短期 Token 仍按客户 session 使用。
 3. 工作台展示快捷入口、二维码、统计概览和待办卡片；统计接口失败时不影响原有入口使用。
 4. 线索、客户、车辆、进件、补件、签约、订单、典当页面路由可正常进入。
 5. PRD 文档覆盖 SaaS 多租户、客户扫码进件、状态机、接口规范、页面清单、实施计划。

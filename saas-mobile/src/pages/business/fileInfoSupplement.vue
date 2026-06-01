@@ -80,7 +80,7 @@
 import { computed, reactive, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { $u } from "uview-pro";
-import { API_BASE_URL, UPLOAD_MAX_SIZE } from "@/common/env";
+import { API_BASE_URL, TENANT_ID, UPLOAD_MAX_SIZE } from "@/common/env";
 import { useBusinessApi } from "@/api/business";
 import { useLocalStore } from "@/stores/local";
 import { useSessionStore } from "@/stores/session";
@@ -120,7 +120,8 @@ const uploadHeader = computed(() => {
     : localStore.token || "";
 
   return {
-    "M-Authorization": token ? `Bearer ${token}` : "",
+    Authorization: token ? `Bearer ${token}` : "",
+    "X-Tenant-ID": TENANT_ID,
   };
 });
 

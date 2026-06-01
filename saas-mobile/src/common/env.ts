@@ -13,6 +13,17 @@ export function getEnv(key: keyof ImportMetaEnv, defaultValue = ""): string {
   return value !== undefined ? String(value) : defaultValue;
 }
 
+export function getFirstEnv(
+  keys: Array<keyof ImportMetaEnv>,
+  defaultValue = "",
+): string {
+  for (const key of keys) {
+    const value = import.meta.env[key];
+    if (value !== undefined && value !== "") return String(value);
+  }
+  return defaultValue;
+}
+
 /**
  * 获取布尔类型的环境变量
  * @param key 环境变量名
@@ -69,12 +80,23 @@ export const isProd = currentEnv === ENV.PRODUCTION;
 /**
  * API 基础地址
  */
-export const API_BASE_URL = getEnv("VITE_API_BASE_URL", "");
+export const API_BASE_URL = getFirstEnv(
+  ["VITE_API_BASE_URL", "VITE_API_URL"],
+  "",
+);
 
 /**
  * 图片基础地址
  */
-export const IMAGE_BASE_URL = getEnv("VITE_IMAGE_BASE_URL", "");
+export const IMAGE_BASE_URL = getFirstEnv(
+  ["VITE_IMAGE_BASE_URL", "VITE_API_BASE_URL", "VITE_API_URL"],
+  "",
+);
+
+/**
+ * 默认租户 ID
+ */
+export const TENANT_ID = getEnv("VITE_TENANT_ID", "1");
 
 /**
  * 应用名称
