@@ -174,7 +174,7 @@ async function seedAllMenus(tenantId: number) {
   const user = await upsertMenu(tenantId, { parentId: system.id, path: 'user', name: 'User', component: '/system/user', title: '用户管理', icon: 'ri:user-line', sort: 41, keepAlive: true })
   const role = await upsertMenu(tenantId, { parentId: system.id, path: 'role', name: 'Role', component: '/system/role', title: '角色管理', icon: 'ri:user-settings-line', sort: 42, keepAlive: true })
   const menu = await upsertMenu(tenantId, { parentId: system.id, path: 'menu', name: 'Menus', component: '/system/menu', title: '菜单管理', icon: 'ri:menu-line', sort: 43, keepAlive: true })
-  const dictMgmt = await upsertMenu(tenantId, { parentId: system.id, path: 'dict', name: 'DictMgmt', component: bp, title: '字典管理', icon: 'ri:book-open-line', sort: 44, keepAlive: true })
+  const dictMgmt = await upsertMenu(tenantId, { parentId: system.id, path: 'dict', name: 'DictMgmt', component: '/system/dict', title: '字典管理', icon: 'ri:book-open-line', sort: 44, keepAlive: true })
   const regionMgmt = await upsertMenu(tenantId, { parentId: system.id, path: 'region', name: 'RegionMgmt', component: bp, title: '地区管理', icon: 'ri:map-pin-line', sort: 45, keepAlive: true })
   const fileConfig = await upsertMenu(tenantId, { parentId: system.id, path: 'file-config', name: 'FileConfig', component: bp, title: '文件存储配置', icon: 'ri:hard-drive-2-line', sort: 46, keepAlive: true })
   const msgTemplate = await upsertMenu(tenantId, { parentId: system.id, path: 'msg-template', name: 'MsgTemplate', component: bp, title: '消息模板', icon: 'ri:mail-send-line', sort: 47, keepAlive: true })

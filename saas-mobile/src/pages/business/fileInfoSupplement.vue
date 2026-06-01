@@ -81,6 +81,7 @@ import { computed, reactive, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { $u } from "uview-pro";
 import { API_BASE_URL, TENANT_ID, UPLOAD_MAX_SIZE } from "@/common/env";
+import { tokenUtil } from "@/common/token";
 import { useBusinessApi } from "@/api/business";
 import { useLocalStore } from "@/stores/local";
 import { useSessionStore } from "@/stores/session";
@@ -120,7 +121,7 @@ const uploadHeader = computed(() => {
     : localStore.token || "";
 
   return {
-    Authorization: token ? `Bearer ${token}` : "",
+    Authorization: tokenUtil.buildAuthorization(token),
     "X-Tenant-ID": TENANT_ID,
   };
 });

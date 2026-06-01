@@ -6,6 +6,7 @@ export function useAuthApi() {
   return {
     // 登录
     login: (data: LoginData) => http.post<LoginResult>(LOGIN_URL, data),
+    getUserInfo: () => http.get<UserInfoResult>("/user/info"),
     logout: () => http.post("/auth/logout"),
     sendSmsCode: (phone: string, type: "login" | "register" = "login") =>
       http.post("/auth/sms/send", { phone, type }),
@@ -35,4 +36,13 @@ export interface LoginResult {
   refreshToken: string;
   expires: number;
   userInfo: Record<string, unknown>;
+}
+
+export interface UserInfoResult {
+  userId: number | string;
+  userName: string;
+  email?: string;
+  avatar?: string;
+  roles?: string[];
+  buttons?: string[];
 }

@@ -206,5 +206,58 @@ declare namespace Api {
       authMark: string
       roleCodes?: string[]
     }
+
+    type DictTypeList = Api.Common.PaginatedResponse<DictTypeItem>
+
+    interface DictTypeItem {
+      id: number
+      name: string
+      code: string
+      status: string
+      remark?: string
+      itemCount: number
+      createTime: string
+      updateTime: string
+    }
+
+    type DictTypeSearchParams = Partial<
+      Pick<DictTypeItem, 'name' | 'code' | 'status'> & Api.Common.CommonSearchParams
+    >
+
+    interface SaveDictTypeParams {
+      name: string
+      code: string
+      status?: string
+      remark?: string
+    }
+
+    type DictDataList = Api.Common.PaginatedResponse<DictDataItem>
+
+    interface DictDataItem {
+      id: number
+      typeId: number
+      typeName: string
+      typeCode: string
+      label: string
+      value: string
+      sort: number
+      status: string
+      remark?: string
+      createTime: string
+      updateTime: string
+    }
+
+    type DictDataSearchParams = Partial<
+      Pick<DictDataItem, 'typeId' | 'label' | 'value' | 'status'> & Api.Common.CommonSearchParams
+    >
+
+    interface SaveDictDataParams {
+      typeId: number
+      label: string
+      value: string
+      sort?: number
+      status?: string
+      remark?: string
+    }
   }
 }

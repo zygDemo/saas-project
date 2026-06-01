@@ -77,14 +77,6 @@ const handleLogin = async () => {
       const payload = res.data || res;
       const token = payload.token || payload.accessToken || res.token;
       const refreshToken = payload.refreshToken || res.refreshToken || "";
-      const userInfo =
-        payload.userInfo || payload.user || payload.salesman || res.salesman || null;
-      const roles = payload.roles || userInfo?.roles || [];
-      const roleKeys =
-        payload.roleKeys ||
-        payload.roleCodes ||
-        roles.map((role) => role.roleKey || role.code || "").filter(Boolean);
-      const permissions = payload.permissions || payload.perms || userInfo?.permissions || [];
 
       if (!token) {
         $u.toast("登录接口未返回Token", "error");
@@ -94,6 +86,18 @@ const handleLogin = async () => {
       sessionStore.clearSession();
       localStore.setToken(token);
       localStore.setRefreshToken(refreshToken);
+      const fallbackUserInfo =
+        payload.userInfo || payload.user || payload.salesman || res.salesman || null;
+      const userInfo = await loadCurrentUserInfo(fallbackUserInfo);
+      const roles = normalizeRoles(payload.roles || userInfo?.roles || []);
+      const roleKeys =
+        payload.roleKeys ||
+        payload.roleCodes ||
+        userInfo?.roleKeys ||
+        roles.map((role) => role.roleKey || "").filter(Boolean);
+      const permissions =
+        payload.permissions || payload.perms || userInfo?.permissions || userInfo?.buttons || [];
+
       localStore.setUserInfo(userInfo);
       localStore.setAuthContext({
         orgId: payload.orgId || userInfo?.orgId || userInfo?.dept?.orgId,
@@ -122,6 +126,42 @@ const handleLogin = async () => {
     loading.value = false;
   }
 };
+
+async function loadCurrentUserInfo(fallbackUserInfo) {
+  try {
+    const infoRes = await authApi.getUserInfo();
+    const info = infoRes.data || infoRes;
+    return normalizeUserInfo(info || fallbackUserInfo);
+  } catch (error) {
+    console.warn("获取当前用户信息失败，使用登录响应兜底:", error);
+    return normalizeUserInfo(fallbackUserInfo);
+  }
+}
+
+function normalizeUserInfo(info) {
+  if (!info) return null;
+  const roles = normalizeRoles(info.roles || []);
+  return {
+    ...info,
+    roles,
+    roleKeys: info.roleKeys || roles.map((role) => role.roleKey || "").filter(Boolean),
+    permissions: info.permissions || info.buttons || [],
+  };
+}
+
+function normalizeRoles(roles) {
+  if (!Array.isArray(roles)) return [];
+  return roles.map((role) => {
+    if (typeof role === "string") {
+      return {
+        roleId: 0,
+        roleName: role,
+        roleKey: role,
+      };
+    }
+    return role;
+  });
+}
 </script>
 
 <style lang="scss" scoped>

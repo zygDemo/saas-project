@@ -4,7 +4,8 @@ import type {
   RequestMeta,
   RequestOptions,
 } from "uview-pro";
-import { API_BASE_URL, TENANT_ID } from "@/common/env";
+import { API_BASE_URL, TENANT_ID } from "./env";
+import { tokenUtil } from "./token";
 import { useLocalStore } from "@/stores/local";
 import { useSessionStore } from "@/stores/session";
 
@@ -41,7 +42,7 @@ export const httpInterceptor: RequestInterceptor = {
     // 2. 注入 Token
     const token = getRequestToken();
     if (token) {
-      config.header.Authorization = `Bearer ${token}`;
+      config.header.Authorization = tokenUtil.buildAuthorization(token);
     }
 
     const localStore = useLocalStore();
@@ -200,10 +201,10 @@ function getRequestToken() {
   const roleTags = String(sessionStore.transferInfo?.roleTags || "").trim();
 
   if (roleTags === "客户" || roleTags.includes("客户")) {
-    return sessionStore.transferToken || "";
+    return tokenUtil.normalize(sessionStore.transferToken || "");
   }
 
-  return localStore.token || "";
+  return tokenUtil.normalize(localStore.token || "");
 }
 
 function buildUploadAuthHeader(token: string) {
@@ -211,7 +212,7 @@ function buildUploadAuthHeader(token: string) {
   const header: Record<string, string> = {};
   header["X-Tenant-ID"] = TENANT_ID;
   if (token) {
-    header.Authorization = `Bearer ${token}`;
+    header.Authorization = tokenUtil.buildAuthorization(token);
   }
   const orgId = localStore.currentOrgId;
   if (orgId) {

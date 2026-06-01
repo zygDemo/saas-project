@@ -107,6 +107,8 @@ model Tenant {
   roles       Role[]
   menus       Menu[]
   permissions Permission[]
+  dictTypes DictType[]
+  dictData DictData[]
   organizations Organization[]
   departments Department[]
   products Product[]
@@ -239,6 +241,43 @@ model RolePermission {
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
+}
+
+model DictType {
+  id        Int        @id @default(autoincrement())
+  tenantId  Int
+  name      String
+  code      String
+  status    String     @default("ACTIVE")
+  remark    String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items     DictData[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([status])
+}
+
+model DictData {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  typeId    Int
+  label     String
+  value     String
+  sort      Int      @default(0)
+  status    String   @default("ACTIVE")
+  remark    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type      DictType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, typeId, value])
+  @@index([tenantId])
+  @@index([typeId])
+  @@index([status])
 }
 
 // ==================== 机构/部门模型 ====================
