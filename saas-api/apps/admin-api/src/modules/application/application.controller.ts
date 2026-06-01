@@ -7,9 +7,13 @@ import {
   ApprovalActionDto,
   CompleteSigningDto,
   ConfirmDisbursementDto,
+  FunderReviewDto,
   GpsInstalledDto,
   MortgageDoneDto,
+  PrecheckActionDto,
   RegisterRepaymentDto,
+  RequestDisbursementDto,
+  SettleApplicationDto,
   StartSigningDto,
   SupplementActionDto
 } from './dto/business-action.dto'
@@ -57,6 +61,12 @@ export class ApplicationController {
     return this.service.submit(Number(id))
   }
 
+  @Post(':id/precheck-pass')
+  @ApiOperation({ summary: '资料校验/预审通过' })
+  precheckPass(@Param('id') id: string, @Body() dto: PrecheckActionDto) {
+    return this.service.precheckPass(Number(id), dto)
+  }
+
   @Post(':id/approve')
   @ApiOperation({ summary: '审批通过' })
   approve(@Param('id') id: string, @Body() dto: ApprovalActionDto) {
@@ -73,6 +83,24 @@ export class ApplicationController {
   @ApiOperation({ summary: '要求补件' })
   requestSupplement(@Param('id') id: string, @Body() dto: SupplementActionDto) {
     return this.service.requestSupplement(Number(id), dto)
+  }
+
+  @Post(':id/submit-funder-review')
+  @ApiOperation({ summary: '提交资方审批' })
+  submitFunderReview(@Param('id') id: string) {
+    return this.service.submitFunderReview(Number(id))
+  }
+
+  @Post(':id/funder-pass')
+  @ApiOperation({ summary: '资方审批通过' })
+  funderPass(@Param('id') id: string, @Body() dto: FunderReviewDto) {
+    return this.service.funderPass(Number(id), dto)
+  }
+
+  @Post(':id/funder-reject')
+  @ApiOperation({ summary: '资方审批拒绝' })
+  funderReject(@Param('id') id: string, @Body() dto: FunderReviewDto) {
+    return this.service.funderReject(Number(id), dto)
   }
 
   @Post(':id/start-signing')
@@ -99,6 +127,12 @@ export class ApplicationController {
     return this.service.completeMortgage(Number(id), dto)
   }
 
+  @Post(':id/request-disbursement')
+  @ApiOperation({ summary: '出账申请' })
+  requestDisbursement(@Param('id') id: string, @Body() dto: RequestDisbursementDto) {
+    return this.service.requestDisbursement(Number(id), dto)
+  }
+
   @Post(':id/confirm-disbursement')
   @ApiOperation({ summary: '放款确认' })
   confirmDisbursement(@Param('id') id: string, @Body() dto: ConfirmDisbursementDto) {
@@ -109,5 +143,11 @@ export class ApplicationController {
   @ApiOperation({ summary: '登记还款' })
   registerRepayment(@Param('planId') planId: string, @Body() dto: RegisterRepaymentDto) {
     return this.service.registerRepayment(Number(planId), dto)
+  }
+
+  @Post(':id/settle')
+  @ApiOperation({ summary: '结清/归档' })
+  settle(@Param('id') id: string, @Body() dto: SettleApplicationDto) {
+    return this.service.settle(Number(id), dto)
   }
 }

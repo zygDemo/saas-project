@@ -2,6 +2,20 @@ import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
 import { IsDateString, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator'
 import { ToDate, ToNumber } from '../../business-common.dto'
 
+export class PrecheckActionDto {
+  @ApiPropertyOptional({ description: '预审人ID' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  reviewerId?: number
+
+  @ApiPropertyOptional({ description: '预审意见' })
+  @IsOptional()
+  @IsString()
+  opinion?: string
+}
+
 export class ApprovalActionDto {
   @ApiProperty({ description: '审批人ID' })
   @ToNumber()
@@ -39,6 +53,13 @@ export class ApprovalActionDto {
   @IsNumber()
   @Min(0)
   rate?: number
+}
+
+export class FunderReviewDto extends ApprovalActionDto {
+  @ApiPropertyOptional({ description: '资方审批编号' })
+  @IsOptional()
+  @IsString()
+  funderApprovalNo?: string
 }
 
 export class SupplementActionDto {
@@ -127,6 +148,13 @@ export class MortgageDoneDto {
   mortgageAt?: Date
 }
 
+export class RequestDisbursementDto {
+  @ApiPropertyOptional({ description: '出账申请备注' })
+  @IsOptional()
+  @IsString()
+  remark?: string
+}
+
 export class ConfirmDisbursementDto {
   @ApiProperty({ description: '实际放款金额' })
   @ToNumber()
@@ -158,6 +186,11 @@ export class ConfirmDisbursementDto {
   @IsOptional()
   @ToDate()
   disburseAt?: Date
+
+  @ApiPropertyOptional({ description: '首期还款日，不传默认放款后一个月' })
+  @IsOptional()
+  @ToDate()
+  firstDueDate?: Date
 }
 
 export class RegisterRepaymentDto {
@@ -213,6 +246,13 @@ export class RegisterRepaymentDto {
   @IsInt()
   @Min(1)
   createdBy?: number
+}
+
+export class SettleApplicationDto {
+  @ApiPropertyOptional({ description: '结清备注' })
+  @IsOptional()
+  @IsString()
+  remark?: string
 }
 
 export class RejectApprovalDto extends PartialType(ApprovalActionDto) {}

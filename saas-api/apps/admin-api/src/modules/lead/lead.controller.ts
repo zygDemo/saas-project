@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/co
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { LeadService } from './lead.service'
-import { LeadQueryDto, CreateLeadDto, UpdateLeadDto } from './dto/lead.dto'
+import { AssignLeadDto, CreateLeadDto, CreateLeadFollowUpDto, LeadQueryDto, UpdateLeadDto } from './dto/lead.dto'
 
 @ApiTags('线索管理')
 @ApiBearerAuth()
@@ -39,5 +39,17 @@ export class LeadController {
   @ApiOperation({ summary: '删除' })
   remove(@Param('id') id: string) {
     return this.service.remove(Number(id))
+  }
+
+  @Post(':id/assign')
+  @ApiOperation({ summary: '分配线索' })
+  assign(@Param('id') id: string, @Body() dto: AssignLeadDto) {
+    return this.service.assign(Number(id), dto)
+  }
+
+  @Post(':id/follow-up')
+  @ApiOperation({ summary: '记录跟进' })
+  addFollowUp(@Param('id') id: string, @Body() dto: CreateLeadFollowUpDto) {
+    return this.service.addFollowUp(Number(id), dto)
   }
 }

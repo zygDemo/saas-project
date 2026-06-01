@@ -7,9 +7,13 @@ import {
   ApprovalActionDto,
   CompleteSigningDto,
   ConfirmDisbursementDto,
+  FunderReviewDto,
   GpsInstalledDto,
   MortgageDoneDto,
+  PrecheckActionDto,
   RegisterRepaymentDto,
+  RequestDisbursementDto,
+  SettleApplicationDto,
   StartSigningDto,
   SupplementActionDto
 } from './dto/business-action.dto'
@@ -81,15 +85,24 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
     if (![ApplicationStatus.DRAFT, ApplicationStatus.PENDING_SUPPLEMENT].includes(application.status)) {
       throw new BadRequestException('当前状态不允许提交')
     }
-    const nextStatus = application.status === ApplicationStatus.PENDING_SUPPLEMENT
-      ? ApplicationStatus.PENDING_FINAL_REVIEW
-      : ApplicationStatus.PENDING_FIRST_REVIEW
-    return this.prisma.application.update({ where: { id }, data: { status: nextStatus } })
+    return this.prisma.application.update({ where: { id }, data: { status: ApplicationStatus.SUBMITTED } })
+  }
+
+  async precheckPass(id: number, dto: PrecheckActionDto) {
+    const application = await this.ensureExists(id)
+    this.assertStatus(application.status, [ApplicationStatus.SUBMITTED], '当前状态不允许预审通过')
+    await this.ensureRelatedExists(this.prisma.user, dto.reviewerId, '预审人不存在')
+    return this.prisma.application.update({ where: { id }, data: { status: ApplicationStatus.PENDING_FIRST_REVIEW } })
   }
 
   async approve(id: number, dto: ApprovalActionDto) {
     await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
     const application = await this.ensureExists(id)
+    this.assertStatus(
+      application.status,
+      [ApplicationStatus.PENDING_FIRST_REVIEW, ApplicationStatus.PENDING_FINAL_REVIEW],
+      '当前状态不允许审批通过'
+    )
     const nextStatus = this.resolvePassStatus(application.status)
     return this.prisma.$transaction(async (tx: any) => {
       await tx.approvalRecord.create({
@@ -119,6 +132,11 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
   async reject(id: number, dto: ApprovalActionDto) {
     await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
     const application = await this.ensureExists(id)
+    this.assertStatus(
+      application.status,
+      [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_FIRST_REVIEW, ApplicationStatus.PENDING_FINAL_REVIEW, ApplicationStatus.PENDING_FUNDER_REVIEW],
+      '当前状态不允许审批驳回'
+    )
     const nextStatus = this.resolveRejectStatus(application.status)
     return this.prisma.$transaction(async (tx: any) => {
       await tx.approvalRecord.create({
@@ -139,7 +157,12 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
 
   async requestSupplement(id: number, dto: SupplementActionDto) {
     await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
-    await this.ensureExists(id)
+    const application = await this.ensureExists(id)
+    this.assertStatus(
+      application.status,
+      [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_FIRST_REVIEW, ApplicationStatus.PENDING_FINAL_REVIEW, ApplicationStatus.PENDING_FUNDER_REVIEW],
+      '当前状态不允许要求补件'
+    )
     return this.prisma.$transaction(async (tx: any) => {
       await tx.approvalRecord.create({
         data: {
@@ -161,8 +184,70 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
     })
   }
 
+  async submitFunderReview(id: number) {
+    const application = await this.ensureExists(id)
+    this.assertStatus(application.status, [ApplicationStatus.FINAL_REVIEW_PASSED], '当前状态不允许提交资方审批')
+    if (!application.funderId) throw new BadRequestException('未选择资方，不能提交资方审批')
+    return this.prisma.application.update({ where: { id }, data: { status: ApplicationStatus.PENDING_FUNDER_REVIEW } })
+  }
+
+  async funderPass(id: number, dto: FunderReviewDto) {
+    await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
+    const application = await this.ensureExists(id)
+    this.assertStatus(application.status, [ApplicationStatus.PENDING_FUNDER_REVIEW], '当前状态不允许资方审批通过')
+    return this.prisma.$transaction(async (tx: any) => {
+      await tx.approvalRecord.create({
+        data: {
+          applicationId: id,
+          approverId: dto.approverId,
+          stage: 'FUNDER_REVIEW',
+          action: ApprovalAction.PASS,
+          opinion: dto.opinion || dto.funderApprovalNo,
+          amount: dto.amount,
+          term: dto.term,
+          rate: dto.rate
+        }
+      })
+      return tx.application.update({
+        where: { id },
+        data: {
+          status: ApplicationStatus.FUNDER_REVIEW_PASSED,
+          approvedAmount: dto.amount ?? application.approvedAmount,
+          approvedTerm: dto.term ?? application.approvedTerm,
+          approvedRate: dto.rate ?? application.approvedRate
+        }
+      })
+    })
+  }
+
+  async funderReject(id: number, dto: FunderReviewDto) {
+    await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
+    const application = await this.ensureExists(id)
+    this.assertStatus(application.status, [ApplicationStatus.PENDING_FUNDER_REVIEW], '当前状态不允许资方审批拒绝')
+    return this.prisma.$transaction(async (tx: any) => {
+      await tx.approvalRecord.create({
+        data: {
+          applicationId: id,
+          approverId: dto.approverId,
+          stage: 'FUNDER_REVIEW',
+          action: ApprovalAction.REJECT,
+          opinion: dto.opinion || dto.funderApprovalNo,
+          amount: dto.amount,
+          term: dto.term,
+          rate: dto.rate
+        }
+      })
+      return tx.application.update({ where: { id }, data: { status: ApplicationStatus.FUNDER_REVIEW_REJECTED } })
+    })
+  }
+
   async startSigning(id: number, dto: StartSigningDto) {
-    await this.ensureExists(id)
+    const application = await this.ensureExists(id)
+    this.assertStatus(
+      application.status,
+      [ApplicationStatus.FINAL_REVIEW_PASSED, ApplicationStatus.FUNDER_REVIEW_PASSED],
+      '当前状态不允许发起签约'
+    )
     return this.prisma.$transaction(async (tx: any) => {
       await tx.signRecord.upsert({
         where: { applicationId: id },
@@ -174,7 +259,8 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
   }
 
   async completeSigning(id: number, dto: CompleteSigningDto) {
-    await this.ensureExists(id)
+    const application = await this.ensureExists(id)
+    this.assertStatus(application.status, [ApplicationStatus.PENDING_SIGN], '当前状态不允许完成签约')
     return this.prisma.$transaction(async (tx: any) => {
       await tx.signRecord.upsert({
         where: { applicationId: id },
@@ -202,7 +288,8 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
   }
 
   async completeGpsInstall(id: number, dto: GpsInstalledDto) {
-    await this.ensureExists(id)
+    const application = await this.ensureExists(id)
+    this.assertStatus(application.status, [ApplicationStatus.PENDING_DISBURSEMENT], '当前状态不允许登记GPS安装')
     return this.prisma.disbursement.upsert({
       where: { applicationId: id },
       update: {
@@ -222,7 +309,8 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
   }
 
   async completeMortgage(id: number, dto: MortgageDoneDto) {
-    await this.ensureExists(id)
+    const application = await this.ensureExists(id)
+    this.assertStatus(application.status, [ApplicationStatus.PENDING_DISBURSEMENT], '当前状态不允许登记抵押')
     return this.prisma.disbursement.upsert({
       where: { applicationId: id },
       update: {
@@ -241,8 +329,26 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
     })
   }
 
+  async requestDisbursement(id: number, dto: RequestDisbursementDto) {
+    const application = await this.ensureExists(id)
+    this.assertStatus(application.status, [ApplicationStatus.PENDING_DISBURSEMENT], '当前状态不允许出账申请')
+    const disbursement = await this.prisma.disbursement.findUnique({ where: { applicationId: id } })
+    if (disbursement?.status !== DisbursementStatus.MORTGAGE_DONE) {
+      throw new BadRequestException('请先完成GPS安装和抵押办理')
+    }
+    return this.prisma.disbursement.update({
+      where: { applicationId: id },
+      data: { status: DisbursementStatus.PENDING_APPROVAL, remark: dto.remark }
+    })
+  }
+
   async confirmDisbursement(id: number, dto: ConfirmDisbursementDto) {
-    await this.ensureExists(id)
+    const application = await this.ensureExists(id)
+    this.assertStatus(application.status, [ApplicationStatus.PENDING_DISBURSEMENT], '当前状态不允许放款确认')
+    const disbursement = await this.prisma.disbursement.findUnique({ where: { applicationId: id } })
+    if (disbursement?.status !== DisbursementStatus.PENDING_APPROVAL) {
+      throw new BadRequestException('请先提交出账申请')
+    }
     return this.prisma.$transaction(async (tx: any) => {
       await tx.disbursement.upsert({
         where: { applicationId: id },
@@ -266,6 +372,10 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
           remark: dto.remark
         }
       })
+      await this.createRepaymentPlansIfNeeded(tx, application, dto)
+      if (application.sourceLeadId) {
+        await tx.lead.update({ where: { id: application.sourceLeadId }, data: { status: LeadStatus.CONVERTED } })
+      }
       return tx.application.update({ where: { id }, data: { status: ApplicationStatus.DISBURSED } })
     })
   }
@@ -313,6 +423,23 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
     })
   }
 
+  async settle(id: number, dto: SettleApplicationDto) {
+    const application = await this.ensureExists(id)
+    this.assertStatus(application.status, [ApplicationStatus.DISBURSED], '当前状态不允许结清')
+    const unpaid = await this.prisma.repaymentPlan.count({
+      where: {
+        applicationId: id,
+        status: { notIn: [RepaymentStatus.PAID, RepaymentStatus.SETTLED] }
+      }
+    })
+    if (unpaid > 0) throw new BadRequestException('仍有未结清还款计划')
+    await this.prisma.repaymentPlan.updateMany({
+      where: { applicationId: id },
+      data: { status: RepaymentStatus.SETTLED }
+    })
+    return this.prisma.application.update({ where: { id }, data: { status: ApplicationStatus.CANCELLED, remark: dto.remark ?? application.remark } })
+  }
+
   async convertLeadToApplication(id: number) {
     const application = await this.prisma.application.findUnique({ where: { id } })
     if (!application?.sourceLeadId) return application
@@ -328,7 +455,6 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
 
   private resolvePassStatus(status: ApplicationStatus) {
     if (status === ApplicationStatus.SUBMITTED || status === ApplicationStatus.PENDING_FIRST_REVIEW) return ApplicationStatus.PENDING_FINAL_REVIEW
-    if (status === ApplicationStatus.PENDING_FUNDER_REVIEW) return ApplicationStatus.PENDING_SIGN
     return ApplicationStatus.FINAL_REVIEW_PASSED
   }
 
@@ -336,5 +462,42 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
     if (status === ApplicationStatus.SUBMITTED || status === ApplicationStatus.PENDING_FIRST_REVIEW) return ApplicationStatus.FIRST_REVIEW_REJECTED
     if (status === ApplicationStatus.PENDING_FUNDER_REVIEW) return ApplicationStatus.FUNDER_REVIEW_REJECTED
     return ApplicationStatus.FINAL_REVIEW_REJECTED
+  }
+
+  private assertStatus(current: ApplicationStatus, allowed: ApplicationStatus[], message: string) {
+    if (!allowed.includes(current)) throw new BadRequestException(message)
+  }
+
+  private async createRepaymentPlansIfNeeded(tx: any, application: any, dto: ConfirmDisbursementDto) {
+    const existed = await tx.repaymentPlan.count({ where: { applicationId: application.id } })
+    if (existed > 0) return
+
+    const term = Number(application.approvedTerm ?? application.term)
+    const amount = Number(dto.disburseAmount)
+    const annualRate = Number(application.approvedRate ?? application.rate)
+    const monthlyRate = annualRate / 12
+    const monthlyPrincipal = amount / term
+    const baseDueDate = dto.firstDueDate ? new Date(dto.firstDueDate) : new Date(dto.disburseAt || new Date())
+    if (!dto.firstDueDate) baseDueDate.setMonth(baseDueDate.getMonth() + 1)
+
+    const plans = Array.from({ length: term }, (_, index) => {
+      const dueDate = new Date(baseDueDate)
+      dueDate.setMonth(baseDueDate.getMonth() + index)
+      const principal = index === term - 1
+        ? amount - Number(monthlyPrincipal.toFixed(2)) * (term - 1)
+        : Number(monthlyPrincipal.toFixed(2))
+      const interest = Number((amount * monthlyRate).toFixed(2))
+      return {
+        applicationId: application.id,
+        period: index + 1,
+        dueDate,
+        principal,
+        interest,
+        totalAmount: Number((principal + interest).toFixed(2)),
+        status: RepaymentStatus.NOT_DUE
+      }
+    })
+
+    await tx.repaymentPlan.createMany({ data: plans })
   }
 }

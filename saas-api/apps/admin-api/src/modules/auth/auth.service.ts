@@ -2,7 +2,6 @@ import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcryptjs'
-import { ApiStatus } from '../../common/constants/api-status'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PrismaService } from '../prisma/prisma.service'
 import { LoginDto } from './dto/login.dto'
@@ -41,12 +40,8 @@ export class AuthService {
       })}`
 
     return {
-      code: ApiStatus.success,
-      msg: 'success',
-      data: {
-        token,
-        refreshToken
-      }
+      token,
+      refreshToken
     }
   }
 }

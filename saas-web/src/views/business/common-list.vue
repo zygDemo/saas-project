@@ -285,6 +285,7 @@
     INVALID: '无效',
     DORMANT: '休眠',
     PUBLIC_POOL: '公海池',
+    SUBMITTED: '资料校验中',
     PENDING_FIRST_REVIEW: '待初审',
     FIRST_REVIEW_PASSED: '初审通过',
     FIRST_REVIEW_REJECTED: '初审拒绝',
@@ -332,9 +333,13 @@
   const approvalActionOptions = ['PASS', 'REJECT', 'SUPPLEMENT', 'RETURN'].map(toOption)
   const applicationStatusOptions = [
     'DRAFT',
+    'SUBMITTED',
     'PENDING_FIRST_REVIEW',
     'PENDING_FINAL_REVIEW',
     'FINAL_REVIEW_PASSED',
+    'PENDING_FUNDER_REVIEW',
+    'FUNDER_REVIEW_PASSED',
+    'FUNDER_REVIEW_REJECTED',
     'PENDING_SIGN',
     'PENDING_DISBURSEMENT',
     'DISBURSED',
@@ -349,6 +354,31 @@
     { prop: 'rate', label: '核定利率', type: 'number', precision: 4 }
   ]
 
+  const leadActions: ActionConfig[] = [
+    {
+      name: 'assign',
+      label: '分配线索',
+      path: (row) => `/lead/${row.id}/assign`,
+      fields: [
+        { prop: 'assigneeId', label: '业务员ID', type: 'number', required: true },
+        { prop: 'remark', label: '分配备注', type: 'textarea' }
+      ],
+      visible: (row) => ['PENDING_ASSIGN', 'PUBLIC_POOL', 'DORMANT'].includes(String(row.status))
+    },
+    {
+      name: 'follow-up',
+      label: '记录跟进',
+      path: (row) => `/lead/${row.id}/follow-up`,
+      fields: [
+        { prop: 'followType', label: '跟进方式', defaultValue: 'PHONE', required: true },
+        { prop: 'content', label: '跟进内容', type: 'textarea', required: true },
+        { prop: 'nextFollowAt', label: '下次跟进时间', type: 'date' },
+        { prop: 'createdBy', label: '跟进人ID', type: 'number' }
+      ],
+      visible: (row) => ['PENDING_FOLLOW', 'FOLLOWING'].includes(String(row.status))
+    }
+  ]
+
   const applicationActions: ActionConfig[] = [
     {
       name: 'submit',
@@ -357,12 +387,22 @@
       visible: (row) => ['DRAFT', 'PENDING_SUPPLEMENT'].includes(String(row.status))
     },
     {
+      name: 'precheck-pass',
+      label: '预审通过',
+      path: (row) => `/application/${row.id}/precheck-pass`,
+      fields: [
+        { prop: 'reviewerId', label: '预审人ID', type: 'number' },
+        { prop: 'opinion', label: '预审意见', type: 'textarea' }
+      ],
+      visible: (row) => String(row.status) === 'SUBMITTED'
+    },
+    {
       name: 'approve',
-      label: '审批通过',
+      label: '初审/终审通过',
       path: (row) => `/application/${row.id}/approve`,
       fields: approvalFields,
       defaults: (row) => ({ amount: row.amount, term: row.term, rate: row.rate }),
-      visible: (row) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW', 'PENDING_FUNDER_REVIEW'].includes(String(row.status))
+      visible: (row) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW'].includes(String(row.status))
     },
     {
       name: 'reject',
@@ -370,7 +410,48 @@
       type: 'danger',
       path: (row) => `/application/${row.id}/reject`,
       fields: approvalFields.slice(0, 2),
-      visible: (row) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW', 'PENDING_FUNDER_REVIEW'].includes(String(row.status))
+      visible: (row) => ['SUBMITTED', 'PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW', 'PENDING_FUNDER_REVIEW'].includes(String(row.status))
+    },
+    {
+      name: 'supplement',
+      label: '要求补件',
+      type: 'warning',
+      path: (row) => `/application/${row.id}/supplement`,
+      fields: [
+        { prop: 'approverId', label: '处理人ID', type: 'number', required: true },
+        { prop: 'reason', label: '补件原因', type: 'textarea', required: true },
+        { prop: 'deadline', label: '补件截止时间', type: 'date' }
+      ],
+      visible: (row) => ['SUBMITTED', 'PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW', 'PENDING_FUNDER_REVIEW'].includes(String(row.status))
+    },
+    {
+      name: 'submit-funder-review',
+      label: '提交资方审批',
+      path: (row) => `/application/${row.id}/submit-funder-review`,
+      visible: (row) => String(row.status) === 'FINAL_REVIEW_PASSED'
+    },
+    {
+      name: 'funder-pass',
+      label: '资方通过',
+      path: (row) => `/application/${row.id}/funder-pass`,
+      fields: [
+        ...approvalFields,
+        { prop: 'funderApprovalNo', label: '资方审批编号' }
+      ],
+      defaults: (row) => ({ amount: row.approvedAmount || row.amount, term: row.approvedTerm || row.term, rate: row.approvedRate || row.rate }),
+      visible: (row) => String(row.status) === 'PENDING_FUNDER_REVIEW'
+    },
+    {
+      name: 'funder-reject',
+      label: '资方拒绝',
+      type: 'danger',
+      path: (row) => `/application/${row.id}/funder-reject`,
+      fields: [
+        { prop: 'approverId', label: '审批人ID', type: 'number', required: true },
+        { prop: 'opinion', label: '审批意见', type: 'textarea' },
+        { prop: 'funderApprovalNo', label: '资方审批编号' }
+      ],
+      visible: (row) => String(row.status) === 'PENDING_FUNDER_REVIEW'
     },
     {
       name: 'start-signing',
@@ -416,18 +497,38 @@
       visible: (row) => String(row.status) === 'PENDING_DISBURSEMENT'
     },
     {
+      name: 'request-disbursement',
+      label: '出账申请',
+      path: (row) => `/application/${row.id}/request-disbursement`,
+      fields: [
+        { prop: 'remark', label: '出账备注', type: 'textarea' }
+      ],
+      visible: (row) => String(row.status) === 'PENDING_DISBURSEMENT'
+    },
+    {
       name: 'confirm-disbursement',
       label: '放款确认',
       path: (row) => `/application/${row.id}/confirm-disbursement`,
       fields: [
         { prop: 'disburseAmount', label: '放款金额', type: 'number', precision: 2, required: true },
         { prop: 'disburseAccount', label: '放款账户' },
+        { prop: 'firstDueDate', label: '首期还款日', type: 'date' },
         { prop: 'transactionNo', label: '交易流水号' },
         { prop: 'voucherUrl', label: '放款凭证URL' },
         { prop: 'remark', label: '备注', type: 'textarea' }
       ],
       defaults: (row) => ({ disburseAmount: row.approvedAmount || row.amount }),
       visible: (row) => String(row.status) === 'PENDING_DISBURSEMENT'
+    },
+    {
+      name: 'settle',
+      label: '结清归档',
+      type: 'success',
+      path: (row) => `/application/${row.id}/settle`,
+      fields: [
+        { prop: 'remark', label: '结清备注', type: 'textarea' }
+      ],
+      visible: (row) => String(row.status) === 'DISBURSED'
     }
   ]
 
@@ -553,7 +654,7 @@
         { prop: 'status', label: '状态', type: 'select', options: leadStatusOptions, defaultValue: 'PENDING_ASSIGN' },
         { prop: 'remark', label: '备注', type: 'textarea' }
       ],
-      actions: []
+      actions: leadActions
     },
     customer: {
       title: '客户管理',

@@ -2,26 +2,39 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { PrismaClient } from '@prisma/client'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 
-const TENANT_MODELS = ['user', 'role', 'menu', 'permission']
+const TENANT_MODELS = [
+  'user',
+  'role',
+  'menu',
+  'permission',
+  'organization',
+  'department',
+  'product',
+  'funder',
+  'lead',
+  'customer',
+  'application',
+  'approvalrecord',
+  'signrecord',
+  'disbursement',
+  'repaymentplan',
+  'repaymentrecord'
+]
 
 function isTenantModel(model: string | undefined): boolean {
   return !!model && TENANT_MODELS.includes(model.toLowerCase())
 }
 
-// 只对列表/批量查询自动注入 tenantId
-// findUnique/findUniqueOrThrow/update/delete/upsert 涉及精确 ID，由 Service 层手动校验
+// 只对可携带普通 where 条件的查询/批量操作自动注入 tenantId。
+// findUnique/update/delete/upsert 涉及唯一条件，由 Service 层先校验再按唯一 ID 操作。
 const AUTO_TENANT_OPS = [
-  'findUnique',
-  'findUniqueOrThrow',
   'findFirst',
   'findFirstOrThrow',
   'findMany',
   'count',
   'aggregate',
   'groupBy',
-  'update',
   'updateMany',
-  'delete',
   'deleteMany'
 ]
 

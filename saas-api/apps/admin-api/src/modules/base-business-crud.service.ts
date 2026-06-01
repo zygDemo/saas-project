@@ -51,7 +51,7 @@ export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate ex
     const where = this.addTenantFilter({ id })
     const args: Record<string, unknown> = { where }
     if (this.options.detailInclude ?? this.options.include) args.include = this.options.detailInclude ?? this.options.include
-    const item = await this.options.model.findUnique(args)
+    const item = await this.options.model.findFirst(args)
     if (!item) throw new NotFoundException('数据不存在')
     return item
   }
@@ -71,20 +71,18 @@ export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate ex
     await this.ensureExists(id)
     await this.options.validateUpdate?.(id, dto)
     const data = (await this.options.beforeUpdate?.(dto)) ?? dto
-    const where = this.addTenantFilter({ id })
-    return this.options.model.update({ where, data })
+    return this.options.model.update({ where: { id }, data })
   }
 
   async remove(id: number) {
     await this.ensureExists(id)
-    const where = this.addTenantFilter({ id })
-    await this.options.model.delete({ where })
+    await this.options.model.delete({ where: { id } })
     return { id }
   }
 
   protected async ensureExists(id: number) {
     const where = this.addTenantFilter({ id })
-    const item = await this.options.model.findUnique({ where })
+    const item = await this.options.model.findFirst({ where })
     if (!item) throw new NotFoundException('数据不存在')
     return item
   }
