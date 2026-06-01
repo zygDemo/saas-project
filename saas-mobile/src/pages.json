@@ -1,0 +1,165 @@
+{
+  "pages": [
+    {
+      "path": "pages/business/workbench"
+    },
+    {
+      "path": "pages/home/uview-intro"
+    },
+    {
+      "path": "pages/home/http-demo"
+    },
+    {
+      "path": "pages/home/pinia-demo"
+    },
+    {
+      "path": "pages/home/components-demo"
+    },
+    {
+      "path": "pages/home/create-demo"
+    },
+    {
+      "path": "pages/auth/login"
+    },
+    {
+      "path": "pages/auth/transfer"
+    },
+    {
+      "path": "pages/business/idInfo"
+    },
+    {
+      "path": "pages/business/carInfo"
+    },
+    {
+      "path": "pages/business/applyInfo"
+    },
+    {
+      "path": "pages/business/applyResult"
+    },
+    {
+      "path": "pages/business/idInfoSupplement"
+    },
+    {
+      "path": "pages/business/carInfoSupplement"
+    },
+    {
+      "path": "pages/business/leadAdd"
+    },
+    {
+      "path": "pages/business/leadList"
+    },
+    {
+      "path": "pages/business/entryList"
+    },
+    {
+      "path": "pages/business/entryDetail"
+    },
+    {
+      "path": "pages/business/applySubmit"
+    },
+    {
+      "path": "pages/business/approvalList"
+    },
+    {
+      "path": "pages/business/faceSignList"
+    },
+    {
+      "path": "pages/business/videoFaceSign"
+    },
+    {
+      "path": "pages/business/faceSignResult"
+    },
+    {
+      "path": "pages/business/authSign"
+    },
+    {
+      "path": "pages/business/orderInfoSupplement"
+    },
+    {
+      "path": "pages/business/fileInfoSupplement"
+    },
+    {
+      "path": "pages/business/orderList"
+    },
+    {
+      "path": "pages/business/fileManage"
+    },
+    {
+      "path": "pages/business/applyListPage"
+    },
+    {
+      "path": "pages/business/supplementList"
+    },
+    {
+      "path": "pages/business/supplementDetail"
+    },
+    {
+      "path": "pages/business/applyDetail"
+    },
+    {
+      "path": "pages/business/pawnMaterials"
+    },
+    {
+      "path": "pages/business/pawnLoanInfo"
+    },
+    {
+      "path": "pages/business/pawnApprovalList"
+    },
+    {
+      "path": "pages/business/pawnApprovalDetail"
+    },
+    {
+      "path": "pages/my/my"
+    },
+    {
+      "path": "pages/my/about-me"
+    },
+    {
+      "path": "pages/my/faq"
+    },
+    {
+      "path": "pages/my/settings"
+    },
+    {
+      "path": "pages/my/privacy"
+    },
+    {
+      "path": "pages/my/agreement"
+    }
+  ],
+  "globalStyle": {
+    "backgroundColor": "@bgColor",
+    "backgroundColorBottom": "@bgColorBottom",
+    "backgroundColorTop": "@bgColorTop",
+    "backgroundTextStyle": "@bgTxtStyle",
+    "navigationBarBackgroundColor": "#000000",
+    "navigationBarTextStyle": "@navTxtStyle",
+    "navigationBarTitleText": "嗨车无忧",
+    "navigationStyle": "custom"
+  },
+  "easycom": {
+    "autoscan": true
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#999999",
+    "selectedColor": "#5da7ff",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/business/workbench",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/business/orderList",
+        "text": "订单"
+      },
+      {
+        "pagePath": "pages/my/my",
+        "text": "我的"
+      }
+    ]
+  },
+  "subPackages": []
+}

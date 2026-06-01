@@ -6,6 +6,7 @@ import {
   IsEnum,
   IsInt,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   Max,
@@ -292,6 +293,23 @@ export class CreateProductDto {
   @IsString()
   regions?: string
 
+  @ApiPropertyOptional({ description: '适用资方配置，JSON对象' })
+  @IsOptional()
+  @IsObject()
+  applicableFunders?: Record<string, unknown>
+
+  @ApiPropertyOptional({ description: '准入条件配置，JSON对象' })
+  @IsOptional()
+  @IsObject()
+  accessConditions?: Record<string, unknown>
+
+  @ApiPropertyOptional({ description: '估值折扣率' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  valuationDiscountRate?: number
+
   @ApiPropertyOptional({ description: '状态' })
   @IsOptional()
   @IsString()
@@ -350,9 +368,27 @@ export class CreateFunderDto {
   @IsString()
   contactPhone?: string
 
+  @ApiPropertyOptional({ description: '对接方式：API、文件导入导出、人工录入' })
+  @IsOptional()
+  @IsString()
+  integrationMode?: string
+
+  @ApiPropertyOptional({ description: '额度配置' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  creditLimit?: number
+
   @ApiPropertyOptional({ description: 'API配置' })
   @IsOptional()
-  apiConfig?: unknown
+  @IsObject()
+  apiConfig?: Record<string, unknown>
+
+  @ApiPropertyOptional({ description: '审批规则配置' })
+  @IsOptional()
+  @IsObject()
+  approvalRules?: Record<string, unknown>
 
   @ApiPropertyOptional({ description: '优先级' })
   @IsOptional()

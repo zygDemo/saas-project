@@ -158,7 +158,13 @@
             value-format="YYYY-MM-DDTHH:mm:ss.SSSZ"
             style="width: 100%"
           />
-          <ElInput v-else v-model="formModel[field.prop] as string" clearable :type="field.type === 'textarea' ? 'textarea' : 'text'" />
+          <ElInput
+            v-else
+            v-model="formModel[field.prop] as string"
+            clearable
+            :autosize="field.type === 'json' || field.type === 'textarea' ? { minRows: 3, maxRows: 8 } : undefined"
+            :type="field.type === 'textarea' || field.type === 'json' ? 'textarea' : 'text'"
+          />
         </ElFormItem>
       </ElForm>
       <template #footer>
@@ -219,7 +225,7 @@
     fetchBusinessUpdate
   } from '@/api/business'
 
-  type FieldType = 'text' | 'number' | 'textarea' | 'select' | 'switch' | 'date'
+  type FieldType = 'text' | 'number' | 'textarea' | 'json' | 'select' | 'switch' | 'date'
   type OptionConfig = { label: string; value: string | number | boolean }
   type ColumnConfig = { prop: string; label: string; width?: number }
   type FieldConfig = {
@@ -331,6 +337,23 @@
   const disbursementStatusOptions = ['PENDING_APPLICATION', 'PENDING_APPROVAL', 'GPS_INSTALLED', 'MORTGAGE_DONE', 'DISBURSED', 'FAILED'].map(toOption)
   const repaymentStatusOptions = ['NOT_DUE', 'PENDING', 'PARTIAL', 'PAID', 'OVERDUE', 'SETTLED'].map(toOption)
   const approvalActionOptions = ['PASS', 'REJECT', 'SUPPLEMENT', 'RETURN'].map(toOption)
+  const productTypeOptions = [
+    { label: '车贷', value: 'CAR_LOAN' },
+    { label: '抵押贷', value: 'MORTGAGE_LOAN' },
+    { label: '信用贷', value: 'CREDIT_LOAN' }
+  ]
+  const repaymentMethodOptions = ['等额本息', '等额本金', '先息后本', '一次性还本付息'].map((value) => ({ label: value, value }))
+  const funderTypeOptions = [
+    { label: '银行', value: 'BANK' },
+    { label: '消金', value: 'CONSUMER_FINANCE' },
+    { label: '融资租赁', value: 'LEASING' },
+    { label: '小贷', value: 'MICRO_LOAN' }
+  ]
+  const integrationModeOptions = [
+    { label: 'API对接', value: 'API' },
+    { label: '文件导入导出', value: 'FILE' },
+    { label: '人工录入', value: 'MANUAL' }
+  ]
   const applicationStatusOptions = [
     'DRAFT',
     'SUBMITTED',
@@ -551,11 +574,16 @@
         { prop: 'contactName', label: '联系人' },
         { prop: 'contactPhone', label: '联系电话' },
         { prop: 'address', label: '地址' },
-        { prop: 'status', label: '状态', type: 'select', options: orgStatusOptions, defaultValue: 'ACTIVE' },
+        { prop: 'creditCode', label: '统一社会信用代码' },
         { prop: 'packageType', label: '套餐类型', defaultValue: 'STANDARD' },
-        { prop: 'apiEnabled', label: 'API开关', type: 'switch', defaultValue: true }
+        { prop: 'expireAt', label: '到期时间', type: 'date' },
+        { prop: 'apiEnabled', label: 'API开关', type: 'switch', defaultValue: true },
+        { prop: 'status', label: '状态', type: 'select', options: orgStatusOptions, defaultValue: 'ACTIVE' }
       ],
-      actions: []
+      actions: [
+        { name: 'enable', label: '启用', path: (row) => `/org/${row.id}/enable`, visible: (row) => String(row.status) !== 'ACTIVE' },
+        { name: 'disable', label: '停用', type: 'warning', path: (row) => `/org/${row.id}/disable`, visible: (row) => String(row.status) === 'ACTIVE' }
+      ]
     },
     dept: {
       title: '部门管理',
@@ -592,14 +620,25 @@
       formFields: [
         { prop: 'orgId', label: '机构ID', type: 'number', required: true },
         { prop: 'name', label: '产品名称', required: true },
-        { prop: 'productType', label: '产品类型', defaultValue: 'CAR_LOAN', required: true },
+        { prop: 'productType', label: '产品类型', type: 'select', options: productTypeOptions, defaultValue: 'CAR_LOAN', required: true },
         { prop: 'minRate', label: '最低年利率', type: 'number', precision: 4, defaultValue: 0.036, required: true },
         { prop: 'maxRate', label: '最高年利率', type: 'number', precision: 4, defaultValue: 0.12, required: true },
         { prop: 'minAmount', label: '最低金额', type: 'number', precision: 2, required: true },
         { prop: 'maxAmount', label: '最高金额', type: 'number', precision: 2, required: true },
         { prop: 'minTerm', label: '最短期限(月)', type: 'number', required: true },
         { prop: 'maxTerm', label: '最长期限(月)', type: 'number', required: true },
-        { prop: 'repaymentMethod', label: '还款方式', defaultValue: '等额本息', required: true },
+        { prop: 'repaymentMethod', label: '还款方式', type: 'select', options: repaymentMethodOptions, defaultValue: '等额本息', required: true },
+        { prop: 'minAge', label: '最低年龄', type: 'number' },
+        { prop: 'maxAge', label: '最高年龄', type: 'number' },
+        { prop: 'maxCarAge', label: '最大车龄', type: 'number' },
+        { prop: 'maxMileage', label: '最大里程', type: 'number' },
+        { prop: 'ltvLimit', label: '最高LTV', type: 'number', precision: 4 },
+        { prop: 'minDownPayment', label: '最低首付比例', type: 'number', precision: 4 },
+        { prop: 'valuationDiscountRate', label: '估值折扣率', type: 'number', precision: 4 },
+        { prop: 'regions', label: '适用区域' },
+        { prop: 'applicableFunders', label: '适用资方JSON', type: 'json' },
+        { prop: 'accessConditions', label: '准入条件JSON', type: 'json' },
+        { prop: 'fileChecklist', label: '文件清单JSON', type: 'json' },
         { prop: 'status', label: '状态', type: 'select', options: activeStatusOptions, defaultValue: 'ACTIVE' }
       ],
       actions: []
@@ -620,9 +659,13 @@
         { prop: 'orgId', label: '机构ID', type: 'number', required: true },
         { prop: 'name', label: '资方名称', required: true },
         { prop: 'code', label: '资方编码', required: true },
-        { prop: 'funderType', label: '资方类型', defaultValue: 'BANK', required: true },
+        { prop: 'funderType', label: '资方类型', type: 'select', options: funderTypeOptions, defaultValue: 'BANK', required: true },
         { prop: 'contactName', label: '联系人' },
         { prop: 'contactPhone', label: '联系电话' },
+        { prop: 'integrationMode', label: '对接方式', type: 'select', options: integrationModeOptions, defaultValue: 'MANUAL' },
+        { prop: 'creditLimit', label: '授信额度', type: 'number', precision: 2 },
+        { prop: 'apiConfig', label: 'API配置JSON', type: 'json' },
+        { prop: 'approvalRules', label: '审批规则JSON', type: 'json' },
         { prop: 'priority', label: '优先级', type: 'number', defaultValue: 0 },
         { prop: 'status', label: '状态', type: 'select', options: activeStatusOptions, defaultValue: 'ACTIVE' }
       ],
@@ -923,7 +966,7 @@
     }
     submitting.value = true
     try {
-      const payload = cleanPayload(formModel)
+      const payload = cleanPayload(formModel, formFields.value)
       if (formMode.value === 'create') {
         await fetchBusinessCreate(config.value.api, payload)
       } else if (currentRow.value?.id) {
@@ -932,6 +975,8 @@
       ElMessage.success('保存成功')
       formVisible.value = false
       await loadData()
+    } catch (error) {
+      ElMessage.error(error instanceof Error ? error.message : '保存失败')
     } finally {
       submitting.value = false
     }
@@ -963,10 +1008,12 @@
     }
     submitting.value = true
     try {
-      await fetchBusinessAction(activeAction.value.path(actionRow.value), cleanPayload(actionModel))
+      await fetchBusinessAction(activeAction.value.path(actionRow.value), cleanPayload(actionModel, actionFields.value))
       ElMessage.success('操作成功')
       actionVisible.value = false
       await loadData()
+    } catch (error) {
+      ElMessage.error(error instanceof Error ? error.message : '操作失败')
     } finally {
       submitting.value = false
     }
@@ -976,14 +1023,29 @@
     for (const key of Object.keys(target)) delete target[key]
     for (const field of fields) {
       const value = source && source[field.prop] !== undefined ? source[field.prop] : field.defaultValue
-      target[field.prop] = value ?? undefined
+      if (field.type === 'json' && value !== undefined && value !== null && value !== '') {
+        target[field.prop] = typeof value === 'string' ? value : JSON.stringify(value, null, 2)
+      } else {
+        target[field.prop] = value ?? undefined
+      }
     }
   }
 
-  function cleanPayload(source: Record<string, unknown>) {
+  function cleanPayload(source: Record<string, unknown>, fields: FieldConfig[]) {
     const payload: Record<string, unknown> = {}
+    const fieldMap = new Map(fields.map((field) => [field.prop, field]))
     for (const [key, value] of Object.entries(source)) {
-      if (value !== undefined && value !== null && value !== '') payload[key] = value
+      if (value === undefined || value === null || value === '') continue
+      const field = fieldMap.get(key)
+      if (field?.type === 'json') {
+        try {
+          payload[key] = typeof value === 'string' ? JSON.parse(value) : value
+        } catch {
+          throw new Error(`${field.label}不是合法JSON`)
+        }
+      } else {
+        payload[key] = value
+      }
     }
     return payload
   }

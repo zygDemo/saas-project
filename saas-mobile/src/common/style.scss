@@ -1,0 +1,65 @@
+:deep(.code-text) {
+  font-family: "Monaco", "Consolas", monospace;
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+
+.code-block {
+  background: $u-bg-gray-light;
+  padding: 24rpx;
+  border-radius: 8rpx;
+  margin: 16rpx 0;
+}
+
+/* 底部固定按钮容器 - 支持多个按钮一行排列 */
+.footer-btn {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: 10rpx;
+  display: flex;
+  gap: 24rpx;
+  border-radius: 50rpx;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.92) 40%,
+    rgba(255, 255, 255, 1) 100%
+  );
+  z-index: 100;
+}
+
+/* 按钮宽度铺满 - uview-pro 的按钮类名 */
+.footer-btn .u-button,
+.footer-btn .u-btn {
+  flex: 1;
+  height: 88rpx !important;
+  font-size: 30rpx !important;
+}
+
+/* 竖杠标题 */
+.section-title {
+  //   font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+  padding: 20rpx 0;
+  position: relative;
+  display: inline-block;
+  padding-left: 24rpx;
+}
+
+.section-title::before {
+  content: "";
+  position: absolute;
+  top: 52%;
+  left: 0;
+  width: 7rpx;
+  height: 29rpx;
+  background: linear-gradient(
+    180deg,
+    var(--u-type-primary-dark),
+    var(--u-type-primary-disabled)
+  );
+  border-radius: 4rpx;
+  transform: translateY(-50%);
+}

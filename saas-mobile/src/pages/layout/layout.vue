@@ -1,0 +1,195 @@
+<template>
+  <view class="layout">
+    <!-- 顶部导航栏 - u-navbar 组件 -->
+    <u-navbar
+      :title="navTitle || currentNavTitle"
+      :background="navBackground"
+      title-color="#ffffff"
+      title-bold
+      :is-back="false"
+      :is-fixed="true"
+      :immersive="false"
+      :border-bottom="false"
+      :z-index="980"
+    />
+
+    <!-- 内容区域 -->
+    <view class="layout-content">
+      <view class="content-page"><slot /></view>
+    </view>
+
+    <!-- 底部TabBar - uview-pro u-tabbar 组件 -->
+    <u-tabbar
+      v-if="showTabbar"
+      v-model="currentTab"
+      :list="tabList"
+      :active-color="themeColor"
+      inactive-color="#999999"
+      :before-switch="beforeSwitch"
+      @change="onTabChange"
+    />
+  </view>
+</template>
+
+<script setup lang="ts">
+import { computed, ref } from "vue";
+import { useTheme } from "uview-pro";
+
+/**
+ * Props 定义
+ * navTitle: 顶部导航栏标题
+ * showTabbar: 是否显示底部 TabBar
+ */
+const props = defineProps<{
+  navTitle?: string;
+  activeTab?: number;
+  showTabbar?: boolean;
+}>();
+
+// 获取主题色
+const { currentTheme } = useTheme();
+
+// 当前选中的tab索引（用于导航栏标题显示）
+const currentTab = ref(props.activeTab ?? 0);
+
+// 获取主题色（用于选中状态）
+const themeColor = computed(() => {
+  return currentTheme.value?.color?.primary || "#409EFF";
+});
+
+// 导航栏渐变背景
+const navBackground = computed(() => {
+  return {
+    backgroundImage: `linear-gradient(90deg, var(--u-type-primary-dark), var(--u-type-primary-disabled))`,
+  };
+});
+
+// Tab列表配置（u-tabbar list 格式）
+// customIcon: false 表示使用 uView 内置图标
+const tabList = ref([
+  {
+    iconPath: "home",
+    selectedIconPath: "home-fill",
+    text: "首页",
+    pagePath: "/pages/business/workbench",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    iconPath: "file-text",
+    selectedIconPath: "file-text-fill",
+    text: "订单",
+    pagePath: "/pages/business/orderList",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    iconPath: "account",
+    selectedIconPath: "account-fill",
+    text: "我的",
+    pagePath: "/pages/my/my",
+    customIcon: false,
+    count: 0,
+  },
+]);
+
+// 默认导航栏标题
+const currentNavTitle = computed(() => {
+  const currentTabItem = tabList.value[currentTab.value];
+  return props.navTitle || currentTabItem?.text || "嗨车无忧";
+});
+
+// 切换前的回调钩子（返回 false 阻止切换）
+function beforeSwitch(index: number): boolean {
+  console.warn("准备切换到Tab:", index);
+  return true;
+}
+
+// Tab切换后的回调（u-tabbar 已自动完成 uni.switchTab 跳转）
+function onTabChange(index: number) {
+  currentTab.value = index;
+}
+
+// 更新Tab的徽标数量（供外部调用）
+function updateBadge(index: number, count: number) {
+  if (index >= 0 && index < tabList.value.length) {
+    tabList.value[index] = {
+      ...tabList.value[index],
+      count,
+    };
+  }
+}
+
+// 暴露方法供外部使用
+defineExpose({
+  updateBadge,
+});
+</script>
+
+<style lang="scss">
+/* 禁用 page 级别滚动，防止与 layout-content 产生双滚动条 */
+page {
+  overflow: hidden;
+}
+</style>
+
+<style lang="scss" scoped>
+.layout {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background-color: #f5f7fa;
+  overflow: hidden;
+}
+
+.custom-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  color: #ffffff;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+
+  .status-bar {
+    height: var(--status-bar-height);
+    width: 100%;
+  }
+
+  .navbar-content {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 32rpx;
+  }
+
+  .navbar-title {
+    font-size: 34rpx;
+    font-weight: 700;
+    color: #ffffff;
+  }
+}
+
+// 核心：用绝对定位精确计算滚动区域，避免 flex 嵌套滚动问题
+.layout-content {
+  position: absolute;
+  top: calc(var(--status-bar-height) + 44px);
+  bottom: calc(50px + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain; // 阻止滚动链，避免嵌套滚动卡顿
+
+  .content-page {
+    min-height: 100%;
+  }
+}
+
+/* u-tabbar 组件样式覆盖 */
+:deep(.u-tabbar) {
+  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+</style>

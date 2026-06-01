@@ -40,4 +40,16 @@ export class OrganizationController {
   remove(@Param('id') id: string) {
     return this.service.remove(Number(id))
   }
+
+  @Post(':id/enable')
+  @ApiOperation({ summary: '启用机构' })
+  enable(@Param('id') id: string) {
+    return this.service.enable(Number(id))
+  }
+
+  @Post(':id/disable')
+  @ApiOperation({ summary: '停用机构' })
+  disable(@Param('id') id: string) {
+    return this.service.disable(Number(id))
+  }
 }

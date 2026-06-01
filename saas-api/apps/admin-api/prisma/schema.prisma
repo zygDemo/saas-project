@@ -315,6 +315,9 @@ model Product {
   ltvLimit        Decimal?     @db.Decimal(5, 4) // 最高贷款价值比
   minDownPayment  Decimal?     @db.Decimal(5, 4) // 最低首付比例
   regions         String?      // 适用区域，JSON或逗号分隔
+  applicableFunders Json?       // 适用资方ID/规则清单
+  accessConditions Json?        // 准入条件配置
+  valuationDiscountRate Decimal? @db.Decimal(5, 4) // 估值折扣率
   status          String       @default("DRAFT") // DRAFT, ACTIVE, INACTIVE, ARCHIVED
   fileChecklist   Json?        // 所需文件清单
   createdAt       DateTime     @default(now())
@@ -338,7 +341,10 @@ model Funder {
   funderType    String       // BANK, CONSUMER_FINANCE, LEASING, MICRO_LOAN
   contactName   String?
   contactPhone  String?
+  integrationMode String       @default("MANUAL") // API, FILE, MANUAL
+  creditLimit   Decimal?      @db.Decimal(15, 2)
   apiConfig     Json?        // 对接配置
+  approvalRules Json?        // 审批/准入规则
   priority      Int          @default(0)
   status        String       @default("ACTIVE")
   createdAt     DateTime     @default(now())
