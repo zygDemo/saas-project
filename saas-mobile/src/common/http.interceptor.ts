@@ -9,7 +9,7 @@ import { useSessionStore } from "@/stores/session";
 
 // 基础配置
 const baseUrl =
-  import.meta.env.VITE_API_BASE_URL || "http://122.51.140.89:10088";
+  import.meta.env.VITE_API_BASE_URL || "";
 
 export const httpRequestConfig: RequestConfig = {
   baseUrl,
@@ -26,6 +26,7 @@ export const httpRequestConfig: RequestConfig = {
 export const httpInterceptor: RequestInterceptor = {
   request: (config: RequestOptions) => {
     const meta: RequestMeta = config.meta || {};
+    config.header = config.header || {};
 
     // 1. 显示 Loading
     if (meta.loading) {
@@ -38,7 +39,15 @@ export const httpInterceptor: RequestInterceptor = {
     // 2. 注入 Token
     const token = getRequestToken();
     if (token) {
+      config.header.Authorization = `Bearer ${token}`;
+      // 兼容现有移动端后端接口，后续统一切换到 Authorization。
       config.header["M-Authorization"] = `Bearer ${token}`;
+    }
+
+    const localStore = useLocalStore();
+    const orgId = localStore.currentOrgId;
+    if (orgId) {
+      config.header["X-Org-Id"] = String(orgId);
     }
 
     return config;
@@ -138,9 +147,7 @@ export function uploadFile(filePath: string, url: string): Promise<any> {
       url: `${baseUrl}${url}`,
       filePath,
       name: "file",
-      header: {
-        "M-Authorization": token ? `Bearer ${token}` : "",
-      },
+      header: buildUploadAuthHeader(token),
       success: (res) => {
         try {
           const data = JSON.parse(res.data);
@@ -173,9 +180,7 @@ export function uploadFileWithData(
       filePath,
       name: "file",
       formData,
-      header: {
-        "M-Authorization": token ? `Bearer ${token}` : "",
-      },
+      header: buildUploadAuthHeader(token),
       success: (res) => {
         try {
           const data = JSON.parse(res.data);
@@ -199,4 +204,18 @@ function getRequestToken() {
   }
 
   return localStore.token || "";
+}
+
+function buildUploadAuthHeader(token: string) {
+  const localStore = useLocalStore();
+  const header: Record<string, string> = {};
+  if (token) {
+    header.Authorization = `Bearer ${token}`;
+    header["M-Authorization"] = `Bearer ${token}`;
+  }
+  const orgId = localStore.currentOrgId;
+  if (orgId) {
+    header["X-Org-Id"] = String(orgId);
+  }
+  return header;
 }

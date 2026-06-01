@@ -68,7 +68,20 @@ export class UsersService {
       gender: query.userGender ? query.userGender : undefined,
       phone: query.userPhone ? { contains: query.userPhone } : undefined,
       email: query.userEmail ? { contains: query.userEmail, mode: 'insensitive' } : undefined,
-      status: query.status ? queryStatusMap[query.status] : undefined
+      status: query.status ? queryStatusMap[query.status] : undefined,
+      ...(query.orgId
+        ? {
+            OR: [
+              { deptId: null },
+              {
+                dept: {
+                  orgId: Number(query.orgId)
+                }
+              }
+            ]
+          }
+        : {}),
+      deptId: query.deptId ? Number(query.deptId) : undefined
     }
 
     const [records, total] = await this.prisma.$transaction([
@@ -77,7 +90,7 @@ export class UsersService {
         skip: pagination.skip,
         take: pagination.take,
         orderBy: { id: 'asc' },
-        include: { roles: { include: { role: true } } }
+        include: { dept: { include: { org: true } }, roles: { include: { role: true } } }
       }),
       this.prisma.user.count({ where })
     ])
@@ -86,6 +99,8 @@ export class UsersService {
   }
 
   async createUser(dto: CreateUserDto, operator = 'system') {
+    await this.ensureDeptExists(dto.deptId)
+
     const existedUser = await this.prisma.user.findFirst({
       where: {
         OR: [
@@ -113,6 +128,7 @@ export class UsersService {
         email: dto.email,
         phone: dto.phone,
         gender: normalizeGender(dto.gender),
+        deptId: dto.deptId,
         status: dto.status ? queryStatusMap[dto.status] : UserStatus.ONLINE,
         createdBy: operator,
         updatedBy: operator,
@@ -122,7 +138,7 @@ export class UsersService {
           }))
         }
       },
-      include: { roles: { include: { role: true } } }
+      include: { dept: { include: { org: true } }, roles: { include: { role: true } } }
     })
 
     return mapUserListItem(user)
@@ -131,6 +147,7 @@ export class UsersService {
   async updateUser(id: number, dto: UpdateUserDto, operator = 'system') {
     const user = await this.prisma.user.findUnique({ where: { id } })
     if (!user) throw new NotFoundException('User not found')
+    await this.ensureDeptExists(dto.deptId)
 
     if (dto.userName || dto.email) {
       const existedUser = await this.prisma.user.findFirst({
@@ -164,6 +181,7 @@ export class UsersService {
         email: dto.email,
         phone: dto.phone,
         gender: dto.gender ? normalizeGender(dto.gender) : undefined,
+        deptId: dto.deptId,
         status: dto.status ? queryStatusMap[dto.status] : undefined,
         updatedBy: operator,
         roles: roles
@@ -175,7 +193,7 @@ export class UsersService {
             }
           : undefined
       },
-      include: { roles: { include: { role: true } } }
+      include: { dept: { include: { org: true } }, roles: { include: { role: true } } }
     })
 
     return mapUserListItem(updatedUser)
@@ -204,13 +222,24 @@ export class UsersService {
 
     return roles
   }
+
+  private async ensureDeptExists(deptId?: number) {
+    if (!deptId) return
+    const tenantId = getCurrentTenantId()
+    const dept = await this.prisma.department.findFirst({
+      where: { id: deptId, ...(tenantId ? { tenantId } : {}) }
+    })
+    if (!dept) throw new BadRequestException('所属部门不存在')
+  }
 }
 
 function formatDate(date: Date) {
   return date.toISOString().replace('T', ' ').slice(0, 19)
 }
 
-type UserWithRoles = Prisma.UserGetPayload<{ include: { roles: { include: { role: true } } } }>
+type UserWithRoles = Prisma.UserGetPayload<{
+  include: { dept: { include: { org: true } }; roles: { include: { role: true } } }
+}>
 
 function mapUserListItem(user: UserWithRoles) {
   return {
@@ -222,6 +251,10 @@ function mapUserListItem(user: UserWithRoles) {
     nickName: user.nickName,
     userPhone: user.phone ?? '',
     userEmail: user.email,
+    deptId: user.deptId,
+    deptName: user.dept?.name ?? '',
+    orgId: user.dept?.orgId,
+    orgName: user.dept?.org?.name ?? '',
     userRoles: user.roles.map(({ role }: any) => role.code),
     createBy: user.createdBy,
     createTime: formatDate(user.createdAt),

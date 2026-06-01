@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { ApplicationStatus, ApprovalAction, DisbursementStatus, LeadStatus, RepaymentStatus, SignStatus } from '@prisma/client'
 import { BaseBusinessCrudService, omitNested } from '../base-business-crud.service'
+import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateApplicationDto, UpdateApplicationDto, ApplicationQueryDto } from './dto/application.dto'
 import {
@@ -38,13 +39,19 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
       prisma,
       searchableFields: ['applicationNo'],
       exactFields: ['orgId', 'status', 'customerId', 'creatorId'],
-      include: { org: true, customer: true, product: true, funder: true, creator: true },
+      include: {
+        org: true,
+        customer: true,
+        product: true,
+        funder: true,
+        creator: { select: { id: true, userName: true, nickName: true } }
+      },
       detailInclude: {
         org: true,
         customer: true,
         product: true,
         funder: true,
-        creator: true,
+        creator: { select: { id: true, userName: true, nickName: true } },
         files: true,
         approvals: true,
         signRecord: true,
@@ -52,20 +59,12 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
         repayments: true
       },
       validateCreate: async (dto) => {
-        await this.ensureRelatedExists(this.prisma.organization, dto.orgId, '机构不存在')
-        await this.ensureRelatedExists(this.prisma.customer, dto.customerId, '客户不存在')
-        await this.ensureRelatedExists(this.prisma.product, dto.productId, '产品不存在')
-        await this.ensureRelatedExists(this.prisma.funder, dto.funderId, '资方不存在')
+        await this.prepareCreateRelations(dto)
         await this.ensureRelatedExists(this.prisma.user, dto.creatorId, '创建人不存在')
-        await this.ensureRelatedExists(this.prisma.lead, dto.sourceLeadId, '来源线索不存在')
       },
-      validateUpdate: async (_id, dto) => {
-        await this.ensureRelatedExists(this.prisma.organization, dto.orgId, '机构不存在')
-        await this.ensureRelatedExists(this.prisma.customer, dto.customerId, '客户不存在')
-        await this.ensureRelatedExists(this.prisma.product, dto.productId, '产品不存在')
-        await this.ensureRelatedExists(this.prisma.funder, dto.funderId, '资方不存在')
+      validateUpdate: async (id, dto) => {
+        await this.prepareUpdateRelations(id, dto)
         await this.ensureRelatedExists(this.prisma.user, dto.creatorId, '创建人不存在')
-        await this.ensureRelatedExists(this.prisma.lead, dto.sourceLeadId, '来源线索不存在')
       },
       beforeCreate: (dto) => {
         const data = omitNested(dto as unknown as Record<string, unknown>, ['files'])
@@ -445,6 +444,56 @@ export class ApplicationService extends BaseBusinessCrudService<CreateApplicatio
     if (!application?.sourceLeadId) return application
     await this.prisma.lead.update({ where: { id: application.sourceLeadId }, data: { status: LeadStatus.CONVERTED } })
     return application
+  }
+
+  private async prepareCreateRelations(dto: CreateApplicationDto) {
+    const customer = await this.getScopedRelated(this.prisma.customer, dto.customerId, '客户不存在')
+    const orgId = dto.orgId ?? customer.orgId
+    if (!orgId) throw new BadRequestException('无法根据客户自动识别机构')
+    if (customer.orgId !== orgId) throw new BadRequestException('客户不属于所选机构')
+
+    await this.ensureOrgExists(orgId)
+    await this.assertSameOrg(this.prisma.product, dto.productId, orgId, '产品不存在', '产品不属于客户所属机构')
+    await this.assertSameOrg(this.prisma.funder, dto.funderId, orgId, '资方不存在', '资方不属于客户所属机构')
+    await this.assertSameOrg(this.prisma.lead, dto.sourceLeadId, orgId, '来源线索不存在', '来源线索不属于客户所属机构')
+
+    dto.orgId = orgId
+  }
+
+  private async prepareUpdateRelations(id: number, dto: UpdateApplicationDto) {
+    const current = await this.ensureExists(id)
+    let orgId = dto.orgId ?? current.orgId
+
+    if (dto.customerId) {
+      const customer = await this.getScopedRelated(this.prisma.customer, dto.customerId, '客户不存在')
+      orgId = dto.orgId ?? customer.orgId
+      if (customer.orgId !== orgId) throw new BadRequestException('客户不属于所选机构')
+      dto.orgId = orgId
+    }
+
+    await this.ensureOrgExists(orgId)
+    await this.assertSameOrg(this.prisma.product, dto.productId, orgId, '产品不存在', '产品不属于进件所属机构')
+    await this.assertSameOrg(this.prisma.funder, dto.funderId, orgId, '资方不存在', '资方不属于进件所属机构')
+    await this.assertSameOrg(this.prisma.lead, dto.sourceLeadId, orgId, '来源线索不存在', '来源线索不属于进件所属机构')
+  }
+
+  private async ensureOrgExists(orgId: number) {
+    await this.getScopedRelated(this.prisma.organization, orgId, '机构不存在')
+  }
+
+  private async assertSameOrg(model: any, id: number | undefined, orgId: number, notFoundMessage: string, mismatchMessage: string) {
+    if (id === undefined || id === null) return
+    const item = await this.getScopedRelated(model, id, notFoundMessage)
+    if (item.orgId !== orgId) throw new BadRequestException(mismatchMessage)
+  }
+
+  private async getScopedRelated(model: any, id: number | undefined, message: string) {
+    if (id === undefined || id === null) throw new BadRequestException(message)
+    const tenantId = getCurrentTenantId()
+    const where = tenantId ? { id, tenantId } : { id }
+    const item = await model.findFirst({ where })
+    if (!item) throw new BadRequestException(message)
+    return item
   }
 
   private resolveApprovalStage(status: ApplicationStatus) {

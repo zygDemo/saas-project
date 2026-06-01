@@ -40,6 +40,42 @@
           <ElOption label="注销" value="4" />
         </ElSelect>
       </ElFormItem>
+      <ElFormItem label="所属机构" prop="orgId">
+        <ElSelect
+          v-model="formData.orgId"
+          class="w-full"
+          clearable
+          filterable
+          :loading="orgLoading"
+          placeholder="请选择所属机构"
+          @change="handleOrgChange"
+        >
+          <ElOption
+            v-for="org in orgList"
+            :key="org.id"
+            :value="org.id"
+            :label="String(org.name)"
+          />
+        </ElSelect>
+      </ElFormItem>
+      <ElFormItem label="所属部门" prop="deptId">
+        <ElSelect
+          v-model="formData.deptId"
+          class="w-full"
+          clearable
+          filterable
+          :disabled="!formData.orgId"
+          :loading="deptLoading"
+          placeholder="请选择所属部门"
+        >
+          <ElOption
+            v-for="dept in deptList"
+            :key="dept.id"
+            :value="dept.id"
+            :label="String(dept.name)"
+          />
+        </ElSelect>
+      </ElFormItem>
       <ElFormItem label="角色" prop="roleCodes">
         <ElSelect
           v-model="formData.roleCodes"
@@ -68,6 +104,7 @@
 </template>
 
 <script setup lang="ts">
+  import { fetchBusinessList } from '@/api/business'
   import { fetchGetRoleList } from '@/api/system-manage'
   import type { DialogType } from '@/types'
   import type { FormInstance, FormRules } from 'element-plus'
@@ -83,11 +120,20 @@
     (e: 'submit', value: Api.SystemManage.CreateUserParams): void
   }
 
+  type BusinessOption = {
+    id: number
+    name: string
+  }
+
   const props = defineProps<Props>()
   const emit = defineEmits<Emits>()
 
   const roleList = ref<Api.SystemManage.RoleListItem[]>([])
+  const orgList = ref<BusinessOption[]>([])
+  const deptList = ref<BusinessOption[]>([])
   const roleLoading = ref(false)
+  const orgLoading = ref(false)
+  const deptLoading = ref(false)
 
   const dialogVisible = computed({
     get: () => props.visible,
@@ -105,6 +151,8 @@
     email: '',
     gender: '男',
     status: '1',
+    orgId: undefined as number | undefined,
+    deptId: undefined as number | undefined,
     roleCodes: [] as string[]
   })
 
@@ -140,6 +188,35 @@
     }
   }
 
+  const loadOrgList = async () => {
+    orgLoading.value = true
+    try {
+      const res = await fetchBusinessList<BusinessOption>('org', { current: 1, size: 200, status: 'ACTIVE' })
+      orgList.value = res.records
+    } finally {
+      orgLoading.value = false
+    }
+  }
+
+  const loadDeptList = async (orgId?: number) => {
+    if (!orgId) {
+      deptList.value = []
+      return
+    }
+    deptLoading.value = true
+    try {
+      const res = await fetchBusinessList<BusinessOption>('dept', { current: 1, size: 200, orgId })
+      deptList.value = res.records
+    } finally {
+      deptLoading.value = false
+    }
+  }
+
+  const handleOrgChange = async () => {
+    formData.deptId = undefined
+    await loadDeptList(formData.orgId)
+  }
+
   const initFormData = () => {
     const row = props.userData
     const isEdit = props.type === 'edit' && row
@@ -152,17 +229,19 @@
       email: isEdit ? row?.userEmail || '' : '',
       gender: isEdit ? row?.userGender || '男' : '男',
       status: isEdit ? row?.status || '1' : '1',
+      orgId: isEdit ? row?.orgId : undefined,
+      deptId: isEdit ? row?.deptId : undefined,
       roleCodes: isEdit && Array.isArray(row?.userRoles) ? row.userRoles : []
     })
   }
 
   watch(
     () => [props.visible, props.type, props.userData],
-    ([visible]) => {
+    async ([visible]) => {
       if (!visible) return
 
       initFormData()
-      loadRoleList()
+      await Promise.all([loadRoleList(), loadOrgList(), loadDeptList(formData.orgId)])
       nextTick(() => {
         formRef.value?.clearValidate()
       })
@@ -182,6 +261,7 @@
       email: formData.email,
       gender: formData.gender,
       status: formData.status,
+      deptId: formData.deptId,
       roleCodes: formData.roleCodes
     })
   }

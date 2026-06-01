@@ -4,13 +4,23 @@ import {
   IsArray,
   IsEmail,
   IsIn,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   Matches,
   MaxLength,
+  Min,
   MinLength
 } from 'class-validator'
+import { Transform } from 'class-transformer'
+
+function ToNumber() {
+  return Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined) return undefined
+    return Number(value)
+  })
+}
 
 export class CreateUserDto {
   @ApiProperty({ description: '用户名', example: 'demo_user' })
@@ -51,6 +61,13 @@ export class CreateUserDto {
   @IsOptional()
   @IsIn(['1', '2', '3', '4'])
   status?: string
+
+  @ApiPropertyOptional({ description: '所属部门ID' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  deptId?: number
 
   @ApiProperty({ description: '角色编码列表', example: ['R_USER'] })
   @IsArray()

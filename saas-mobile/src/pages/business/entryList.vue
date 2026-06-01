@@ -91,7 +91,36 @@ const businessApi = useBusinessApi();
 
 const searchKeyword = ref("");
 const loading = ref(false);
-const list = ref([]);
+interface EntryListItem {
+  id: string | number;
+  uuid: string;
+  creditOrderId: string | number;
+  customerName: string;
+  phone: string;
+  idcard: string;
+  approvalText: string;
+  approvalType: "success" | "warning" | "error" | "info";
+  createTime: string;
+}
+
+interface UserListRow {
+  id?: string | number;
+  uuid?: string;
+  creditOrderId?: string | number;
+  personName?: string;
+  telephone?: string;
+  personIdcard?: string;
+  approval?: number;
+  createTime?: string;
+  updateTime?: string;
+}
+
+interface UserListResponse {
+  code?: number;
+  rows?: UserListRow[];
+}
+
+const list = ref<EntryListItem[]>([]);
 
 /** 加载进件列表 */
 async function loadList(name?: string) {
@@ -101,18 +130,18 @@ async function loadList(name?: string) {
     if (name && name.trim()) {
       params.personName = name.trim();
     }
-    const res = await businessApi.getUserList(params);
+    const res = (await businessApi.getUserList(params)) as UserListResponse;
     if (res && res.code === 200) {
       const rows = Array.isArray(res.rows) ? res.rows : [];
-      list.value = rows.map((item) => ({
-        id: item.uuid || item.id,
+      list.value = rows.map((item: UserListRow) => ({
+        id: item.uuid || item.id || "",
         uuid: item.uuid || "",
         creditOrderId: item.creditOrderId || "",
         customerName: item.personName || "",
         phone: item.telephone || "",
-        idcard: maskIdcard(item.personIdcard),
-        approvalText: formatApproval(item.approval),
-        approvalType: getApprovalType(item.approval),
+        idcard: maskIdcard(item.personIdcard || ""),
+        approvalText: formatApproval(item.approval || 0),
+        approvalType: getApprovalType(item.approval || 0),
         createTime: item.createTime || item.updateTime || "",
       }));
     } else {
@@ -137,8 +166,8 @@ function formatApproval(approval: number) {
   return map[approval] || "待跟进";
 }
 
-function getApprovalType(approval: number) {
-  const map: Record<number, string> = {
+function getApprovalType(approval: number): EntryListItem["approvalType"] {
+  const map: Record<number, EntryListItem["approvalType"]> = {
     1: "warning",
     2: "success",
     3: "error",

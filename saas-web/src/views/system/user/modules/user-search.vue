@@ -11,6 +11,8 @@
 </template>
 
 <script setup lang="ts">
+  import { fetchBusinessList } from '@/api/business'
+
   interface Props {
     modelValue: Api.SystemManage.UserSearchParams
   }
@@ -36,6 +38,8 @@
 
   // 动态 options
   const statusOptions = ref<{ label: string; value: string; disabled?: boolean }[]>([])
+  const orgOptions = ref<{ label: string; value: number }[]>([])
+  const deptOptions = ref<{ label: string; value: number }[]>([])
 
   // 模拟接口返回状态数据
   function fetchStatusOptions(): Promise<typeof statusOptions.value> {
@@ -53,7 +57,22 @@
 
   onMounted(async () => {
     statusOptions.value = await fetchStatusOptions()
+    const orgRes = await fetchBusinessList('org', { current: 1, size: 200, status: 'ACTIVE' })
+    orgOptions.value = orgRes.records.map((item: any) => ({ label: item.name, value: item.id }))
   })
+
+  watch(
+    () => formData.value.orgId,
+    async (orgId) => {
+      formData.value.deptId = undefined
+      if (!orgId) {
+        deptOptions.value = []
+        return
+      }
+      const deptRes = await fetchBusinessList('dept', { current: 1, size: 200, orgId })
+      deptOptions.value = deptRes.records.map((item: any) => ({ label: item.name, value: item.id }))
+    }
+  )
 
   // 表单配置
   const formItems = computed(() => [
@@ -83,6 +102,29 @@
       props: {
         placeholder: '请选择状态',
         options: statusOptions.value
+      }
+    },
+    {
+      label: '机构',
+      key: 'orgId',
+      type: 'select',
+      props: {
+        placeholder: '请选择机构',
+        clearable: true,
+        filterable: true,
+        options: orgOptions.value
+      }
+    },
+    {
+      label: '部门',
+      key: 'deptId',
+      type: 'select',
+      props: {
+        placeholder: '请选择部门',
+        clearable: true,
+        filterable: true,
+        disabled: !formData.value.orgId,
+        options: deptOptions.value
       }
     },
     {

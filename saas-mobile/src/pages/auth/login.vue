@@ -23,9 +23,9 @@
         </u-button>
       </view>
       <u-gap height="16" />
-      <view class="login-tip">
+      <view v-if="showDemoTip" class="login-tip">
         <u-text
-          text="提示：演示账号 zyg / 123456"
+          text="开发环境可使用后端配置的演示账号登录"
           size="24rpx"
           color="info"
         />
@@ -36,8 +36,9 @@
 
 <script setup>
 import { $u } from "uview-pro";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 // import { useUserStore } from "@/stores/user";
+import { isDev } from "@/common/env";
 import { useAuthApi } from "@/api/auth";
 import { useLocalStore } from "@/stores/local";
 import { useSessionStore } from "@/stores/session";
@@ -46,9 +47,10 @@ const authApi = useAuthApi();
 const localStore = useLocalStore();
 const sessionStore = useSessionStore();
 // const userStore = useUserStore();
-const username = ref("zyg");
-const password = ref("123456");
+const username = ref("");
+const password = ref("");
 const loading = ref(false);
+const showDemoTip = computed(() => isDev);
 
 /**
  * 处理登录逻辑
@@ -72,10 +74,35 @@ const handleLogin = async () => {
       password: password.value,
     });
     if (res.code === 200) {
-      const { token, salesman } = res || {};
+      const payload = res.data || res;
+      const token = payload.token || payload.accessToken || res.token;
+      const refreshToken = payload.refreshToken || res.refreshToken || "";
+      const userInfo =
+        payload.userInfo || payload.user || payload.salesman || res.salesman || null;
+      const roles = payload.roles || userInfo?.roles || [];
+      const roleKeys =
+        payload.roleKeys ||
+        payload.roleCodes ||
+        roles.map((role) => role.roleKey || role.code || "").filter(Boolean);
+      const permissions = payload.permissions || payload.perms || userInfo?.permissions || [];
+
+      if (!token) {
+        $u.toast("登录接口未返回Token", "error");
+        return;
+      }
+
       sessionStore.clearSession();
       localStore.setToken(token);
-      localStore.setUserInfo(salesman);
+      localStore.setRefreshToken(refreshToken);
+      localStore.setUserInfo(userInfo);
+      localStore.setAuthContext({
+        orgId: payload.orgId || userInfo?.orgId || userInfo?.dept?.orgId,
+        deptId: payload.deptId || userInfo?.deptId,
+        roles,
+        roleKeys,
+        permissions,
+        expires: payload.expires || payload.expiresIn || res.expires,
+      });
       $u.toast("登录成功！", "success");
       // 4. 延迟跳转到首页（工作台）
       setTimeout(() => {
@@ -83,6 +110,8 @@ const handleLogin = async () => {
           url: "/pages/business/workbench",
         });
       }, 500);
+    } else {
+      $u.toast(res.msg || "登录失败，请检查账号或密码", "error");
     }
   } catch (error) {
     // 登录失败，显示错误信息

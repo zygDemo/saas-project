@@ -5,13 +5,27 @@ export interface UserInfo {
   /** 用户ID */
   userId: number | string;
   /** 部门ID */
-  deptId?: number;
+  deptId?: number | string;
+  /** 机构ID */
+  orgId?: number | string;
+  /** 机构名称 */
+  orgName?: string;
   /** 用户名 */
   userName?: string;
+  /** 兼容 SaaS 新接口用户名字段 */
+  username?: string;
+  /** 真实姓名 */
+  realName?: string;
   /** 昵称 */
   nickName?: string;
   /** 手机号 */
   phonenumber?: string;
+  /** 兼容旧移动端手机号字段 */
+  phone?: string;
+  /** 兼容旧移动端业务员 UUID */
+  uuid?: string;
+  /** 兼容旧移动端角色字段 */
+  role?: string;
   /** 邮箱 */
   email?: string;
   /** 头像 */
@@ -36,6 +50,10 @@ export interface UserInfo {
   roles?: SysRole[];
   /** 角色ID列表 */
   roleIds?: number[];
+  /** SaaS 角色编码列表 */
+  roleKeys?: string[];
+  /** 按钮/接口权限标识 */
+  permissions?: string[];
   /** 岗位ID列表 */
   postIds?: number[];
   /** 部门信息 */
@@ -109,6 +127,11 @@ export const useLocalStore = defineStore("local", {
     token: "",
     refreshToken: "",
     userInfo: null as UserInfo | null,
+    orgId: "" as number | string,
+    deptId: "" as number | string,
+    roles: [] as SysRole[],
+    roleKeys: [] as string[],
+    permissions: [] as string[],
     loginTime: 0,
     expireTime: 0,
   }),
@@ -122,6 +145,9 @@ export const useLocalStore = defineStore("local", {
     hasRefreshToken(): boolean {
       return Boolean(this.refreshToken);
     },
+    currentOrgId(): number | string {
+      return this.orgId || this.userInfo?.orgId || "";
+    },
   },
   actions: {
     setToken(token: string) {
@@ -132,12 +158,48 @@ export const useLocalStore = defineStore("local", {
     },
     setUserInfo(userInfo: UserInfo | null) {
       this.userInfo = userInfo;
+      this.orgId = userInfo?.orgId || "";
+      this.deptId = userInfo?.deptId || "";
+      this.roles = userInfo?.roles || [];
+      this.roleKeys = userInfo?.roleKeys || this.roles.map((role) => role.roleKey || "").filter(Boolean);
+      this.permissions = userInfo?.permissions || [];
+    },
+    setAuthContext(context: {
+      orgId?: number | string;
+      deptId?: number | string;
+      roles?: SysRole[];
+      roleKeys?: string[];
+      permissions?: string[];
+      expires?: number;
+      expireTime?: number;
+    }) {
+      this.orgId = context.orgId || this.orgId;
+      this.deptId = context.deptId || this.deptId;
+      this.roles = context.roles || this.roles;
+      this.roleKeys = context.roleKeys || this.roleKeys;
+      this.permissions = context.permissions || this.permissions;
+      if (context.expires || context.expireTime) {
+        const expires = context.expireTime || context.expires || 0;
+        this.expireTime = expires > 10_000_000_000 ? expires : Date.now() + expires * 1000;
+      }
+      this.loginTime = Date.now();
+    },
+    hasRole(roleKey: string) {
+      return this.roleKeys.includes(roleKey) || this.roles.some((role) => role.roleKey === roleKey);
+    },
+    hasPermission(permission: string) {
+      return this.permissions.includes(permission) || this.permissions.includes("*:*:*");
     },
 
     logout() {
       this.token = "";
       this.refreshToken = "";
       this.userInfo = null;
+      this.orgId = "";
+      this.deptId = "";
+      this.roles = [];
+      this.roleKeys = [];
+      this.permissions = [];
       this.loginTime = 0;
       this.expireTime = 0;
     },
@@ -145,6 +207,17 @@ export const useLocalStore = defineStore("local", {
   persist: {
     key: "local-store",
     storage: (globalThis as any)?.localStorage || localStorageAdapter,
-    paths: ["token", "refreshToken", "userInfo", "loginTime", "expireTime"],
+    paths: [
+      "token",
+      "refreshToken",
+      "userInfo",
+      "orgId",
+      "deptId",
+      "roles",
+      "roleKeys",
+      "permissions",
+      "loginTime",
+      "expireTime",
+    ],
   },
 });

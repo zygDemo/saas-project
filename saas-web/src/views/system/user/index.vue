@@ -74,6 +74,8 @@
     userGender: undefined,
     userPhone: undefined,
     userEmail: undefined,
+    orgId: undefined,
+    deptId: undefined,
     status: '1'
   })
 
@@ -146,6 +148,18 @@
               ])
             ])
           }
+        },
+        {
+          prop: 'orgName',
+          label: '所属机构',
+          minWidth: 150,
+          formatter: (row) => row.orgName || '未分配'
+        },
+        {
+          prop: 'deptName',
+          label: '所属部门',
+          minWidth: 150,
+          formatter: (row) => row.deptName || '未分配'
         },
         {
           prop: 'userGender',

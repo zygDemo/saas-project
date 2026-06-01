@@ -63,6 +63,47 @@
         </view>
       </view>
 
+      <view class="overview-panel">
+        <view class="overview-head">
+          <text class="overview-title">今日概览</text>
+          <text class="overview-sub">SaaS业务看板</text>
+        </view>
+        <view class="overview-grid">
+          <view
+            v-for="item in overviewItems"
+            :key="item.key"
+            class="overview-item"
+          >
+            <text class="overview-value">{{ item.value }}</text>
+            <text class="overview-label">{{ item.label }}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="todo-panel">
+        <view class="overview-head">
+          <text class="overview-title">待办中心</text>
+          <text class="overview-sub">优先处理高时效任务</text>
+        </view>
+        <view class="todo-list">
+          <view
+            v-for="item in todoItems"
+            :key="item.key"
+            class="todo-item"
+            @click="goTo(item.path)"
+          >
+            <view class="todo-left">
+              <u-icon :name="item.icon" size="34" :color="item.color" />
+              <text class="todo-title">{{ item.label }}</text>
+            </view>
+            <view class="todo-right">
+              <text class="todo-count">{{ item.count }}</text>
+              <u-icon name="arrow-right" size="24" color="#999" />
+            </view>
+          </view>
+        </view>
+      </view>
+
       <u-popup
         v-model="qrShow"
         mode="center"
@@ -128,8 +169,9 @@
 <script setup>
 import layout from "@/pages/layout/layout.vue";
 import { $u, useTheme } from "uview-pro";
+import { useBusinessApi } from "@/api/business";
 import { useLocalStore } from "@/stores";
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { isDev } from "@/common/env";
 
 const { currentTheme } = useTheme();
@@ -138,6 +180,92 @@ const themeColor = computed(() => {
 });
 
 const localStore = useLocalStore();
+const businessApi = useBusinessApi();
+
+const overview = ref({
+  todayLeads: 0,
+  todayApplications: 0,
+  pendingSupplement: 0,
+  pendingSigning: 0,
+  pendingApproval: 0,
+  monthLoanAmount: 0,
+  approvalRate: "-",
+});
+
+const formatAmount = (amount) => {
+  const value = Number(amount || 0);
+  if (!value) return "0";
+  return value >= 10000 ? `${(value / 10000).toFixed(1)}万` : String(value);
+};
+
+const overviewItems = computed(() => [
+  { key: "todayLeads", label: "今日线索", value: overview.value.todayLeads || 0 },
+  { key: "todayApplications", label: "今日进件", value: overview.value.todayApplications || 0 },
+  { key: "pendingSupplement", label: "待补件", value: overview.value.pendingSupplement || 0 },
+  { key: "pendingSigning", label: "待签约", value: overview.value.pendingSigning || 0 },
+  {
+    key: "monthLoanAmount",
+    label: "本月放款",
+    value: formatAmount(overview.value.monthLoanAmount),
+  },
+  { key: "approvalRate", label: "审批通过率", value: overview.value.approvalRate || "-" },
+]);
+
+const todoItems = computed(() => [
+  {
+    key: "supplement",
+    label: "待补件",
+    count: overview.value.pendingSupplement || 0,
+    icon: "file-text",
+    color: "#f59e0b",
+    path: "/pages/business/supplementList",
+  },
+  {
+    key: "signing",
+    label: "待签约",
+    count: overview.value.pendingSigning || 0,
+    icon: "edit",
+    color: "#22c55e",
+    path: "/pages/business/faceSignList",
+  },
+  {
+    key: "approval",
+    label: "待审批",
+    count: overview.value.pendingApproval || 0,
+    icon: "time",
+    color: "#409EFF",
+    path: "/pages/business/approvalList",
+  },
+]);
+
+const normalizeOverview = (data) => {
+  const source = data?.data || data || {};
+  overview.value = {
+    ...overview.value,
+    todayLeads: source.todayLeads || source.leadCountToday || source.leadsToday || 0,
+    todayApplications:
+      source.todayApplications || source.applicationCountToday || source.creditCountToday || 0,
+    pendingSupplement: source.pendingSupplement || source.supplementCount || 0,
+    pendingSigning: source.pendingSigning || source.signingCount || 0,
+    pendingApproval: source.pendingApproval || source.approvalCount || 0,
+    monthLoanAmount: source.monthLoanAmount || source.loanAmountMonth || 0,
+    approvalRate: source.approvalRate || source.passRate || "-",
+  };
+};
+
+const loadOverview = async () => {
+  if (!localStore.token) return;
+  try {
+    const res = await businessApi.getStatisticsOverview();
+    if (res?.code === 200) {
+      normalizeOverview(res);
+    }
+  } catch (error) {
+    console.warn("获取工作台统计失败", error);
+  }
+};
+
+onMounted(loadOverview);
 
 const checkAuth = () => {
   if (!localStore.token) {
@@ -172,6 +300,7 @@ const handleItem = (item) => {
 const FALLBACK_ICON = "question-circle";
 const VALID_ICONS = new Set([
   "account",
+  "arrow-right",
   "bag",
   "camera",
   "car",
@@ -191,6 +320,7 @@ const VALID_ICONS = new Set([
   "list",
   "location",
   "money-circle",
+  "plus-circle",
   "question-circle",
   "return",
   "search",
@@ -345,7 +475,7 @@ const sectionsRaw = [
       },
       {
         text: "订单信息",
-        icon: "order",
+        icon: "file-text",
         path: "/pages/business/orderInfoSupplement",
       },
       {
@@ -375,12 +505,12 @@ const sectionsRaw = [
       },
       {
         text: "放款申请",
-        icon: "order",
+        icon: "money-circle",
         path: "/pages/business/pawnLoanInfo",
       },
       {
         text: "资料补充",
-        icon: "order",
+        icon: "file-text",
         path: "/pages/business/pawnMaterials",
       },
       {
@@ -410,11 +540,105 @@ const sections = computed(() => {
   background: linear-gradient(180deg, #f7f8f9 0%, #ffffff 100%);
 }
 
+.overview-panel,
+.todo-panel {
+  margin-bottom: 24rpx;
+  padding: 28rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.06);
+}
+
+.overview-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 22rpx;
+}
+
+.overview-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.overview-sub {
+  font-size: 22rpx;
+  color: #8c8c8c;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16rpx;
+}
+
+.overview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  padding: 20rpx 14rpx;
+  border-radius: 18rpx;
+  background: linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%);
+  text-align: center;
+}
+
+.overview-value {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: var(--u-type-primary);
+}
+
+.overview-label {
+  font-size: 22rpx;
+  color: #6b7280;
+}
+
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.todo-item,
+.todo-left,
+.todo-right {
+  display: flex;
+  align-items: center;
+}
+
+.todo-item {
+  justify-content: space-between;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  background: #f8fafc;
+}
+
+.todo-left {
+  gap: 12rpx;
+}
+
+.todo-title {
+  font-size: 26rpx;
+  color: #1f2937;
+}
+
+.todo-right {
+  gap: 8rpx;
+}
+
+.todo-count {
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #111827;
+}
+
 .quick-actions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 20rpx;
   width: 100%;
+  margin-bottom: 24rpx;
 }
 
 .quick-card {

@@ -2,8 +2,9 @@ import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
 import { Transform, Type } from 'class-transformer'
 import {
   IsBoolean,
-  IsDateString,
+  IsDate,
   IsEnum,
+  IsIn,
   IsInt,
   IsNumber,
   IsObject,
@@ -13,7 +14,16 @@ import {
   Min,
   ValidateNested
 } from 'class-validator'
-import { ApplicationStatus, ApprovalAction, DisbursementStatus, Gender, LeadStatus, OrgStatus, RepaymentStatus, SignStatus } from '@prisma/client'
+import {
+  ApplicationStatus,
+  ApprovalAction,
+  DisbursementStatus,
+  Gender,
+  LeadStatus,
+  OrgStatus,
+  RepaymentStatus,
+  SignStatus
+} from '@prisma/client'
 
 export function ToNumber() {
   return Transform(({ value }) => {
@@ -113,7 +123,7 @@ export class CreateOrganizationDto {
   @ApiPropertyOptional({ description: '到期时间' })
   @IsOptional()
   @ToDate()
-  @IsDateString({}, { message: 'expireAt 必须是有效日期字符串' })
+  @IsDate({ message: 'expireAt 必须是有效日期' })
   expireAt?: string | Date
 
   @ApiPropertyOptional({ description: 'API开关' })
@@ -126,6 +136,11 @@ export class CreateOrganizationDto {
 export class UpdateOrganizationDto extends PartialType(CreateOrganizationDto) {}
 
 export class OrganizationQueryDto extends PageQueryDto {
+  @ApiPropertyOptional({ description: '关键词，匹配机构名称、编码、信用代码、联系人或联系电话' })
+  @IsOptional()
+  @IsString()
+  keyword?: string
+
   @ApiPropertyOptional({ description: '机构名称，模糊查询' })
   @IsOptional()
   @IsString()
@@ -136,10 +151,36 @@ export class OrganizationQueryDto extends PageQueryDto {
   @IsString()
   code?: string
 
+  @ApiPropertyOptional({ description: '统一社会信用代码，模糊查询' })
+  @IsOptional()
+  @IsString()
+  creditCode?: string
+
+  @ApiPropertyOptional({ description: '联系电话，模糊查询' })
+  @IsOptional()
+  @IsString()
+  contactPhone?: string
+
   @ApiPropertyOptional({ description: '状态', enum: OrgStatus })
   @IsOptional()
   @IsEnum(OrgStatus)
   status?: OrgStatus
+
+  @ApiPropertyOptional({ description: '套餐类型' })
+  @IsOptional()
+  @IsString()
+  packageType?: string
+
+  @ApiPropertyOptional({ description: 'API开关' })
+  @IsOptional()
+  @ToBoolean()
+  @IsBoolean()
+  apiEnabled?: boolean
+
+  @ApiPropertyOptional({ description: '到期状态', enum: ['EXPIRED', 'EXPIRING', 'VALID', 'UNSET'] })
+  @IsOptional()
+  @IsIn(['EXPIRED', 'EXPIRING', 'VALID', 'UNSET'])
+  expireState?: 'EXPIRED' | 'EXPIRING' | 'VALID' | 'UNSET'
 }
 
 export class CreateDeptDto {
@@ -803,11 +844,12 @@ export class ApplicationFileDto {
 }
 
 export class CreateApplicationDto {
-  @ApiProperty({ description: '机构ID' })
+  @ApiPropertyOptional({ description: '机构ID，不传时由后端根据客户所属机构自动填充' })
+  @IsOptional()
   @ToNumber()
   @IsInt()
   @Min(1)
-  orgId: number
+  orgId?: number
 
   @ApiProperty({ description: '客户ID' })
   @ToNumber()
