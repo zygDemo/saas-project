@@ -9,6 +9,7 @@ import UnoCSS from 'unocss/vite'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  base: '/saas/mobile/',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

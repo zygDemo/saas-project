@@ -86,7 +86,10 @@
     },
     "h5" : {
         "darkmode" : true,
-        "themeLocation" : "theme.json"
+        "themeLocation" : "theme.json",
+        "router" : {
+            "base" : "/saas/mobile/"
+        }
     },
     "quickapp" : {},
     "mp-weixin" : {
