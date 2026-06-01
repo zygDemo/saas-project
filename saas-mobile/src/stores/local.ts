@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { tokenUtil } from "@/common/token";
 
 /** 登录用户信息 */
 export interface UserInfo {
@@ -151,7 +152,7 @@ export const useLocalStore = defineStore("local", {
   },
   actions: {
     setToken(token: string) {
-      this.token = token;
+      this.token = tokenUtil.normalize(token);
     },
     setRefreshToken(refreshToken: string) {
       this.refreshToken = refreshToken;

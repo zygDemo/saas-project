@@ -5,6 +5,7 @@ import { TenantMiddleware } from './common/tenant/tenant.middleware'
 import { AuthModule } from './modules/auth/auth.module'
 import { HealthModule } from './modules/health/health.module'
 import { MenusModule } from './modules/menus/menus.module'
+import { DictModule } from './modules/dict/dict.module'
 import { PrismaModule } from './modules/prisma/prisma.module'
 import { QueueModule } from './modules/queue/queue.module'
 import { RedisModule } from './modules/redis/redis.module'
@@ -52,6 +53,7 @@ const appEnv = process.env.NODE_ENV || 'development'
     UsersModule,
     RolesModule,
     MenusModule,
+    DictModule,
     HealthModule,
     // 业务模块
     OrganizationModule,

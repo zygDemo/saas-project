@@ -49,6 +49,17 @@ export const systemRoutes: AppRouteRecord = {
       }
     },
     {
+      path: 'dict',
+      name: 'DictMgmt',
+      component: '/system/dict',
+      meta: {
+        title: '字典管理',
+        icon: 'ri:book-open-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
+    },
+    {
       path: 'nested',
       name: 'Nested',
       component: '',

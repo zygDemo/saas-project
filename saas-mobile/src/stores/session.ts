@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { tokenUtil } from "@/common/token";
 import type { LoanBusinessNode } from "@/api/business";
 
 type OrderInfo = Record<string, unknown> | null;
@@ -34,7 +35,7 @@ export const useSessionStore = defineStore("session", {
   },
   actions: {
     setToken(token: string) {
-      this.transferToken = token;
+      this.transferToken = tokenUtil.normalize(token);
     },
     /** 设置/合并更新 orderInfo */
     setOrderInfo(orderInfo: OrderInfo) {

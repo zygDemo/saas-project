@@ -126,3 +126,63 @@ export function fetchDeletePermission(id: number) {
     url: `/v3/system/menus/permissions/${id}/delete`
   })
 }
+
+export function fetchGetDictTypeList(params: Api.SystemManage.DictTypeSearchParams) {
+  return request.get<Api.SystemManage.DictTypeList>({
+    url: '/dict/type/list',
+    params
+  })
+}
+
+export function fetchCreateDictType(params: Api.SystemManage.SaveDictTypeParams) {
+  return request.post<Api.SystemManage.DictTypeItem>({
+    url: '/dict/type/create',
+    params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchUpdateDictType(id: number, params: Partial<Api.SystemManage.SaveDictTypeParams>) {
+  return request.post<Api.SystemManage.DictTypeItem>({
+    url: `/dict/type/${id}`,
+    params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchDeleteDictType(id: number) {
+  return request.post<{ id: number }>({
+    url: `/dict/type/${id}/delete`,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchGetDictDataList(params: Api.SystemManage.DictDataSearchParams) {
+  return request.get<Api.SystemManage.DictDataList>({
+    url: '/dict/data/list',
+    params
+  })
+}
+
+export function fetchCreateDictData(params: Api.SystemManage.SaveDictDataParams) {
+  return request.post<Api.SystemManage.DictDataItem>({
+    url: '/dict/data/create',
+    params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchUpdateDictData(id: number, params: Partial<Api.SystemManage.SaveDictDataParams>) {
+  return request.post<Api.SystemManage.DictDataItem>({
+    url: `/dict/data/${id}`,
+    params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchDeleteDictData(id: number) {
+  return request.post<{ id: number }>({
+    url: `/dict/data/${id}/delete`,
+    showSuccessMessage: true
+  })
+}
