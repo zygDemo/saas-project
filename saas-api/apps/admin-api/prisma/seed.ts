@@ -119,6 +119,8 @@ async function main() {
   // User: 仅仪表盘
   await connectRoleMenus(roleByCode.R_USER.id, dashboardMenuIds)
 
+  await seedBusinessData(tenant.id)
+
   console.log('Seed completed.')
 }
 
@@ -207,6 +209,451 @@ async function connectRoleMenus(roleId: number, menuIds: number[]) {
       })
     )
   )
+}
+
+async function seedBusinessData(tenantId: number) {
+  const [sales, approver, finance] = await Promise.all([
+    prisma.user.findUnique({ where: { tenantId_userName: { tenantId, userName: 'Sales' } } }),
+    prisma.user.findUnique({ where: { tenantId_userName: { tenantId, userName: 'Approver' } } }),
+    prisma.user.findUnique({ where: { tenantId_userName: { tenantId, userName: 'Finance' } } })
+  ])
+
+  if (!sales || !approver || !finance) {
+    throw new Error('Seed users are missing')
+  }
+
+  const org = await prisma.organization.upsert({
+    where: { code: 'DEMO_ORG' },
+    update: {
+      tenantId,
+      name: '示例车贷机构',
+      contactName: '张经理',
+      contactPhone: '13810000000',
+      address: '北京市朝阳区示例路 100 号',
+      status: 'ACTIVE',
+      packageType: 'STANDARD',
+      apiEnabled: true
+    },
+    create: {
+      tenantId,
+      name: '示例车贷机构',
+      code: 'DEMO_ORG',
+      creditCode: '91110000DEMO000001',
+      contactName: '张经理',
+      contactPhone: '13810000000',
+      address: '北京市朝阳区示例路 100 号',
+      status: 'ACTIVE',
+      packageType: 'STANDARD',
+      apiEnabled: true
+    }
+  })
+
+  const dept = await prisma.department.upsert({
+    where: { orgId_name: { orgId: org.id, name: '车贷业务一部' } },
+    update: {
+      tenantId,
+      managerId: sales.id,
+      sort: 1
+    },
+    create: {
+      tenantId,
+      orgId: org.id,
+      name: '车贷业务一部',
+      managerId: sales.id,
+      sort: 1
+    }
+  })
+
+  await prisma.user.update({
+    where: { id: sales.id },
+    data: { deptId: dept.id }
+  })
+
+  const productData = {
+    tenantId,
+    orgId: org.id,
+    name: '标准车抵贷',
+    productType: 'CAR_LOAN',
+    minRate: 0.036,
+    maxRate: 0.108,
+    minAmount: 50000,
+    maxAmount: 500000,
+    minTerm: 6,
+    maxTerm: 36,
+    repaymentMethod: '等额本息',
+    minAge: 22,
+    maxAge: 60,
+    maxCarAge: 8,
+    maxMileage: 150000,
+    ltvLimit: 0.8,
+    minDownPayment: 0.2,
+    regions: '北京,天津,河北',
+    status: 'ACTIVE',
+    fileChecklist: ['身份证', '行驶证', '登记证', '银行卡']
+  }
+  const existedProduct = await prisma.product.findFirst({
+    where: { tenantId, orgId: org.id, name: productData.name }
+  })
+  const product = existedProduct
+    ? await prisma.product.update({ where: { id: existedProduct.id }, data: productData })
+    : await prisma.product.create({ data: productData })
+
+  const funder = await prisma.funder.upsert({
+    where: { orgId_code: { orgId: org.id, code: 'DEMO_BANK' } },
+    update: {
+      tenantId,
+      name: '示例银行资金方',
+      funderType: 'BANK',
+      contactName: '李经理',
+      contactPhone: '13810000001',
+      priority: 1,
+      status: 'ACTIVE'
+    },
+    create: {
+      tenantId,
+      orgId: org.id,
+      name: '示例银行资金方',
+      code: 'DEMO_BANK',
+      funderType: 'BANK',
+      contactName: '李经理',
+      contactPhone: '13810000001',
+      priority: 1,
+      status: 'ACTIVE'
+    }
+  })
+
+  const leadData = {
+    tenantId,
+    orgId: org.id,
+    source: 'SELF',
+    name: '王小明',
+    phone: '13910000001',
+    idCard: '110101199001010011',
+    carBrand: '大众',
+    carModel: '迈腾',
+    loanAmount: 120000,
+    remark: '客户计划置换经营周转资金',
+    status: 'FOLLOWING',
+    assigneeId: sales.id,
+    createdBy: sales.id,
+    nextFollowAt: new Date('2026-06-01T10:00:00+08:00')
+  }
+  const existedLead = await prisma.lead.findFirst({
+    where: { tenantId, orgId: org.id, phone: leadData.phone }
+  })
+  const lead = existedLead
+    ? await prisma.lead.update({ where: { id: existedLead.id }, data: leadData })
+    : await prisma.lead.create({ data: leadData })
+
+  const customer = await prisma.customer.upsert({
+    where: { orgId_phone: { orgId: org.id, phone: '13910000001' } },
+    update: {
+      tenantId,
+      name: '王小明',
+      idCard: '110101199001010011',
+      gender: 'MALE',
+      companyName: '北京示例商贸有限公司',
+      monthlyIncome: 28000,
+      address: '北京市海淀区示例小区 8 号',
+      emergencyName: '王女士',
+      emergencyPhone: '13910000002',
+      status: 'ACTIVE'
+    },
+    create: {
+      tenantId,
+      orgId: org.id,
+      name: '王小明',
+      phone: '13910000001',
+      idCard: '110101199001010011',
+      gender: 'MALE',
+      companyName: '北京示例商贸有限公司',
+      monthlyIncome: 28000,
+      address: '北京市海淀区示例小区 8 号',
+      emergencyName: '王女士',
+      emergencyPhone: '13910000002',
+      status: 'ACTIVE'
+    }
+  })
+
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { customerId: customer.id, vin: 'Ldemo202605290001' }
+  })
+  const vehicleData = {
+    customerId: customer.id,
+    vin: 'Ldemo202605290001',
+    plateNumber: '京A12345',
+    brand: '大众',
+    model: '迈腾',
+    color: '黑色',
+    year: 2021,
+    mileage: 42000,
+    purchasePrice: 210000,
+    estimateValue: 160000,
+    isMortgaged: false
+  }
+  if (vehicle) {
+    await prisma.vehicle.update({
+      where: { id: vehicle.id },
+      data: vehicleData
+    })
+  } else {
+    await prisma.vehicle.create({
+      data: vehicleData
+    })
+  }
+
+  const bankCard = await prisma.bankCard.findFirst({
+    where: { customerId: customer.id, cardNo: '6222000000000000000' }
+  })
+  const bankCardData = {
+    customerId: customer.id,
+    bankName: '示例银行',
+    cardNo: '6222000000000000000',
+    cardType: '借记卡',
+    isDefault: true
+  }
+  if (bankCard) {
+    await prisma.bankCard.update({
+      where: { id: bankCard.id },
+      data: bankCardData
+    })
+  } else {
+    await prisma.bankCard.create({
+      data: bankCardData
+    })
+  }
+
+  const contact = await prisma.customerContact.findFirst({
+    where: { customerId: customer.id, phone: '13910000002' }
+  })
+  const contactData = {
+    customerId: customer.id,
+    name: '王女士',
+    relation: '配偶',
+    phone: '13910000002',
+    address: '北京市海淀区示例小区 8 号',
+    isEmergency: true
+  }
+  if (contact) {
+    await prisma.customerContact.update({
+      where: { id: contact.id },
+      data: contactData
+    })
+  } else {
+    await prisma.customerContact.create({
+      data: contactData
+    })
+  }
+
+  const followUp = await prisma.leadFollowUp.findFirst({
+    where: { leadId: lead.id, content: '客户已提交车辆资料，准备转进件。' }
+  })
+  const followUpData = {
+    leadId: lead.id,
+    followType: 'PHONE',
+    content: '客户已提交车辆资料，准备转进件。',
+    nextFollowAt: new Date('2026-06-01T10:00:00+08:00'),
+    createdBy: sales.id
+  }
+  if (followUp) {
+    await prisma.leadFollowUp.update({
+      where: { id: followUp.id },
+      data: followUpData
+    })
+  } else {
+    await prisma.leadFollowUp.create({
+      data: followUpData
+    })
+  }
+
+  const application = await prisma.application.upsert({
+    where: { applicationNo: 'APP-DEMO-0001' },
+    update: {
+      tenantId,
+      orgId: org.id,
+      customerId: customer.id,
+      productId: product.id,
+      funderId: funder.id,
+      amount: 120000,
+      term: 24,
+      rate: 0.068,
+      repaymentMethod: '等额本息',
+      purpose: '经营周转',
+      status: 'PENDING_DISBURSEMENT',
+      creatorId: sales.id,
+      sourceLeadId: lead.id,
+      approvedAmount: 115000,
+      approvedTerm: 24,
+      approvedRate: 0.066,
+      remark: '示例进件数据'
+    },
+    create: {
+      tenantId,
+      orgId: org.id,
+      customerId: customer.id,
+      productId: product.id,
+      funderId: funder.id,
+      applicationNo: 'APP-DEMO-0001',
+      amount: 120000,
+      term: 24,
+      rate: 0.068,
+      repaymentMethod: '等额本息',
+      purpose: '经营周转',
+      status: 'PENDING_DISBURSEMENT',
+      creatorId: sales.id,
+      sourceLeadId: lead.id,
+      approvedAmount: 115000,
+      approvedTerm: 24,
+      approvedRate: 0.066,
+      remark: '示例进件数据'
+    }
+  })
+
+  const appFiles = [
+    {
+      fileType: 'ID_CARD',
+      fileUrl: 'https://example.com/files/id-card.jpg',
+      fileName: '身份证.jpg'
+    },
+    {
+      fileType: 'VEHICLE_LICENSE',
+      fileUrl: 'https://example.com/files/vehicle-license.jpg',
+      fileName: '行驶证.jpg'
+    }
+  ]
+  for (const file of appFiles) {
+    const existedFile = await prisma.applicationFile.findFirst({
+      where: { applicationId: application.id, fileType: file.fileType }
+    })
+    if (existedFile) {
+      await prisma.applicationFile.update({
+        where: { id: existedFile.id },
+        data: file
+      })
+    } else {
+      await prisma.applicationFile.create({
+        data: { ...file, applicationId: application.id }
+      })
+    }
+  }
+
+  const approvals = [
+    {
+      tenantId,
+      applicationId: application.id,
+      approverId: approver.id,
+      stage: 'FIRST_REVIEW',
+      action: 'PASS',
+      opinion: '资料完整，初审通过',
+      amount: 115000,
+      term: 24,
+      rate: 0.066
+    },
+    {
+      tenantId,
+      applicationId: application.id,
+      approverId: approver.id,
+      stage: 'FINAL_REVIEW',
+      action: 'PASS',
+      opinion: '终审通过，可进入签约放款',
+      amount: 115000,
+      term: 24,
+      rate: 0.066
+    }
+  ] as const
+  for (const approval of approvals) {
+    const existedApproval = await prisma.approvalRecord.findFirst({
+      where: {
+        applicationId: approval.applicationId,
+        stage: approval.stage,
+        action: approval.action
+      }
+    })
+    if (existedApproval) {
+      await prisma.approvalRecord.update({
+        where: { id: existedApproval.id },
+        data: approval
+      })
+    } else {
+      await prisma.approvalRecord.create({
+        data: approval
+      })
+    }
+  }
+
+  await prisma.signRecord.upsert({
+    where: { applicationId: application.id },
+    update: {
+      tenantId,
+      status: 'SIGNED',
+      contractUrl: 'https://example.com/contracts/APP-DEMO-0001.pdf',
+      videoUrl: 'https://example.com/videos/APP-DEMO-0001.mp4',
+      signedAt: new Date('2026-05-29T09:30:00+08:00')
+    },
+    create: {
+      tenantId,
+      applicationId: application.id,
+      status: 'SIGNED',
+      contractUrl: 'https://example.com/contracts/APP-DEMO-0001.pdf',
+      videoUrl: 'https://example.com/videos/APP-DEMO-0001.mp4',
+      signedAt: new Date('2026-05-29T09:30:00+08:00')
+    }
+  })
+
+  await prisma.disbursement.upsert({
+    where: { applicationId: application.id },
+    update: {
+      tenantId,
+      status: 'MORTGAGE_DONE',
+      gpsDeviceNo: 'GPS-DEMO-001',
+      gpsInstallImg: 'https://example.com/gps/APP-DEMO-0001.jpg',
+      gpsInstallAt: new Date('2026-05-29T10:00:00+08:00'),
+      mortgageStatus: 'DONE',
+      mortgageImg: 'https://example.com/mortgage/APP-DEMO-0001.jpg',
+      mortgageAt: new Date('2026-05-29T11:00:00+08:00'),
+      disburseAmount: 115000,
+      disburseAccount: '6222000000000000000',
+      transactionNo: 'TX-DEMO-0001',
+      remark: '待财务确认放款'
+    },
+    create: {
+      tenantId,
+      applicationId: application.id,
+      status: 'MORTGAGE_DONE',
+      gpsDeviceNo: 'GPS-DEMO-001',
+      gpsInstallImg: 'https://example.com/gps/APP-DEMO-0001.jpg',
+      gpsInstallAt: new Date('2026-05-29T10:00:00+08:00'),
+      mortgageStatus: 'DONE',
+      mortgageImg: 'https://example.com/mortgage/APP-DEMO-0001.jpg',
+      mortgageAt: new Date('2026-05-29T11:00:00+08:00'),
+      disburseAmount: 115000,
+      disburseAccount: '6222000000000000000',
+      transactionNo: 'TX-DEMO-0001',
+      remark: '待财务确认放款'
+    }
+  })
+
+  await prisma.repaymentPlan.upsert({
+    where: { applicationId_period: { applicationId: application.id, period: 1 } },
+    update: {
+      tenantId,
+      dueDate: new Date('2026-06-29T00:00:00+08:00'),
+      principal: 4791.67,
+      interest: 632.5,
+      totalAmount: 5424.17,
+      status: 'NOT_DUE'
+    },
+    create: {
+      tenantId,
+      applicationId: application.id,
+      period: 1,
+      dueDate: new Date('2026-06-29T00:00:00+08:00'),
+      principal: 4791.67,
+      interest: 632.5,
+      totalAmount: 5424.17,
+      status: 'NOT_DUE'
+    }
+  })
 }
 
 main()
