@@ -55,11 +55,11 @@ async function main() {
   console.log('\n--- 同步菜单 ---')
   const bp = '/business/common-list'
 
-  const menuDefs: Array<{ parentKey?: string; path: string; name: string; title: string; icon: string; sort: number; keepAlive?: boolean; hidden?: boolean; hiddenTab?: boolean }> = [
+  const menuDefs: Array<{ parentKey?: string; path: string; name: string; title: string; icon: string; sort: number; component?: string; keepAlive?: boolean; hidden?: boolean; hiddenTab?: boolean }> = [
     // 仪表盘
-    { path: '/dashboard', name: 'Dashboard', title: '仪表盘', icon: 'ri:dashboard-line', sort: 10 },
-    { parentKey: 'Dashboard', path: 'console', name: 'Console', title: '工作台', icon: 'ri:computer-line', sort: 11, keepAlive: true },
-    { parentKey: 'Dashboard', path: 'analysis', name: 'Analysis', title: '分析页', icon: 'ri:line-chart-line', sort: 12, keepAlive: true },
+    { path: '/dashboard', name: 'Dashboard', component: '/index/index', title: '仪表盘', icon: 'ri:dashboard-line', sort: 10 },
+    { parentKey: 'Dashboard', path: 'console', name: 'Console', component: '/dashboard/console', title: '工作台', icon: 'ri:computer-line', sort: 11, keepAlive: true },
+    { parentKey: 'Dashboard', path: 'analysis', name: 'Analysis', component: '/dashboard/analysis', title: '分析页', icon: 'ri:line-chart-line', sort: 12, keepAlive: true },
 
     // 平台管理
     { path: '/platform', name: 'Platform', title: '平台管理', icon: 'ri:global-line', sort: 20 },
@@ -120,7 +120,7 @@ async function main() {
       update: {
         parentId,
         path: def.path,
-        component: parentId ? bp : '/index/index',
+        component: def.component ?? (parentId ? bp : '/index/index'),
         title: def.title,
         icon: def.icon,
         sort: def.sort,
@@ -133,7 +133,7 @@ async function main() {
         parentId,
         path: def.path,
         name: def.name,
-        component: parentId ? bp : '/index/index',
+        component: def.component ?? (parentId ? bp : '/index/index'),
         title: def.title,
         icon: def.icon,
         sort: def.sort,
