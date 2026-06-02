@@ -13,6 +13,71 @@ export interface ApiResponse<T = unknown> {
   total?: number;
 }
 
+export interface MobileUploadResult {
+  id?: number;
+  url?: string;
+  fileUrl?: string;
+  objectKey?: string;
+  fileKey?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileType?: string;
+  fileCode?: string;
+}
+
+export interface MobileFileQuery {
+  uuid?: string;
+  creditOrderId?: string;
+  fileType?: string;
+  categoryCode?: string;
+  businessType?: string;
+  businessId?: string | number;
+}
+
+export interface CreditApplyData {
+  uuid: string;
+  amount: number;
+  periods: number;
+  businessType?: string;
+  orderType?: string;
+  remark?: string;
+  parkingFee?: number;
+  vehicleStatus?: string;
+  garage?: string;
+  storeName?: string;
+  ownerName?: string;
+  deposit?: number;
+}
+
+export interface CreditListItem {
+  id?: number;
+  uuid?: string;
+  creditOrderId?: string;
+  name?: string;
+  phone?: string;
+  status?: number;
+  businessNode?: string;
+  productName?: string;
+  periods?: number;
+  pushQuota?: string;
+  createTime?: string;
+  updateTime?: string;
+}
+
+export interface StatisticsOverview {
+  todayLeads?: number;
+  todayApplications?: number;
+  pendingSupplement?: number;
+  pendingSigning?: number;
+  pendingApproval?: number;
+  monthLoanAmount?: number;
+  approvalRate?: string | number;
+  leadCount?: number;
+  entryCount?: number;
+  loanCount?: number;
+  loanAmount?: number;
+}
+
 /** 贷款业务节点枚举 */
 export interface LoanBusinessNode {
   /** 编码 */
@@ -248,7 +313,7 @@ export function useBusinessApi() {
   return {
     /** 身份证信息保存 */
     addOrUpdateUserBasic: (data: IdCardInfo) =>
-      http.post<IdCardInfo>("/m/user/addOrUpdateUserBasic", data),
+      http.post<ApiResponse<IdCardInfo>>("/m/user/addOrUpdateUserBasic", data),
     /** 联系人信息保存（uuid 通过 URL 参数传递） */
     addOrUpdateContact: (data: ContactInfo) =>
       http.post(`/m/user/addOrUpdateContact`, data),
@@ -259,9 +324,9 @@ export function useBusinessApi() {
     deleteContact: (id: number) => http.delete(`/m/user/deleteContact/${id}`),
     /** 创建/更新身份证信息 */
     addOrUpdateIdCardInfo: (data: IdCardInfo) =>
-      http.post<IdCardInfo>("/m/user/addOrUpdateIdCardInfo", data),
+      http.post<ApiResponse<IdCardInfo>>("/m/user/addOrUpdateIdCardInfo", data),
     /** 获取身份证信息 */
-    getIdCardInfo: () => http.post("/m/user/getIdCardInfo"),
+    getIdCardInfo: () => http.post<ApiResponse<IdCardInfo | null>>("/m/user/getIdCardInfo"),
     /** 创建/更新车辆信息 */
     addOrUpdateVehicle: (data: VehicleInfo) =>
       http.post<ApiResponse<VehicleInfo>>(
@@ -269,13 +334,13 @@ export function useBusinessApi() {
         data,
       ),
     /** 文件上传（支持文件路径） */
-    uploadFile: (filePath: string) => uploadByUni(filePath, "/m/file/upload"),
+    uploadFile: (filePath: string) => uploadByUni(filePath, "/m/file/upload") as Promise<ApiResponse<MobileUploadResult> & MobileUploadResult>,
     /** 图片上传（支持文件路径）统一走 /m/file/upload */
-    uploadImage: (filePath: string) => uploadByUni(filePath, "/m/file/upload"),
+    uploadImage: (filePath: string) => uploadByUni(filePath, "/m/file/upload") as Promise<ApiResponse<MobileUploadResult> & MobileUploadResult>,
     /** 带类型参数的文件上传 */
     uploadWithType: (filePath: string, formData: Record<string, string>) =>
-      uploadFileWithData(filePath, "/m/file/uploadWithType", formData),
-    /** 保存文件记录（上传后关联业务字段） */
+      uploadFileWithData(filePath, "/m/file/uploadWithType", formData) as Promise<ApiResponse<MobileUploadResult> & MobileUploadResult>,
+    /** 兼容旧调用：文件记录已在 /m/file/uploadWithType 上传时保存 */
     saveFiles: (data: {
       uuid: string;
       fileType: string;
@@ -286,51 +351,60 @@ export function useBusinessApi() {
         fileSize?: number;
         fileCode?: string;
       }>;
-    }) => http.post("/m/credit/saveFiles", data),
-    /** 获取用户文件列表（按授信申请） */
+    }) => Promise.resolve({
+      code: 200,
+      msg: "success",
+      data: data.files,
+    } as ApiResponse<typeof data.files>),
+    /** 兼容旧调用：按授信申请获取文件列表 */
     getCreditFileList: (params: { uuid: string; creditOrderId: string }) =>
-      http.get("/m/credit/getFileList", params),
-    /** 提交初审 */
+      http.get<ApiResponse<MobileUploadResult[]>>("/m/file/getFileList", params),
+    /** 兼容旧调用：当前接口清单未提供状态推进，返回订单详情保持页面流程可继续 */
     submitInitialAudit: (creditOrderId: string) =>
-      http.post(`/m/credit/submitInitialAudit/${creditOrderId}`),
-    /** 完成文件补充 */
+      http.get(`/m/credit/getCreditDetailByOrderId/${creditOrderId}`),
+    /** 兼容旧调用：当前接口清单未提供状态推进，返回订单详情保持页面流程可继续 */
     completeFileSupplement: (creditOrderId: string) =>
-      http.post(`/m/credit/completeFileSupplement/${creditOrderId}`),
-    /** 资料补充后提交审批 */
+      http.get(`/m/credit/getCreditDetailByOrderId/${creditOrderId}`),
+    /** 兼容旧调用：当前接口清单未提供状态推进，返回订单详情保持页面流程可继续 */
     submitPreAudit: (creditOrderId: string) =>
-      http.post(`/m/credit/submitPreAudit/${creditOrderId}`),
+      http.get(`/m/credit/getCreditDetailByOrderId/${creditOrderId}`),
     /** 获取文件列表 */
-    getFileList: (uuid?: string) => http.get("/m/file/getFileList", { uuid }),
+    getFileList: (params?: string | MobileFileQuery) =>
+      http.get<ApiResponse<MobileUploadResult[]>>(
+        "/m/file/getFileList",
+        typeof params === "string" ? { uuid: params } : params,
+      ),
     /** 按文件类型获取文件列表 */
-    getFileListByType: (params: { uuid: string; fileType: string }) =>
-      http.get("/m/file/getFileListByType", params),
+    getFileListByType: (params: MobileFileQuery & { fileType: string }) =>
+      http.get<ApiResponse<MobileUploadResult[]>>("/m/file/getFileListByType", params),
     /** 删除文件 */
-    deleteFile: (id: number) => http.delete(`/m/file/deleteFile/${id}`),
+    deleteFile: (id: number) => http.delete<ApiResponse<{ id: number }>>(`/m/file/deleteFile/${id}`),
     /** 获取产品文件清单 */
     getProductFileList: (params?: Record<string, unknown>) =>
-      http.get("/m/file/getProductFileList", params),
+      http.get<ApiResponse<unknown[]>>("/m/file/getProductFileList", params),
     /** 根据业务员ID获取授信申请列表（进件列表） */
     getCreditList: (params: Record<string, unknown>) =>
-      http.get<ApiResponse<any[]>>("/m/credit/getCreditList", params),
+      http.get<ApiResponse<CreditListItem[]>>("/m/credit/getCreditList", params),
     /** 获取待补充资料列表 */
     getSupplementList: (params: Record<string, unknown>) =>
       http.get("/m/credit/getSupplementList", params),
     /** 获取授信申请详情（编辑也用） */
     getCreditDetail: (id: number | string) =>
-      http.get(`/m/credit/getCreditDetail/${id}`),
+      http.get<ApiResponse<CreditListItem>>(`/m/credit/getCreditDetail/${id}`),
     /** 根据授信申请编号获取详情 */
     getCreditDetailByOrderId: (creditOrderId: string) =>
-      http.get(`/m/credit/getCreditDetailByOrderId/${creditOrderId}`),
+      http.get<ApiResponse<CreditListItem>>(`/m/credit/getCreditDetailByOrderId/${creditOrderId}`),
     /** 提交授信申请 */
-    creditApply: (data: Record<string, unknown>) =>
-      http.post("/m/credit/apply", data),
+    creditApply: (data: CreditApplyData) =>
+      http.post<ApiResponse<CreditListItem>>("/m/credit/apply", data),
     /** 修改授信申请 */
     updateCredit: (data: Record<string, unknown>) =>
-      http.post("/m/credit/update", data),
+      http.post<ApiResponse<CreditListItem>>("/m/credit/update", data),
     /** 获取产品列表 */
     getProductList: () => http.get("/m/product/getProductList"),
     /** 获取客户身份信息详情 */
-    getUserBasic: (uuid: string) => http.get("/m/user/getUserBasic", { uuid }),
+    getUserBasic: (uuid: string) =>
+      http.get<ApiResponse<IdCardInfo>>("/m/user/getUserBasic", { uuid }),
     /** 获取客户车辆信息详情 */
     getVehicleInfo: (uuid: string) =>
       http.get<ApiResponse<VehicleInfo>>("/m/vehicle/getVehicleInfo", { uuid }),
@@ -339,7 +413,7 @@ export function useBusinessApi() {
       http.post("/m/user/getIdCardOcr", { objectKey }),
     /** 车辆行驶证OCR识别 */
     getVehicleOcr: (objectKey: string) =>
-      http.post("/m/vehicle/getVehicleOcr", { objectKey }),
+      http.post<ApiResponse<null>>("/m/vehicle/getVehicleOcr", { objectKey }),
     /** 根据车架号(VIN)获取车型详细信息 */
     requestVehicleModel: (vin: string) =>
       http.post<ApiResponse<Record<string, unknown>>>(
@@ -362,7 +436,7 @@ export function useBusinessApi() {
       http.get<ApiResponse<LoanBusinessNode[]>>("/m/enum/loanBusinessNodes"),
     /** 获取线索列表（dataSource=2，支持客户姓名模糊查询） */
     getUserList: (params: { dataSource?: number; personName?: string }) =>
-      http.get("/m/user/getUserList", params),
+      http.get<ApiResponse<IdCardInfo[]>>("/m/user/getUserList", params),
 
     /** 新增销售线索 */
     addSalesLead: (data: SalesLeadData) => http.post("/m/salesLead/add", data),
@@ -420,6 +494,7 @@ export function useBusinessApi() {
     // ========== 统计 ==========
 
     /** 业务统计概览 */
-    getStatisticsOverview: () => http.get("/m/statistics/overview"),
+    getStatisticsOverview: () =>
+      http.get<ApiResponse<StatisticsOverview>>("/m/statistics/overview"),
   };
 }

@@ -1,4 +1,4 @@
-import { PrismaClient, UserStatus } from '@prisma/client'
+﻿import { PrismaClient, UserStatus } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -9,6 +9,172 @@ const statusMap: Record<string, UserStatus> = {
   Operator: UserStatus.ONLINE,
   CS: UserStatus.ONLINE
 }
+
+const defaultFlowNodes = [
+  {
+    code: 1100,
+    name: '身份证信息',
+    phaseCode: 1000,
+    phaseName: '预审进件',
+    sort: 1100,
+    requireMaterials: true,
+    requireApproval: false,
+    transitions: [{ action: 10, toNode: 1200 }]
+  },
+  {
+    code: 1200,
+    name: '车辆信息',
+    phaseCode: 1000,
+    phaseName: '预审进件',
+    sort: 1200,
+    requireMaterials: true,
+    requireApproval: false,
+    transitions: [{ action: 10, toNode: 1300 }]
+  },
+  {
+    code: 1300,
+    name: '申请信息',
+    phaseCode: 1000,
+    phaseName: '预审进件',
+    sort: 1300,
+    requireMaterials: true,
+    requireApproval: false,
+    transitions: [{ action: 10, toNode: 1400 }]
+  },
+  {
+    code: 1400,
+    name: '签署授权书',
+    phaseCode: 1000,
+    phaseName: '预审进件',
+    sort: 1400,
+    requireMaterials: true,
+    requireApproval: false,
+    transitions: [{ action: 10, toNode: 2000 }]
+  },
+  {
+    code: 2000,
+    name: '风控模型预审',
+    phaseCode: 2000,
+    phaseName: '风控模型预审',
+    sort: 2000,
+    requireApproval: false,
+    autoPass: true,
+    transitions: [{ action: 20, toNode: 3000 }]
+  },
+  {
+    code: 3000,
+    name: '资方预审',
+    phaseCode: 3000,
+    phaseName: '资方预审',
+    sort: 3000,
+    requireApproval: true,
+    transitions: [{ action: 20, toNode: 4000 }]
+  },
+  {
+    code: 4000,
+    name: '资料补充',
+    phaseCode: 4000,
+    phaseName: '资料补充',
+    sort: 4000,
+    requireMaterials: true,
+    requireApproval: false,
+    transitions: [{ action: 10, toNode: 5000, condition: 'REQUIRED_TASKS_COMPLETED' }]
+  },
+  {
+    code: 4100,
+    name: '客户资料',
+    phaseCode: 4000,
+    phaseName: '资料补充',
+    sort: 4100,
+    parentNode: 4000,
+    parallel: true,
+    required: true,
+    requireMaterials: true,
+    requireApproval: false
+  },
+  {
+    code: 4200,
+    name: '车辆资料',
+    phaseCode: 4000,
+    phaseName: '资料补充',
+    sort: 4200,
+    parentNode: 4000,
+    parallel: true,
+    required: true,
+    requireMaterials: true,
+    requireApproval: false
+  },
+  {
+    code: 4300,
+    name: '订单信息',
+    phaseCode: 4000,
+    phaseName: '资料补充',
+    sort: 4300,
+    parentNode: 4000,
+    parallel: true,
+    required: true,
+    requireMaterials: true,
+    requireApproval: false
+  },
+  {
+    code: 4400,
+    name: '文件信息',
+    phaseCode: 4000,
+    phaseName: '资料补充',
+    sort: 4400,
+    parentNode: 4000,
+    parallel: true,
+    required: true,
+    requireMaterials: true,
+    requireApproval: false
+  },
+  {
+    code: 5000,
+    name: '风控初审',
+    phaseCode: 5000,
+    phaseName: '风控初审',
+    sort: 5000,
+    requireApproval: true,
+    transitions: [{ action: 20, toNode: 6000 }]
+  },
+  {
+    code: 6000,
+    name: '风控终审',
+    phaseCode: 6000,
+    phaseName: '风控终审',
+    sort: 6000,
+    requireApproval: true,
+    approveLevel: 2,
+    transitions: [{ action: 20, toNode: 7000 }]
+  },
+  {
+    code: 7000,
+    name: '请款资料',
+    phaseCode: 7000,
+    phaseName: '请款资料',
+    sort: 7000,
+    requireMaterials: true,
+    requireApproval: false,
+    transitions: [{ action: 10, toNode: 8000 }]
+  },
+  {
+    code: 8000,
+    name: '资方终审',
+    phaseCode: 8000,
+    phaseName: '资方终审',
+    sort: 8000,
+    requireApproval: true,
+    transitions: [{ action: 20, toNode: 9000 }]
+  },
+  {
+    code: 9000,
+    name: '资方放款',
+    phaseCode: 9000,
+    phaseName: '资方放款',
+    sort: 9000,
+    requireApproval: false
+  }
+]
 
 async function main() {
   // 创建默认租户
@@ -22,14 +188,29 @@ async function main() {
 
   // 创建角色（含车贷 SaaS 业务角色）
   const roleDefs = [
-    { name: 'Super Admin', code: 'R_SUPER', description: '平台超级管理员，全平台管理', dataScope: 'ALL' },
+    {
+      name: 'Super Admin',
+      code: 'R_SUPER',
+      description: '平台超级管理员，全平台管理',
+      dataScope: 'ALL'
+    },
     { name: 'Admin', code: 'R_ADMIN', description: '机构管理员', dataScope: 'ALL' },
     { name: 'Platform Operator', code: 'R_OPERATION', description: '平台运营', dataScope: 'ALL' },
-    { name: 'Sales Manager', code: 'R_SALES_MANAGER', description: '部门经理/团队负责人', dataScope: 'DEPT' },
+    {
+      name: 'Sales Manager',
+      code: 'R_SALES_MANAGER',
+      description: '部门经理/团队负责人',
+      dataScope: 'DEPT'
+    },
     { name: 'Sales', code: 'R_SALES', description: '业务员/客户经理', dataScope: 'SELF' },
     { name: 'Approver', code: 'R_APPROVER', description: '风控审批员', dataScope: 'ALL' },
     { name: 'Finance', code: 'R_FINANCE', description: '财务人员', dataScope: 'ALL' },
-    { name: 'CS & Collection', code: 'R_CS_COLLECTION', description: '客服/催收', dataScope: 'ALL' },
+    {
+      name: 'CS & Collection',
+      code: 'R_CS_COLLECTION',
+      description: '客服/催收',
+      dataScope: 'ALL'
+    },
     { name: 'User', code: 'R_USER', description: '普通用户，仅移动端操作权限', dataScope: 'SELF' }
   ]
 
@@ -47,14 +228,70 @@ async function main() {
 
   // 创建默认用户
   const userDefs = [
-    { userName: 'Super', nickName: 'Super Admin', email: 'super@example.com', phone: '13800000001', gender: 'Male', roleCode: 'R_SUPER' },
-    { userName: 'Admin', nickName: 'Admin', email: 'admin@example.com', phone: '13800000002', gender: 'Female', roleCode: 'R_ADMIN' },
-    { userName: 'Operator', nickName: 'Operator', email: 'operator@example.com', phone: '13800000007', gender: 'Unknown', roleCode: 'R_OPERATION' },
-    { userName: 'Sales', nickName: 'Sales', email: 'sales@example.com', phone: '13800000003', gender: 'Unknown', roleCode: 'R_SALES' },
-    { userName: 'Approver', nickName: 'Approver', email: 'approver@example.com', phone: '13800000004', gender: 'Unknown', roleCode: 'R_APPROVER' },
-    { userName: 'Finance', nickName: 'Finance', email: 'finance@example.com', phone: '13800000005', gender: 'Unknown', roleCode: 'R_FINANCE' },
-    { userName: 'CS', nickName: 'CS', email: 'cs@example.com', phone: '13800000006', gender: 'Unknown', roleCode: 'R_CS_COLLECTION' },
-    { userName: 'User', nickName: 'User', email: 'user@example.com', phone: '13800000008', gender: 'Unknown', roleCode: 'R_USER' }
+    {
+      userName: 'Super',
+      nickName: 'Super Admin',
+      email: 'super@example.com',
+      phone: '13800000001',
+      gender: 'Male',
+      roleCode: 'R_SUPER'
+    },
+    {
+      userName: 'Admin',
+      nickName: 'Admin',
+      email: 'admin@example.com',
+      phone: '13800000002',
+      gender: 'Female',
+      roleCode: 'R_ADMIN'
+    },
+    {
+      userName: 'Operator',
+      nickName: 'Operator',
+      email: 'operator@example.com',
+      phone: '13800000007',
+      gender: 'Unknown',
+      roleCode: 'R_OPERATION'
+    },
+    {
+      userName: 'Sales',
+      nickName: 'Sales',
+      email: 'sales@example.com',
+      phone: '13800000003',
+      gender: 'Unknown',
+      roleCode: 'R_SALES'
+    },
+    {
+      userName: 'Approver',
+      nickName: 'Approver',
+      email: 'approver@example.com',
+      phone: '13800000004',
+      gender: 'Unknown',
+      roleCode: 'R_APPROVER'
+    },
+    {
+      userName: 'Finance',
+      nickName: 'Finance',
+      email: 'finance@example.com',
+      phone: '13800000005',
+      gender: 'Unknown',
+      roleCode: 'R_FINANCE'
+    },
+    {
+      userName: 'CS',
+      nickName: 'CS',
+      email: 'cs@example.com',
+      phone: '13800000006',
+      gender: 'Unknown',
+      roleCode: 'R_CS_COLLECTION'
+    },
+    {
+      userName: 'User',
+      nickName: 'User',
+      email: 'user@example.com',
+      phone: '13800000008',
+      gender: 'Unknown',
+      roleCode: 'R_USER'
+    }
   ]
 
   await Promise.all(
@@ -93,21 +330,60 @@ async function main() {
   const menus = await seedAllMenus(tenant.id)
 
   // 分配菜单权限给角色（按 PRD 角色菜单树）
-  const filterIds = (...names: string[]) => menus.filter((m) => names.includes(m.name)).map((m) => m.id)
+  const filterIds = (...names: string[]) =>
+    menus.filter((m) => names.includes(m.name)).map((m) => m.id)
 
   // 公共：所有角色都有仪表盘工作台
   const dashIds = filterIds('Dashboard', 'Console', 'Analysis')
 
   // 平台管理菜单
-  const platformIds = filterIds('Platform', 'TenantMgmt', 'PackageBilling', 'ProductTemplate', 'PlatformSupervision', 'ThirdPartyService', 'WorkOrder')
+  const platformIds = filterIds(
+    'Platform',
+    'TenantMgmt',
+    'PackageBilling',
+    'ProductTemplate',
+    'PlatformSupervision',
+    'ThirdPartyService',
+    'WorkOrder'
+  )
   // 数据中心
   const dataCenterIds = filterIds('DataCenter', 'DataStats', 'AuditLog')
   // 系统管理
-  const systemFullIds = filterIds('System', 'User', 'Role', 'Menus', 'DictMgmt', 'RegionMgmt', 'FileConfig', 'MsgTemplate', 'SysParam', 'Notice', 'UserCenter')
-  const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'UserCenter')
+  const systemFullIds = filterIds(
+    'System',
+    'User',
+    'Role',
+    'Menus',
+    'DictMgmt',
+    'RegionMgmt',
+    'FileManage',
+    'FileConfig',
+    'MsgTemplate',
+    'SysParam',
+    'Notice',
+    'UserCenter'
+  )
+  const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter')
   // 业务管理 - 全部
-  const bizAllIds = filterIds('Business', 'Org', 'Dept', 'Product', 'Funder', 'FlowConfig',
-    'Lead', 'Customer', 'Application', 'Approval', 'Signing', 'Disbursement', 'OrderMgmt', 'Repayment', 'PawnBusiness', 'Reports', 'OrgConfig')
+  const bizAllIds = filterIds(
+    'Business',
+    'Org',
+    'Dept',
+    'Product',
+    'Funder',
+    'FlowConfig',
+    'Lead',
+    'Customer',
+    'Application',
+    'Approval',
+    'Signing',
+    'Disbursement',
+    'OrderMgmt',
+    'Repayment',
+    'PawnBusiness',
+    'Reports',
+    'OrgConfig'
+  )
   // 业务管理 - 核心进件流程
   const bizCoreIds = filterIds('Business', 'Lead', 'Customer', 'Application', 'Signing')
   // 业务管理 - 审批相关
@@ -117,16 +393,64 @@ async function main() {
   // 业务管理 - 客服催收相关
   const bizCsIds = filterIds('Business', 'Customer', 'Repayment', 'Reports')
   // 业务管理 - 经理视角（线索分配 + 业务跟进 + 团队统计）
-  const bizManagerIds = filterIds('Business', 'Org', 'Dept', 'FlowConfig',
-    'Lead', 'Customer', 'Application', 'Approval', 'Signing', 'Disbursement', 'OrderMgmt', 'Repayment', 'Reports')
+  const bizManagerIds = filterIds(
+    'Business',
+    'Org',
+    'Dept',
+    'FlowConfig',
+    'Lead',
+    'Customer',
+    'Application',
+    'Approval',
+    'Signing',
+    'Disbursement',
+    'OrderMgmt',
+    'Repayment',
+    'Reports'
+  )
   // 业务管理 - 机构管理员（全业务模块）
-  const bizAdminIds = filterIds('Business', 'Org', 'Dept', 'Product', 'Funder', 'FlowConfig',
-    'Lead', 'Customer', 'Application', 'Approval', 'Signing', 'Disbursement', 'OrderMgmt', 'Repayment', 'PawnBusiness', 'Reports', 'OrgConfig')
+  const bizAdminIds = filterIds(
+    'Business',
+    'Org',
+    'Dept',
+    'Product',
+    'Funder',
+    'FlowConfig',
+    'Lead',
+    'Customer',
+    'Application',
+    'Approval',
+    'Signing',
+    'Disbursement',
+    'OrderMgmt',
+    'Repayment',
+    'PawnBusiness',
+    'Reports',
+    'OrgConfig'
+  )
 
   // R_SUPER: 全部
-  await connectRoleMenus(roleByCode.R_SUPER.id, menus.map((m) => m.id))
+  await connectRoleMenus(
+    roleByCode.R_SUPER.id,
+    menus.map((m) => m.id)
+  )
   // R_OPERATION: 仪表盘 + 平台管理（部分）+ 数据中心 + 公告 + 基础业务查看
-  await connectRoleMenus(roleByCode.R_OPERATION.id, [...dashIds, ...platformIds, ...dataCenterIds, ...filterIds('Notice'), ...filterIds('Business', 'Lead', 'Customer', 'Application', 'Approval', 'Disbursement', 'Repayment'), ...filterIds('WorkOrder')])
+  await connectRoleMenus(roleByCode.R_OPERATION.id, [
+    ...dashIds,
+    ...platformIds,
+    ...dataCenterIds,
+    ...filterIds('Notice'),
+    ...filterIds(
+      'Business',
+      'Lead',
+      'Customer',
+      'Application',
+      'Approval',
+      'Disbursement',
+      'Repayment'
+    ),
+    ...filterIds('WorkOrder')
+  ])
   // R_ADMIN: 仪表盘 + 系统基础 + 全业务模块
   await connectRoleMenus(roleByCode.R_ADMIN.id, [...dashIds, ...systemBasicIds, ...bizAdminIds])
   // R_SALES_MANAGER: 仪表盘 + 业务经理视角
@@ -151,60 +475,460 @@ async function seedAllMenus(tenantId: number) {
   const bp = '/business/common-list'
 
   // ============== 仪表盘 ==============
-  const dashboard = await upsertMenu(tenantId, { path: '/dashboard', name: 'Dashboard', component: '/index/index', title: '仪表盘', icon: 'ri:dashboard-line', sort: 10 })
-  const consoleMenu = await upsertMenu(tenantId, { parentId: dashboard.id, path: 'console', name: 'Console', component: '/dashboard/console', title: '工作台', icon: 'ri:computer-line', sort: 11, keepAlive: true })
-  const analysis = await upsertMenu(tenantId, { parentId: dashboard.id, path: 'analysis', name: 'Analysis', component: '/dashboard/analysis', title: '分析页', icon: 'ri:line-chart-line', sort: 12, keepAlive: true })
+  const dashboard = await upsertMenu(tenantId, {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: '/index/index',
+    title: '仪表盘',
+    icon: 'ri:dashboard-line',
+    sort: 10
+  })
+  const consoleMenu = await upsertMenu(tenantId, {
+    parentId: dashboard.id,
+    path: 'console',
+    name: 'Console',
+    component: '/dashboard/console',
+    title: '工作台',
+    icon: 'ri:computer-line',
+    sort: 11,
+    keepAlive: true
+  })
+  const analysis = await upsertMenu(tenantId, {
+    parentId: dashboard.id,
+    path: 'analysis',
+    name: 'Analysis',
+    component: '/dashboard/analysis',
+    title: '分析页',
+    icon: 'ri:line-chart-line',
+    sort: 12,
+    keepAlive: true
+  })
 
   // ============== 平台管理（超级管理员/平台运营） ==============
-  const platform = await upsertMenu(tenantId, { path: '/platform', name: 'Platform', component: '/index/index', title: '平台管理', icon: 'ri:global-line', sort: 20 })
-  const tenantMgmt = await upsertMenu(tenantId, { parentId: platform.id, path: 'tenant', name: 'TenantMgmt', component: bp, title: '租户机构管理', icon: 'ri:building-2-line', sort: 21, keepAlive: true })
-  const packageBilling = await upsertMenu(tenantId, { parentId: platform.id, path: 'package-billing', name: 'PackageBilling', component: bp, title: '套餐与计费', icon: 'ri:money-dollar-circle-line', sort: 22, keepAlive: true })
-  const productTemplate = await upsertMenu(tenantId, { parentId: platform.id, path: 'product-template', name: 'ProductTemplate', component: bp, title: '产品与资方模板', icon: 'ri:file-copy-line', sort: 23, keepAlive: true })
-  const platformSupervision = await upsertMenu(tenantId, { parentId: platform.id, path: 'supervision', name: 'PlatformSupervision', component: bp, title: '平台业务监管', icon: 'ri:eye-line', sort: 24, keepAlive: true })
-  const thirdPartyService = await upsertMenu(tenantId, { parentId: platform.id, path: 'third-party', name: 'ThirdPartyService', component: bp, title: '第三方服务管理', icon: 'ri:plug-line', sort: 25, keepAlive: true })
-  const workOrder = await upsertMenu(tenantId, { parentId: platform.id, path: 'work-order', name: 'WorkOrder', component: bp, title: '运营工单中心', icon: 'ri:customer-service-2-line', sort: 26, keepAlive: true })
+  const platform = await upsertMenu(tenantId, {
+    path: '/platform',
+    name: 'Platform',
+    component: '/index/index',
+    title: '平台管理',
+    icon: 'ri:global-line',
+    sort: 20
+  })
+  const tenantMgmt = await upsertMenu(tenantId, {
+    parentId: platform.id,
+    path: 'tenant',
+    name: 'TenantMgmt',
+    component: bp,
+    title: '租户机构管理',
+    icon: 'ri:building-2-line',
+    sort: 21,
+    keepAlive: true
+  })
+  const packageBilling = await upsertMenu(tenantId, {
+    parentId: platform.id,
+    path: 'package-billing',
+    name: 'PackageBilling',
+    component: bp,
+    title: '套餐与计费',
+    icon: 'ri:money-dollar-circle-line',
+    sort: 22,
+    keepAlive: true
+  })
+  const productTemplate = await upsertMenu(tenantId, {
+    parentId: platform.id,
+    path: 'product-template',
+    name: 'ProductTemplate',
+    component: bp,
+    title: '产品与资方模板',
+    icon: 'ri:file-copy-line',
+    sort: 23,
+    keepAlive: true
+  })
+  const platformSupervision = await upsertMenu(tenantId, {
+    parentId: platform.id,
+    path: 'supervision',
+    name: 'PlatformSupervision',
+    component: bp,
+    title: '平台业务监管',
+    icon: 'ri:eye-line',
+    sort: 24,
+    keepAlive: true
+  })
+  const thirdPartyService = await upsertMenu(tenantId, {
+    parentId: platform.id,
+    path: 'third-party',
+    name: 'ThirdPartyService',
+    component: bp,
+    title: '第三方服务管理',
+    icon: 'ri:plug-line',
+    sort: 25,
+    keepAlive: true
+  })
+  const workOrder = await upsertMenu(tenantId, {
+    parentId: platform.id,
+    path: 'work-order',
+    name: 'WorkOrder',
+    component: bp,
+    title: '运营工单中心',
+    icon: 'ri:customer-service-2-line',
+    sort: 26,
+    keepAlive: true
+  })
 
   // ============== 数据中心（超级管理员） ==============
-  const dataCenter = await upsertMenu(tenantId, { path: '/datacenter', name: 'DataCenter', component: '/index/index', title: '数据中心', icon: 'ri:bar-chart-box-line', sort: 30 })
-  const dataStats = await upsertMenu(tenantId, { parentId: dataCenter.id, path: 'stats', name: 'DataStats', component: bp, title: '数据统计', icon: 'ri:bar-chart-line', sort: 31, keepAlive: true })
-  const auditLog = await upsertMenu(tenantId, { parentId: dataCenter.id, path: 'audit-log', name: 'AuditLog', component: bp, title: '日志审计', icon: 'ri:file-list-3-line', sort: 32, keepAlive: true })
+  const dataCenter = await upsertMenu(tenantId, {
+    path: '/datacenter',
+    name: 'DataCenter',
+    component: '/index/index',
+    title: '数据中心',
+    icon: 'ri:bar-chart-box-line',
+    sort: 30
+  })
+  const dataStats = await upsertMenu(tenantId, {
+    parentId: dataCenter.id,
+    path: 'stats',
+    name: 'DataStats',
+    component: bp,
+    title: '数据统计',
+    icon: 'ri:bar-chart-line',
+    sort: 31,
+    keepAlive: true
+  })
+  const auditLog = await upsertMenu(tenantId, {
+    parentId: dataCenter.id,
+    path: 'audit-log',
+    name: 'AuditLog',
+    component: bp,
+    title: '日志审计',
+    icon: 'ri:file-list-3-line',
+    sort: 32,
+    keepAlive: true
+  })
 
   // ============== 系统管理 ==============
-  const system = await upsertMenu(tenantId, { path: '/system', name: 'System', component: '/index/index', title: '系统管理', icon: 'ri:settings-3-line', sort: 40 })
-  const user = await upsertMenu(tenantId, { parentId: system.id, path: 'user', name: 'User', component: '/system/user', title: '用户管理', icon: 'ri:user-line', sort: 41, keepAlive: true })
-  const role = await upsertMenu(tenantId, { parentId: system.id, path: 'role', name: 'Role', component: '/system/role', title: '角色管理', icon: 'ri:user-settings-line', sort: 42, keepAlive: true })
-  const menu = await upsertMenu(tenantId, { parentId: system.id, path: 'menu', name: 'Menus', component: '/system/menu', title: '菜单管理', icon: 'ri:menu-line', sort: 43, keepAlive: true })
-  const dictMgmt = await upsertMenu(tenantId, { parentId: system.id, path: 'dict', name: 'DictMgmt', component: '/system/dict', title: '字典管理', icon: 'ri:book-open-line', sort: 44, keepAlive: true })
-  const regionMgmt = await upsertMenu(tenantId, { parentId: system.id, path: 'region', name: 'RegionMgmt', component: bp, title: '地区管理', icon: 'ri:map-pin-line', sort: 45, keepAlive: true })
-  const fileConfig = await upsertMenu(tenantId, { parentId: system.id, path: 'file-config', name: 'FileConfig', component: bp, title: '文件存储配置', icon: 'ri:hard-drive-2-line', sort: 46, keepAlive: true })
-  const msgTemplate = await upsertMenu(tenantId, { parentId: system.id, path: 'msg-template', name: 'MsgTemplate', component: bp, title: '消息模板', icon: 'ri:mail-send-line', sort: 47, keepAlive: true })
-  const sysParam = await upsertMenu(tenantId, { parentId: system.id, path: 'sys-param', name: 'SysParam', component: bp, title: '系统参数', icon: 'ri:settings-line', sort: 48, keepAlive: true })
-  const notice = await upsertMenu(tenantId, { parentId: system.id, path: 'notice', name: 'Notice', component: bp, title: '公告管理', icon: 'ri:notification-line', sort: 49, keepAlive: true })
-  const userCenter = await upsertMenu(tenantId, { parentId: system.id, path: 'user-center', name: 'UserCenter', component: '/system/user-center', title: '用户中心', icon: 'ri:user-line', sort: 50, keepAlive: true, hidden: true, hiddenTab: true })
+  const system = await upsertMenu(tenantId, {
+    path: '/system',
+    name: 'System',
+    component: '/index/index',
+    title: '系统管理',
+    icon: 'ri:settings-3-line',
+    sort: 40
+  })
+  const user = await upsertMenu(tenantId, {
+    parentId: system.id,
+    path: 'user',
+    name: 'User',
+    component: '/system/user',
+    title: '用户管理',
+    icon: 'ri:user-line',
+    sort: 41,
+    keepAlive: true
+  })
+  const role = await upsertMenu(tenantId, {
+    parentId: system.id,
+    path: 'role',
+    name: 'Role',
+    component: '/system/role',
+    title: '角色管理',
+    icon: 'ri:user-settings-line',
+    sort: 42,
+    keepAlive: true
+  })
+  const menu = await upsertMenu(tenantId, {
+    parentId: system.id,
+    path: 'menu',
+    name: 'Menus',
+    component: '/system/menu',
+    title: '菜单管理',
+    icon: 'ri:menu-line',
+    sort: 43,
+    keepAlive: true
+  })
+  const dictMgmt = await upsertMenu(tenantId, {
+    parentId: system.id,
+    path: 'dict',
+    name: 'DictMgmt',
+    component: '/system/dict',
+    title: '字典管理',
+    icon: 'ri:book-open-line',
+    sort: 44,
+    keepAlive: true
+  })
+  const regionMgmt = await upsertMenu(tenantId, {
+    parentId: system.id,
+    path: 'region',
+    name: 'RegionMgmt',
+    component: bp,
+    title: '地区管理',
+    icon: 'ri:map-pin-line',
+    sort: 45,
+    keepAlive: true
+  })
+  const fileManage = await upsertMenu(tenantId, {
+    parentId: system.id,
+    path: 'file',
+    name: 'FileManage',
+    component: '/system/file',
+    title: '文件管理',
+    icon: 'ri:file-list-3-line',
+    sort: 46,
+    keepAlive: true
+  })
+  const fileConfig = await upsertMenu(tenantId, {
+    parentId: system.id,
+    path: 'file-config',
+    name: 'FileConfig',
+    component: '/system/file-config',
+    title: '文件存储配置',
+    icon: 'ri:hard-drive-2-line',
+    sort: 47,
+    keepAlive: true
+  })
+  const msgTemplate = await upsertMenu(tenantId, {
+    parentId: system.id,
+    path: 'msg-template',
+    name: 'MsgTemplate',
+    component: bp,
+    title: '消息模板',
+    icon: 'ri:mail-send-line',
+    sort: 48,
+    keepAlive: true
+  })
+  const sysParam = await upsertMenu(tenantId, {
+    parentId: system.id,
+    path: 'sys-param',
+    name: 'SysParam',
+    component: bp,
+    title: '系统参数',
+    icon: 'ri:settings-line',
+    sort: 49,
+    keepAlive: true
+  })
+  const notice = await upsertMenu(tenantId, {
+    parentId: system.id,
+    path: 'notice',
+    name: 'Notice',
+    component: bp,
+    title: '公告管理',
+    icon: 'ri:notification-line',
+    sort: 50,
+    keepAlive: true
+  })
+  const userCenter = await upsertMenu(tenantId, {
+    parentId: system.id,
+    path: 'user-center',
+    name: 'UserCenter',
+    component: '/system/user-center',
+    title: '用户中心',
+    icon: 'ri:user-line',
+    sort: 51,
+    keepAlive: true,
+    hidden: true,
+    hiddenTab: true
+  })
 
   // ============== 业务管理 ==============
-  const business = await upsertMenu(tenantId, { path: '/business', name: 'Business', component: '/index/index', title: '业务管理', icon: 'ri:briefcase-line', sort: 60 })
-  const org = await upsertMenu(tenantId, { parentId: business.id, path: 'org', name: 'Org', component: bp, title: '机构管理', icon: 'ri:building-line', sort: 61, keepAlive: true })
-  const dept = await upsertMenu(tenantId, { parentId: business.id, path: 'dept', name: 'Dept', component: bp, title: '部门管理', icon: 'ri:organization-chart', sort: 62, keepAlive: true })
-  const product = await upsertMenu(tenantId, { parentId: business.id, path: 'product', name: 'Product', component: bp, title: '产品配置', icon: 'ri:file-list-line', sort: 63, keepAlive: true })
-  const funder = await upsertMenu(tenantId, { parentId: business.id, path: 'funder', name: 'Funder', component: bp, title: '资方配置', icon: 'ri:bank-line', sort: 64, keepAlive: true })
-  const flowConfig = await upsertMenu(tenantId, { parentId: business.id, path: 'flow-config', name: 'FlowConfig', component: bp, title: '流程与规则', icon: 'ri:git-branch-line', sort: 65, keepAlive: true })
-  const lead = await upsertMenu(tenantId, { parentId: business.id, path: 'lead', name: 'Lead', component: bp, title: '线索管理', icon: 'ri:customer-service-line', sort: 66, keepAlive: true })
-  const customer = await upsertMenu(tenantId, { parentId: business.id, path: 'customer', name: 'Customer', component: bp, title: '客户管理', icon: 'ri:contacts-line', sort: 67, keepAlive: true })
-  const application = await upsertMenu(tenantId, { parentId: business.id, path: 'application', name: 'Application', component: bp, title: '进件管理', icon: 'ri:file-edit-line', sort: 68, keepAlive: true })
-  const approval = await upsertMenu(tenantId, { parentId: business.id, path: 'approval', name: 'Approval', component: bp, title: '审批管理', icon: 'ri:shield-check-line', sort: 69, keepAlive: true })
-  const signing = await upsertMenu(tenantId, { parentId: business.id, path: 'signing', name: 'Signing', component: bp, title: '签约管理', icon: 'ri:pen-nib-line', sort: 70, keepAlive: true })
-  const disbursement = await upsertMenu(tenantId, { parentId: business.id, path: 'disbursement', name: 'Disbursement', component: bp, title: '放款管理', icon: 'ri:money-cny-circle-line', sort: 71, keepAlive: true })
-  const orderMgmt = await upsertMenu(tenantId, { parentId: business.id, path: 'order', name: 'OrderMgmt', component: bp, title: '订单管理', icon: 'ri:file-list-2-line', sort: 72, keepAlive: true })
-  const repayment = await upsertMenu(tenantId, { parentId: business.id, path: 'repayment', name: 'Repayment', component: bp, title: '还款管理', icon: 'ri:refund-line', sort: 73, keepAlive: true })
-  const pawnBusiness = await upsertMenu(tenantId, { parentId: business.id, path: 'pawn', name: 'PawnBusiness', component: bp, title: '典当业务', icon: 'ri:swap-box-line', sort: 74, keepAlive: true })
-  const reports = await upsertMenu(tenantId, { parentId: business.id, path: 'reports', name: 'Reports', component: bp, title: '报表统计', icon: 'ri:pie-chart-line', sort: 75, keepAlive: true })
-  const orgConfig = await upsertMenu(tenantId, { parentId: business.id, path: 'org-config', name: 'OrgConfig', component: bp, title: '机构配置', icon: 'ri:tools-line', sort: 76, keepAlive: true })
+  const business = await upsertMenu(tenantId, {
+    path: '/business',
+    name: 'Business',
+    component: '/index/index',
+    title: '业务管理',
+    icon: 'ri:briefcase-line',
+    sort: 60
+  })
+  const org = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'org',
+    name: 'Org',
+    component: bp,
+    title: '机构管理',
+    icon: 'ri:building-line',
+    sort: 61,
+    keepAlive: true
+  })
+  const dept = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'dept',
+    name: 'Dept',
+    component: bp,
+    title: '部门管理',
+    icon: 'ri:organization-chart',
+    sort: 62,
+    keepAlive: true
+  })
+  const product = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'product',
+    name: 'Product',
+    component: bp,
+    title: '产品配置',
+    icon: 'ri:file-list-line',
+    sort: 63,
+    keepAlive: true
+  })
+  const funder = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'funder',
+    name: 'Funder',
+    component: bp,
+    title: '资方配置',
+    icon: 'ri:bank-line',
+    sort: 64,
+    keepAlive: true
+  })
+  const flowConfig = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'flow-config',
+    name: 'FlowConfig',
+    component: '/business/flow-config',
+    title: '流程与规则',
+    icon: 'ri:git-branch-line',
+    sort: 65,
+    keepAlive: true
+  })
+  const lead = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'lead',
+    name: 'Lead',
+    component: bp,
+    title: '线索管理',
+    icon: 'ri:customer-service-line',
+    sort: 66,
+    keepAlive: true
+  })
+  const customer = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'customer',
+    name: 'Customer',
+    component: bp,
+    title: '客户管理',
+    icon: 'ri:contacts-line',
+    sort: 67,
+    keepAlive: true
+  })
+  const application = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'application',
+    name: 'Application',
+    component: bp,
+    title: '进件管理',
+    icon: 'ri:file-edit-line',
+    sort: 68,
+    keepAlive: true
+  })
+  const approval = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'approval',
+    name: 'Approval',
+    component: bp,
+    title: '审批管理',
+    icon: 'ri:shield-check-line',
+    sort: 69,
+    keepAlive: true
+  })
+  const signing = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'signing',
+    name: 'Signing',
+    component: bp,
+    title: '签约管理',
+    icon: 'ri:pen-nib-line',
+    sort: 70,
+    keepAlive: true
+  })
+  const disbursement = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'disbursement',
+    name: 'Disbursement',
+    component: bp,
+    title: '放款管理',
+    icon: 'ri:money-cny-circle-line',
+    sort: 71,
+    keepAlive: true
+  })
+  const orderMgmt = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'order',
+    name: 'OrderMgmt',
+    component: bp,
+    title: '订单管理',
+    icon: 'ri:file-list-2-line',
+    sort: 72,
+    keepAlive: true
+  })
+  const repayment = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'repayment',
+    name: 'Repayment',
+    component: bp,
+    title: '还款管理',
+    icon: 'ri:refund-line',
+    sort: 73,
+    keepAlive: true
+  })
+  const pawnBusiness = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'pawn',
+    name: 'PawnBusiness',
+    component: bp,
+    title: '典当业务',
+    icon: 'ri:swap-box-line',
+    sort: 74,
+    keepAlive: true
+  })
+  const reports = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'reports',
+    name: 'Reports',
+    component: bp,
+    title: '报表统计',
+    icon: 'ri:pie-chart-line',
+    sort: 75,
+    keepAlive: true
+  })
+  const orgConfig = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'org-config',
+    name: 'OrgConfig',
+    component: bp,
+    title: '机构配置',
+    icon: 'ri:tools-line',
+    sort: 76,
+    keepAlive: true
+  })
 
   // 按钮权限
-  const bizMenus = [tenantMgmt, packageBilling, productTemplate, platformSupervision, thirdPartyService, workOrder,
-    dataStats, auditLog, org, dept, product, funder, flowConfig, lead, customer, application, approval, signing,
-    disbursement, orderMgmt, repayment, pawnBusiness, reports, orgConfig, menu, dictMgmt, regionMgmt, msgTemplate, notice]
+  const bizMenus = [
+    tenantMgmt,
+    packageBilling,
+    productTemplate,
+    platformSupervision,
+    thirdPartyService,
+    workOrder,
+    dataStats,
+    auditLog,
+    org,
+    dept,
+    product,
+    funder,
+    flowConfig,
+    lead,
+    customer,
+    application,
+    approval,
+    signing,
+    disbursement,
+    orderMgmt,
+    repayment,
+    pawnBusiness,
+    reports,
+    orgConfig,
+    menu,
+    dictMgmt,
+    regionMgmt,
+    fileManage,
+    msgTemplate,
+    notice
+  ]
   for (const m of bizMenus) {
     for (const authMark of ['add', 'edit', 'delete']) {
       await prisma.permission.upsert({
@@ -216,12 +940,48 @@ async function seedAllMenus(tenantId: number) {
   }
 
   return [
-    dashboard, consoleMenu, analysis,
-    platform, tenantMgmt, packageBilling, productTemplate, platformSupervision, thirdPartyService, workOrder,
-    dataCenter, dataStats, auditLog,
-    system, user, role, menu, dictMgmt, regionMgmt, fileConfig, msgTemplate, sysParam, notice, userCenter,
-    business, org, dept, product, funder, flowConfig, lead, customer, application, approval, signing,
-    disbursement, orderMgmt, repayment, pawnBusiness, reports, orgConfig
+    dashboard,
+    consoleMenu,
+    analysis,
+    platform,
+    tenantMgmt,
+    packageBilling,
+    productTemplate,
+    platformSupervision,
+    thirdPartyService,
+    workOrder,
+    dataCenter,
+    dataStats,
+    auditLog,
+    system,
+    user,
+    role,
+    menu,
+    dictMgmt,
+    regionMgmt,
+    fileManage,
+    fileConfig,
+    msgTemplate,
+    sysParam,
+    notice,
+    userCenter,
+    business,
+    org,
+    dept,
+    product,
+    funder,
+    flowConfig,
+    lead,
+    customer,
+    application,
+    approval,
+    signing,
+    disbursement,
+    orderMgmt,
+    repayment,
+    pawnBusiness,
+    reports,
+    orgConfig
   ]
 }
 
@@ -263,6 +1023,60 @@ async function connectRoleMenus(roleId: number, menuIds: number[]) {
   )
 }
 
+function buildDefaultFlowRule(node: (typeof defaultFlowNodes)[number]) {
+  const ruleConfig: Record<string, unknown> = {
+    nodeCode: node.code,
+    phaseCode: node.phaseCode,
+    phaseName: node.phaseName,
+    sort: node.sort,
+    parallel: Boolean('parallel' in node && node.parallel),
+    required: Boolean('required' in node && node.required),
+    initialStatus: 'parentNode' in node && node.parentNode ? 0 : 10,
+    transitions: 'transitions' in node ? node.transitions || [] : []
+  }
+  if ('parentNode' in node && node.parentNode) ruleConfig.parentNode = node.parentNode
+  return ruleConfig
+}
+
+async function seedDefaultFlowConfigs(tenantId: number, orgId: number, businessType = 'CAR_LOAN') {
+  for (const node of defaultFlowNodes) {
+    await prisma.flowConfig.upsert({
+      where: {
+        orgId_businessType_nodeCode: {
+          orgId,
+          businessType,
+          nodeCode: String(node.code)
+        }
+      },
+      update: {
+        tenantId,
+        name: `${node.phaseName}-${node.name}`,
+        nodeName: node.name,
+        approveLevel: 'approveLevel' in node && node.approveLevel ? node.approveLevel : 1,
+        requireMaterials: Boolean('requireMaterials' in node && node.requireMaterials),
+        requireApproval: 'requireApproval' in node ? node.requireApproval : true,
+        autoPass: Boolean('autoPass' in node && node.autoPass),
+        ruleConfig: buildDefaultFlowRule(node),
+        status: 'ACTIVE'
+      },
+      create: {
+        tenantId,
+        orgId,
+        name: `${node.phaseName}-${node.name}`,
+        businessType,
+        nodeCode: String(node.code),
+        nodeName: node.name,
+        approveLevel: 'approveLevel' in node && node.approveLevel ? node.approveLevel : 1,
+        requireMaterials: Boolean('requireMaterials' in node && node.requireMaterials),
+        requireApproval: 'requireApproval' in node ? node.requireApproval : true,
+        autoPass: Boolean('autoPass' in node && node.autoPass),
+        ruleConfig: buildDefaultFlowRule(node),
+        status: 'ACTIVE'
+      }
+    })
+  }
+}
+
 async function seedBusinessData(tenantId: number) {
   const [sales, approver, finance] = await Promise.all([
     prisma.user.findUnique({ where: { tenantId_userName: { tenantId, userName: 'Sales' } } }),
@@ -299,6 +1113,8 @@ async function seedBusinessData(tenantId: number) {
       apiEnabled: true
     }
   })
+
+  await seedDefaultFlowConfigs(tenantId, org.id)
 
   const dept = await prisma.department.upsert({
     where: { orgId_name: { orgId: org.id, name: '车贷业务一部' } },

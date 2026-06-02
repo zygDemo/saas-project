@@ -142,4 +142,32 @@ export default [
     },
   },
 
+  // 主题 6: 幻夜紫（基于 #5240FE / #AD9EFF / #FD91FF）
+  {
+    name: 'nebula',
+    label: '幻夜紫',
+    color: {
+      primary: '#5240FE',
+      error: '#FF4757',
+      warning: '#FFA502',
+      success: '#2ED573',
+      info: '#AD9EFF',
+      primaryLight: '#EEEAFF',
+      errorLight: '#FFE8EA',
+      warningLight: '#FFF6E5',
+      successLight: '#E8FDF0',
+      infoLight: '#F3F0FF',
+      primaryDark: '#3B2BD1',
+      errorDark: '#E63946',
+      warningDark: '#E8940A',
+      successDark: '#26B85E',
+      infoDark: '#8B7FE8',
+      primaryDisabled: '#B8AEFF',
+      errorDisabled: '#FFB3B8',
+      warningDisabled: '#FFD699',
+      successDisabled: '#8EEDAA',
+      infoDisabled: '#D6D0FF',
+    },
+  },
+
 ]

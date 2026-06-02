@@ -111,7 +111,7 @@ const fileList = ref([]);
 const IMAGE_TYPES = ["jpg", "jpeg", "png", "gif", "webp", "bmp"];
 const VIDEO_TYPES = ["mp4", "mov", "avi", "mkv", "wmv", "m4v"];
 
-const uploadAction = `${API_BASE_URL}/m/file/upload`;
+const uploadAction = `${API_BASE_URL}/m/file/uploadWithType`;
 const uploadMaxSize = UPLOAD_MAX_SIZE * 1024 * 1024;
 
 const uploadHeader = computed(() => {
@@ -129,6 +129,7 @@ const uploadHeader = computed(() => {
 const uploadFormData = computed(() => ({
   uuid: pageUuid.value,
   creditOrderId: creditOrderId.value,
+  fileType: currentFileType.value,
   fileCode: currentFileCode.value,
 }));
 
@@ -433,7 +434,7 @@ async function loadFileList() {
   Object.keys(fileIdMap).forEach((key) => delete fileIdMap[key]);
 
   try {
-    const res = await businessApi.getCreditFileList({
+    const res = await businessApi.getFileList({
       uuid: pageUuid.value,
       creditOrderId: creditOrderId.value,
     });
@@ -544,23 +545,7 @@ async function handleUploadSuccess(data, index, lists) {
   }
 
   try {
-    const uploadFileType = getFileExtension(fileName);
-    const saveRes = await businessApi.saveFiles({
-      uuid: pageUuid.value,
-      fileType: uploadFileType || currentFileType.value,
-      creditOrderId: creditOrderId.value,
-      files: [{
-        objectKey,
-        fileName: fileName || undefined,
-        fileSize: fileSize || undefined,
-        fileCode: currentFileCode.value,
-        fileUrl: fileUrl || undefined,
-      }],
-    });
-
-    const savedFile = Array.isArray(saveRes?.data)
-      ? saveRes.data[0]
-      : Array.isArray(saveRes?.data?.files) ? saveRes.data.files[0] : saveRes?.data;
+    const savedFile = responseData;
 
     if (fileUrl) {
       fileIdMap[fileUrl] = savedFile?.id || savedFile?.fileId || Date.now();
@@ -646,7 +631,6 @@ async function handleSubmit() {
 
   try {
     loading.value = true;
-    await businessApi.completeFileSupplement(creditOrderId.value);
     $u.toast("提交成功", "success");
     setTimeout(() => {
       uni.redirectTo({

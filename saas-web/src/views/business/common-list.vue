@@ -557,6 +557,19 @@
     { label: '文件导入导出', value: 'FILE' },
     { label: '人工录入', value: 'MANUAL' }
   ]
+  const flowBusinessTypeOptions = [
+    { label: '车贷', value: 'CAR_LOAN' },
+    { label: '融资租赁', value: 'LEASE' },
+    { label: '典当', value: 'PAWN' }
+  ]
+  const flowNodeOptions = [
+    { label: '线索', value: 'LEAD' },
+    { label: '进件', value: 'APPLICATION' },
+    { label: '审批', value: 'APPROVAL' },
+    { label: '签约', value: 'SIGNING' },
+    { label: '放款', value: 'DISBURSEMENT' },
+    { label: '还款', value: 'REPAYMENT' }
+  ]
   const applicationStatusOptions = [
     'DRAFT',
     'SUBMITTED',
@@ -1044,6 +1057,95 @@
       ],
       actions: []
     },
+    'flow-config': {
+      title: '流程与规则',
+      description: '维护各机构的业务流程节点、审批层级、资料要求、自动通过与超时规则。',
+      api: 'flow-config',
+      keywordField: 'name',
+      columns: [
+        { prop: 'name', label: '规则名称', width: 180 },
+        { prop: 'orgName', label: '所属机构', width: 160 },
+        { prop: 'businessType', label: '业务类型', width: 120 },
+        { prop: 'nodeName', label: '流程节点', width: 120 },
+        { prop: 'approveLevel', label: '审批层级', width: 100 },
+        { prop: 'requireApproval', label: '需要审批', width: 100 },
+        { prop: 'autoPass', label: '自动通过', width: 100 },
+        { prop: 'status', label: '状态', width: 100 }
+      ],
+      detailColumns: [
+        { prop: 'name', label: '规则名称' },
+        { prop: 'orgName', label: '所属机构' },
+        { prop: 'businessType', label: '业务类型' },
+        { prop: 'nodeCode', label: '节点编码' },
+        { prop: 'nodeName', label: '节点名称' },
+        { prop: 'approveLevel', label: '审批层级' },
+        { prop: 'amountLimit', label: '金额阈值' },
+        { prop: 'timeoutHours', label: '超时时长(小时)' },
+        { prop: 'requireMaterials', label: '要求资料' },
+        { prop: 'requireApproval', label: '需要审批' },
+        { prop: 'autoPass', label: '自动通过' },
+        { prop: 'ruleConfig', label: '规则JSON' },
+        { prop: 'remark', label: '备注' },
+        { prop: 'status', label: '状态' }
+      ],
+      formFields: [
+        {
+          prop: 'orgId',
+          label: '所属机构',
+          type: 'select',
+          required: true,
+          remoteOptions: { module: 'org', params: { status: 'ACTIVE' } },
+          placeholder: '请选择所属机构'
+        },
+        { prop: 'name', label: '规则名称', required: true },
+        {
+          prop: 'businessType',
+          label: '业务类型',
+          type: 'select',
+          options: flowBusinessTypeOptions,
+          defaultValue: 'CAR_LOAN',
+          required: true
+        },
+        {
+          prop: 'nodeCode',
+          label: '流程节点',
+          type: 'select',
+          options: flowNodeOptions,
+          defaultValue: 'APPLICATION',
+          required: true
+        },
+        { prop: 'nodeName', label: '节点名称', required: true },
+        {
+          prop: 'status',
+          label: '状态',
+          type: 'select',
+          options: activeStatusOptions,
+          defaultValue: 'ACTIVE'
+        },
+        {
+          prop: 'approveLevel',
+          label: '审批层级',
+          type: 'number',
+          defaultValue: 1,
+          required: true,
+          group: '审批规则'
+        },
+        { prop: 'amountLimit', label: '金额阈值', type: 'number', precision: 2, unit: '元' },
+        { prop: 'timeoutHours', label: '超时时长', type: 'number', unit: '小时' },
+        { prop: 'requireMaterials', label: '要求资料', type: 'switch', defaultValue: false },
+        { prop: 'requireApproval', label: '需要审批', type: 'switch', defaultValue: true },
+        { prop: 'autoPass', label: '自动通过', type: 'switch', defaultValue: false },
+        {
+          prop: 'ruleConfig',
+          label: '规则JSON',
+          type: 'json',
+          placeholder: '{"minAmount": 10000, "roles": ["R_APPROVER"]}',
+          group: '高级配置'
+        },
+        { prop: 'remark', label: '备注', type: 'textarea' }
+      ],
+      actions: []
+    },
     lead: {
       title: '线索管理',
       description: '线索分配、跟进、转化和公海池。',
@@ -1287,6 +1389,7 @@
       org: orgStatusOptions,
       product: activeStatusOptions,
       funder: activeStatusOptions,
+      'flow-config': activeStatusOptions,
       lead: leadStatusOptions,
       customer: activeStatusOptions,
       application: applicationStatusOptions,
@@ -1300,7 +1403,7 @@
   const extraFilters = computed(() => {
     const m = moduleName.value
     const filters: FilterConfig[] = []
-    if (['dept', 'product', 'funder', 'lead', 'customer', 'application'].includes(m)) {
+    if (['dept', 'product', 'funder', 'flow-config', 'lead', 'customer', 'application'].includes(m)) {
       filters.push({
         prop: 'orgId',
         label: '所属机构',
@@ -1369,6 +1472,20 @@
         label: '资方类型',
         type: 'select',
         options: funderTypeOptions
+      })
+    }
+    if (m === 'flow-config') {
+      filters.push({
+        prop: 'businessType',
+        label: '业务类型',
+        type: 'select',
+        options: flowBusinessTypeOptions
+      })
+      filters.push({
+        prop: 'nodeCode',
+        label: '流程节点',
+        type: 'select',
+        options: flowNodeOptions
       })
     }
     return filters
@@ -1689,6 +1806,10 @@
       if (value) loadRemoteOptions(formFields.value, ['assigneeId'])
       else selectOptions.assigneeId = []
     }
+    if (moduleName.value === 'flow-config' && field.prop === 'nodeCode') {
+      formModel.nodeName =
+        flowNodeOptions.find((option) => option.value === value)?.label || formModel.nodeName
+    }
   }
 
   function cleanPayload(source: Record<string, unknown>, fields: FieldConfig[]) {
@@ -1751,6 +1872,12 @@
     if (prop === 'businessScale')
       return `部门${orgCount(row, 'departmentCount')} / 产品${orgCount(row, 'productCount')} / 资方${orgCount(row, 'funderCount')}`
     if (prop === 'apiEnabled') return value === false ? '已关闭' : '已开启'
+    if (['requireMaterials', 'requireApproval', 'autoPass'].includes(prop))
+      return value ? '是' : '否'
+    if (prop === 'businessType')
+      return flowBusinessTypeOptions.find((option) => option.value === value)?.label || String(value)
+    if (prop === 'nodeCode')
+      return flowNodeOptions.find((option) => option.value === value)?.label || String(value)
     if (prop === 'packageType') return packageLabel(value)
     if (prop === 'expireAt') return orgExpiryMeta(value).label
     if (value === undefined || value === null || value === '') return '-'

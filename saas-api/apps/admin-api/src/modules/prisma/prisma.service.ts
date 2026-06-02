@@ -18,7 +18,9 @@ const TENANT_MODELS = [
   'signrecord',
   'disbursement',
   'repaymentplan',
-  'repaymentrecord'
+  'repaymentrecord',
+  'flowconfig',
+  'fileasset'
 ]
 
 function isTenantModel(model: string | undefined): boolean {

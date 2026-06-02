@@ -97,6 +97,7 @@ import { useSessionStore, useLocalStore } from "@/stores";
 import { storeToRefs } from "pinia";
 import { useBusinessApi } from "@/api/business";
 import NationConst, { nationLabelToValue } from "@/enums/nation";
+import { recognizeIdCard } from "@/common/ocr";
 
 const businessApi = useBusinessApi();
 
@@ -353,7 +354,10 @@ function pickImage(side) {
 
       if (path) {
         try {
-          // 1. 先上传图片
+          // 1. 本地 OCR 识别（先填表，不依赖网络）
+          await doLocalOcr(path, side);
+
+          // 2. 上传图片到服务器
           const uploadRes = await businessApi.uploadFile(path);
           if (uploadRes?.code !== 200) {
             $u.toast(uploadRes?.msg || "图片上传失败", "error");
@@ -362,7 +366,6 @@ function pickImage(side) {
           // 兼容返回结构：data 可能是对象 { url } 或直接是字符串
           const imageUrl = uploadRes?.url;
 
-          // 2. 更新为上传后的远程URL
           if (side === "front") {
             frontImage.value = imageUrl;
             frontImageObjectKey.value = uploadRes?.objectKey;
@@ -370,55 +373,8 @@ function pickImage(side) {
             backImage.value = imageUrl;
             backImageObjectKey.value = uploadRes?.objectKey;
           }
-
-          // 3. 调用OCR识别
-          const ocrRes = await businessApi.getIdCardOcr(uploadRes?.objectKey);
-          if (ocrRes?.code === 200) {
-            const data = ocrRes;
-            if (side === "front") {
-              // 出参字段映射：name / idNum / sex / nation / address / birth
-              idInfo.personName = data.name || idInfo.personName || "";
-              idInfo.personIdcard = data.idNum || idInfo.personIdcard || "";
-              // sex: "男"->1, "女"->2
-              if (data.sex === "男") idInfo.gender = 1;
-              else if (data.sex === "女") idInfo.gender = 2;
-              idInfo.race =
-                nationLabelToValue(data.nation) || idInfo.race || "";
-              idInfo.personAddress = data.address || idInfo.personAddress || "";
-            } else {
-              // 出参字段映射：authority / validDate
-              idInfo.personIssuingAuthority =
-                data.authority || idInfo.personIssuingAuthority || "";
-              // validDate 格式如 "2019.05.27-2029.05.27" 或 "2020-01-01至2030-01-01" 等
-              const validStr = data.validDate || "";
-              if (validStr) {
-                if (validStr.includes("长期")) {
-                  const startMatch = validStr.match(
-                    /(\d{4}[.\-/]\d{2}[.\-/]\d{2})/
-                  );
-                  idInfo.personValidDateStart = startMatch
-                    ? startMatch[1].replace(/\./g, "-")
-                    : "";
-                  idInfo.personValidDateEnd = "长期";
-                } else {
-                  const parts = validStr
-                    .replace(/\//g, "-")
-                    .split(/[-–—至~]+/)
-                    .map((s) => s.trim())
-                    .filter(Boolean);
-                  if (parts.length >= 2) {
-                    idInfo.personValidDateStart = parts[0].replace(/\./g, "-");
-                    idInfo.personValidDateEnd = parts[1].replace(/\./g, "-");
-                  }
-                }
-              }
-            }
-          } else {
-            $u.toast(ocrRes?.msg || "OCR识别失败，请手动填写", "error");
-          }
         } catch (e) {
-          console.error("OCR识别异常", e);
-          $u.toast("OCR识别异常，请手动填写", "error");
+          console.error("OCR/上传异常", e);
         } finally {
           setLoading.value = false;
         }
@@ -426,6 +382,53 @@ function pickImage(side) {
     },
     fail: () => {},
   });
+}
+
+/** 本地 OCR 识别并自动填表 */
+async function doLocalOcr(imagePath, side) {
+  try {
+    const result = await recognizeIdCard(imagePath, side === "front" ? "front" : "back");
+    if (!result) return;
+
+    if (side === "front") {
+      const data = result;
+      if (data.name) idInfo.personName = data.name;
+      if (data.idNum) idInfo.personIdcard = data.idNum;
+      if (data.gender === "男") idInfo.gender = 1;
+      else if (data.gender === "女") idInfo.gender = 2;
+      if (data.nation) idInfo.race = nationLabelToValue(data.nation) || data.nation;
+      if (data.address) idInfo.personAddress = data.address;
+      if (data.birth) {
+        // birth 格式: yyyy-MM-dd，暂存到 session 供有效期计算参考
+        sessionStore.setOrderInfo({ birth: data.birth });
+      }
+    } else {
+      const data = result;
+      if (data.authority) idInfo.personIssuingAuthority = data.authority;
+      if (data.validDate) {
+        if (data.validDate.includes("长期")) {
+          const startMatch = data.validDate.match(/(\d{4}[.\-\\/]\d{2}[.\-\\/]\d{2})/);
+          idInfo.personValidDateStart = startMatch
+            ? startMatch[1].replace(/\./g, "-")
+            : "";
+          idInfo.personValidDateEnd = "长期";
+        } else {
+          const parts = data.validDate
+            .replace(/\//g, "-")
+            .split(/[-–—至~]+/)
+            .map((s) => s.trim())
+            .filter(Boolean);
+          if (parts.length >= 2) {
+            idInfo.personValidDateStart = parts[0].replace(/\./g, "-");
+            idInfo.personValidDateEnd = parts[1].replace(/\./g, "-");
+          }
+        }
+      }
+    }
+    $u.toast("已自动识别，请核对修改", "success");
+  } catch {
+    // OCR 失败不阻塞上传
+  }
 }
 
 const doSubmit = async () => {

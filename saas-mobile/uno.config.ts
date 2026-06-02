@@ -8,6 +8,11 @@ import {
 } from 'unocss'
 
 export default defineConfig({
+  theme: {
+    colors: {
+      accent: '#FD91FF',
+    },
+  },
   presets: [
     presetUni({
       attributify: false,

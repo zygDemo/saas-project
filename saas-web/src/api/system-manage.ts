@@ -186,3 +186,44 @@ export function fetchDeleteDictData(id: number) {
     showSuccessMessage: true
   })
 }
+
+export function fetchGetFileAssetList(params: Api.SystemManage.FileAssetSearchParams) {
+  return request.get<Api.SystemManage.FileAssetList>({
+    url: '/file/list',
+    params
+  })
+}
+
+export function fetchUploadImage(data: FormData) {
+  return request.post<Api.SystemManage.UploadImageResult>({
+    url: '/file/upload/image',
+    data,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchCreateFileAsset(params: Api.SystemManage.SaveFileAssetParams) {
+  return request.post<Api.SystemManage.FileAssetItem>({
+    url: '/file/create',
+    params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchUpdateFileAsset(
+  id: number,
+  params: Api.SystemManage.SaveFileAssetParams
+) {
+  return request.post<Api.SystemManage.FileAssetItem>({
+    url: `/file/${id}`,
+    params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchDeleteFileAsset(id: number) {
+  return request.post<{ id: number }>({
+    url: `/file/${id}/delete`,
+    showSuccessMessage: true
+  })
+}

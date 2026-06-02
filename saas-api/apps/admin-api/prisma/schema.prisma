@@ -109,10 +109,12 @@ model Tenant {
   permissions Permission[]
   dictTypes DictType[]
   dictData DictData[]
+  fileAssets FileAsset[]
   organizations Organization[]
   departments Department[]
   products Product[]
   funders Funder[]
+  flowConfigs FlowConfig[]
   leads Lead[]
   customers Customer[]
   applications Application[]
@@ -280,6 +282,37 @@ model DictData {
   @@index([status])
 }
 
+model FileAsset {
+  id            Int      @id @default(autoincrement())
+  tenantId      Int
+  orgId         Int?
+  businessType  String?
+  businessId    Int?
+  categoryCode  String
+  categoryName  String
+  fileName      String
+  fileUrl       String
+  objectKey     String?
+  mimeType      String?
+  fileExt       String?
+  fileSize      Int?
+  storageType   String   @default("LOCAL")
+  status        String   @default("ACTIVE")
+  uploadedBy    Int?
+  remark        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([orgId])
+  @@index([businessType, businessId])
+  @@index([categoryCode])
+  @@index([status])
+  @@index([uploadedBy])
+}
+
 // ==================== 机构/部门模型 ====================
 
 model Organization {
@@ -302,6 +335,7 @@ model Organization {
   departments   Department[]
   products      Product[]
   funders       Funder[]
+  flowConfigs   FlowConfig[]
   leads         Lead[]
   customers     Customer[]
   applications  Application[]
@@ -398,6 +432,37 @@ model Funder {
   @@index([orgId])
 }
 
+model FlowConfig {
+  id               Int          @id @default(autoincrement())
+  tenantId         Int
+  orgId            Int
+  name             String
+  businessType     String       // LOAN, LEASE, PAWN
+  nodeCode         String       // LEAD, APPLICATION, APPROVAL, SIGNING, DISBURSEMENT
+  nodeName         String
+  approveLevel     Int          @default(1)
+  amountLimit      Decimal?     @db.Decimal(15, 2)
+  timeoutHours     Int?
+  requireMaterials Boolean      @default(false)
+  requireApproval  Boolean      @default(true)
+  autoPass         Boolean      @default(false)
+  ruleConfig       Json?
+  status           String       @default("ACTIVE")
+  remark           String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  tenant           Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  org              Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, businessType, nodeCode])
+  @@index([tenantId])
+  @@index([orgId])
+  @@index([businessType])
+  @@index([nodeCode])
+  @@index([status])
+}
+
 // ==================== 线索模型 ====================
 
 model Lead {
@@ -456,6 +521,13 @@ model Customer {
   idCard          String?      // 身份证号
   gender          Gender       @default(UNKNOWN)
   birthDate       DateTime?
+  nation          String?
+  householdAddress String?
+  issuingAuthority String?
+  idCardValidFrom String?
+  idCardValidTo   String?
+  idCardFront     String?
+  idCardBack      String?
   maritalStatus   String?
   education       String?
   occupation      String?
@@ -503,6 +575,13 @@ model Vehicle {
   plateNumber   String?  // 车牌号
   brand         String?
   model         String?
+  ownerName     String?
+  address       String?
+  usageNature   String?
+  sealInfo      String?
+  engineNumber  String?
+  registerDate  DateTime?
+  vehicleImgUrl String?
   color         String?
   year          Int?
   mileage       Int?
@@ -549,6 +628,9 @@ model Application {
   repaymentMethod String
   purpose         String?           // 贷款用途
   status          ApplicationStatus @default(DRAFT)
+  businessType    String            @default("CAR_LOAN")
+  currentNode     Int               @default(1100)
+  currentStatus   Int               @default(10)
   creatorId       Int               // 创建人（业务员）
   sourceLeadId    Int?              // 来源线索
   supplementReason String?          // 补件原因
@@ -576,6 +658,9 @@ model Application {
   @@index([orgId])
   @@index([customerId])
   @@index([status])
+  @@index([businessType])
+  @@index([currentNode])
+  @@index([currentStatus])
   @@index([creatorId])
   @@index([applicationNo])
 }
