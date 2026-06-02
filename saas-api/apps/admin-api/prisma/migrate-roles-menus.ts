@@ -29,15 +29,30 @@ async function main() {
   // ========== 1. 同步角色 ==========
   console.log('\n--- 同步角色 ---')
   const roleDefs = [
-    { code: 'R_SUPER', name: 'Super Admin', description: '平台超级管理员，全平台管理', dataScope: 'ALL' },
+    {
+      code: 'R_SUPER',
+      name: 'Super Admin',
+      description: '平台超级管理员，全平台管理',
+      dataScope: 'ALL'
+    },
     { code: 'R_OPERATION', name: 'Platform Operator', description: '平台运营', dataScope: 'ALL' },
     { code: 'R_ADMIN', name: 'Admin', description: '机构管理员', dataScope: 'ALL' },
-    { code: 'R_SALES_MANAGER', name: 'Sales Manager', description: '部门经理/团队负责人', dataScope: 'DEPT' },
+    {
+      code: 'R_SALES_MANAGER',
+      name: 'Sales Manager',
+      description: '部门经理/团队负责人',
+      dataScope: 'DEPT'
+    },
     { code: 'R_SALES', name: 'Sales', description: '业务员/客户经理', dataScope: 'SELF' },
     { code: 'R_APPROVER', name: 'Approver', description: '风控审批员', dataScope: 'ALL' },
     { code: 'R_FINANCE', name: 'Finance', description: '财务人员', dataScope: 'ALL' },
-    { code: 'R_CS_COLLECTION', name: 'CS & Collection', description: '客服/催收', dataScope: 'ALL' },
-    { code: 'R_USER', name: 'User', description: '普通用户，仅移动端操作权限', dataScope: 'SELF' },
+    {
+      code: 'R_CS_COLLECTION',
+      name: 'CS & Collection',
+      description: '客服/催收',
+      dataScope: 'ALL'
+    },
+    { code: 'R_USER', name: 'User', description: '普通用户，仅移动端操作权限', dataScope: 'SELF' }
   ]
 
   const roles: Record<string, { id: number }> = {}
@@ -45,7 +60,7 @@ async function main() {
     const role = await prisma.role.upsert({
       where: { tenantId_code: { tenantId: tenant.id, code: def.code } },
       update: { name: def.name, description: def.description, dataScope: def.dataScope },
-      create: { ...def, tenantId: tenant.id, enabled: true },
+      create: { ...def, tenantId: tenant.id, enabled: true }
     })
     roles[def.code] = role
     console.log(`  ✓ ${def.code} (id=${role.id}) — ${def.description}`)
@@ -55,58 +70,389 @@ async function main() {
   console.log('\n--- 同步菜单 ---')
   const bp = '/business/common-list'
 
-  const menuDefs: Array<{ parentKey?: string; path: string; name: string; title: string; icon: string; sort: number; component?: string; keepAlive?: boolean; hidden?: boolean; hiddenTab?: boolean }> = [
+  const menuDefs: Array<{
+    parentKey?: string
+    path: string
+    name: string
+    title: string
+    icon: string
+    sort: number
+    component?: string
+    keepAlive?: boolean
+    hidden?: boolean
+    hiddenTab?: boolean
+  }> = [
     // 仪表盘
-    { path: '/dashboard', name: 'Dashboard', component: '/index/index', title: '仪表盘', icon: 'ri:dashboard-line', sort: 10 },
-    { parentKey: 'Dashboard', path: 'console', name: 'Console', component: '/dashboard/console', title: '工作台', icon: 'ri:computer-line', sort: 11, keepAlive: true },
-    { parentKey: 'Dashboard', path: 'analysis', name: 'Analysis', component: '/dashboard/analysis', title: '分析页', icon: 'ri:line-chart-line', sort: 12, keepAlive: true },
+    {
+      path: '/dashboard',
+      name: 'Dashboard',
+      component: '/index/index',
+      title: '仪表盘',
+      icon: 'ri:dashboard-line',
+      sort: 10
+    },
+    {
+      parentKey: 'Dashboard',
+      path: 'console',
+      name: 'Console',
+      component: '/dashboard/console',
+      title: '工作台',
+      icon: 'ri:computer-line',
+      sort: 11,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Dashboard',
+      path: 'analysis',
+      name: 'Analysis',
+      component: '/dashboard/analysis',
+      title: '分析页',
+      icon: 'ri:line-chart-line',
+      sort: 12,
+      keepAlive: true
+    },
 
     // 平台管理
     { path: '/platform', name: 'Platform', title: '平台管理', icon: 'ri:global-line', sort: 20 },
-    { parentKey: 'Platform', path: 'tenant', name: 'TenantMgmt', title: '租户机构管理', icon: 'ri:building-2-line', sort: 21, keepAlive: true },
-    { parentKey: 'Platform', path: 'package-billing', name: 'PackageBilling', title: '套餐与计费', icon: 'ri:money-dollar-circle-line', sort: 22, keepAlive: true },
-    { parentKey: 'Platform', path: 'product-template', name: 'ProductTemplate', title: '产品与资方模板', icon: 'ri:file-copy-line', sort: 23, keepAlive: true },
-    { parentKey: 'Platform', path: 'supervision', name: 'PlatformSupervision', title: '平台业务监管', icon: 'ri:eye-line', sort: 24, keepAlive: true },
-    { parentKey: 'Platform', path: 'third-party', name: 'ThirdPartyService', title: '第三方服务管理', icon: 'ri:plug-line', sort: 25, keepAlive: true },
-    { parentKey: 'Platform', path: 'work-order', name: 'WorkOrder', title: '运营工单中心', icon: 'ri:customer-service-2-line', sort: 26, keepAlive: true },
+    {
+      parentKey: 'Platform',
+      path: 'tenant',
+      name: 'TenantMgmt',
+      title: '租户机构管理',
+      icon: 'ri:building-2-line',
+      sort: 21,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Platform',
+      path: 'package-billing',
+      name: 'PackageBilling',
+      title: '套餐与计费',
+      icon: 'ri:money-dollar-circle-line',
+      sort: 22,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Platform',
+      path: 'product-template',
+      name: 'ProductTemplate',
+      title: '产品与资方模板',
+      icon: 'ri:file-copy-line',
+      sort: 23,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Platform',
+      path: 'supervision',
+      name: 'PlatformSupervision',
+      title: '平台业务监管',
+      icon: 'ri:eye-line',
+      sort: 24,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Platform',
+      path: 'third-party',
+      name: 'ThirdPartyService',
+      title: '第三方服务管理',
+      icon: 'ri:plug-line',
+      sort: 25,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Platform',
+      path: 'work-order',
+      name: 'WorkOrder',
+      title: '运营工单中心',
+      icon: 'ri:customer-service-2-line',
+      sort: 26,
+      keepAlive: true
+    },
 
     // 数据中心
-    { path: '/datacenter', name: 'DataCenter', title: '数据中心', icon: 'ri:bar-chart-box-line', sort: 30 },
-    { parentKey: 'DataCenter', path: 'stats', name: 'DataStats', title: '数据统计', icon: 'ri:bar-chart-line', sort: 31, keepAlive: true },
-    { parentKey: 'DataCenter', path: 'audit-log', name: 'AuditLog', title: '日志审计', icon: 'ri:file-list-3-line', sort: 32, keepAlive: true },
+    {
+      path: '/datacenter',
+      name: 'DataCenter',
+      title: '数据中心',
+      icon: 'ri:bar-chart-box-line',
+      sort: 30
+    },
+    {
+      parentKey: 'DataCenter',
+      path: 'stats',
+      name: 'DataStats',
+      title: '数据统计',
+      icon: 'ri:bar-chart-line',
+      sort: 31,
+      keepAlive: true
+    },
+    {
+      parentKey: 'DataCenter',
+      path: 'audit-log',
+      name: 'AuditLog',
+      title: '日志审计',
+      icon: 'ri:file-list-3-line',
+      sort: 32,
+      keepAlive: true
+    },
 
     // 系统管理
     { path: '/system', name: 'System', title: '系统管理', icon: 'ri:settings-3-line', sort: 40 },
-    { parentKey: 'System', path: 'user', name: 'User', component: '/system/user', title: '用户管理', icon: 'ri:user-line', sort: 41, keepAlive: true },
-    { parentKey: 'System', path: 'role', name: 'Role', component: '/system/role', title: '角色管理', icon: 'ri:user-settings-line', sort: 42, keepAlive: true },
-    { parentKey: 'System', path: 'menu', name: 'Menus', component: '/system/menu', title: '菜单管理', icon: 'ri:menu-line', sort: 43, keepAlive: true },
-    { parentKey: 'System', path: 'dict', name: 'DictMgmt', component: '/system/dict', title: '字典管理', icon: 'ri:book-open-line', sort: 44, keepAlive: true },
-    { parentKey: 'System', path: 'region', name: 'RegionMgmt', title: '地区管理', icon: 'ri:map-pin-line', sort: 45, keepAlive: true },
-    { parentKey: 'System', path: 'file', name: 'FileManage', component: '/system/file', title: '文件管理', icon: 'ri:file-list-3-line', sort: 46, keepAlive: true },
-    { parentKey: 'System', path: 'file-config', name: 'FileConfig', component: '/system/file-config', title: '文件存储配置', icon: 'ri:hard-drive-2-line', sort: 47, keepAlive: true },
-    { parentKey: 'System', path: 'msg-template', name: 'MsgTemplate', title: '消息模板', icon: 'ri:mail-send-line', sort: 48, keepAlive: true },
-    { parentKey: 'System', path: 'sys-param', name: 'SysParam', title: '系统参数', icon: 'ri:settings-line', sort: 49, keepAlive: true },
-    { parentKey: 'System', path: 'notice', name: 'Notice', title: '公告管理', icon: 'ri:notification-line', sort: 50, keepAlive: true },
-    { parentKey: 'System', path: 'user-center', name: 'UserCenter', title: '用户中心', icon: 'ri:user-line', sort: 51, keepAlive: true, hidden: true, hiddenTab: true },
+    {
+      parentKey: 'System',
+      path: 'user',
+      name: 'User',
+      component: '/system/user',
+      title: '用户管理',
+      icon: 'ri:user-line',
+      sort: 41,
+      keepAlive: true
+    },
+    {
+      parentKey: 'System',
+      path: 'role',
+      name: 'Role',
+      component: '/system/role',
+      title: '角色管理',
+      icon: 'ri:user-settings-line',
+      sort: 42,
+      keepAlive: true
+    },
+    {
+      parentKey: 'System',
+      path: 'menu',
+      name: 'Menus',
+      component: '/system/menu',
+      title: '菜单管理',
+      icon: 'ri:menu-line',
+      sort: 43,
+      keepAlive: true
+    },
+    {
+      parentKey: 'System',
+      path: 'dict',
+      name: 'DictMgmt',
+      component: '/system/dict',
+      title: '字典管理',
+      icon: 'ri:book-open-line',
+      sort: 44,
+      keepAlive: true
+    },
+    {
+      parentKey: 'System',
+      path: 'region',
+      name: 'RegionMgmt',
+      title: '地区管理',
+      icon: 'ri:map-pin-line',
+      sort: 45,
+      keepAlive: true
+    },
+    {
+      parentKey: 'System',
+      path: 'file',
+      name: 'FileManage',
+      component: '/system/file',
+      title: '文件管理',
+      icon: 'ri:file-list-3-line',
+      sort: 46,
+      keepAlive: true
+    },
+    {
+      parentKey: 'System',
+      path: 'file-config',
+      name: 'FileConfig',
+      component: '/system/file-config',
+      title: '文件存储配置',
+      icon: 'ri:hard-drive-2-line',
+      sort: 47,
+      keepAlive: true
+    },
+    {
+      parentKey: 'System',
+      path: 'msg-template',
+      name: 'MsgTemplate',
+      title: '消息模板',
+      icon: 'ri:mail-send-line',
+      sort: 48,
+      keepAlive: true
+    },
+    {
+      parentKey: 'System',
+      path: 'sys-param',
+      name: 'SysParam',
+      title: '系统参数',
+      icon: 'ri:settings-line',
+      sort: 49,
+      keepAlive: true
+    },
+    {
+      parentKey: 'System',
+      path: 'notice',
+      name: 'Notice',
+      title: '公告管理',
+      icon: 'ri:notification-line',
+      sort: 50,
+      keepAlive: true
+    },
+    {
+      parentKey: 'System',
+      path: 'user-center',
+      name: 'UserCenter',
+      title: '用户中心',
+      icon: 'ri:user-line',
+      sort: 51,
+      keepAlive: true,
+      hidden: true,
+      hiddenTab: true
+    },
 
     // 业务管理
     { path: '/business', name: 'Business', title: '业务管理', icon: 'ri:briefcase-line', sort: 60 },
-    { parentKey: 'Business', path: 'org', name: 'Org', title: '机构管理', icon: 'ri:building-line', sort: 61, keepAlive: true },
-    { parentKey: 'Business', path: 'dept', name: 'Dept', title: '部门管理', icon: 'ri:organization-chart', sort: 62, keepAlive: true },
-    { parentKey: 'Business', path: 'product', name: 'Product', title: '产品配置', icon: 'ri:file-list-line', sort: 63, keepAlive: true },
-    { parentKey: 'Business', path: 'funder', name: 'Funder', title: '资方配置', icon: 'ri:bank-line', sort: 64, keepAlive: true },
-    { parentKey: 'Business', path: 'flow-config', name: 'FlowConfig', title: '流程与规则', icon: 'ri:git-branch-line', sort: 65, keepAlive: true },
-    { parentKey: 'Business', path: 'lead', name: 'Lead', title: '线索管理', icon: 'ri:customer-service-line', sort: 66, keepAlive: true },
-    { parentKey: 'Business', path: 'customer', name: 'Customer', title: '客户管理', icon: 'ri:contacts-line', sort: 67, keepAlive: true },
-    { parentKey: 'Business', path: 'application', name: 'Application', title: '进件管理', icon: 'ri:file-edit-line', sort: 68, keepAlive: true },
-    { parentKey: 'Business', path: 'approval', name: 'Approval', title: '审批管理', icon: 'ri:shield-check-line', sort: 69, keepAlive: true },
-    { parentKey: 'Business', path: 'signing', name: 'Signing', title: '签约管理', icon: 'ri:pen-nib-line', sort: 70, keepAlive: true },
-    { parentKey: 'Business', path: 'disbursement', name: 'Disbursement', title: '放款管理', icon: 'ri:money-cny-circle-line', sort: 71, keepAlive: true },
-    { parentKey: 'Business', path: 'order', name: 'OrderMgmt', title: '订单管理', icon: 'ri:file-list-2-line', sort: 72, keepAlive: true },
-    { parentKey: 'Business', path: 'repayment', name: 'Repayment', title: '还款管理', icon: 'ri:refund-line', sort: 73, keepAlive: true },
-    { parentKey: 'Business', path: 'pawn', name: 'PawnBusiness', title: '典当业务', icon: 'ri:swap-box-line', sort: 74, keepAlive: true },
-    { parentKey: 'Business', path: 'reports', name: 'Reports', title: '报表统计', icon: 'ri:pie-chart-line', sort: 75, keepAlive: true },
-    { parentKey: 'Business', path: 'org-config', name: 'OrgConfig', title: '机构配置', icon: 'ri:tools-line', sort: 76, keepAlive: true },
+    {
+      parentKey: 'Business',
+      path: 'org',
+      name: 'Org',
+      title: '机构管理',
+      icon: 'ri:building-line',
+      sort: 61,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'dept',
+      name: 'Dept',
+      title: '部门管理',
+      icon: 'ri:organization-chart',
+      sort: 62,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'product',
+      name: 'Product',
+      title: '产品配置',
+      icon: 'ri:file-list-line',
+      sort: 63,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'funder',
+      name: 'Funder',
+      title: '资方配置',
+      icon: 'ri:bank-line',
+      sort: 64,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'flow-config',
+      name: 'FlowConfig',
+      component: '/business/flow-config',
+      title: '流程与规则',
+      icon: 'ri:git-branch-line',
+      sort: 65,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'lead',
+      name: 'Lead',
+      title: '线索管理',
+      icon: 'ri:customer-service-line',
+      sort: 66,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'customer',
+      name: 'Customer',
+      title: '客户管理',
+      icon: 'ri:contacts-line',
+      sort: 67,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'application',
+      name: 'Application',
+      title: '进件管理',
+      icon: 'ri:file-edit-line',
+      sort: 68,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'approval',
+      name: 'Approval',
+      title: '审批管理',
+      icon: 'ri:shield-check-line',
+      sort: 69,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'signing',
+      name: 'Signing',
+      title: '签约管理',
+      icon: 'ri:pen-nib-line',
+      sort: 70,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'disbursement',
+      name: 'Disbursement',
+      title: '放款管理',
+      icon: 'ri:money-cny-circle-line',
+      sort: 71,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'order',
+      name: 'OrderMgmt',
+      title: '订单管理',
+      icon: 'ri:file-list-2-line',
+      sort: 72,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'repayment',
+      name: 'Repayment',
+      title: '还款管理',
+      icon: 'ri:refund-line',
+      sort: 73,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'pawn',
+      name: 'PawnBusiness',
+      title: '典当业务',
+      icon: 'ri:swap-box-line',
+      sort: 74,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'reports',
+      name: 'Reports',
+      title: '报表统计',
+      icon: 'ri:pie-chart-line',
+      sort: 75,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'org-config',
+      name: 'OrgConfig',
+      title: '机构配置',
+      icon: 'ri:tools-line',
+      sort: 76,
+      keepAlive: true
+    }
   ]
 
   const menuMap: Record<string, { id: number }> = {}
@@ -127,7 +473,7 @@ async function main() {
         sort: def.sort,
         keepAlive: def.keepAlive ?? false,
         hidden: def.hidden ?? false,
-        hiddenTab: def.hiddenTab ?? false,
+        hiddenTab: def.hiddenTab ?? false
       },
       create: {
         tenantId: tenant.id,
@@ -140,8 +486,8 @@ async function main() {
         sort: def.sort,
         keepAlive: def.keepAlive ?? false,
         hidden: def.hidden ?? false,
-        hiddenTab: def.hiddenTab ?? false,
-      },
+        hiddenTab: def.hiddenTab ?? false
+      }
     })
     menuMap[def.name] = menu
     const indent = def.parentKey ? '  ' : ''
@@ -154,33 +500,91 @@ async function main() {
     names.map((n) => menuMap[n]?.id).filter(Boolean) as number[]
 
   const dashIds = filterIds('Dashboard', 'Console', 'Analysis')
-  const platformIds = filterIds('Platform', 'TenantMgmt', 'PackageBilling', 'ProductTemplate', 'PlatformSupervision', 'ThirdPartyService', 'WorkOrder')
+  const platformIds = filterIds(
+    'Platform',
+    'TenantMgmt',
+    'PackageBilling',
+    'ProductTemplate',
+    'PlatformSupervision',
+    'ThirdPartyService',
+    'WorkOrder'
+  )
   const dataCenterIds = filterIds('DataCenter', 'DataStats', 'AuditLog')
   const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter')
   const bizCoreIds = filterIds('Business', 'Lead', 'Customer', 'Application', 'Signing')
   const bizApprovalIds = filterIds('Business', 'Application', 'Approval')
   const bizFinanceIds = filterIds('Business', 'Disbursement', 'OrderMgmt', 'Repayment', 'Reports')
   const bizCsIds = filterIds('Business', 'Customer', 'Repayment', 'Reports')
-  const bizManagerIds = filterIds('Business', 'Org', 'Dept', 'FlowConfig', 'Lead', 'Customer', 'Application', 'Approval', 'Signing', 'Disbursement', 'OrderMgmt', 'Repayment', 'Reports')
-  const bizAdminIds = filterIds('Business', 'Org', 'Dept', 'Product', 'Funder', 'FlowConfig', 'Lead', 'Customer', 'Application', 'Approval', 'Signing', 'Disbursement', 'OrderMgmt', 'Repayment', 'PawnBusiness', 'Reports', 'OrgConfig')
+  const bizManagerIds = filterIds(
+    'Business',
+    'Org',
+    'Dept',
+    'FlowConfig',
+    'Lead',
+    'Customer',
+    'Application',
+    'Approval',
+    'Signing',
+    'Disbursement',
+    'OrderMgmt',
+    'Repayment',
+    'Reports'
+  )
+  const bizAdminIds = filterIds(
+    'Business',
+    'Org',
+    'Dept',
+    'Product',
+    'Funder',
+    'FlowConfig',
+    'Lead',
+    'Customer',
+    'Application',
+    'Approval',
+    'Signing',
+    'Disbursement',
+    'OrderMgmt',
+    'Repayment',
+    'PawnBusiness',
+    'Reports',
+    'OrgConfig'
+  )
 
   const allMenuIds = Object.values(menuMap).map((m) => m.id)
 
   const roleMenuMap: Record<string, number[]> = {
     R_SUPER: allMenuIds,
-    R_OPERATION: [...dashIds, ...platformIds, ...dataCenterIds, ...filterIds('Notice'), ...filterIds('Business', 'Lead', 'Customer', 'Application', 'Approval', 'Disbursement', 'Repayment'), ...filterIds('WorkOrder')],
+    R_OPERATION: [
+      ...dashIds,
+      ...platformIds,
+      ...dataCenterIds,
+      ...filterIds('Notice'),
+      ...filterIds(
+        'Business',
+        'Lead',
+        'Customer',
+        'Application',
+        'Approval',
+        'Disbursement',
+        'Repayment'
+      ),
+      ...filterIds('WorkOrder')
+    ],
     R_ADMIN: [...dashIds, ...systemBasicIds, ...bizAdminIds],
     R_SALES_MANAGER: [...dashIds, ...bizManagerIds],
     R_SALES: [...dashIds, ...bizCoreIds],
     R_APPROVER: [...dashIds, ...bizApprovalIds],
     R_FINANCE: [...dashIds, ...bizFinanceIds],
     R_CS_COLLECTION: [...dashIds, ...bizCsIds],
-    R_USER: [...dashIds],
+    R_USER: [...dashIds]
   }
 
   for (const [roleCode, menuIds] of Object.entries(roleMenuMap)) {
     const role = roles[roleCode]
-    if (!role) { console.log(`  ✗ 角色 ${roleCode} 不存在，跳过`); continue }
+    if (!role) {
+      console.log(`  ✗ 角色 ${roleCode} 不存在，跳过`)
+      continue
+    }
 
     // 删除旧关联
     await prisma.roleMenu.deleteMany({ where: { roleId: role.id } })
@@ -189,7 +593,7 @@ async function main() {
     if (menuIds.length > 0) {
       await prisma.roleMenu.createMany({
         data: menuIds.map((menuId) => ({ roleId: role.id, menuId })),
-        skipDuplicates: true,
+        skipDuplicates: true
       })
     }
     console.log(`  ✓ ${roleCode} → ${menuIds.length} 个菜单`)
@@ -198,11 +602,36 @@ async function main() {
   // ========== 4. 创建按钮权限 ==========
   console.log('\n--- 同步按钮权限 ---')
   const bizMenuNames = [
-    'TenantMgmt', 'PackageBilling', 'ProductTemplate', 'PlatformSupervision', 'ThirdPartyService', 'WorkOrder',
-    'DataStats', 'AuditLog',
-    'Org', 'Dept', 'Product', 'Funder', 'FlowConfig', 'Lead', 'Customer', 'Application', 'Approval', 'Signing',
-    'Disbursement', 'OrderMgmt', 'Repayment', 'PawnBusiness', 'Reports', 'OrgConfig',
-    'Menus', 'DictMgmt', 'RegionMgmt', 'FileManage', 'MsgTemplate', 'Notice',
+    'TenantMgmt',
+    'PackageBilling',
+    'ProductTemplate',
+    'PlatformSupervision',
+    'ThirdPartyService',
+    'WorkOrder',
+    'DataStats',
+    'AuditLog',
+    'Org',
+    'Dept',
+    'Product',
+    'Funder',
+    'FlowConfig',
+    'Lead',
+    'Customer',
+    'Application',
+    'Approval',
+    'Signing',
+    'Disbursement',
+    'OrderMgmt',
+    'Repayment',
+    'PawnBusiness',
+    'Reports',
+    'OrgConfig',
+    'Menus',
+    'DictMgmt',
+    'RegionMgmt',
+    'FileManage',
+    'MsgTemplate',
+    'Notice'
   ]
 
   let permCount = 0
@@ -213,7 +642,12 @@ async function main() {
       await prisma.permission.upsert({
         where: { tenantId_menuId_authMark: { tenantId: tenant.id, menuId: menu.id, authMark } },
         update: { title: authMark.charAt(0).toUpperCase() + authMark.slice(1) },
-        create: { tenantId: tenant.id, menuId: menu.id, authMark, title: authMark.charAt(0).toUpperCase() + authMark.slice(1) },
+        create: {
+          tenantId: tenant.id,
+          menuId: menu.id,
+          authMark,
+          title: authMark.charAt(0).toUpperCase() + authMark.slice(1)
+        }
       })
       permCount++
     }
@@ -223,7 +657,7 @@ async function main() {
   // ========== 5. 总结 ==========
   const [roleCount, menuCount] = await Promise.all([
     prisma.role.count({ where: { tenantId: tenant.id } }),
-    prisma.menu.count({ where: { tenantId: tenant.id } }),
+    prisma.menu.count({ where: { tenantId: tenant.id } })
   ])
 
   console.log(`\n========================================`)
@@ -233,7 +667,9 @@ async function main() {
 }
 
 main()
-  .then(async () => { await prisma.$disconnect() })
+  .then(async () => {
+    await prisma.$disconnect()
+  })
   .catch(async (e) => {
     console.error(e)
     await prisma.$disconnect()

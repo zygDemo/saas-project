@@ -13,6 +13,30 @@ export interface BusinessPage<T = Record<string, unknown>> {
   size: number
 }
 
+export interface FlowNodeMeta {
+  code: number
+  name: string
+  phaseCode: number
+  phaseName: string
+  sort: number
+  parentNode?: number
+  parallel?: boolean
+  required?: boolean
+  transitions?: Array<{
+    action: number
+    toNode: number
+    condition?: string
+  }>
+}
+
+export interface FlowConfigMeta {
+  businessTypes: Array<{ label: string; value: string }>
+  actions: Array<{ label: string; value: number; code: string }>
+  statuses: Array<{ label: string; value: number; code: string }>
+  nodes: FlowNodeMeta[]
+  phases: Array<{ code: number; name: string; nodes: number[] }>
+}
+
 export function fetchBusinessList<T = Record<string, unknown>>(
   module: string,
   params: BusinessQuery
@@ -63,5 +87,25 @@ export function fetchBusinessAction<T = Record<string, unknown>>(
   return request.post<T>({
     url,
     params: params || {}
+  })
+}
+
+export function fetchFlowConfigMeta() {
+  return request.get<FlowConfigMeta>({
+    url: '/flow-config/meta'
+  })
+}
+
+export function fetchInitDefaultFlowConfig(params: { orgId: number; businessType?: string }) {
+  return request.post<{ count: number; records: Record<string, unknown>[] }>({
+    url: '/flow-config/init-default',
+    params
+  })
+}
+
+export function fetchApplicationFlowList<T = Record<string, unknown>>(params: BusinessQuery) {
+  return request.get<BusinessPage<T>>({
+    url: '/application/flow-list',
+    params
   })
 }

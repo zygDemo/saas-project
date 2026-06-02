@@ -628,6 +628,9 @@ model Application {
   repaymentMethod String
   purpose         String?           // 贷款用途
   status          ApplicationStatus @default(DRAFT)
+  businessType    String            @default("CAR_LOAN")
+  currentNode     Int               @default(1100)
+  currentStatus   Int               @default(10)
   creatorId       Int               // 创建人（业务员）
   sourceLeadId    Int?              // 来源线索
   supplementReason String?          // 补件原因
@@ -655,6 +658,9 @@ model Application {
   @@index([orgId])
   @@index([customerId])
   @@index([status])
+  @@index([businessType])
+  @@index([currentNode])
+  @@index([currentStatus])
   @@index([creatorId])
   @@index([applicationNo])
 }

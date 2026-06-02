@@ -29,7 +29,10 @@ const FAILED_CREDIT_STATUSES = new Set<ApplicationStatus>([
   ApplicationStatus.FUNDER_REVIEW_REJECTED,
   ApplicationStatus.CANCELLED
 ])
-const SIGN_STATUSES = new Set<ApplicationStatus>([ApplicationStatus.PENDING_SIGN, ApplicationStatus.SIGNED])
+const SIGN_STATUSES = new Set<ApplicationStatus>([
+  ApplicationStatus.PENDING_SIGN,
+  ApplicationStatus.SIGNED
+])
 const DISBURSEMENT_STATUSES = new Set<ApplicationStatus>([
   ApplicationStatus.PENDING_DISBURSEMENT,
   ApplicationStatus.DISBURSED
@@ -54,7 +57,8 @@ const MOBILE_ENTRY_STORAGE_FIELDS = [
   'registerDate',
   'vehicleImgUrl'
 ]
-const MOBILE_ENTRY_STORAGE_ERROR = '移动端进件字段尚未初始化，请执行 admin-api Prisma 迁移并重新启动服务'
+const MOBILE_ENTRY_STORAGE_ERROR =
+  '移动端进件字段尚未初始化，请执行 admin-api Prisma 迁移并重新启动服务'
 
 export interface MobileUploadResult {
   url: string
@@ -79,7 +83,9 @@ function generateApplicationNo() {
   const hh = String(now.getHours()).padStart(2, '0')
   const mi = String(now.getMinutes()).padStart(2, '0')
   const ss = String(now.getSeconds()).padStart(2, '0')
-  const rand = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+  const rand = Math.floor(Math.random() * 10000)
+    .toString()
+    .padStart(4, '0')
   return `APP${yyyy}${mm}${dd}${hh}${mi}${ss}${rand}`
 }
 
@@ -115,7 +121,12 @@ export class MobileBusinessService {
     }
   }
 
-  async uploadWithType(file: UploadedImageFile | undefined, body: Record<string, string>, user: RequestUser, headerOrgId?: number) {
+  async uploadWithType(
+    file: UploadedImageFile | undefined,
+    body: Record<string, string>,
+    user: RequestUser,
+    headerOrgId?: number
+  ) {
     if (!file) throw new BadRequestException('请选择要上传的文件')
     const uploadResult = await this.saveImage(file, user)
     const binding = await this.resolveFileBinding(body, user, headerOrgId)
@@ -166,16 +177,44 @@ export class MobileBusinessService {
         id: 1,
         fileName: '个人资料相关',
         children: [
-          { fileCode: 'PFL001', fileType: 'ID_CARD_FRONT', fileName: '身份证人像面', fileSort: 1, requireFlag: 1, acceptType: 'jpg|jpeg|png|webp' },
-          { fileCode: 'PFL002', fileType: 'ID_CARD_BACK', fileName: '身份证国徽面', fileSort: 2, requireFlag: 1, acceptType: 'jpg|jpeg|png|webp' }
+          {
+            fileCode: 'PFL001',
+            fileType: 'ID_CARD_FRONT',
+            fileName: '身份证人像面',
+            fileSort: 1,
+            requireFlag: 1,
+            acceptType: 'jpg|jpeg|png|webp'
+          },
+          {
+            fileCode: 'PFL002',
+            fileType: 'ID_CARD_BACK',
+            fileName: '身份证国徽面',
+            fileSort: 2,
+            requireFlag: 1,
+            acceptType: 'jpg|jpeg|png|webp'
+          }
         ]
       },
       {
         id: 2,
         fileName: '车辆证明资料',
         children: [
-          { fileCode: 'PFL006', fileType: 'VEHICLE_LICENSE', fileName: '行驶证', fileSort: 6, requireFlag: 1, acceptType: 'jpg|jpeg|png|webp' },
-          { fileCode: 'PFL008', fileType: 'VEHICLE_IMAGE', fileName: '车辆照片', fileSort: 8, requireFlag: 2, acceptType: 'jpg|jpeg|png|webp' }
+          {
+            fileCode: 'PFL006',
+            fileType: 'VEHICLE_LICENSE',
+            fileName: '行驶证',
+            fileSort: 6,
+            requireFlag: 1,
+            acceptType: 'jpg|jpeg|png|webp'
+          },
+          {
+            fileCode: 'PFL008',
+            fileType: 'VEHICLE_IMAGE',
+            fileName: '车辆照片',
+            fileSort: 8,
+            requireFlag: 2,
+            acceptType: 'jpg|jpeg|png|webp'
+          }
         ]
       }
     ]
@@ -185,7 +224,9 @@ export class MobileBusinessService {
     return this.guardMobileEntryStorage(async () => {
       const org = await this.getDefaultOrg(headerOrgId)
       const customerByUuid = dto.uuid ? await this.findCustomerByUuid(dto.uuid) : null
-      const customerByPhone = customerByUuid ? null : await this.prisma.customer.findFirst({ where: { orgId: org.id, phone: dto.telephone } })
+      const customerByPhone = customerByUuid
+        ? null
+        : await this.prisma.customer.findFirst({ where: { orgId: org.id, phone: dto.telephone } })
       const data = {
         orgId: customerByUuid?.orgId ?? customerByPhone?.orgId ?? org.id,
         name: dto.personName,
@@ -204,12 +245,13 @@ export class MobileBusinessService {
         status: 'ACTIVE'
       }
 
-      const customer = customerByUuid || customerByPhone
-        ? await this.prisma.customer.update({
-          where: { id: (customerByUuid || customerByPhone).id },
-          data
-        })
-        : await this.prisma.customer.create({ data })
+      const customer =
+        customerByUuid || customerByPhone
+          ? await this.prisma.customer.update({
+              where: { id: (customerByUuid || customerByPhone).id },
+              data
+            })
+          : await this.prisma.customer.create({ data })
 
       await this.linkCustomerImages(customer, dto, user)
 
@@ -258,10 +300,7 @@ export class MobileBusinessService {
       const current = await this.prisma.vehicle.findFirst({
         where: {
           customerId: customer.id,
-          OR: [
-            { vin: dto.vehicleCode },
-            { plateNumber: dto.plateNumber }
-          ]
+          OR: [{ vin: dto.vehicleCode }, { plateNumber: dto.plateNumber }]
         }
       })
       const data = {
@@ -345,6 +384,9 @@ export class MobileBusinessService {
         rate,
         repaymentMethod: product?.repaymentMethod || '等额本息',
         status: ApplicationStatus.SUBMITTED,
+        businessType: 'CAR_LOAN',
+        currentNode: 2000,
+        currentStatus: 10,
         creatorId: user.sub,
         remark: remarkParts.join('；') || undefined
       }
@@ -362,7 +404,9 @@ export class MobileBusinessService {
   }
 
   async updateCredit(dto: MobileCreditUpdateDto) {
-    const application = await this.prisma.application.findFirst({ where: { applicationNo: dto.creditOrderId } })
+    const application = await this.prisma.application.findFirst({
+      where: { applicationNo: dto.creditOrderId }
+    })
     if (!application) throw new NotFoundException('授信申请不存在')
     const updated = await this.prisma.application.update({
       where: { id: application.id },
@@ -514,15 +558,16 @@ export class MobileBusinessService {
 
   private async findApplication(idOrNo: string | number) {
     const numericId = Number(idOrNo)
-    const application = Number.isInteger(numericId) && numericId > 0
-      ? await this.prisma.application.findFirst({
-        where: { id: numericId },
-        include: { customer: { include: { vehicles: true } }, product: true, funder: true }
-      })
-      : await this.prisma.application.findFirst({
-        where: { applicationNo: String(idOrNo) },
-        include: { customer: { include: { vehicles: true } }, product: true, funder: true }
-      })
+    const application =
+      Number.isInteger(numericId) && numericId > 0
+        ? await this.prisma.application.findFirst({
+            where: { id: numericId },
+            include: { customer: { include: { vehicles: true } }, product: true, funder: true }
+          })
+        : await this.prisma.application.findFirst({
+            where: { applicationNo: String(idOrNo) },
+            include: { customer: { include: { vehicles: true } }, product: true, funder: true }
+          })
     if (!application) throw new NotFoundException('授信申请不存在')
     return application
   }
@@ -534,7 +579,8 @@ export class MobileBusinessService {
       personName: customer.name,
       telephone: customer.phone,
       personIdcard: customer.idCard,
-      gender: customer.gender === Gender.MALE ? 1 : customer.gender === Gender.FEMALE ? 2 : undefined,
+      gender:
+        customer.gender === Gender.MALE ? 1 : customer.gender === Gender.FEMALE ? 2 : undefined,
       nation: customer.nation,
       race: customer.nation,
       personAddress: customer.householdAddress || customer.address,
@@ -583,15 +629,21 @@ export class MobileBusinessService {
       productName: application.product?.name,
       periods: application.term,
       pushQuota: Number(application.amount).toFixed(2),
-      passQuota: application.approvedAmount ? Number(application.approvedAmount).toFixed(2) : undefined,
-      validAmt: application.approvedAmount ? Number(application.approvedAmount).toFixed(2) : undefined,
+      passQuota: application.approvedAmount
+        ? Number(application.approvedAmount).toFixed(2)
+        : undefined,
+      validAmt: application.approvedAmount
+        ? Number(application.approvedAmount).toFixed(2)
+        : undefined,
       remark: application.remark,
       createTime: this.formatDateTime(application.createdAt),
       updateTime: this.formatDateTime(application.updatedAt),
-      ...(includeDetail ? {
-        vehicle: vehicle ? this.mapVehicle(vehicle, String(customer.id)) : undefined,
-        customer: customer ? this.mapCustomer(customer) : undefined
-      } : {})
+      ...(includeDetail
+        ? {
+            vehicle: vehicle ? this.mapVehicle(vehicle, String(customer.id)) : undefined,
+            customer: customer ? this.mapCustomer(customer) : undefined
+          }
+        : {})
     }
   }
 
@@ -626,7 +678,7 @@ export class MobileBusinessService {
       select: { id: true }
     })
     const vehicleIds = vehicles.map((vehicle) => vehicle.id)
-    const fileAssets = await this.getFileAssetModel()?.findMany?.({
+    const fileAssets = (await this.getFileAssetModel()?.findMany?.({
       where: {
         OR: [
           {
@@ -641,7 +693,7 @@ export class MobileBusinessService {
           }
         ]
       }
-    }) as any[] | undefined
+    })) as any[] | undefined
 
     if (!fileAssets?.length) return
     await this.prisma.applicationFile.createMany({
@@ -698,16 +750,22 @@ export class MobileBusinessService {
   }
 
   private getFileAssetModel() {
-    return (this.prisma as unknown as {
-      fileAsset?: {
-        findMany(args: unknown): Promise<unknown[]>
-        create(args: unknown): Promise<unknown>
-        update(args: unknown): Promise<unknown>
+    return (
+      this.prisma as unknown as {
+        fileAsset?: {
+          findMany(args: unknown): Promise<unknown[]>
+          create(args: unknown): Promise<unknown>
+          update(args: unknown): Promise<unknown>
+        }
       }
-    }).fileAsset
+    ).fileAsset
   }
 
-  private async resolveFileBinding(body: Record<string, string>, user: RequestUser, headerOrgId?: number) {
+  private async resolveFileBinding(
+    body: Record<string, string>,
+    user: RequestUser,
+    headerOrgId?: number
+  ) {
     const fileType = body.fileType || body.fileCode || body.categoryCode || 'IMAGE'
     if (body.creditOrderId) {
       const application = await this.findApplication(body.creditOrderId)
@@ -757,17 +815,20 @@ export class MobileBusinessService {
       if (customer) {
         where.OR = [
           { businessType: 'CUSTOMER', businessId: customer.id },
-          { businessType: 'APPLICATION', businessId: { in: await this.getCustomerApplicationIds(customer.id) } },
-          { businessType: 'VEHICLE', businessId: { in: await this.getCustomerVehicleIds(customer.id) } }
+          {
+            businessType: 'APPLICATION',
+            businessId: { in: await this.getCustomerApplicationIds(customer.id) }
+          },
+          {
+            businessType: 'VEHICLE',
+            businessId: { in: await this.getCustomerVehicleIds(customer.id) }
+          }
         ]
         return where
       }
     }
 
-    where.OR = [
-      { businessType: 'MOBILE', businessId: user.sub },
-      { uploadedBy: user.sub }
-    ]
+    where.OR = [{ businessType: 'MOBILE', businessId: user.sub }, { uploadedBy: user.sub }]
     return where
   }
 
@@ -954,11 +1015,12 @@ export class MobileBusinessService {
     }
     const message = error instanceof Error ? error.message : ''
     const isKnownField = MOBILE_ENTRY_STORAGE_FIELDS.some((field) => message.includes(field))
-    return isKnownField && (
-      message.includes('Unknown argument') ||
-      message.includes('does not exist') ||
-      message.includes('not found') ||
-      message.includes('column')
+    return (
+      isKnownField &&
+      (message.includes('Unknown argument') ||
+        message.includes('does not exist') ||
+        message.includes('not found') ||
+        message.includes('column'))
     )
   }
 

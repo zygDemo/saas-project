@@ -1010,6 +1010,25 @@ export class CreateApplicationDto {
   @IsEnum(ApplicationStatus)
   status?: ApplicationStatus
 
+  @ApiPropertyOptional({ description: '业务类型', default: 'CAR_LOAN' })
+  @IsOptional()
+  @IsString()
+  businessType?: string
+
+  @ApiPropertyOptional({ description: '当前流程节点' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(0)
+  currentNode?: number
+
+  @ApiPropertyOptional({ description: '当前节点状态' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(0)
+  currentStatus?: number
+
   @ApiProperty({ description: '创建人ID' })
   @ToNumber()
   @IsInt()
@@ -1078,6 +1097,25 @@ export class ApplicationQueryDto extends OrgScopedQueryDto {
   @IsOptional()
   @IsEnum(ApplicationStatus)
   status?: ApplicationStatus
+
+  @ApiPropertyOptional({ description: '业务类型' })
+  @IsOptional()
+  @IsString()
+  businessType?: string
+
+  @ApiPropertyOptional({ description: '当前流程节点' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(0)
+  currentNode?: number
+
+  @ApiPropertyOptional({ description: '当前节点状态' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(0)
+  currentStatus?: number
 
   @ApiPropertyOptional({ description: '客户ID' })
   @IsOptional()

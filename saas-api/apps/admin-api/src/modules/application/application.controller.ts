@@ -2,7 +2,11 @@ import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/co
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { ApplicationService } from './application.service'
-import { ApplicationQueryDto, CreateApplicationDto, UpdateApplicationDto } from './dto/application.dto'
+import {
+  ApplicationQueryDto,
+  CreateApplicationDto,
+  UpdateApplicationDto
+} from './dto/application.dto'
 import {
   ApprovalActionDto,
   CompleteSigningDto,
@@ -29,6 +33,12 @@ export class ApplicationController {
   @ApiOperation({ summary: '列表查询' })
   list(@Query() query: ApplicationQueryDto) {
     return this.service.getList(query)
+  }
+
+  @Get('flow-list')
+  @ApiOperation({ summary: '按流程节点状态查询订单' })
+  flowList(@Query() query: ApplicationQueryDto) {
+    return this.service.getFlowList(query)
   }
 
   @Get(':id')

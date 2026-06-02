@@ -1,7 +1,12 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
-import { CreateFlowConfigDto, FlowConfigQueryDto, UpdateFlowConfigDto } from './dto/flow-config.dto'
+import {
+  CreateFlowConfigDto,
+  FlowConfigQueryDto,
+  InitDefaultFlowConfigDto,
+  UpdateFlowConfigDto
+} from './dto/flow-config.dto'
 import { FlowConfigService } from './flow-config.service'
 
 @ApiTags('流程与规则')
@@ -15,6 +20,18 @@ export class FlowConfigController {
   @ApiOperation({ summary: '列表查询' })
   list(@Query() query: FlowConfigQueryDto) {
     return this.service.getList(query)
+  }
+
+  @Get('meta')
+  @ApiOperation({ summary: '流程节点元数据' })
+  meta() {
+    return this.service.getMeta()
+  }
+
+  @Post('init-default')
+  @ApiOperation({ summary: '初始化默认流程' })
+  initDefault(@Body() dto: InitDefaultFlowConfigDto) {
+    return this.service.initDefault(dto)
   }
 
   @Get(':id')

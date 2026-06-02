@@ -64,7 +64,7 @@ export const businessRoutes: AppRouteRecord = {
     {
       path: 'flow-config',
       name: 'BusinessFlowConfig',
-      component: businessPage,
+      component: '/business/flow-config',
       meta: {
         title: '流程与规则',
         icon: 'ri:git-branch-line',
