@@ -398,8 +398,8 @@ function pickImage() {
       mainLoading.value = true;
 
       try {
-        // 1. 本地 OCR 识别（先填表，不依赖网络）
-        await doLocalVehicleOcr(path);
+        // 1. 后端 OCR 识别（先填表）
+        await doVehicleOcr(path);
 
         // 2. 上传图片到服务器
         const uploadRes = await businessApi.uploadFile(path);
@@ -421,8 +421,8 @@ function pickImage() {
   });
 }
 
-/** 本地行驶证 OCR 识别并自动填表 */
-async function doLocalVehicleOcr(imagePath) {
+/** 后端行驶证 OCR 识别并自动填表 */
+async function doVehicleOcr(imagePath) {
   try {
     const data = await recognizeVehicle(imagePath);
     if (!data) return;

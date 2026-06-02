@@ -13,7 +13,7 @@
 - **UI 框架**：uview-pro（uni-app Vue3 多平台 UI 框架）
 - **支持平台**：H5、微信小程序（mp-weixin）、Android App、iOS App、HarmonyOS、支付宝小程序、百度小程序、抖音小程序、QQ 小程序、快手小程序、京东小程序、飞书小程序、小红书小程序、钉钉小程序、快应用等
 - **应用标识**：`__UNI__A86ECA0`
-- **微信小程序 AppID**：`wxbb176981bffc17fe`
+- **微信小程序 AppID**：`--`
 
 ---
 

@@ -10,9 +10,9 @@ import { readFile } from 'fs/promises'
 import { basename, extname, resolve, sep } from 'path'
 import { OcrObjectKeyDto } from './dto/ocr.dto'
 
-const OCR_SERVICE_DEFAULT_URL = 'http://127.0.0.1:8001'
+const OCR_DEFAULT_URL = 'https://www.yugui.store/ocr'
 const OCR_SERVICE_DEFAULT_TIMEOUT_MS = 60_000
-const OCR_IMAGE_LIMIT = 10 * 1024 * 1024
+const OCR_IMAGE_LIMIT = 8 * 1024 * 1024
 const ALLOWED_OCR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/bmp'])
 const MIME_TYPE_BY_EXTENSION: Record<string, string> = {
   '.jpg': 'image/jpeg',
@@ -122,6 +122,7 @@ export class OcrService {
 
     return this.fetchWithTimeout(this.getRecognizeEndpoint(), {
       method: 'POST',
+      headers: this.getAuthHeaders(),
       body: form
     })
   }
@@ -204,7 +205,7 @@ export class OcrService {
     if (!file) throw new BadRequestException('请选择要识别的图片')
     if (!file.buffer?.length) throw new BadRequestException('图片内容不能为空')
     if (file.size > OCR_IMAGE_LIMIT || file.buffer.length > OCR_IMAGE_LIMIT) {
-      throw new BadRequestException('图片大小不能超过 10MB')
+      throw new BadRequestException('图片大小不能超过 8MB')
     }
     if (!ALLOWED_OCR_MIME_TYPES.has(file.mimetype)) {
       throw new BadRequestException('OCR 仅支持 jpg、png、webp、bmp 图片')
@@ -522,19 +523,40 @@ export class OcrService {
   }
 
   private getRecognizeEndpoint() {
-    return `${this.getServiceBaseUrl()}/ocr`
+    const ocrUrl = this.config.get<string>('OCR_URL')?.trim()
+    if (ocrUrl) return ocrUrl.replace(/\/+$/, '')
+
+    const legacyBaseUrl = this.getLegacyServiceBaseUrl()
+    if (legacyBaseUrl) return `${legacyBaseUrl}/ocr`
+
+    return OCR_DEFAULT_URL
   }
 
   private getHealthEndpoint() {
-    return `${this.getServiceBaseUrl()}/health`
+    const ocrUrl = this.config.get<string>('OCR_URL')?.trim()
+    if (ocrUrl) return `${ocrUrl.replace(/\/+$/, '')}/health`
+
+    const legacyBaseUrl = this.getLegacyServiceBaseUrl()
+    if (legacyBaseUrl) return `${legacyBaseUrl}/health`
+
+    return `${OCR_DEFAULT_URL}/health`
   }
 
-  private getServiceBaseUrl() {
-    return this.config.get<string>('OCR_SERVICE_URL', OCR_SERVICE_DEFAULT_URL).replace(/\/+$/, '')
+  private getLegacyServiceBaseUrl() {
+    return this.config.get<string>('OCR_SERVICE_URL')?.replace(/\/+$/, '')
+  }
+
+  private getAuthHeaders(): HeadersInit | undefined {
+    const token = this.config.get<string>('OCR_TOKEN') || this.config.get<string>('OCR_SERVICE_TOKEN')
+    if (!token?.trim()) return undefined
+
+    return {
+      'x-ocr-token': token.trim()
+    }
   }
 
   private getTimeoutMs() {
-    const raw = this.config.get<string>('OCR_SERVICE_TIMEOUT_MS')
+    const raw = this.config.get<string>('OCR_TIMEOUT_MS') || this.config.get<string>('OCR_SERVICE_TIMEOUT_MS')
     const parsed = raw ? Number(raw) : OCR_SERVICE_DEFAULT_TIMEOUT_MS
     return Number.isFinite(parsed) && parsed > 0 ? parsed : OCR_SERVICE_DEFAULT_TIMEOUT_MS
   }
