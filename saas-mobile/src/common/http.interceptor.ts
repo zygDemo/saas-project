@@ -88,11 +88,14 @@ function handleHttpError(response: any, meta: RequestMeta) {
     handleUnauthorized(meta);
     return;
   }
-
-  // 其他 HTTP 错误
-  const msg = getErrorMessage(response.statusCode);
-  if (meta.toast) {
-    uni.showToast({ title: msg, icon: "none" });
+  if (response.data?.msg) {
+    uni.showToast({ title: response.data.msg, icon: "none" });
+  } else {
+    // 其他 HTTP 错误
+    const msg = getErrorMessage(response.statusCode);
+    if (meta.toast) {
+      uni.showToast({ title: msg, icon: "none" });
+    }
   }
 }
 

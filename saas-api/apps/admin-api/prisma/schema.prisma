@@ -521,6 +521,13 @@ model Customer {
   idCard          String?      // 身份证号
   gender          Gender       @default(UNKNOWN)
   birthDate       DateTime?
+  nation          String?
+  householdAddress String?
+  issuingAuthority String?
+  idCardValidFrom String?
+  idCardValidTo   String?
+  idCardFront     String?
+  idCardBack      String?
   maritalStatus   String?
   education       String?
   occupation      String?
@@ -568,6 +575,13 @@ model Vehicle {
   plateNumber   String?  // 车牌号
   brand         String?
   model         String?
+  ownerName     String?
+  address       String?
+  usageNature   String?
+  sealInfo      String?
+  engineNumber  String?
+  registerDate  DateTime?
+  vehicleImgUrl String?
   color         String?
   year          Int?
   mileage       Int?

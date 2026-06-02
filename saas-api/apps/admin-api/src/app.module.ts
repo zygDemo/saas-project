@@ -26,6 +26,7 @@ import { ApprovalModule } from './modules/approval/approval.module'
 import { SigningModule } from './modules/signing/signing.module'
 import { DisbursementModule } from './modules/disbursement/disbursement.module'
 import { RepaymentModule } from './modules/repayment/repayment.module'
+import { MobileBusinessModule } from './modules/mobile-business/mobile-business.module'
 
 const appEnv = process.env.NODE_ENV || 'development'
 
@@ -70,7 +71,8 @@ const appEnv = process.env.NODE_ENV || 'development'
     ApprovalModule,
     SigningModule,
     DisbursementModule,
-    RepaymentModule
+    RepaymentModule,
+    MobileBusinessModule
   ]
 })
 export class AppModule implements NestModule {

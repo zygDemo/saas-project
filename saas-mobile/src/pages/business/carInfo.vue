@@ -68,6 +68,7 @@ import { onLoad } from "@dcloudio/uni-app";
 import AppForm from "@/components/app-form/app-form.vue";
 import { useSessionStore } from "@/stores";
 import { useBusinessApi } from "@/api/business";
+import { recognizeVehicle } from "@/common/ocr";
 
 const sessionStore = useSessionStore();
 const businessApi = useBusinessApi();
@@ -397,7 +398,10 @@ function pickImage() {
       mainLoading.value = true;
 
       try {
-        // 1. 先上传图片
+        // 1. 本地 OCR 识别（先填表，不依赖网络）
+        await doLocalVehicleOcr(path);
+
+        // 2. 上传图片到服务器
         const uploadRes = await businessApi.uploadFile(path);
         if (uploadRes?.code !== 200) {
           $u.toast(uploadRes?.msg || "图片上传失败", "error");
@@ -408,43 +412,35 @@ function pickImage() {
           mainImage.value = imageUrl;
           vehicleImgUrlObjectKey.value = uploadRes.objectKey;
         }
-
-        // 2. 调用行驶证OCR识别
-        const ocrRes = await businessApi.getVehicleOcr(uploadRes?.objectKey);
-        if (ocrRes?.code === 200) {
-          // 兼容返回结构：字段可能直接挂在 ocrRes 上，也可能在 ocrRes.data 里
-          const data = ocrRes || {};
-          // OCR出参字段映射
-          carInfo.plateNumber = data.plateNumber || carInfo.plateNumber || "";
-          carInfo.vehicleBrand =
-            data.vehicleBrand || carInfo.vehicleBrand || "";
-          carInfo.vehicleModel =
-            data.vehicleModel || carInfo.vehicleModel || "";
-          carInfo.vehicleOwner =
-            data.vehicleOwner || carInfo.vehicleOwner || "";
-          carInfo.address = data.address || carInfo.address || "";
-          carInfo.usageNature = data.usageNature || carInfo.usageNature || "";
-          carInfo.sealInfo = data.sealInfo || carInfo.sealInfo || "";
-          carInfo.engineNumber =
-            data.engineNumber || carInfo.engineNumber || "";
-          // 注册日期兼容多种格式：yyyy.mm.dd / yyyy-mm-dd / yyyy/mm/dd
-          const regDateRaw = data.registerDate || "";
-          if (regDateRaw) {
-            carInfo.registerDate = regDateRaw.replace(/[./]/g, "-");
-          }
-          carInfo.vehicleCode = data.vehicleCode || carInfo.vehicleCode || "";
-          carInfo.mileage = data.mileage || carInfo.mileage || "";
-        } else {
-          $u.toast(ocrRes?.msg || "行驶证识别失败，请手动填写", "error");
-        }
       } catch (e) {
-        console.error("行驶证OCR识别异常", e);
-        $u.toast("行驶证识别异常，请手动填写", "error");
+        console.error("行驶证OCR/上传异常", e);
       } finally {
         mainLoading.value = false;
       }
     },
   });
+}
+
+/** 本地行驶证 OCR 识别并自动填表 */
+async function doLocalVehicleOcr(imagePath) {
+  try {
+    const data = await recognizeVehicle(imagePath);
+    if (!data) return;
+
+    if (data.plateNumber) carInfo.plateNumber = data.plateNumber;
+    if (data.vehicleType) carInfo.vehicleBrand = data.vehicleType;
+    if (data.model) carInfo.vehicleModel = data.model;
+    if (data.owner) carInfo.vehicleOwner = data.owner;
+    if (data.address) carInfo.address = data.address;
+    if (data.useCharacter) carInfo.usageNature = data.useCharacter;
+    if (data.engineNumber) carInfo.engineNumber = data.engineNumber;
+    if (data.vin) carInfo.vehicleCode = data.vin;
+    if (data.registerDate) carInfo.registerDate = data.registerDate;
+
+    $u.toast("已自动识别，请核对修改", "success");
+  } catch {
+    // OCR 失败不阻塞上传
+  }
 }
 
 const doSubmit = async () => {

@@ -77,9 +77,9 @@ async function main() {
 
     // 系统管理
     { path: '/system', name: 'System', title: '系统管理', icon: 'ri:settings-3-line', sort: 40 },
-    { parentKey: 'System', path: 'user', name: 'User', title: '用户管理', icon: 'ri:user-line', sort: 41, keepAlive: true },
-    { parentKey: 'System', path: 'role', name: 'Role', title: '角色管理', icon: 'ri:user-settings-line', sort: 42, keepAlive: true },
-    { parentKey: 'System', path: 'menu', name: 'Menus', title: '菜单管理', icon: 'ri:menu-line', sort: 43, keepAlive: true },
+    { parentKey: 'System', path: 'user', name: 'User', component: '/system/user', title: '用户管理', icon: 'ri:user-line', sort: 41, keepAlive: true },
+    { parentKey: 'System', path: 'role', name: 'Role', component: '/system/role', title: '角色管理', icon: 'ri:user-settings-line', sort: 42, keepAlive: true },
+    { parentKey: 'System', path: 'menu', name: 'Menus', component: '/system/menu', title: '菜单管理', icon: 'ri:menu-line', sort: 43, keepAlive: true },
     { parentKey: 'System', path: 'dict', name: 'DictMgmt', component: '/system/dict', title: '字典管理', icon: 'ri:book-open-line', sort: 44, keepAlive: true },
     { parentKey: 'System', path: 'region', name: 'RegionMgmt', title: '地区管理', icon: 'ri:map-pin-line', sort: 45, keepAlive: true },
     { parentKey: 'System', path: 'file', name: 'FileManage', component: '/system/file', title: '文件管理', icon: 'ri:file-list-3-line', sort: 46, keepAlive: true },
