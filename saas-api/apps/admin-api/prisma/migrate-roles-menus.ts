@@ -82,11 +82,12 @@ async function main() {
     { parentKey: 'System', path: 'menu', name: 'Menus', title: '菜单管理', icon: 'ri:menu-line', sort: 43, keepAlive: true },
     { parentKey: 'System', path: 'dict', name: 'DictMgmt', component: '/system/dict', title: '字典管理', icon: 'ri:book-open-line', sort: 44, keepAlive: true },
     { parentKey: 'System', path: 'region', name: 'RegionMgmt', title: '地区管理', icon: 'ri:map-pin-line', sort: 45, keepAlive: true },
-    { parentKey: 'System', path: 'file-config', name: 'FileConfig', component: '/system/file-config', title: '文件存储配置', icon: 'ri:hard-drive-2-line', sort: 46, keepAlive: true },
-    { parentKey: 'System', path: 'msg-template', name: 'MsgTemplate', title: '消息模板', icon: 'ri:mail-send-line', sort: 47, keepAlive: true },
-    { parentKey: 'System', path: 'sys-param', name: 'SysParam', title: '系统参数', icon: 'ri:settings-line', sort: 48, keepAlive: true },
-    { parentKey: 'System', path: 'notice', name: 'Notice', title: '公告管理', icon: 'ri:notification-line', sort: 49, keepAlive: true },
-    { parentKey: 'System', path: 'user-center', name: 'UserCenter', title: '用户中心', icon: 'ri:user-line', sort: 50, keepAlive: true, hidden: true, hiddenTab: true },
+    { parentKey: 'System', path: 'file', name: 'FileManage', component: '/system/file', title: '文件管理', icon: 'ri:file-list-3-line', sort: 46, keepAlive: true },
+    { parentKey: 'System', path: 'file-config', name: 'FileConfig', component: '/system/file-config', title: '文件存储配置', icon: 'ri:hard-drive-2-line', sort: 47, keepAlive: true },
+    { parentKey: 'System', path: 'msg-template', name: 'MsgTemplate', title: '消息模板', icon: 'ri:mail-send-line', sort: 48, keepAlive: true },
+    { parentKey: 'System', path: 'sys-param', name: 'SysParam', title: '系统参数', icon: 'ri:settings-line', sort: 49, keepAlive: true },
+    { parentKey: 'System', path: 'notice', name: 'Notice', title: '公告管理', icon: 'ri:notification-line', sort: 50, keepAlive: true },
+    { parentKey: 'System', path: 'user-center', name: 'UserCenter', title: '用户中心', icon: 'ri:user-line', sort: 51, keepAlive: true, hidden: true, hiddenTab: true },
 
     // 业务管理
     { path: '/business', name: 'Business', title: '业务管理', icon: 'ri:briefcase-line', sort: 60 },
@@ -155,7 +156,7 @@ async function main() {
   const dashIds = filterIds('Dashboard', 'Console', 'Analysis')
   const platformIds = filterIds('Platform', 'TenantMgmt', 'PackageBilling', 'ProductTemplate', 'PlatformSupervision', 'ThirdPartyService', 'WorkOrder')
   const dataCenterIds = filterIds('DataCenter', 'DataStats', 'AuditLog')
-  const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'UserCenter')
+  const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter')
   const bizCoreIds = filterIds('Business', 'Lead', 'Customer', 'Application', 'Signing')
   const bizApprovalIds = filterIds('Business', 'Application', 'Approval')
   const bizFinanceIds = filterIds('Business', 'Disbursement', 'OrderMgmt', 'Repayment', 'Reports')
@@ -201,7 +202,7 @@ async function main() {
     'DataStats', 'AuditLog',
     'Org', 'Dept', 'Product', 'Funder', 'FlowConfig', 'Lead', 'Customer', 'Application', 'Approval', 'Signing',
     'Disbursement', 'OrderMgmt', 'Repayment', 'PawnBusiness', 'Reports', 'OrgConfig',
-    'Menus', 'DictMgmt', 'RegionMgmt', 'MsgTemplate', 'Notice',
+    'Menus', 'DictMgmt', 'RegionMgmt', 'FileManage', 'MsgTemplate', 'Notice',
   ]
 
   let permCount = 0

@@ -262,6 +262,17 @@ declare namespace Api {
 
     type FileAssetList = Api.Common.PaginatedResponse<FileAssetItem>
 
+    interface UploadImageResult {
+      url: string
+      fileName: string
+      objectKey: string
+      mimeType: string
+      fileExt: string
+      fileSize: number
+      storageType: string
+      uploadedBy?: number
+    }
+
     interface FileAssetItem {
       id: number
       orgId?: number

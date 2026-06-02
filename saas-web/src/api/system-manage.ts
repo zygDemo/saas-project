@@ -194,6 +194,14 @@ export function fetchGetFileAssetList(params: Api.SystemManage.FileAssetSearchPa
   })
 }
 
+export function fetchUploadImage(data: FormData) {
+  return request.post<Api.SystemManage.UploadImageResult>({
+    url: '/file/upload/image',
+    data,
+    showSuccessMessage: true
+  })
+}
+
 export function fetchCreateFileAsset(params: Api.SystemManage.SaveFileAssetParams) {
   return request.post<Api.SystemManage.FileAssetItem>({
     url: '/file/create',

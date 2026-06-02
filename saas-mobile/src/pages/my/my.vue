@@ -179,13 +179,13 @@ function formatLoanAmount(amount: unknown) {
 // 功能菜单列表 - 网格样式
 // 功能列表 - 仅保留这几个，从上往下依次排列
 const menuList = ref([
-  // {
-  //   icon: "setting",
-  //   title: "个人设置",
-  //   desc: "修改资料与偏好",
-  //   path: "/pages/my/settings",
-  //   gradient: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-  // },
+  {
+    icon: "setting",
+    title: "个人设置",
+    desc: "修改资料与偏好",
+    path: "/pages/my/settings",
+    gradient: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+  },
   {
     icon: "question-circle",
     title: "帮助中心",

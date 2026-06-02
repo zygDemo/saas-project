@@ -1,18 +1,24 @@
 import { ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
+import { NestExpressApplication } from '@nestjs/platform-express'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import { join } from 'path'
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { RequestLoggerInterceptor } from './common/interceptors/request-logger.interceptor'
 import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule)
+  const app = await NestFactory.create<NestExpressApplication>(AppModule)
   const config = app.get(ConfigService)
   const apiPrefix = config.get<string>('API_PREFIX', 'saas/api')
+  const normalizedApiPrefix = apiPrefix.replace(/^\/+|\/+$/g, '')
 
   app.setGlobalPrefix(apiPrefix)
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: `/${normalizedApiPrefix}/uploads/`
+  })
   app.enableCors({
     origin: config.get<string>('FRONTEND_ORIGIN', 'http://localhost:5173'),
     credentials: true

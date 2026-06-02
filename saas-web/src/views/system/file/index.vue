@@ -45,6 +45,19 @@
       </template>
 
       <ElTable v-loading="loading" :data="list" row-key="id" border stripe>
+        <ElTableColumn label="预览" width="88" align="center">
+          <template #default="{ row }">
+            <ElImage
+              v-if="isImageFile(row)"
+              class="file-thumb"
+              :src="resolveFileUrl(row.fileUrl)"
+              :preview-src-list="[resolveFileUrl(row.fileUrl)]"
+              preview-teleported
+              fit="cover"
+            />
+            <span v-else class="file-empty">-</span>
+          </template>
+        </ElTableColumn>
         <ElTableColumn prop="fileName" label="文件名" min-width="220" show-overflow-tooltip />
         <ElTableColumn prop="categoryName" label="分类" min-width="130" show-overflow-tooltip />
         <ElTableColumn prop="businessType" label="业务类型" width="120">
@@ -85,6 +98,24 @@
 
     <ElDialog v-model="dialogVisible" :title="form.id ? '编辑文件' : '新增文件'" width="680px">
       <ElForm :model="form" label-width="110px">
+        <ElFormItem label="上传图片">
+          <ElUpload
+            class="image-uploader"
+            :action="uploadImageUrl"
+            :headers="uploadHeaders"
+            :show-file-list="false"
+            accept="image/*"
+            :before-upload="beforeImageUpload"
+            :on-success="handleImageUploadSuccess"
+            :on-error="handleImageUploadError"
+          >
+            <img v-if="form.fileUrl && isImageFile(form)" :src="resolveFileUrl(form.fileUrl)" class="upload-preview" />
+            <div v-else class="upload-placeholder">
+              <ArtSvgIcon icon="ri:image-add-line" class="upload-icon" />
+              <span>点击上传图片</span>
+            </div>
+          </ElUpload>
+        </ElFormItem>
         <ElFormItem label="文件名" required>
           <ElInput v-model="form.fileName" placeholder="请输入文件名" />
         </ElFormItem>
@@ -110,14 +141,14 @@
         <ElFormItem label="机构ID">
           <ElInputNumber v-model="form.orgId" :min="1" controls-position="right" style="width: 100%" />
         </ElFormItem>
-        <ElFormItem label="扩展信息">
+        <ElFormItem v-if="form.id" label="扩展信息">
           <div class="file-binding">
             <ElInput v-model="form.mimeType" placeholder="MIME 类型" />
             <ElInput v-model="form.fileExt" placeholder="扩展名" />
             <ElInputNumber v-model="form.fileSize" :min="0" controls-position="right" placeholder="字节" />
           </div>
         </ElFormItem>
-        <ElFormItem label="存储类型">
+        <ElFormItem v-if="form.id" label="存储类型">
           <ElSelect v-model="form.storageType" style="width: 100%">
             <ElOption label="本地" value="LOCAL" />
             <ElOption label="OSS" value="OSS" />
@@ -125,7 +156,7 @@
             <ElOption label="S3" value="S3" />
           </ElSelect>
         </ElFormItem>
-        <ElFormItem label="对象Key">
+        <ElFormItem v-if="form.id" label="对象Key">
           <ElInput v-model="form.objectKey" placeholder="对象存储 Key，可选" />
         </ElFormItem>
         <ElFormItem label="状态">
@@ -152,12 +183,59 @@
     fetchGetFileAssetList,
     fetchUpdateFileAsset
   } from '@/api/system-manage'
+  import { useUserStore } from '@/store/modules/user'
+  import { API_BASE_URL } from '@/utils/http'
   import { ElMessage, ElMessageBox } from 'element-plus'
 
   defineOptions({ name: 'FileManage' })
 
   type FileAssetItem = Api.SystemManage.FileAssetItem
+  type UploadImageResponse = {
+    code: number
+    msg: string
+    data: Api.SystemManage.UploadImageResult
+  }
 
+  const MAX_IMAGE_SIZE = 10
+  const FILE_FORM_FIELDS = [
+    'id',
+    'orgId',
+    'businessType',
+    'businessId',
+    'categoryCode',
+    'categoryName',
+    'fileName',
+    'fileUrl',
+    'objectKey',
+    'mimeType',
+    'fileExt',
+    'fileSize',
+    'storageType',
+    'status',
+    'remark'
+  ] as const
+  const FILE_SAVE_FIELDS = [
+    'orgId',
+    'businessType',
+    'businessId',
+    'categoryCode',
+    'categoryName',
+    'fileName',
+    'fileUrl',
+    'objectKey',
+    'mimeType',
+    'fileExt',
+    'fileSize',
+    'storageType',
+    'status',
+    'remark'
+  ] as const
+  const userStore = useUserStore()
+  const uploadImageUrl = `${API_BASE_URL}/file/upload/image`
+  const uploadHeaders = computed(() => ({
+    Authorization: userStore.accessToken,
+    'x-tenant-id': import.meta.env.VITE_TENANT_ID || '1'
+  }))
   const businessTypeOptions = [
     { label: '进件', value: 'APPLICATION' },
     { label: '签约', value: 'SIGNING' },
@@ -167,6 +245,7 @@
     { label: '线索', value: 'LEAD' }
   ]
   const categoryOptions = [
+    { label: '图片', value: 'IMAGE' },
     { label: '身份证', value: 'ID_CARD' },
     { label: '行驶证', value: 'VEHICLE_LICENSE' },
     { label: '登记证', value: 'VEHICLE_REGISTER' },
@@ -193,8 +272,8 @@
     status: ''
   })
   const form = reactive<Partial<FileAssetItem>>({
-    categoryCode: 'OTHER',
-    categoryName: '其他',
+    categoryCode: 'IMAGE',
+    categoryName: '图片',
     storageType: 'LOCAL',
     status: 'ACTIVE'
   })
@@ -204,11 +283,11 @@
   async function loadData() {
     loading.value = true
     try {
-      const result = await fetchGetFileAssetList({
+      const result = await fetchGetFileAssetList(cleanSearchParams({
         ...search,
         current: pagination.current,
         size: pagination.size
-      })
+      }))
       list.value = result.records || []
       pagination.total = result.total || 0
     } finally {
@@ -234,8 +313,8 @@
       orgId: undefined,
       businessType: '',
       businessId: undefined,
-      categoryCode: 'OTHER',
-      categoryName: '其他',
+      categoryCode: 'IMAGE',
+      categoryName: '图片',
       fileName: '',
       fileUrl: '',
       objectKey: '',
@@ -247,13 +326,60 @@
       uploadedBy: undefined,
       remark: ''
     })
-    if (row) Object.assign(form, row)
+    if (row) Object.assign(form, pickFields(row, FILE_FORM_FIELDS))
     dialogVisible.value = true
   }
 
   function syncCategoryName(value: string) {
     form.categoryName =
       categoryOptions.find((item) => item.value === value)?.label || form.categoryName || value
+  }
+
+  function beforeImageUpload(file: File) {
+    const isImage = file.type.startsWith('image/')
+    const isLtLimit = file.size / 1024 / 1024 <= MAX_IMAGE_SIZE
+
+    if (!isImage) {
+      ElMessage.warning('只能上传图片文件')
+      return false
+    }
+
+    if (!isLtLimit) {
+      ElMessage.warning(`图片大小不能超过 ${MAX_IMAGE_SIZE}MB`)
+      return false
+    }
+
+    return true
+  }
+
+  function handleImageUploadSuccess(response: UploadImageResponse) {
+    if (response?.code !== 200 || !response.data) {
+      ElMessage.error(response?.msg || '图片上传失败')
+      return
+    }
+
+    applyUploadedImage(response.data)
+    ElMessage.success('图片上传成功')
+  }
+
+  function handleImageUploadError() {
+    ElMessage.error('图片上传失败')
+  }
+
+  function applyUploadedImage(file: Api.SystemManage.UploadImageResult) {
+    Object.assign(form, {
+      fileName: file.fileName,
+      fileUrl: file.url,
+      objectKey: file.objectKey,
+      mimeType: file.mimeType,
+      fileExt: file.fileExt,
+      fileSize: file.fileSize,
+      storageType: file.storageType,
+      uploadedBy: file.uploadedBy,
+      categoryCode: form.categoryCode || 'IMAGE',
+      categoryName: form.categoryName || '图片',
+      status: form.status || 'ACTIVE'
+    })
   }
 
   async function submitForm() {
@@ -284,17 +410,42 @@
       ElMessage.warning('文件地址为空')
       return
     }
-    window.open(row.fileUrl, '_blank')
+    window.open(resolveFileUrl(row.fileUrl), '_blank')
   }
 
   function cleanPayload(source: Partial<FileAssetItem>) {
     const payload: Record<string, unknown> = {}
-    for (const [key, value] of Object.entries(source)) {
-      if (key === 'id' || key === 'createdAt' || key === 'updatedAt') continue
+    for (const key of FILE_SAVE_FIELDS) {
+      const value = source[key]
       if (value === undefined || value === null || value === '') continue
       payload[key] = value
     }
+
+    if (!payload.businessType || !payload.businessId) {
+      delete payload.businessType
+      delete payload.businessId
+    }
+
     return payload
+  }
+
+  function pickFields<T extends object, K extends readonly string[]>(source: T, fields: K) {
+    const result: Record<string, unknown> = {}
+    for (const key of fields) {
+      if (Object.prototype.hasOwnProperty.call(source, key)) {
+        result[key] = (source as Record<string, unknown>)[key]
+      }
+    }
+    return result
+  }
+
+  function cleanSearchParams(source: Api.SystemManage.FileAssetSearchParams) {
+    const params: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(source)) {
+      if (value === undefined || value === null || value === '') continue
+      params[key] = value
+    }
+    return params as Api.SystemManage.FileAssetSearchParams
   }
 
   function businessTypeLabel(value?: string) {
@@ -311,6 +462,20 @@
     if (size < 1024) return `${size} B`
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
     return `${(size / 1024 / 1024).toFixed(1)} MB`
+  }
+
+  function isImageFile(row: Partial<FileAssetItem>) {
+    const mimeType = row.mimeType || ''
+    const ext = (row.fileExt || row.fileName?.split('.').pop() || '').toLowerCase()
+    return mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext)
+  }
+
+  function resolveFileUrl(fileUrl?: string) {
+    if (!fileUrl) return ''
+    if (/^(https?:)?\/\//.test(fileUrl) || fileUrl.startsWith('data:') || fileUrl.startsWith('blob:')) {
+      return fileUrl
+    }
+    return fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`
   }
 </script>
 
@@ -343,6 +508,55 @@
       display: flex;
       justify-content: flex-end;
       margin-top: 16px;
+    }
+
+    .file-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 4px;
+      vertical-align: middle;
+      cursor: zoom-in;
+    }
+
+    .file-empty {
+      color: var(--el-text-color-placeholder);
+    }
+
+    .image-uploader {
+      :deep(.el-upload) {
+        width: 160px;
+        height: 112px;
+        overflow: hidden;
+        border: 1px dashed var(--el-border-color);
+        border-radius: 6px;
+        background: var(--el-fill-color-lighter);
+      }
+    }
+
+    .upload-preview,
+    .upload-placeholder {
+      width: 160px;
+      height: 112px;
+    }
+
+    .upload-preview {
+      display: block;
+      object-fit: cover;
+    }
+
+    .upload-placeholder {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      color: var(--el-text-color-secondary);
+      font-size: 13px;
+    }
+
+    .upload-icon {
+      font-size: 28px;
+      color: var(--el-color-primary);
     }
 
     .file-binding {

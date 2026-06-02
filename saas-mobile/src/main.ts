@@ -27,7 +27,7 @@ export function createApp() {
   app.use(uViewPro, {
     theme: {
       themes,
-      defaultTheme: "ocean",
+      defaultTheme: "nebula",
       defaultDarkMode: "light",
     },
     locale: "zh-CN",
