@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module'
 import { HealthModule } from './modules/health/health.module'
 import { MenusModule } from './modules/menus/menus.module'
 import { DictModule } from './modules/dict/dict.module'
+import { FileModule } from './modules/file/file.module'
 import { PrismaModule } from './modules/prisma/prisma.module'
 import { QueueModule } from './modules/queue/queue.module'
 import { RedisModule } from './modules/redis/redis.module'
@@ -17,6 +18,7 @@ import { OrganizationModule } from './modules/org/org.module'
 import { DeptModule } from './modules/dept/dept.module'
 import { ProductModule } from './modules/product/product.module'
 import { FunderModule } from './modules/funder/funder.module'
+import { FlowConfigModule } from './modules/flow-config/flow-config.module'
 import { LeadModule } from './modules/lead/lead.module'
 import { CustomerModule } from './modules/customer/customer.module'
 import { ApplicationModule } from './modules/application/application.module'
@@ -54,12 +56,14 @@ const appEnv = process.env.NODE_ENV || 'development'
     RolesModule,
     MenusModule,
     DictModule,
+    FileModule,
     HealthModule,
     // 业务模块
     OrganizationModule,
     DeptModule,
     ProductModule,
     FunderModule,
+    FlowConfigModule,
     LeadModule,
     CustomerModule,
     ApplicationModule,

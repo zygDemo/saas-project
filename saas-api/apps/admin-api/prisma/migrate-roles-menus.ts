@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 角色与菜单数据迁移脚本
  *
  * 用途：将 PRD 定义的 9 类角色 + 45 个菜单项同步到数据库
@@ -82,7 +82,7 @@ async function main() {
     { parentKey: 'System', path: 'menu', name: 'Menus', title: '菜单管理', icon: 'ri:menu-line', sort: 43, keepAlive: true },
     { parentKey: 'System', path: 'dict', name: 'DictMgmt', component: '/system/dict', title: '字典管理', icon: 'ri:book-open-line', sort: 44, keepAlive: true },
     { parentKey: 'System', path: 'region', name: 'RegionMgmt', title: '地区管理', icon: 'ri:map-pin-line', sort: 45, keepAlive: true },
-    { parentKey: 'System', path: 'file-config', name: 'FileConfig', title: '文件存储配置', icon: 'ri:hard-drive-2-line', sort: 46, keepAlive: true },
+    { parentKey: 'System', path: 'file-config', name: 'FileConfig', component: '/system/file-config', title: '文件存储配置', icon: 'ri:hard-drive-2-line', sort: 46, keepAlive: true },
     { parentKey: 'System', path: 'msg-template', name: 'MsgTemplate', title: '消息模板', icon: 'ri:mail-send-line', sort: 47, keepAlive: true },
     { parentKey: 'System', path: 'sys-param', name: 'SysParam', title: '系统参数', icon: 'ri:settings-line', sort: 48, keepAlive: true },
     { parentKey: 'System', path: 'notice', name: 'Notice', title: '公告管理', icon: 'ri:notification-line', sort: 49, keepAlive: true },

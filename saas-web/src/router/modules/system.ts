@@ -60,6 +60,28 @@ export const systemRoutes: AppRouteRecord = {
       }
     },
     {
+      path: 'file',
+      name: 'FileManage',
+      component: '/system/file',
+      meta: {
+        title: '文件管理',
+        icon: 'ri:file-list-3-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
+    },
+    {
+      path: 'file-config',
+      name: 'FileConfig',
+      component: '/system/file-config',
+      meta: {
+        title: '文件存储配置',
+        icon: 'ri:hard-drive-2-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
+    },
+    {
       path: 'nested',
       name: 'Nested',
       component: '',

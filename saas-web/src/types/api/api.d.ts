@@ -259,5 +259,57 @@ declare namespace Api {
       status?: string
       remark?: string
     }
+
+    type FileAssetList = Api.Common.PaginatedResponse<FileAssetItem>
+
+    interface FileAssetItem {
+      id: number
+      orgId?: number
+      businessType?: string
+      businessId?: number
+      categoryCode: string
+      categoryName: string
+      fileName: string
+      fileUrl: string
+      objectKey?: string
+      mimeType?: string
+      fileExt?: string
+      fileSize?: number
+      storageType: string
+      status: string
+      uploadedBy?: number
+      remark?: string
+      createdAt: string
+      updatedAt: string
+    }
+
+    type FileAssetSearchParams = Partial<
+      Pick<
+        FileAssetItem,
+        'orgId' | 'businessType' | 'businessId' | 'categoryCode' | 'fileName' | 'status'
+      > &
+        Api.Common.CommonSearchParams
+    >
+
+    type SaveFileAssetParams = Partial<
+      Pick<
+        FileAssetItem,
+        | 'orgId'
+        | 'businessType'
+        | 'businessId'
+        | 'categoryCode'
+        | 'categoryName'
+        | 'fileName'
+        | 'fileUrl'
+        | 'objectKey'
+        | 'mimeType'
+        | 'fileExt'
+        | 'fileSize'
+        | 'storageType'
+        | 'status'
+        | 'uploadedBy'
+        | 'remark'
+      >
+    >
   }
 }

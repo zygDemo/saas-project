@@ -109,10 +109,12 @@ model Tenant {
   permissions Permission[]
   dictTypes DictType[]
   dictData DictData[]
+  fileAssets FileAsset[]
   organizations Organization[]
   departments Department[]
   products Product[]
   funders Funder[]
+  flowConfigs FlowConfig[]
   leads Lead[]
   customers Customer[]
   applications Application[]
@@ -280,6 +282,37 @@ model DictData {
   @@index([status])
 }
 
+model FileAsset {
+  id            Int      @id @default(autoincrement())
+  tenantId      Int
+  orgId         Int?
+  businessType  String?
+  businessId    Int?
+  categoryCode  String
+  categoryName  String
+  fileName      String
+  fileUrl       String
+  objectKey     String?
+  mimeType      String?
+  fileExt       String?
+  fileSize      Int?
+  storageType   String   @default("LOCAL")
+  status        String   @default("ACTIVE")
+  uploadedBy    Int?
+  remark        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([orgId])
+  @@index([businessType, businessId])
+  @@index([categoryCode])
+  @@index([status])
+  @@index([uploadedBy])
+}
+
 // ==================== 机构/部门模型 ====================
 
 model Organization {
@@ -302,6 +335,7 @@ model Organization {
   departments   Department[]
   products      Product[]
   funders       Funder[]
+  flowConfigs   FlowConfig[]
   leads         Lead[]
   customers     Customer[]
   applications  Application[]
@@ -396,6 +430,37 @@ model Funder {
   @@unique([orgId, code])
   @@index([tenantId])
   @@index([orgId])
+}
+
+model FlowConfig {
+  id               Int          @id @default(autoincrement())
+  tenantId         Int
+  orgId            Int
+  name             String
+  businessType     String       // LOAN, LEASE, PAWN
+  nodeCode         String       // LEAD, APPLICATION, APPROVAL, SIGNING, DISBURSEMENT
+  nodeName         String
+  approveLevel     Int          @default(1)
+  amountLimit      Decimal?     @db.Decimal(15, 2)
+  timeoutHours     Int?
+  requireMaterials Boolean      @default(false)
+  requireApproval  Boolean      @default(true)
+  autoPass         Boolean      @default(false)
+  ruleConfig       Json?
+  status           String       @default("ACTIVE")
+  remark           String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  tenant           Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  org              Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, businessType, nodeCode])
+  @@index([tenantId])
+  @@index([orgId])
+  @@index([businessType])
+  @@index([nodeCode])
+  @@index([status])
 }
 
 // ==================== 线索模型 ====================
