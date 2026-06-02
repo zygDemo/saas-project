@@ -354,8 +354,8 @@ function pickImage(side) {
 
       if (path) {
         try {
-          // 1. 本地 OCR 识别（先填表，不依赖网络）
-          await doLocalOcr(path, side);
+          // 1. 后端 OCR 识别（先填表）
+          await doIdCardOcr(path, side);
 
           // 2. 上传图片到服务器
           const uploadRes = await businessApi.uploadFile(path);
@@ -384,8 +384,8 @@ function pickImage(side) {
   });
 }
 
-/** 本地 OCR 识别并自动填表 */
-async function doLocalOcr(imagePath, side) {
+/** 后端 OCR 识别并自动填表 */
+async function doIdCardOcr(imagePath, side) {
   try {
     const result = await recognizeIdCard(imagePath, side === "front" ? "front" : "back");
     if (!result) return;

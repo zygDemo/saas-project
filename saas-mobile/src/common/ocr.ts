@@ -1,25 +1,22 @@
 /**
- * OCR 工具模块 — 基于 tesseract.js 本地识别
- * 仅 H5 环境可用（Web Worker + WASM）
+ * OCR 工具模块：通过后端 OCR 接口识别，避免前端加载 tesseract 语言模型。
  */
-// #ifdef H5
-import { createWorker } from 'tesseract.js';
-// #endif
+import { uploadFileWithData } from "@/common/http.interceptor";
 
 /** 身份证人像面 OCR 结果 */
 export interface IdCardFrontResult {
   name: string;
-  gender: string;      // "男" | "女"
-  nation: string;      // 如 "汉"
-  birth: string;       // yyyy-MM-dd
+  gender: string;
+  nation: string;
+  birth: string;
   address: string;
   idNum: string;
 }
 
 /** 身份证国徽面 OCR 结果 */
 export interface IdCardBackResult {
-  authority: string;   // 签发机关
-  validDate: string;   // 如 "2020.01.01-2030.01.01" 或 "2020.01.01-长期"
+  authority: string;
+  validDate: string;
 }
 
 /** 行驶证 OCR 结果 */
@@ -36,211 +33,143 @@ export interface VehicleOcrResult {
   issueDate: string;
 }
 
-// ===== ID Card Parsing =====
-
-/** 解析身份证人像面 OCR 文本 */
-function parseIdCardFront(raw: string): IdCardFrontResult {
-  const result: IdCardFrontResult = {
-    name: '',
-    gender: '',
-    nation: '',
-    birth: '',
-    address: '',
-    idNum: '',
+interface OcrApiResponse<TFields = Record<string, unknown>, TParsed = unknown> {
+  code?: number;
+  msg?: string;
+  data?: {
+    success?: boolean;
+    text?: string;
+    fields?: TFields;
+    parsed?: TParsed;
   };
-
-  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-
-  for (const line of lines) {
-    // 姓名
-    const nameMatch = line.match(/姓名[：:\s]*([^\s]{2,4})/);
-    if (nameMatch) { result.name = nameMatch[1]; continue; }
-
-    // 性别
-    const genderMatch = line.match(/性别[：:\s]*(男|女)/);
-    if (genderMatch) { result.gender = genderMatch[1]; continue; }
-
-    // 民族
-    const nationMatch = line.match(/民族[：:\s]*(\S{1,4})/);
-    if (nationMatch) { result.nation = nationMatch[1]; continue; }
-
-    // 出生日期
-    const birthMatch = line.match(/(?:出生|生日)[：:\s]*(\d{4})\D*(\d{1,2})\D*(\d{1,2})/);
-    if (birthMatch) {
-      const m = birthMatch[2].padStart(2, '0');
-      const d = birthMatch[3].padStart(2, '0');
-      result.birth = `${birthMatch[1]}-${m}-${d}`;
-      continue;
-    }
-
-    // 住址
-    const addrMatch = line.match(/(?:住址|地址)[：:\s]*(.+)/);
-    if (addrMatch) { result.address = addrMatch[1]; continue; }
-
-    // 身份证号（18位）
-    const idMatch = line.match(/(?:公民身份号码|身份证号|身份证)[：:\s]*(\d{17}[\dXx])/);
-    if (idMatch) { result.idNum = idMatch[1].toUpperCase(); continue; }
-
-    // 兜底：纯 18 位数字+X
-    const pureIdMatch = line.match(/^(\d{17}[\dXx])$/);
-    if (pureIdMatch) { result.idNum = pureIdMatch[1].toUpperCase(); continue; }
-  }
-
-  return result;
 }
 
-/** 解析身份证国徽面 OCR 文本 */
-function parseIdCardBack(raw: string): IdCardBackResult {
-  const result: IdCardBackResult = { authority: '', validDate: '' };
-  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-
-  for (const line of lines) {
-    const authMatch = line.match(/(?:签发机关|发证机关)[：:\s]*(.+)/);
-    if (authMatch) { result.authority = authMatch[1]; continue; }
-
-    const validMatch = line.match(/(?:有效期限|有效期)[：:\s]*(.+)/);
-    if (validMatch) { result.validDate = validMatch[1]; continue; }
-  }
-
-  return result;
+interface IdCardParsed {
+  side?: "front" | "back";
+  front?: Partial<IdCardFrontResult>;
+  back?: Partial<IdCardBackResult>;
 }
 
-// ===== Vehicle License Parsing =====
+interface IdCardFields {
+  personName?: string;
+  personIdcard?: string;
+  gender?: number | string;
+  race?: string;
+  birth?: string;
+  personAddress?: string;
+  personIssuingAuthority?: string;
+  personValidDateStart?: string;
+  personValidDateEnd?: string;
+}
 
-/** 解析行驶证 OCR 文本 */
-function parseVehicleOcr(raw: string): VehicleOcrResult {
-  const result: VehicleOcrResult = {
-    plateNumber: '',
-    vehicleType: '',
-    owner: '',
-    address: '',
-    useCharacter: '',
-    model: '',
-    vin: '',
-    engineNumber: '',
-    registerDate: '',
-    issueDate: '',
+interface VehicleFields {
+  plateNumber?: string;
+  vehicleBrand?: string;
+  vehicleModel?: string;
+  vehicleOwner?: string;
+  address?: string;
+  usageNature?: string;
+  engineNumber?: string;
+  registerDate?: string;
+  vehicleCode?: string;
+}
+
+function unwrapOcrData<TFields, TParsed>(response: OcrApiResponse<TFields, TParsed>) {
+  if (response?.code !== 200 || !response.data) {
+    throw new Error(response?.msg || "OCR 识别失败");
+  }
+  return response.data;
+}
+
+function genderToText(value: unknown) {
+  if (value === 1 || value === "1") return "男";
+  if (value === 2 || value === "2") return "女";
+  return typeof value === "string" ? value : "";
+}
+
+function buildValidDate(start?: string, end?: string) {
+  if (!start && !end) return "";
+  if (!start) return end || "";
+  if (!end) return start;
+  return `${start}-${end}`;
+}
+
+function mapIdCardFront(parsed: IdCardParsed, fields: IdCardFields): IdCardFrontResult {
+  const front = parsed.front || {};
+  return {
+    name: front.name || fields.personName || "",
+    gender: front.gender || genderToText(fields.gender),
+    nation: front.nation || fields.race || "",
+    birth: front.birth || fields.birth || "",
+    address: front.address || fields.personAddress || "",
+    idNum: front.idNum || fields.personIdcard || "",
   };
-
-  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-
-  for (const line of lines) {
-    const plate = line.match(/(?:号牌号码|车牌号)[：:\s]*([A-Z0-9\u4e00-\u9fff]{6,8})/);
-    if (plate) { result.plateNumber = plate[1]; continue; }
-
-    const vtype = line.match(/(?:车辆类型)[：:\s]*(.+)/);
-    if (vtype) { result.vehicleType = vtype[1]; continue; }
-
-    const owner = line.match(/(?:所有人|车主)[：:\s]*(.+)/);
-    if (owner) { result.owner = owner[1]; continue; }
-
-    const addr = line.match(/(?:住址|地址)[：:\s]*(.+)/);
-    if (addr) { result.address = addr[1]; continue; }
-
-    const useChar = line.match(/(?:使用性质)[：:\s]*(.+)/);
-    if (useChar) { result.useCharacter = useChar[1]; continue; }
-
-    const mdl = line.match(/(?:品牌型号|车辆型号)[：:\s]*(.+)/);
-    if (mdl) { result.model = mdl[1]; continue; }
-
-    const vinMatch = line.match(/(?:车辆识别代号|车架号|VIN)[：:\s]*([A-HJ-NPR-Z0-9]{17})/i);
-    if (vinMatch) { result.vin = vinMatch[1].toUpperCase(); continue; }
-
-    const eng = line.match(/(?:发动机号)[：:\s]*([A-Z0-9]{6,})/i);
-    if (eng) { result.engineNumber = eng[1]; continue; }
-
-    const regDate = line.match(/(?:注册日期)[：:\s]*(\d{4}\D\d{1,2}\D\d{1,2})/);
-    if (regDate) {
-      const [y, m, d] = regDate[1].split(/\D/);
-      result.registerDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-      continue;
-    }
-
-    const issDate = line.match(/(?:发证日期)[：:\s]*(\d{4}\D\d{1,2}\D\d{1,2})/);
-    if (issDate) {
-      const [y, m, d] = issDate[1].split(/\D/);
-      result.issueDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-      continue;
-    }
-  }
-
-  return result;
 }
 
-// ===== Main OCR Functions =====
+function mapIdCardBack(parsed: IdCardParsed, fields: IdCardFields): IdCardBackResult {
+  const back = parsed.back || {};
+  return {
+    authority: back.authority || fields.personIssuingAuthority || "",
+    validDate:
+      back.validDate ||
+      buildValidDate(fields.personValidDateStart, fields.personValidDateEnd),
+  };
+}
 
-let workerInstance: any = null;
-
-async function getWorker(): Promise<any> {
-  if (workerInstance) return workerInstance;
-  // #ifdef H5
-  workerInstance = await createWorker('chi_sim');
-  // #endif
-  return workerInstance;
+function mapVehicle(parsed: Partial<VehicleOcrResult>, fields: VehicleFields): VehicleOcrResult {
+  return {
+    plateNumber: parsed.plateNumber || fields.plateNumber || "",
+    vehicleType: parsed.vehicleType || fields.vehicleBrand || "",
+    owner: parsed.owner || fields.vehicleOwner || "",
+    address: parsed.address || fields.address || "",
+    useCharacter: parsed.useCharacter || fields.usageNature || "",
+    model: parsed.model || fields.vehicleModel || "",
+    vin: parsed.vin || fields.vehicleCode || "",
+    engineNumber: parsed.engineNumber || fields.engineNumber || "",
+    registerDate: parsed.registerDate || fields.registerDate || "",
+    issueDate: parsed.issueDate || "",
+  };
 }
 
 /**
- * 对图片进行 OCR 识别（仅 H5 环境）
- * @param imagePath 图片本地路径或 base64
- * @param side 身份证正反面
- * @returns 识别结果，非 H5 环境返回 null
+ * 身份证 OCR 识别。
  */
 export async function recognizeIdCard(
   imagePath: string,
-  side: 'front' | 'back',
+  side: "front" | "back",
 ): Promise<IdCardFrontResult | IdCardBackResult | null> {
-  // #ifndef H5
-  console.warn('[OCR] 仅 H5 环境支持本地 OCR');
-  return null;
-  // #endif
-
-  // #ifdef H5
   try {
-    const worker = await getWorker();
-    const { data: { text } } = await worker.recognize(imagePath);
-    console.log(`[OCR] 身份证${side === 'front' ? '人像面' : '国徽面'}原始文本:\n`, text);
+    const response = await uploadFileWithData(imagePath, "/m/user/getIdCardOcr", { side });
+    const data = unwrapOcrData<IdCardFields, IdCardParsed>(response);
+    const parsed = data.parsed || {};
+    const fields = data.fields || {};
 
-    return side === 'front' ? parseIdCardFront(text) : parseIdCardBack(text);
-  } catch (e) {
-    console.error('[OCR] 识别失败:', e);
+    return side === "front"
+      ? mapIdCardFront(parsed, fields)
+      : mapIdCardBack(parsed, fields);
+  } catch (error) {
+    console.error("[OCR] 身份证识别失败:", error);
     return null;
   }
-  // #endif
 }
 
 /**
- * 行驶证 OCR 识别（仅 H5 环境）
+ * 行驶证 OCR 识别。
  */
-export async function recognizeVehicle(
-  imagePath: string,
-): Promise<VehicleOcrResult | null> {
-  // #ifndef H5
-  console.warn('[OCR] 仅 H5 环境支持本地 OCR');
-  return null;
-  // #endif
-
-  // #ifdef H5
+export async function recognizeVehicle(imagePath: string): Promise<VehicleOcrResult | null> {
   try {
-    const worker = await getWorker();
-    const { data: { text } } = await worker.recognize(imagePath);
-    console.log('[OCR] 行驶证原始文本:\n', text);
-
-    return parseVehicleOcr(text);
-  } catch (e) {
-    console.error('[OCR] 行驶证识别失败:', e);
+    const response = await uploadFileWithData(imagePath, "/m/vehicle/getVehicleOcr", {});
+    const data = unwrapOcrData<VehicleFields, Partial<VehicleOcrResult>>(response);
+    return mapVehicle(data.parsed || {}, data.fields || {});
+  } catch (error) {
+    console.error("[OCR] 行驶证识别失败:", error);
     return null;
   }
-  // #endif
 }
 
 /**
- * 释放 OCR Worker（页面销毁时调用）
+ * 兼容旧调用；后端 OCR 不需要前端释放 Worker。
  */
 export async function terminateOcrWorker(): Promise<void> {
-  // #ifdef H5
-  if (workerInstance) {
-    await workerInstance.terminate();
-    workerInstance = null;
-  }
-  // #endif
+  await Promise.resolve();
 }

@@ -14,7 +14,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { OcrObjectKeyDto } from './dto/ocr.dto'
 import { OcrImageFile, OcrService } from './ocr.service'
 
-const OCR_IMAGE_UPLOAD_LIMIT = 10 * 1024 * 1024
+const OCR_IMAGE_UPLOAD_LIMIT = 8 * 1024 * 1024
 const ALLOWED_OCR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/bmp'])
 
 function ocrUploadInterceptor() {

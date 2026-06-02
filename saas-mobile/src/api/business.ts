@@ -409,8 +409,8 @@ export function useBusinessApi() {
     getVehicleInfo: (uuid: string) =>
       http.get<ApiResponse<VehicleInfo>>("/m/vehicle/getVehicleInfo", { uuid }),
     /** 身份证OCR识别 */
-    getIdCardOcr: (objectKey: string) =>
-      http.post("/m/user/getIdCardOcr", { objectKey }),
+    getIdCardOcr: (objectKey: string, side?: "front" | "back") =>
+      http.post("/m/user/getIdCardOcr", { objectKey, side }),
     /** 车辆行驶证OCR识别 */
     getVehicleOcr: (objectKey: string) =>
       http.post<ApiResponse<null>>("/m/vehicle/getVehicleOcr", { objectKey }),

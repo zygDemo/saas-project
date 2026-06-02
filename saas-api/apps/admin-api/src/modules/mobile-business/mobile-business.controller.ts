@@ -31,6 +31,7 @@ import {
 import { MobileBusinessService } from './mobile-business.service'
 
 const IMAGE_UPLOAD_LIMIT = 10 * 1024 * 1024
+const OCR_IMAGE_UPLOAD_LIMIT = 8 * 1024 * 1024
 const ALLOWED_IMAGE_MIME_TYPES = new Set([
   'image/jpeg',
   'image/png',
@@ -38,6 +39,7 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set([
   'image/webp',
   'image/bmp'
 ])
+const ALLOWED_OCR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/bmp'])
 
 function imageUploadInterceptor() {
   return FileInterceptor('file', {
@@ -45,6 +47,19 @@ function imageUploadInterceptor() {
     fileFilter: (_req, file, callback) => {
       if (!ALLOWED_IMAGE_MIME_TYPES.has(file.mimetype)) {
         callback(new BadRequestException('仅支持 jpg、png、gif、webp、bmp 图片'), false)
+        return
+      }
+      callback(null, true)
+    }
+  })
+}
+
+function ocrImageUploadInterceptor() {
+  return FileInterceptor('file', {
+    limits: { fileSize: OCR_IMAGE_UPLOAD_LIMIT },
+    fileFilter: (_req, file, callback) => {
+      if (!ALLOWED_OCR_MIME_TYPES.has(file.mimetype)) {
+        callback(new BadRequestException('OCR 仅支持 jpg、png、webp、bmp 图片'), false)
         return
       }
       callback(null, true)
@@ -169,7 +184,7 @@ export class MobileUserController {
       }
     }
   })
-  @UseInterceptors(imageUploadInterceptor())
+  @UseInterceptors(ocrImageUploadInterceptor())
   getIdCardOcr(@UploadedFile() file: UploadedImageFile | undefined, @Body() body: OcrObjectKeyDto) {
     return this.service.getIdCardOcr(body, file)
   }
@@ -212,7 +227,7 @@ export class MobileVehicleController {
       }
     }
   })
-  @UseInterceptors(imageUploadInterceptor())
+  @UseInterceptors(ocrImageUploadInterceptor())
   getVehicleOcr(@UploadedFile() file: UploadedImageFile | undefined, @Body() body: OcrObjectKeyDto) {
     return this.service.getVehicleOcr(body, file)
   }
