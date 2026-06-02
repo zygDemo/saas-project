@@ -18,6 +18,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { RequestUser } from '../../common/types/request-user'
 import { UploadedImageFile } from '../file/file.service'
+import { OcrObjectKeyDto } from '../ocr/dto/ocr.dto'
 import {
   MobileCreditApplyDto,
   MobileCreditListQueryDto,
@@ -155,6 +156,24 @@ export class MobileUserController {
     return null
   }
 
+  @Post('getIdCardOcr')
+  @ApiOperation({ summary: '身份证 OCR 识别' })
+  @ApiConsumes('multipart/form-data', 'application/json')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        objectKey: { type: 'string' },
+        side: { type: 'string', enum: ['front', 'back'] }
+      }
+    }
+  })
+  @UseInterceptors(imageUploadInterceptor())
+  getIdCardOcr(@UploadedFile() file: UploadedImageFile | undefined, @Body() body: OcrObjectKeyDto) {
+    return this.service.getIdCardOcr(body, file)
+  }
+
   @Get('getUserList')
   @ApiOperation({ summary: '客户列表' })
   getUserList(@Query() query: MobileUserListQueryDto) {
@@ -182,9 +201,20 @@ export class MobileVehicleController {
   }
 
   @Post('getVehicleOcr')
-  @ApiOperation({ summary: '行驶证 OCR 占位' })
-  getVehicleOcr() {
-    return null
+  @ApiOperation({ summary: '行驶证 OCR 识别' })
+  @ApiConsumes('multipart/form-data', 'application/json')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        objectKey: { type: 'string' }
+      }
+    }
+  })
+  @UseInterceptors(imageUploadInterceptor())
+  getVehicleOcr(@UploadedFile() file: UploadedImageFile | undefined, @Body() body: OcrObjectKeyDto) {
+    return this.service.getVehicleOcr(body, file)
   }
 }
 

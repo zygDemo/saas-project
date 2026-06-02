@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common'
+import { OcrModule } from '../ocr/ocr.module'
 import {
   MobileCreditController,
   MobileEnumController,
@@ -10,6 +11,7 @@ import {
 import { MobileBusinessService } from './mobile-business.service'
 
 @Module({
+  imports: [OcrModule],
   controllers: [
     MobileFileController,
     MobileUserController,

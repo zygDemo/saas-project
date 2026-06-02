@@ -7,6 +7,7 @@ import { HealthModule } from './modules/health/health.module'
 import { MenusModule } from './modules/menus/menus.module'
 import { DictModule } from './modules/dict/dict.module'
 import { FileModule } from './modules/file/file.module'
+import { OcrModule } from './modules/ocr/ocr.module'
 import { PrismaModule } from './modules/prisma/prisma.module'
 import { QueueModule } from './modules/queue/queue.module'
 import { RedisModule } from './modules/redis/redis.module'
@@ -58,6 +59,7 @@ const appEnv = process.env.NODE_ENV || 'development'
     MenusModule,
     DictModule,
     FileModule,
+    OcrModule,
     HealthModule,
     // 业务模块
     OrganizationModule,

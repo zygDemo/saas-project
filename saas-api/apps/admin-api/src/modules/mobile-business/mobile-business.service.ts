@@ -5,6 +5,8 @@ import { RequestUser } from '../../common/types/request-user'
 import { getPagination } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
 import { UploadedImageFile } from '../file/file.service'
+import { OcrObjectKeyDto } from '../ocr/dto/ocr.dto'
+import { OcrService } from '../ocr/ocr.service'
 import {
   MobileCreditApplyDto,
   MobileCreditListQueryDto,
@@ -93,7 +95,8 @@ function generateApplicationNo() {
 export class MobileBusinessService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService
+    private readonly config: ConfigService,
+    private readonly ocrService: OcrService
   ) {}
 
   async upload(file: UploadedImageFile | undefined, user: RequestUser, headerOrgId?: number) {
@@ -218,6 +221,16 @@ export class MobileBusinessService {
         ]
       }
     ]
+  }
+
+  async getIdCardOcr(body: OcrObjectKeyDto = {}, file?: UploadedImageFile) {
+    if (file) return this.ocrService.recognizeIdCard(file, body.side)
+    return this.ocrService.recognizeIdCardByObjectKey(body)
+  }
+
+  async getVehicleOcr(body: OcrObjectKeyDto = {}, file?: UploadedImageFile) {
+    if (file) return this.ocrService.recognizeVehicle(file)
+    return this.ocrService.recognizeVehicleByObjectKey(body)
   }
 
   async addOrUpdateUserBasic(dto: MobileIdCardInfoDto, user: RequestUser, headerOrgId?: number) {
