@@ -20,6 +20,7 @@ import {
 import {
   ApprovalActionDto,
   CompleteSigningDto,
+  CompleteSupplementDto,
   ConfirmDisbursementDto,
   FunderReviewDto,
   GpsInstalledDto,
@@ -125,19 +126,30 @@ function flowByApplicationStatus(status: ApplicationStatus) {
   const map: Record<ApplicationStatus, { currentNode: number; currentStatus: number }> = {
     [ApplicationStatus.DRAFT]: { currentNode: 1100, currentStatus: 10 },
     [ApplicationStatus.SUBMITTED]: { currentNode: 2000, currentStatus: 10 },
+    [ApplicationStatus.PENDING_RISK_PRE]: { currentNode: 2000, currentStatus: 10 },
+    [ApplicationStatus.RISK_PRE_PASSED]: { currentNode: 3000, currentStatus: 20 },
+    [ApplicationStatus.RISK_PRE_REJECTED]: { currentNode: 2000, currentStatus: 30 },
+    [ApplicationStatus.PENDING_FUNDER_PRE]: { currentNode: 3000, currentStatus: 10 },
+    [ApplicationStatus.FUNDER_PRE_PASSED]: { currentNode: 4000, currentStatus: 20 },
+    [ApplicationStatus.FUNDER_PRE_REJECTED]: { currentNode: 3000, currentStatus: 30 },
     [ApplicationStatus.PENDING_FIRST_REVIEW]: { currentNode: 5000, currentStatus: 10 },
     [ApplicationStatus.FIRST_REVIEW_PASSED]: { currentNode: 6000, currentStatus: 20 },
     [ApplicationStatus.FIRST_REVIEW_REJECTED]: { currentNode: 5000, currentStatus: 30 },
     [ApplicationStatus.PENDING_SUPPLEMENT]: { currentNode: 4000, currentStatus: 50 },
     [ApplicationStatus.PENDING_FINAL_REVIEW]: { currentNode: 6000, currentStatus: 10 },
-    [ApplicationStatus.FINAL_REVIEW_PASSED]: { currentNode: 7000, currentStatus: 20 },
+    [ApplicationStatus.FINAL_REVIEW_PASSED]: { currentNode: 8000, currentStatus: 10 },
     [ApplicationStatus.FINAL_REVIEW_REJECTED]: { currentNode: 6000, currentStatus: 30 },
     [ApplicationStatus.PENDING_FUNDER_REVIEW]: { currentNode: 8000, currentStatus: 10 },
-    [ApplicationStatus.FUNDER_REVIEW_PASSED]: { currentNode: 7000, currentStatus: 20 },
+    [ApplicationStatus.FUNDER_REVIEW_PASSED]: { currentNode: 1400, currentStatus: 20 },
     [ApplicationStatus.FUNDER_REVIEW_REJECTED]: { currentNode: 8000, currentStatus: 30 },
     [ApplicationStatus.PENDING_SIGN]: { currentNode: 1400, currentStatus: 10 },
-    [ApplicationStatus.SIGNED]: { currentNode: 7000, currentStatus: 20 },
-    [ApplicationStatus.PENDING_DISBURSEMENT]: { currentNode: 7000, currentStatus: 10 },
+    [ApplicationStatus.SIGNING_PROGRESS]: { currentNode: 1400, currentStatus: 10 },
+    [ApplicationStatus.SIGNED]: { currentNode: 7000, currentStatus: 10 },
+    [ApplicationStatus.PENDING_LOAN_REQUEST]: { currentNode: 7000, currentStatus: 10 },
+    [ApplicationStatus.LOAN_REQUEST_REVIEWING]: { currentNode: 7000, currentStatus: 10 },
+    [ApplicationStatus.LOAN_REQUEST_APPROVED]: { currentNode: 9000, currentStatus: 10 },
+    [ApplicationStatus.LOAN_REQUEST_REJECTED]: { currentNode: 7000, currentStatus: 30 },
+    [ApplicationStatus.PENDING_DISBURSEMENT]: { currentNode: 9000, currentStatus: 10 },
     [ApplicationStatus.DISBURSED]: { currentNode: 9000, currentStatus: 90 },
     [ApplicationStatus.CANCELLED]: { currentNode: 9000, currentStatus: 30 }
   }
@@ -292,19 +304,131 @@ export class ApplicationService extends BaseBusinessCrudService<
     }
     return this.prisma.application.update({
       where: { id },
-      data: { status: ApplicationStatus.SUBMITTED, ...flowPatch(ApplicationStatus.SUBMITTED) }
+      data: {
+        status: ApplicationStatus.PENDING_RISK_PRE,
+        ...flowPatch(ApplicationStatus.PENDING_RISK_PRE)
+      }
     })
   }
 
   async precheckPass(id: number, dto: PrecheckActionDto) {
+    return this.riskPrePass(id, dto)
+  }
+
+  async riskPrePass(id: number, dto: PrecheckActionDto) {
     const application = await this.ensureExists(id)
-    this.assertStatus(application.status, [ApplicationStatus.SUBMITTED], '当前状态不允许预审通过')
-    await this.ensureRelatedExists(this.prisma.user, dto.reviewerId, '预审人不存在')
+    this.assertStatus(
+      application.status,
+      [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE],
+      '当前状态不允许风控预审通过'
+    )
+    if (dto.reviewerId) await this.ensureRelatedExists(this.prisma.user, dto.reviewerId, '预审人不存在')
+    return this.prisma.application.update({
+      where: { id },
+      data: {
+        status: ApplicationStatus.PENDING_FUNDER_PRE,
+        ...flowPatch(ApplicationStatus.PENDING_FUNDER_PRE)
+      }
+    })
+  }
+
+  async riskPreReject(id: number, dto: PrecheckActionDto) {
+    const application = await this.ensureExists(id)
+    this.assertStatus(
+      application.status,
+      [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE],
+      '当前状态不允许风控预审拒绝'
+    )
+    if (dto.reviewerId) await this.ensureRelatedExists(this.prisma.user, dto.reviewerId, '预审人不存在')
+    return this.prisma.application.update({
+      where: { id },
+      data: {
+        status: ApplicationStatus.RISK_PRE_REJECTED,
+        ...flowPatch(ApplicationStatus.RISK_PRE_REJECTED),
+        remark: dto.opinion ?? application.remark
+      }
+    })
+  }
+
+  async funderPrePass(id: number, dto: FunderReviewDto) {
+    await this.ensureRelatedExists(this.prisma.user, dto.approverId, '处理人不存在')
+    const application = await this.ensureExists(id)
+    this.assertStatus(
+      application.status,
+      [ApplicationStatus.PENDING_FUNDER_PRE],
+      '当前状态不允许资方预审通过'
+    )
+    return this.prisma.$transaction(async (tx: any) => {
+      await tx.approvalRecord.create({
+        data: {
+          applicationId: id,
+          approverId: dto.approverId,
+          stage: 'FUNDER_PRE',
+          action: ApprovalAction.PASS,
+          opinion: dto.opinion || dto.funderApprovalNo,
+          amount: dto.amount,
+          term: dto.term,
+          rate: dto.rate
+        }
+      })
+      return tx.application.update({
+        where: { id },
+        data: {
+          status: ApplicationStatus.PENDING_SUPPLEMENT,
+          ...flowPatch(ApplicationStatus.PENDING_SUPPLEMENT),
+          approvedAmount: dto.amount ?? application.approvedAmount,
+          approvedTerm: dto.term ?? application.approvedTerm,
+          approvedRate: dto.rate ?? application.approvedRate
+        }
+      })
+    })
+  }
+
+  async funderPreReject(id: number, dto: FunderReviewDto) {
+    await this.ensureRelatedExists(this.prisma.user, dto.approverId, '处理人不存在')
+    const application = await this.ensureExists(id)
+    this.assertStatus(
+      application.status,
+      [ApplicationStatus.PENDING_FUNDER_PRE],
+      '当前状态不允许资方预审拒绝'
+    )
+    return this.prisma.$transaction(async (tx: any) => {
+      await tx.approvalRecord.create({
+        data: {
+          applicationId: id,
+          approverId: dto.approverId,
+          stage: 'FUNDER_PRE',
+          action: ApprovalAction.REJECT,
+          opinion: dto.opinion || dto.funderApprovalNo
+        }
+      })
+      return tx.application.update({
+        where: { id },
+        data: {
+          status: ApplicationStatus.FUNDER_PRE_REJECTED,
+          ...flowPatch(ApplicationStatus.FUNDER_PRE_REJECTED)
+        }
+      })
+    })
+  }
+
+  async completeSupplement(id: number, dto: CompleteSupplementDto) {
+    const application = await this.ensureExists(id)
+    this.assertStatus(
+      application.status,
+      [
+        ApplicationStatus.PENDING_SUPPLEMENT,
+        ApplicationStatus.FUNDER_PRE_PASSED
+      ],
+      '当前状态不允许完成资料补充'
+    )
     return this.prisma.application.update({
       where: { id },
       data: {
         status: ApplicationStatus.PENDING_FIRST_REVIEW,
-        ...flowPatch(ApplicationStatus.PENDING_FIRST_REVIEW)
+        ...flowPatch(ApplicationStatus.PENDING_FIRST_REVIEW),
+        supplementReason: dto.reason ?? application.supplementReason,
+        supplementDeadline: dto.deadline ? new Date(dto.deadline) : application.supplementDeadline
       }
     })
   }
@@ -351,9 +475,12 @@ export class ApplicationService extends BaseBusinessCrudService<
       application.status,
       [
         ApplicationStatus.SUBMITTED,
+        ApplicationStatus.PENDING_RISK_PRE,
+        ApplicationStatus.PENDING_FUNDER_PRE,
         ApplicationStatus.PENDING_FIRST_REVIEW,
         ApplicationStatus.PENDING_FINAL_REVIEW,
-        ApplicationStatus.PENDING_FUNDER_REVIEW
+        ApplicationStatus.PENDING_FUNDER_REVIEW,
+        ApplicationStatus.LOAN_REQUEST_REVIEWING
       ],
       '当前状态不允许审批驳回'
     )
@@ -385,9 +512,12 @@ export class ApplicationService extends BaseBusinessCrudService<
       application.status,
       [
         ApplicationStatus.SUBMITTED,
+        ApplicationStatus.PENDING_RISK_PRE,
+        ApplicationStatus.PENDING_FUNDER_PRE,
         ApplicationStatus.PENDING_FIRST_REVIEW,
         ApplicationStatus.PENDING_FINAL_REVIEW,
-        ApplicationStatus.PENDING_FUNDER_REVIEW
+        ApplicationStatus.PENDING_FUNDER_REVIEW,
+        ApplicationStatus.LOAN_REQUEST_REVIEWING
       ],
       '当前状态不允许要求补件'
     )
@@ -555,8 +685,84 @@ export class ApplicationService extends BaseBusinessCrudService<
       return tx.application.update({
         where: { id },
         data: {
-          status: ApplicationStatus.PENDING_DISBURSEMENT,
-          ...flowPatch(ApplicationStatus.PENDING_DISBURSEMENT)
+          status: ApplicationStatus.PENDING_LOAN_REQUEST,
+          ...flowPatch(ApplicationStatus.PENDING_LOAN_REQUEST)
+        }
+      })
+    })
+  }
+
+  async submitLoanRequest(id: number, dto: RequestDisbursementDto) {
+    const application = await this.ensureExists(id)
+    this.assertStatus(
+      application.status,
+      [ApplicationStatus.SIGNED, ApplicationStatus.PENDING_LOAN_REQUEST, ApplicationStatus.LOAN_REQUEST_REJECTED],
+      '当前状态不允许提交请款资料'
+    )
+    return this.prisma.application.update({
+      where: { id },
+      data: {
+        status: ApplicationStatus.LOAN_REQUEST_REVIEWING,
+        ...flowPatch(ApplicationStatus.LOAN_REQUEST_REVIEWING),
+        remark: dto.remark ?? application.remark
+      }
+    })
+  }
+
+  async approveLoanRequest(id: number, dto: ApprovalActionDto) {
+    await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
+    const application = await this.ensureExists(id)
+    this.assertStatus(
+      application.status,
+      [ApplicationStatus.LOAN_REQUEST_REVIEWING],
+      '当前状态不允许请款审核通过'
+    )
+    return this.prisma.$transaction(async (tx: any) => {
+      await tx.approvalRecord.create({
+        data: {
+          applicationId: id,
+          approverId: dto.approverId,
+          stage: 'LOAN_REQUEST',
+          action: ApprovalAction.PASS,
+          opinion: dto.opinion,
+          amount: dto.amount,
+          term: dto.term,
+          rate: dto.rate
+        }
+      })
+      return tx.application.update({
+        where: { id },
+        data: {
+          status: ApplicationStatus.LOAN_REQUEST_APPROVED,
+          ...flowPatch(ApplicationStatus.LOAN_REQUEST_APPROVED)
+        }
+      })
+    })
+  }
+
+  async rejectLoanRequest(id: number, dto: ApprovalActionDto) {
+    await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
+    const application = await this.ensureExists(id)
+    this.assertStatus(
+      application.status,
+      [ApplicationStatus.LOAN_REQUEST_REVIEWING],
+      '当前状态不允许请款审核拒绝'
+    )
+    return this.prisma.$transaction(async (tx: any) => {
+      await tx.approvalRecord.create({
+        data: {
+          applicationId: id,
+          approverId: dto.approverId,
+          stage: 'LOAN_REQUEST',
+          action: ApprovalAction.REJECT,
+          opinion: dto.opinion
+        }
+      })
+      return tx.application.update({
+        where: { id },
+        data: {
+          status: ApplicationStatus.LOAN_REQUEST_REJECTED,
+          ...flowPatch(ApplicationStatus.LOAN_REQUEST_REJECTED)
         }
       })
     })
@@ -566,7 +772,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     const application = await this.ensureExists(id)
     this.assertStatus(
       application.status,
-      [ApplicationStatus.PENDING_DISBURSEMENT],
+      [ApplicationStatus.PENDING_DISBURSEMENT, ApplicationStatus.LOAN_REQUEST_APPROVED],
       '当前状态不允许登记GPS安装'
     )
     return this.prisma.disbursement.upsert({
@@ -591,7 +797,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     const application = await this.ensureExists(id)
     this.assertStatus(
       application.status,
-      [ApplicationStatus.PENDING_DISBURSEMENT],
+      [ApplicationStatus.PENDING_DISBURSEMENT, ApplicationStatus.LOAN_REQUEST_APPROVED],
       '当前状态不允许登记抵押'
     )
     return this.prisma.disbursement.upsert({
@@ -616,16 +822,22 @@ export class ApplicationService extends BaseBusinessCrudService<
     const application = await this.ensureExists(id)
     this.assertStatus(
       application.status,
-      [ApplicationStatus.PENDING_DISBURSEMENT],
-      '当前状态不允许出账申请'
+      [ApplicationStatus.LOAN_REQUEST_APPROVED, ApplicationStatus.PENDING_DISBURSEMENT],
+      '当前状态不允许提交资方放款申请'
     )
-    const disbursement = await this.prisma.disbursement.findUnique({ where: { applicationId: id } })
-    if (disbursement?.status !== DisbursementStatus.MORTGAGE_DONE) {
-      throw new BadRequestException('请先完成GPS安装和抵押办理')
-    }
-    return this.prisma.disbursement.update({
-      where: { applicationId: id },
-      data: { status: DisbursementStatus.PENDING_APPROVAL, remark: dto.remark }
+    return this.prisma.$transaction(async (tx: any) => {
+      await tx.disbursement.upsert({
+        where: { applicationId: id },
+        update: { status: DisbursementStatus.PENDING_APPROVAL, remark: dto.remark },
+        create: { applicationId: id, status: DisbursementStatus.PENDING_APPROVAL, remark: dto.remark }
+      })
+      return tx.application.update({
+        where: { id },
+        data: {
+          status: ApplicationStatus.PENDING_DISBURSEMENT,
+          ...flowPatch(ApplicationStatus.PENDING_DISBURSEMENT)
+        }
+      })
     })
   }
 
@@ -851,23 +1063,34 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   private resolveApprovalStage(status: ApplicationStatus) {
-    if (status === ApplicationStatus.SUBMITTED || status === ApplicationStatus.PENDING_FIRST_REVIEW)
-      return 'FIRST_REVIEW'
+    if (status === ApplicationStatus.SUBMITTED || status === ApplicationStatus.PENDING_RISK_PRE)
+      return 'RISK_PRE'
+    if (status === ApplicationStatus.PENDING_FUNDER_PRE) return 'FUNDER_PRE'
+    if (status === ApplicationStatus.PENDING_FIRST_REVIEW) return 'FIRST_REVIEW'
     if (status === ApplicationStatus.PENDING_FUNDER_REVIEW) return 'FUNDER_REVIEW'
+    if (status === ApplicationStatus.LOAN_REQUEST_REVIEWING) return 'LOAN_REQUEST'
     return 'FINAL_REVIEW'
   }
 
   private resolvePassStatus(status: ApplicationStatus) {
-    if (status === ApplicationStatus.SUBMITTED || status === ApplicationStatus.PENDING_FIRST_REVIEW)
+    if (status === ApplicationStatus.PENDING_FIRST_REVIEW)
       return ApplicationStatus.PENDING_FINAL_REVIEW
+    if (status === ApplicationStatus.LOAN_REQUEST_REVIEWING)
+      return ApplicationStatus.LOAN_REQUEST_APPROVED
     return ApplicationStatus.FINAL_REVIEW_PASSED
   }
 
   private resolveRejectStatus(status: ApplicationStatus) {
-    if (status === ApplicationStatus.SUBMITTED || status === ApplicationStatus.PENDING_FIRST_REVIEW)
+    if (status === ApplicationStatus.SUBMITTED || status === ApplicationStatus.PENDING_RISK_PRE)
+      return ApplicationStatus.RISK_PRE_REJECTED
+    if (status === ApplicationStatus.PENDING_FUNDER_PRE)
+      return ApplicationStatus.FUNDER_PRE_REJECTED
+    if (status === ApplicationStatus.PENDING_FIRST_REVIEW)
       return ApplicationStatus.FIRST_REVIEW_REJECTED
     if (status === ApplicationStatus.PENDING_FUNDER_REVIEW)
       return ApplicationStatus.FUNDER_REVIEW_REJECTED
+    if (status === ApplicationStatus.LOAN_REQUEST_REVIEWING)
+      return ApplicationStatus.LOAN_REQUEST_REJECTED
     return ApplicationStatus.FINAL_REVIEW_REJECTED
   }
 

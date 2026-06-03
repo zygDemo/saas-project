@@ -85,6 +85,19 @@ export class SupplementActionDto {
   deadline?: string | Date
 }
 
+export class CompleteSupplementDto {
+  @ApiPropertyOptional({ description: '补件完成备注' })
+  @IsOptional()
+  @IsString()
+  reason?: string
+
+  @ApiPropertyOptional({ description: '补件截止时间' })
+  @IsOptional()
+  @ToDate()
+  @IsDateString({}, { message: 'deadline 必须是有效日期字符串' })
+  deadline?: string | Date
+}
+
 export class StartSigningDto {
   @ApiPropertyOptional({ description: '合同URL' })
   @IsOptional()

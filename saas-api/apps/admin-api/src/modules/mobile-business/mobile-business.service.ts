@@ -18,28 +18,44 @@ import {
 
 const IMAGE_UPLOAD_LIMIT = 10 * 1024 * 1024
 const SUCCESS_CREDIT_STATUSES = new Set<ApplicationStatus>([
+  ApplicationStatus.RISK_PRE_PASSED,
+  ApplicationStatus.FUNDER_PRE_PASSED,
   ApplicationStatus.FINAL_REVIEW_PASSED,
   ApplicationStatus.FUNDER_REVIEW_PASSED,
+  ApplicationStatus.LOAN_REQUEST_APPROVED,
   ApplicationStatus.PENDING_SIGN,
+  ApplicationStatus.SIGNING_PROGRESS,
   ApplicationStatus.SIGNED,
+  ApplicationStatus.PENDING_LOAN_REQUEST,
+  ApplicationStatus.LOAN_REQUEST_REVIEWING,
   ApplicationStatus.PENDING_DISBURSEMENT,
   ApplicationStatus.DISBURSED
 ])
 const FAILED_CREDIT_STATUSES = new Set<ApplicationStatus>([
+  ApplicationStatus.RISK_PRE_REJECTED,
+  ApplicationStatus.FUNDER_PRE_REJECTED,
   ApplicationStatus.FIRST_REVIEW_REJECTED,
   ApplicationStatus.FINAL_REVIEW_REJECTED,
   ApplicationStatus.FUNDER_REVIEW_REJECTED,
+  ApplicationStatus.LOAN_REQUEST_REJECTED,
   ApplicationStatus.CANCELLED
 ])
 const SIGN_STATUSES = new Set<ApplicationStatus>([
   ApplicationStatus.PENDING_SIGN,
+  ApplicationStatus.SIGNING_PROGRESS,
   ApplicationStatus.SIGNED
 ])
 const DISBURSEMENT_STATUSES = new Set<ApplicationStatus>([
+  ApplicationStatus.LOAN_REQUEST_APPROVED,
   ApplicationStatus.PENDING_DISBURSEMENT,
   ApplicationStatus.DISBURSED
 ])
 const PRE_AUDIT_STATUSES = new Set<ApplicationStatus>([
+  ApplicationStatus.SUBMITTED,
+  ApplicationStatus.PENDING_RISK_PRE,
+  ApplicationStatus.RISK_PRE_PASSED,
+  ApplicationStatus.PENDING_FUNDER_PRE,
+  ApplicationStatus.FUNDER_PRE_PASSED,
   ApplicationStatus.PENDING_FIRST_REVIEW,
   ApplicationStatus.FIRST_REVIEW_PASSED,
   ApplicationStatus.PENDING_FINAL_REVIEW
@@ -410,7 +426,7 @@ export class MobileBusinessService {
       term: dto.periods,
       rate,
       repaymentMethod: product?.repaymentMethod || '等额本息',
-      status: ApplicationStatus.SUBMITTED,
+      status: ApplicationStatus.PENDING_RISK_PRE,
       businessType: dto.businessType === 'pawn' ? 'PAWN' : 'CAR_LOAN',
       currentNode: 2000,
       currentStatus: 10,
@@ -1061,7 +1077,7 @@ export class MobileBusinessService {
   private statusFromBusinessNode(node: string) {
     const map: Record<string, ApplicationStatus> = {
       INITIAL_AUDIT: ApplicationStatus.SUBMITTED,
-      PRE_AUDIT: ApplicationStatus.PENDING_FIRST_REVIEW,
+      PRE_AUDIT: ApplicationStatus.PENDING_RISK_PRE,
       SUPPLEMENT_MATERIALS: ApplicationStatus.PENDING_SUPPLEMENT,
       SIGN_CONTRACT: ApplicationStatus.PENDING_SIGN,
       LOAN_DISBURSEMENT: ApplicationStatus.PENDING_DISBURSEMENT

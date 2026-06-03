@@ -212,11 +212,14 @@
 <script setup lang="ts">
 import layout from "@/pages/layout/layout.vue";
 import { computed, ref } from "vue";
-import { onLoad, onReachBottom } from "@dcloudio/uni-app";
+import { onLoad, onReachBottom, onShow } from "@dcloudio/uni-app";
 import { useBusinessApi } from "@/api/business";
 import type { CreditListItem, PageResult } from "@/api/business";
 
 const businessApi = useBusinessApi();
+
+const ORDER_FILTER_STORAGE_KEY = "WORKBENCH_ORDER_FILTER";
+const ORDER_FILTER_MAX_AGE = 60 * 1000;
 
 // 搜索关键词
 const keyword = ref("");
@@ -275,6 +278,12 @@ const NODE_STATUS_OPTIONS: Array<Omit<FilterOption, "count">> = [
 const APPLICATION_STATUS_CLASS: Record<string, string> = {
   DRAFT: "3",
   SUBMITTED: "4",
+  PENDING_RISK_PRE: "4",
+  RISK_PRE_PASSED: "1",
+  RISK_PRE_REJECTED: "2",
+  PENDING_FUNDER_PRE: "4",
+  FUNDER_PRE_PASSED: "1",
+  FUNDER_PRE_REJECTED: "2",
   PENDING_FIRST_REVIEW: "4",
   FIRST_REVIEW_PASSED: "1",
   FIRST_REVIEW_REJECTED: "2",
@@ -286,7 +295,12 @@ const APPLICATION_STATUS_CLASS: Record<string, string> = {
   FUNDER_REVIEW_PASSED: "1",
   FUNDER_REVIEW_REJECTED: "2",
   PENDING_SIGN: "4",
+  SIGNING_PROGRESS: "4",
   SIGNED: "1",
+  PENDING_LOAN_REQUEST: "4",
+  LOAN_REQUEST_REVIEWING: "4",
+  LOAN_REQUEST_APPROVED: "1",
+  LOAN_REQUEST_REJECTED: "2",
   PENDING_DISBURSEMENT: "4",
   DISBURSED: "1",
   CANCELLED: "2",
@@ -602,9 +616,32 @@ function handleApprove(order: OrderListViewItem) {
   });
 }
 
+function applyWorkbenchFilter() {
+  const filter = uni.getStorageSync(ORDER_FILTER_STORAGE_KEY) || {};
+  const nodeCode = String(filter.nodeCode || "");
+  const updatedAt = Number(filter.updatedAt || 0);
+  if (
+    nodeCode &&
+    ORDER_NODE_OPTIONS.some((item) => item.value === nodeCode) &&
+    Date.now() - updatedAt < ORDER_FILTER_MAX_AGE
+  ) {
+    currentBusinessNode.value = nodeCode;
+    uni.removeStorageSync(ORDER_FILTER_STORAGE_KEY);
+    fetchList(true);
+    return true;
+  }
+  return false;
+}
+
 // 初始加载
 onLoad(() => {
-  fetchList(true);
+  if (!applyWorkbenchFilter()) {
+    fetchList(true);
+  }
+});
+
+onShow(() => {
+  applyWorkbenchFilter();
 });
 
 onReachBottom(() => {

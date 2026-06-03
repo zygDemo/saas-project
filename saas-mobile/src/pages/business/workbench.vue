@@ -1,6 +1,23 @@
 <template>
   <layout :active-tab="0" navTitle="首页" show-tabbar>
     <view class="workbench">
+      <view class="home-header">
+        <view class="home-title-block">
+          <text class="home-date">{{ todayText }}</text>
+          <text class="home-title">{{ userDisplayName }}，开始处理业务</text>
+          <text class="home-desc">线索、进件、补件和审批集中处理</text>
+        </view>
+        <view class="home-status">
+          <u-icon name="checkmark-circle" size="26" color="#16a34a" />
+          <text>在线</text>
+        </view>
+      </view>
+
+      <view class="block-head">
+        <text class="block-title">快捷入口</text>
+        <text class="block-tip">扫码或直接发起业务</text>
+      </view>
+
       <view class="quick-actions">
         <view
           class="quick-card quick-card--lead"
@@ -23,10 +40,10 @@
           </view>
         </view>
 
-        <view class="quick-card" @click="goTo('/pages/business/idInfo')">
+        <view class="quick-card quick-card--credit" @click="goTo('/pages/business/idInfo')">
           <view class="quick-left">
             <view class="quick-title-row">
-              <u-icon name="plus-circle" size="44" color="#fff" />
+              <u-icon name="file-text" size="44" color="#fff" />
               <text class="quick-text">进件</text>
             </view>
             <text class="quick-sub">快速发起贷款申请</text>
@@ -41,26 +58,6 @@
           </view>
         </view>
 
-        <view
-          class="quick-card quick-card--pawn"
-          @click="goTo('/pages/business/idInfo?businessType=pawn')"
-        >
-          <view class="quick-left">
-            <view class="quick-title-row">
-              <u-icon name="car" size="44" color="#fff" />
-              <text class="quick-text">车辆典当</text>
-            </view>
-            <text class="quick-sub">扫码进件，资料审批</text>
-          </view>
-          <view class="qr-icon" @click.stop="showQr('pawn')">
-            <u-icon
-              name="erweima"
-              custom-prefix="custom-icon"
-              size="65"
-              color="#fff"
-            />
-          </view>
-        </view>
       </view>
 
       <view class="overview-panel">
@@ -145,7 +142,10 @@
         class="section"
         :style="{ animationDelay: `${gi * 0.08}s` }"
       >
-        <view class="section-title">{{ group.title }}</view>
+        <view class="section-head">
+          <text class="section-title">{{ group.title }}</text>
+          <text class="section-count">{{ group.items.length }} 项</text>
+        </view>
         <view class="grid">
           <view
             v-for="(item, idx) in group.items"
@@ -181,6 +181,24 @@ const themeColor = computed(() => {
 
 const localStore = useLocalStore();
 const businessApi = useBusinessApi();
+
+const userDisplayName = computed(() => {
+  const userInfo = localStore.userInfo || {};
+  return (
+    userInfo.nickName ||
+    userInfo.realName ||
+    userInfo.userName ||
+    userInfo.username ||
+    "业务伙伴"
+  );
+});
+
+const todayText = computed(() => {
+  const date = new Date();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${month}月${day}日`;
+});
 
 const overview = ref({
   todayLeads: 0,
@@ -267,6 +285,8 @@ const loadOverview = async () => {
 
 onMounted(loadOverview);
 
+const ORDER_FILTER_STORAGE_KEY = "WORKBENCH_ORDER_FILTER";
+
 const checkAuth = () => {
   if (!localStore.token) {
     uni.showModal({
@@ -285,13 +305,30 @@ const checkAuth = () => {
 
 const goTo = (url) => {
   if (!checkAuth()) return;
+  if (url === "/pages/business/orderList") {
+    uni.switchTab({ url });
+    return;
+  }
   uni.navigateTo({ url });
+};
+
+const goToOrderNode = (nodeCode) => {
+  if (!checkAuth()) return;
+  uni.setStorageSync(ORDER_FILTER_STORAGE_KEY, {
+    nodeCode: String(nodeCode || ""),
+    updatedAt: Date.now(),
+  });
+  uni.switchTab({ url: "/pages/business/orderList" });
 };
 
 const handleItem = (item) => {
   if (!checkAuth()) return;
+  if (item.orderNode) {
+    goToOrderNode(item.orderNode);
+    return;
+  }
   if (item.path) {
-    uni.navigateTo({ url: item.path });
+    goTo(item.path);
     return;
   }
   $u.toast("功能开发中");
@@ -347,7 +384,6 @@ const QR_VALID_MS = 60 * 60 * 24 * 7 * 1000;
 const QR_CONFIG = {
   lead: { title: "新增线索", path: "leadAdd" },
   credit: { title: "进件", path: "idInfo" },
-  pawn: { title: "车辆典当进件", path: "idInfo", businessType: "pawn" },
 };
 
 const formatExpireTime = (timestamp) => {
@@ -426,7 +462,7 @@ const sectionsRaw = [
     ],
   },
   {
-    title: "预审",
+    title: "预审进件",
     items: [
       {
         text: "身份证信息",
@@ -444,6 +480,11 @@ const sectionsRaw = [
         path: "/pages/business/applyInfo",
       },
       {
+        text: "签署授权书",
+        icon: "edit",
+        orderNode: "1400",
+      },
+      {
         text: "申请结果",
         icon: "checkmark-circle",
         path: "/pages/business/applyResult",
@@ -456,6 +497,31 @@ const sectionsRaw = [
       {
         text: "预审列表",
         icon: "file-text",
+        path: "/pages/business/applyListPage",
+      },
+    ],
+  },
+  {
+    title: "预审跟进",
+    items: [
+      {
+        text: "订单列表",
+        icon: "list",
+        path: "/pages/business/orderList",
+      },
+      {
+        text: "风控预审",
+        icon: "chart",
+        orderNode: "2000",
+      },
+      {
+        text: "资方预审",
+        icon: "handshake",
+        orderNode: "3000",
+      },
+      {
+        text: "预审结果",
+        icon: "checkmark-circle",
         path: "/pages/business/applyListPage",
       },
     ],
@@ -491,32 +557,37 @@ const sectionsRaw = [
     ],
   },
   {
-    title: "典当",
+    title: "审核签约",
     items: [
       {
-        text: "身份证信息",
-        icon: "file-text",
-        path: "/pages/business/idInfo?businessType=pawn",
+        text: "风控初审",
+        icon: "hourglass",
+        orderNode: "5000",
       },
       {
-        text: "车辆信息",
-        icon: "car",
-        path: "/pages/business/carInfo?businessType=pawn",
+        text: "风控终审",
+        icon: "hourglass-half-fill",
+        orderNode: "6000",
       },
       {
-        text: "放款申请",
+        text: "资方终审",
+        icon: "handshake",
+        orderNode: "8000",
+      },
+      {
+        text: "签约中心",
+        icon: "edit",
+        path: "/pages/business/faceSignList",
+      },
+      {
+        text: "请款资料",
+        icon: "file",
+        orderNode: "7000",
+      },
+      {
+        text: "资方放款",
         icon: "money-circle",
-        path: "/pages/business/pawnLoanInfo",
-      },
-      {
-        text: "资料补充",
-        icon: "file-text",
-        path: "/pages/business/pawnMaterials",
-      },
-      {
-        text: "审批池",
-        icon: "list",
-        path: "/pages/business/pawnApprovalList",
+        orderNode: "9000",
       },
     ],
   },
@@ -536,17 +607,95 @@ const sections = computed(() => {
 
 <style lang="scss" scoped>
 .workbench {
-  padding: 24rpx;
-  background: linear-gradient(180deg, #f7f8f9 0%, #ffffff 100%);
+  min-height: 100vh;
+  padding: 22rpx 22rpx 36rpx;
+  background: #f5f7fb;
+}
+
+.home-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+  padding: 28rpx 28rpx 30rpx;
+  margin-bottom: 24rpx;
+  color: #fff;
+  background: linear-gradient(135deg, #1f5fbf 0%, #2563eb 52%, #0f9f8f 100%);
+  border-radius: 18rpx;
+  box-shadow: 0 14rpx 34rpx rgba(37, 99, 235, 0.18);
+}
+
+.home-title-block {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.home-date {
+  margin-bottom: 12rpx;
+  font-size: 22rpx;
+  opacity: 0.82;
+}
+
+.home-title {
+  font-size: 38rpx;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.home-desc {
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  line-height: 1.45;
+  opacity: 0.88;
+}
+
+.home-status {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 6rpx;
+  padding: 8rpx 14rpx;
+  font-size: 22rpx;
+  color: #dcfce7;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1rpx solid rgba(255, 255, 255, 0.22);
+  border-radius: 999rpx;
+}
+
+.block-head,
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.block-head {
+  margin-bottom: 16rpx;
+}
+
+.block-title,
+.section-title {
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #162033;
+}
+
+.block-tip,
+.section-count {
+  font-size: 22rpx;
+  color: #7b8798;
 }
 
 .overview-panel,
 .todo-panel {
   margin-bottom: 24rpx;
-  padding: 28rpx;
+  padding: 26rpx;
   background: #fff;
-  border-radius: 24rpx;
-  box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.06);
+  border: 1rpx solid #e8edf5;
+  border-radius: 18rpx;
+  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.04);
 }
 
 .overview-head {
@@ -558,13 +707,13 @@ const sections = computed(() => {
 
 .overview-title {
   font-size: 30rpx;
-  font-weight: 700;
-  color: #1f2937;
+  font-weight: 800;
+  color: #162033;
 }
 
 .overview-sub {
   font-size: 22rpx;
-  color: #8c8c8c;
+  color: #7b8798;
 }
 
 .overview-grid {
@@ -577,16 +726,20 @@ const sections = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 8rpx;
-  padding: 20rpx 14rpx;
-  border-radius: 18rpx;
-  background: linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%);
+  justify-content: center;
+  min-height: 112rpx;
+  padding: 18rpx 10rpx;
+  background: #f8fafc;
+  border: 1rpx solid #edf2f7;
+  border-radius: 12rpx;
   text-align: center;
 }
 
 .overview-value {
   font-size: 32rpx;
   font-weight: 800;
-  color: var(--u-type-primary);
+  line-height: 1.1;
+  color: #2563eb;
 }
 
 .overview-label {
@@ -597,7 +750,7 @@ const sections = computed(() => {
 .todo-list {
   display: flex;
   flex-direction: column;
-  gap: 14rpx;
+  gap: 12rpx;
 }
 
 .todo-item,
@@ -609,13 +762,20 @@ const sections = computed(() => {
 
 .todo-item {
   justify-content: space-between;
-  padding: 20rpx;
-  border-radius: 16rpx;
+  min-height: 84rpx;
+  padding: 18rpx 20rpx;
   background: #f8fafc;
+  border: 1rpx solid #edf2f7;
+  border-radius: 12rpx;
+
+  &:active {
+    background: #eef5ff;
+  }
 }
 
 .todo-left {
   gap: 12rpx;
+  min-width: 0;
 }
 
 .todo-title {
@@ -630,13 +790,13 @@ const sections = computed(() => {
 .todo-count {
   font-size: 30rpx;
   font-weight: 800;
-  color: #111827;
+  color: #162033;
 }
 
 .quick-actions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20rpx;
+  gap: 16rpx;
   width: 100%;
   margin-bottom: 24rpx;
 }
@@ -646,22 +806,27 @@ const sections = computed(() => {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  min-height: 140rpx;
-  padding: 24rpx;
-  border-radius: 20rpx;
+  min-height: 132rpx;
+  padding: 24rpx 22rpx;
   color: #fff;
-  background: linear-gradient(135deg, #5da7ff, #6bd3ff);
-  box-shadow: 0 12rpx 32rpx rgba(93, 167, 255, 0.3);
   position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  border-radius: 16rpx;
+  box-shadow: 0 10rpx 24rpx rgba(37, 99, 235, 0.16);
 
-  &--lead {
-    background: linear-gradient(135deg, #52c41a, #73d13d);
-    box-shadow: 0 12rpx 32rpx rgba(82, 196, 26, 0.3);
+  &:active {
+    transform: translateY(2rpx);
   }
 
-  &--pawn {
-    background: linear-gradient(135deg, #f97316, #facc15);
-    box-shadow: 0 12rpx 32rpx rgba(249, 115, 22, 0.24);
+  &--lead {
+    background: linear-gradient(135deg, #0f9f8f, #22c55e);
+    box-shadow: 0 10rpx 24rpx rgba(15, 159, 143, 0.16);
+  }
+
+  &--credit {
+    background: linear-gradient(135deg, #2563eb, #5b7cfa);
+    box-shadow: 0 10rpx 24rpx rgba(37, 99, 235, 0.18);
   }
 }
 
@@ -675,28 +840,30 @@ const sections = computed(() => {
 .quick-title-row {
   display: flex;
   align-items: center;
-  gap: 12rpx;
+  gap: 10rpx;
 }
 
 .quick-text {
   font-size: 30rpx;
-  font-weight: 700;
+  font-weight: 800;
+  line-height: 1.2;
 }
 
 .quick-sub {
   font-size: 22rpx;
+  line-height: 1.35;
   opacity: 0.85;
 }
 
 .qr-icon {
-  width: 80rpx;
-  height: 80rpx;
+  width: 74rpx;
+  height: 74rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1rpx solid rgba(255, 255, 255, 0.22);
   border-radius: 12rpx;
   background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(4px);
   transition: all 0.2s ease;
   flex-shrink: 0;
 
@@ -742,36 +909,36 @@ const sections = computed(() => {
 }
 
 .section {
-  margin-top: 36rpx;
+  margin-top: 28rpx;
 }
 
-.section-title {
-  margin-bottom: 20rpx;
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #1f2937;
+.section-head {
+  margin-bottom: 16rpx;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20rpx 16rpx;
+  gap: 14rpx;
 }
 
 .grid-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8rpx;
-  padding: 18rpx 12rpx;
-  border-radius: 12rpx;
+  justify-content: center;
+  gap: 10rpx;
+  min-height: 132rpx;
+  padding: 14rpx 8rpx;
   background: #fff;
-  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid #e8edf5;
+  border-radius: 12rpx;
   animation: slideUp 0.4s ease-out both;
   transition: all 0.3s ease;
 
   &:active {
-    transform: scale(0.95);
+    background: #eef5ff;
+    transform: scale(0.98);
   }
 }
 
@@ -791,10 +958,17 @@ const sections = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 58rpx;
+  height: 58rpx;
+  background: #eef5ff;
+  border-radius: 14rpx;
 }
 
 .grid-text {
-  font-size: 26rpx;
-  color: $u-main-color;
+  width: 100%;
+  font-size: 23rpx;
+  line-height: 1.25;
+  color: #263449;
+  text-align: center;
 }
 </style>

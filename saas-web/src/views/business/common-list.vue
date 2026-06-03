@@ -413,6 +413,10 @@
     statusMap?: Record<string, string>
     actions: ActionConfig[]
   }
+  type BusinessRouteMeta = {
+    businessModule?: string
+    defaultQuery?: Record<string, unknown>
+  }
 
   const route = useRoute()
   const loading = ref(false)
@@ -435,6 +439,18 @@
   const activeAction = ref<ActionConfig | null>(null)
   const actionRow = ref<Record<string, unknown> | null>(null)
   const pagination = ref({ current: 1, size: 20, total: 0 })
+  const routeMeta = computed(() => route.meta as BusinessRouteMeta)
+  const applicationNodeByPath: Record<string, number> = {
+    'pre-entry': 1100,
+    'risk-pre': 2000,
+    'funder-pre': 3000,
+    supplement: 4000,
+    'first-review': 5000,
+    'final-review': 6000,
+    'loan-request': 7000,
+    'funder-final': 8000,
+    'disbursement-node': 9000
+  }
 
   const commonStatusMap: Record<string, string> = {
     ACTIVE: '启用',
@@ -448,7 +464,13 @@
     INVALID: '无效',
     DORMANT: '休眠',
     PUBLIC_POOL: '公海池',
-    SUBMITTED: '资料校验中',
+    SUBMITTED: '已提交',
+    PENDING_RISK_PRE: '风控预审中',
+    RISK_PRE_PASSED: '风控预审通过',
+    RISK_PRE_REJECTED: '风控预审拒绝',
+    PENDING_FUNDER_PRE: '资方预审中',
+    FUNDER_PRE_PASSED: '资方预审通过',
+    FUNDER_PRE_REJECTED: '资方预审拒绝',
     PENDING_FIRST_REVIEW: '待初审',
     FIRST_REVIEW_PASSED: '初审通过',
     FIRST_REVIEW_REJECTED: '初审拒绝',
@@ -460,7 +482,12 @@
     FUNDER_REVIEW_PASSED: '资方通过',
     FUNDER_REVIEW_REJECTED: '资方拒绝',
     PENDING_SIGN: '待签约',
+    SIGNING_PROGRESS: '签约中',
     SIGNED: '已签约',
+    PENDING_LOAN_REQUEST: '待请款',
+    LOAN_REQUEST_REVIEWING: '请款审核中',
+    LOAN_REQUEST_APPROVED: '请款通过',
+    LOAN_REQUEST_REJECTED: '请款拒绝',
     PENDING_DISBURSEMENT: '待放款',
     DISBURSED: '已放款',
     CANCELLED: '已取消',
@@ -573,13 +600,29 @@
   const applicationStatusOptions = [
     'DRAFT',
     'SUBMITTED',
+    'PENDING_RISK_PRE',
+    'RISK_PRE_PASSED',
+    'RISK_PRE_REJECTED',
+    'PENDING_FUNDER_PRE',
+    'FUNDER_PRE_PASSED',
+    'FUNDER_PRE_REJECTED',
+    'PENDING_SUPPLEMENT',
     'PENDING_FIRST_REVIEW',
+    'FIRST_REVIEW_PASSED',
+    'FIRST_REVIEW_REJECTED',
     'PENDING_FINAL_REVIEW',
     'FINAL_REVIEW_PASSED',
+    'FINAL_REVIEW_REJECTED',
     'PENDING_FUNDER_REVIEW',
     'FUNDER_REVIEW_PASSED',
     'FUNDER_REVIEW_REJECTED',
     'PENDING_SIGN',
+    'SIGNING_PROGRESS',
+    'SIGNED',
+    'PENDING_LOAN_REQUEST',
+    'LOAN_REQUEST_REVIEWING',
+    'LOAN_REQUEST_APPROVED',
+    'LOAN_REQUEST_REJECTED',
     'PENDING_DISBURSEMENT',
     'DISBURSED',
     'CANCELLED'
@@ -626,14 +669,52 @@
       visible: (row) => ['DRAFT', 'PENDING_SUPPLEMENT'].includes(String(row.status))
     },
     {
-      name: 'precheck-pass',
-      label: '预审通过',
-      path: (row) => `/application/${row.id}/precheck-pass`,
+      name: 'risk-pre-pass',
+      label: '风控预审通过',
+      path: (row) => `/application/${row.id}/risk-pre-pass`,
       fields: [
-        { prop: 'reviewerId', label: '预审人ID', type: 'number' },
-        { prop: 'opinion', label: '预审意见', type: 'textarea' }
+        { prop: 'reviewerId', label: '处理人ID', type: 'number' },
+        { prop: 'opinion', label: '风控预审意见', type: 'textarea' }
       ],
-      visible: (row) => String(row.status) === 'SUBMITTED'
+      visible: (row) => ['SUBMITTED', 'PENDING_RISK_PRE'].includes(String(row.status))
+    },
+    {
+      name: 'risk-pre-reject',
+      label: '风控预审拒绝',
+      type: 'danger',
+      path: (row) => `/application/${row.id}/risk-pre-reject`,
+      fields: [
+        { prop: 'reviewerId', label: '处理人ID', type: 'number' },
+        { prop: 'opinion', label: '拒绝原因', type: 'textarea' }
+      ],
+      visible: (row) => ['SUBMITTED', 'PENDING_RISK_PRE'].includes(String(row.status))
+    },
+    {
+      name: 'funder-pre-pass',
+      label: '资方预审通过',
+      path: (row) => `/application/${row.id}/funder-pre-pass`,
+      fields: [...approvalFields, { prop: 'funderApprovalNo', label: '资方预审编号' }],
+      defaults: (row) => ({ amount: row.amount, term: row.term, rate: row.rate }),
+      visible: (row) => String(row.status) === 'PENDING_FUNDER_PRE'
+    },
+    {
+      name: 'funder-pre-reject',
+      label: '资方预审拒绝',
+      type: 'danger',
+      path: (row) => `/application/${row.id}/funder-pre-reject`,
+      fields: [
+        { prop: 'approverId', label: '处理人ID', type: 'number', required: true },
+        { prop: 'opinion', label: '拒绝原因', type: 'textarea' },
+        { prop: 'funderApprovalNo', label: '资方预审编号' }
+      ],
+      visible: (row) => String(row.status) === 'PENDING_FUNDER_PRE'
+    },
+    {
+      name: 'complete-supplement',
+      label: '资料补充完成',
+      path: (row) => `/application/${row.id}/complete-supplement`,
+      fields: [{ prop: 'reason', label: '补件备注', type: 'textarea' }],
+      visible: (row) => ['PENDING_SUPPLEMENT', 'FUNDER_PRE_PASSED'].includes(String(row.status))
     },
     {
       name: 'approve',
@@ -653,6 +734,8 @@
       visible: (row) =>
         [
           'SUBMITTED',
+          'PENDING_RISK_PRE',
+          'PENDING_FUNDER_PRE',
           'PENDING_FIRST_REVIEW',
           'PENDING_FINAL_REVIEW',
           'PENDING_FUNDER_REVIEW'
@@ -671,6 +754,8 @@
       visible: (row) =>
         [
           'SUBMITTED',
+          'PENDING_RISK_PRE',
+          'PENDING_FUNDER_PRE',
           'PENDING_FIRST_REVIEW',
           'PENDING_FINAL_REVIEW',
           'PENDING_FUNDER_REVIEW'
@@ -725,7 +810,35 @@
         { prop: 'videoUrl', label: '面签视频URL' },
         { prop: 'signedAt', label: '签约时间', type: 'date' }
       ],
-      visible: (row) => String(row.status) === 'PENDING_SIGN'
+      visible: (row) => ['PENDING_SIGN', 'SIGNING_PROGRESS'].includes(String(row.status))
+    },
+    {
+      name: 'submit-loan-request',
+      label: '提交请款资料',
+      path: (row) => `/application/${row.id}/submit-loan-request`,
+      fields: [{ prop: 'remark', label: '请款备注', type: 'textarea' }],
+      visible: (row) =>
+        ['SIGNED', 'PENDING_LOAN_REQUEST', 'LOAN_REQUEST_REJECTED'].includes(String(row.status))
+    },
+    {
+      name: 'approve-loan-request',
+      label: '请款审核通过',
+      path: (row) => `/application/${row.id}/approve-loan-request`,
+      fields: approvalFields,
+      defaults: (row) => ({
+        amount: row.approvedAmount || row.amount,
+        term: row.approvedTerm || row.term,
+        rate: row.approvedRate || row.rate
+      }),
+      visible: (row) => String(row.status) === 'LOAN_REQUEST_REVIEWING'
+    },
+    {
+      name: 'reject-loan-request',
+      label: '请款审核拒绝',
+      type: 'danger',
+      path: (row) => `/application/${row.id}/reject-loan-request`,
+      fields: approvalFields.slice(0, 2),
+      visible: (row) => String(row.status) === 'LOAN_REQUEST_REVIEWING'
     },
     {
       name: 'gps-installed',
@@ -751,10 +864,11 @@
     },
     {
       name: 'request-disbursement',
-      label: '出账申请',
+      label: '提交资方放款',
       path: (row) => `/application/${row.id}/request-disbursement`,
-      fields: [{ prop: 'remark', label: '出账备注', type: 'textarea' }],
-      visible: (row) => String(row.status) === 'PENDING_DISBURSEMENT'
+      fields: [{ prop: 'remark', label: '放款申请备注', type: 'textarea' }],
+      visible: (row) =>
+        ['LOAN_REQUEST_APPROVED', 'PENDING_DISBURSEMENT'].includes(String(row.status))
     },
     {
       name: 'confirm-disbursement',
@@ -1519,14 +1633,26 @@
     }
   ])
 
+  function getRoutePathModule() {
+    return (
+      String(route.path || '')
+        .split('/')
+        .filter(Boolean)
+        .pop() || ''
+    )
+  }
+
+  function resolveDefaultQuery() {
+    if (routeMeta.value.defaultQuery) return routeMeta.value.defaultQuery
+    const currentNode = applicationNodeByPath[getRoutePathModule()]
+    return currentNode ? { currentNode } : {}
+  }
+
   function resolveBusinessModule() {
-    const metaModule = route.meta.businessModule
+    const metaModule = routeMeta.value.businessModule
     if (metaModule && configs[String(metaModule)]) return String(metaModule)
 
-    const pathModule = String(route.path || '')
-      .split('/')
-      .filter(Boolean)
-      .pop()
+    const pathModule = getRoutePathModule()
     if (pathModule && configs[pathModule]) return pathModule
 
     const name = String(route.name || '').replace(/^Business/i, '')
@@ -1566,6 +1692,7 @@
         const v = extraFilterModel[filter.prop]
         if (v !== undefined && v !== null && v !== '') params[filter.prop] = v
       }
+      Object.assign(params, resolveDefaultQuery())
       const result = await fetchBusinessList(config.value.api, params)
       const rawRecords = (result.records || []) as Record<string, unknown>[]
       records.value = rawRecords.map((r) => flattenRelations(r))
@@ -1951,15 +2078,36 @@
 
   function statusTagType(value: unknown) {
     const statusValue = String(value)
-    if (['ACTIVE', 'DISBURSED', 'PAID', 'SIGNED', 'FINAL_REVIEW_PASSED'].includes(statusValue))
+    if (
+      [
+        'ACTIVE',
+        'DISBURSED',
+        'PAID',
+        'SIGNED',
+        'RISK_PRE_PASSED',
+        'FUNDER_PRE_PASSED',
+        'FIRST_REVIEW_PASSED',
+        'FINAL_REVIEW_PASSED',
+        'FUNDER_REVIEW_PASSED',
+        'LOAN_REQUEST_APPROVED'
+      ].includes(statusValue)
+    )
       return 'success'
     if (
       [
         'DRAFT',
         'PENDING',
+        'SUBMITTED',
+        'PENDING_RISK_PRE',
+        'PENDING_FUNDER_PRE',
+        'PENDING_SUPPLEMENT',
         'PENDING_FIRST_REVIEW',
         'PENDING_FINAL_REVIEW',
+        'PENDING_FUNDER_REVIEW',
         'PENDING_SIGN',
+        'SIGNING_PROGRESS',
+        'PENDING_LOAN_REQUEST',
+        'LOAN_REQUEST_REVIEWING',
         'PENDING_DISBURSEMENT'
       ].includes(statusValue)
     )

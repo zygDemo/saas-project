@@ -1,5 +1,6 @@
 ﻿import { PrismaClient, UserStatus } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
+import { LeadStatus, Prisma } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -373,6 +374,15 @@ async function main() {
     'Funder',
     'FlowConfig',
     'Lead',
+    'PreEntry',
+    'RiskPre',
+    'FunderPre',
+    'Supplement',
+    'FirstReview',
+    'FinalReview',
+    'LoanRequest',
+    'FunderFinal',
+    'DisbursementNode',
     'Customer',
     'Application',
     'Approval',
@@ -380,16 +390,39 @@ async function main() {
     'Disbursement',
     'OrderMgmt',
     'Repayment',
-    'PawnBusiness',
     'Reports',
     'OrgConfig'
   )
   // 业务管理 - 核心进件流程
-  const bizCoreIds = filterIds('Business', 'Lead', 'Customer', 'Application', 'Signing')
+  const bizCoreIds = filterIds(
+    'Business',
+    'Lead',
+    'PreEntry',
+    'FunderPre',
+    'Supplement',
+    'Application',
+    'Signing'
+  )
   // 业务管理 - 审批相关
-  const bizApprovalIds = filterIds('Business', 'Application', 'Approval')
+  const bizApprovalIds = filterIds(
+    'Business',
+    'Application',
+    'RiskPre',
+    'FirstReview',
+    'FinalReview',
+    'FunderFinal',
+    'Approval'
+  )
   // 业务管理 - 财务相关
-  const bizFinanceIds = filterIds('Business', 'Disbursement', 'OrderMgmt', 'Repayment', 'Reports')
+  const bizFinanceIds = filterIds(
+    'Business',
+    'LoanRequest',
+    'DisbursementNode',
+    'Disbursement',
+    'OrderMgmt',
+    'Repayment',
+    'Reports'
+  )
   // 业务管理 - 客服催收相关
   const bizCsIds = filterIds('Business', 'Customer', 'Repayment', 'Reports')
   // 业务管理 - 经理视角（线索分配 + 业务跟进 + 团队统计）
@@ -399,6 +432,15 @@ async function main() {
     'Dept',
     'FlowConfig',
     'Lead',
+    'PreEntry',
+    'RiskPre',
+    'FunderPre',
+    'Supplement',
+    'FirstReview',
+    'FinalReview',
+    'LoanRequest',
+    'FunderFinal',
+    'DisbursementNode',
     'Customer',
     'Application',
     'Approval',
@@ -417,6 +459,15 @@ async function main() {
     'Funder',
     'FlowConfig',
     'Lead',
+    'PreEntry',
+    'RiskPre',
+    'FunderPre',
+    'Supplement',
+    'FirstReview',
+    'FinalReview',
+    'LoanRequest',
+    'FunderFinal',
+    'DisbursementNode',
     'Customer',
     'Application',
     'Approval',
@@ -424,7 +475,6 @@ async function main() {
     'Disbursement',
     'OrderMgmt',
     'Repayment',
-    'PawnBusiness',
     'Reports',
     'OrgConfig'
   )
@@ -795,6 +845,96 @@ async function seedAllMenus(tenantId: number) {
     sort: 66,
     keepAlive: true
   })
+  const preEntry = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'pre-entry',
+    name: 'PreEntry',
+    component: bp,
+    title: '预审进件',
+    icon: 'ri:file-edit-line',
+    sort: 67,
+    keepAlive: true
+  })
+  const riskPre = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'risk-pre',
+    name: 'RiskPre',
+    component: bp,
+    title: '风控模型预审',
+    icon: 'ri:robot-2-line',
+    sort: 68,
+    keepAlive: true
+  })
+  const funderPre = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'funder-pre',
+    name: 'FunderPre',
+    component: bp,
+    title: '资方预审',
+    icon: 'ri:bank-card-line',
+    sort: 69,
+    keepAlive: true
+  })
+  const supplement = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'supplement',
+    name: 'Supplement',
+    component: bp,
+    title: '资料补充',
+    icon: 'ri:folder-upload-line',
+    sort: 70,
+    keepAlive: true
+  })
+  const firstReview = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'first-review',
+    name: 'FirstReview',
+    component: bp,
+    title: '风控初审',
+    icon: 'ri:shield-check-line',
+    sort: 71,
+    keepAlive: true
+  })
+  const finalReview = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'final-review',
+    name: 'FinalReview',
+    component: bp,
+    title: '风控终审',
+    icon: 'ri:verified-badge-line',
+    sort: 72,
+    keepAlive: true
+  })
+  const loanRequest = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'loan-request',
+    name: 'LoanRequest',
+    component: bp,
+    title: '请款资料',
+    icon: 'ri:file-paper-2-line',
+    sort: 73,
+    keepAlive: true
+  })
+  const funderFinal = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'funder-final',
+    name: 'FunderFinal',
+    component: bp,
+    title: '资方终审',
+    icon: 'ri:bank-line',
+    sort: 74,
+    keepAlive: true
+  })
+  const disbursementNode = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'disbursement-node',
+    name: 'DisbursementNode',
+    component: bp,
+    title: '资方放款',
+    icon: 'ri:money-cny-circle-line',
+    sort: 75,
+    keepAlive: true
+  })
   const customer = await upsertMenu(tenantId, {
     parentId: business.id,
     path: 'customer',
@@ -802,7 +942,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '客户管理',
     icon: 'ri:contacts-line',
-    sort: 67,
+    sort: 76,
     keepAlive: true
   })
   const application = await upsertMenu(tenantId, {
@@ -810,9 +950,9 @@ async function seedAllMenus(tenantId: number) {
     path: 'application',
     name: 'Application',
     component: bp,
-    title: '进件管理',
+    title: '全部进件',
     icon: 'ri:file-edit-line',
-    sort: 68,
+    sort: 77,
     keepAlive: true
   })
   const approval = await upsertMenu(tenantId, {
@@ -820,9 +960,9 @@ async function seedAllMenus(tenantId: number) {
     path: 'approval',
     name: 'Approval',
     component: bp,
-    title: '审批管理',
+    title: '审批记录',
     icon: 'ri:shield-check-line',
-    sort: 69,
+    sort: 78,
     keepAlive: true
   })
   const signing = await upsertMenu(tenantId, {
@@ -832,7 +972,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '签约管理',
     icon: 'ri:pen-nib-line',
-    sort: 70,
+    sort: 79,
     keepAlive: true
   })
   const disbursement = await upsertMenu(tenantId, {
@@ -842,7 +982,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '放款管理',
     icon: 'ri:money-cny-circle-line',
-    sort: 71,
+    sort: 80,
     keepAlive: true
   })
   const orderMgmt = await upsertMenu(tenantId, {
@@ -852,7 +992,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '订单管理',
     icon: 'ri:file-list-2-line',
-    sort: 72,
+    sort: 81,
     keepAlive: true
   })
   const repayment = await upsertMenu(tenantId, {
@@ -862,17 +1002,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '还款管理',
     icon: 'ri:refund-line',
-    sort: 73,
-    keepAlive: true
-  })
-  const pawnBusiness = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'pawn',
-    name: 'PawnBusiness',
-    component: bp,
-    title: '典当业务',
-    icon: 'ri:swap-box-line',
-    sort: 74,
+    sort: 82,
     keepAlive: true
   })
   const reports = await upsertMenu(tenantId, {
@@ -882,7 +1012,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '报表统计',
     icon: 'ri:pie-chart-line',
-    sort: 75,
+    sort: 83,
     keepAlive: true
   })
   const orgConfig = await upsertMenu(tenantId, {
@@ -892,7 +1022,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '机构配置',
     icon: 'ri:tools-line',
-    sort: 76,
+    sort: 84,
     keepAlive: true
   })
 
@@ -912,6 +1042,15 @@ async function seedAllMenus(tenantId: number) {
     funder,
     flowConfig,
     lead,
+    preEntry,
+    riskPre,
+    funderPre,
+    supplement,
+    firstReview,
+    finalReview,
+    loanRequest,
+    funderFinal,
+    disbursementNode,
     customer,
     application,
     approval,
@@ -919,7 +1058,6 @@ async function seedAllMenus(tenantId: number) {
     disbursement,
     orderMgmt,
     repayment,
-    pawnBusiness,
     reports,
     orgConfig,
     menu,
@@ -972,6 +1110,15 @@ async function seedAllMenus(tenantId: number) {
     funder,
     flowConfig,
     lead,
+    preEntry,
+    riskPre,
+    funderPre,
+    supplement,
+    firstReview,
+    finalReview,
+    loanRequest,
+    funderFinal,
+    disbursementNode,
     customer,
     application,
     approval,
@@ -979,7 +1126,6 @@ async function seedAllMenus(tenantId: number) {
     disbursement,
     orderMgmt,
     repayment,
-    pawnBusiness,
     reports,
     orgConfig
   ]
@@ -1023,8 +1169,9 @@ async function connectRoleMenus(roleId: number, menuIds: number[]) {
   )
 }
 
-function buildDefaultFlowRule(node: (typeof defaultFlowNodes)[number]) {
-  const ruleConfig: Record<string, unknown> = {
+function buildDefaultFlowRule(node: (typeof defaultFlowNodes)[number]): Prisma.InputJsonObject {
+  const parentNode = 'parentNode' in node && node.parentNode ? node.parentNode : undefined
+  return {
     nodeCode: node.code,
     phaseCode: node.phaseCode,
     phaseName: node.phaseName,
@@ -1032,10 +1179,9 @@ function buildDefaultFlowRule(node: (typeof defaultFlowNodes)[number]) {
     parallel: Boolean('parallel' in node && node.parallel),
     required: Boolean('required' in node && node.required),
     initialStatus: 'parentNode' in node && node.parentNode ? 0 : 10,
-    transitions: 'transitions' in node ? node.transitions || [] : []
+    transitions: ('transitions' in node ? node.transitions || [] : []) as Prisma.InputJsonValue,
+    ...(parentNode ? { parentNode } : {})
   }
-  if ('parentNode' in node && node.parentNode) ruleConfig.parentNode = node.parentNode
-  return ruleConfig
 }
 
 async function seedDefaultFlowConfigs(tenantId: number, orgId: number, businessType = 'CAR_LOAN') {
@@ -1190,7 +1336,7 @@ async function seedBusinessData(tenantId: number) {
     }
   })
 
-  const leadData = {
+  const leadData: Prisma.LeadUncheckedCreateInput = {
     tenantId,
     orgId: org.id,
     source: 'SELF',
@@ -1201,16 +1347,17 @@ async function seedBusinessData(tenantId: number) {
     carModel: '迈腾',
     loanAmount: 120000,
     remark: '客户计划置换经营周转资金',
-    status: 'FOLLOWING',
+    status: LeadStatus.FOLLOWING,
     assigneeId: sales.id,
     createdBy: sales.id,
     nextFollowAt: new Date('2026-06-01T10:00:00+08:00')
   }
+  const leadUpdateData: Prisma.LeadUncheckedUpdateInput = { ...leadData }
   const existedLead = await prisma.lead.findFirst({
     where: { tenantId, orgId: org.id, phone: leadData.phone }
   })
   const lead = existedLead
-    ? await prisma.lead.update({ where: { id: existedLead.id }, data: leadData })
+    ? await prisma.lead.update({ where: { id: existedLead.id }, data: leadUpdateData })
     : await prisma.lead.create({ data: leadData })
 
   const customer = await prisma.customer.upsert({

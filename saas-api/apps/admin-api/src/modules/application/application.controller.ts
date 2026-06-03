@@ -11,6 +11,7 @@ import {
 import {
   ApprovalActionDto,
   CompleteSigningDto,
+  CompleteSupplementDto,
   ConfirmDisbursementDto,
   FunderReviewDto,
   GpsInstalledDto,
@@ -84,6 +85,36 @@ export class ApplicationController {
     return this.service.precheckPass(Number(id), dto)
   }
 
+  @Post(':id/risk-pre-pass')
+  @ApiOperation({ summary: '风控预审通过' })
+  riskPrePass(@Param('id') id: string, @Body() dto: PrecheckActionDto) {
+    return this.service.riskPrePass(Number(id), dto)
+  }
+
+  @Post(':id/risk-pre-reject')
+  @ApiOperation({ summary: '风控预审拒绝' })
+  riskPreReject(@Param('id') id: string, @Body() dto: PrecheckActionDto) {
+    return this.service.riskPreReject(Number(id), dto)
+  }
+
+  @Post(':id/funder-pre-pass')
+  @ApiOperation({ summary: '资方预审通过' })
+  funderPrePass(@Param('id') id: string, @Body() dto: FunderReviewDto) {
+    return this.service.funderPrePass(Number(id), dto)
+  }
+
+  @Post(':id/funder-pre-reject')
+  @ApiOperation({ summary: '资方预审拒绝' })
+  funderPreReject(@Param('id') id: string, @Body() dto: FunderReviewDto) {
+    return this.service.funderPreReject(Number(id), dto)
+  }
+
+  @Post(':id/complete-supplement')
+  @ApiOperation({ summary: '资料补充完成，进入风控初审' })
+  completeSupplement(@Param('id') id: string, @Body() dto: CompleteSupplementDto) {
+    return this.service.completeSupplement(Number(id), dto)
+  }
+
   @Post(':id/approve')
   @ApiOperation({ summary: '审批通过' })
   approve(@Param('id') id: string, @Body() dto: ApprovalActionDto) {
@@ -148,6 +179,24 @@ export class ApplicationController {
   @ApiOperation({ summary: '出账申请' })
   requestDisbursement(@Param('id') id: string, @Body() dto: RequestDisbursementDto) {
     return this.service.requestDisbursement(Number(id), dto)
+  }
+
+  @Post(':id/submit-loan-request')
+  @ApiOperation({ summary: '提交请款资料' })
+  submitLoanRequest(@Param('id') id: string, @Body() dto: RequestDisbursementDto) {
+    return this.service.submitLoanRequest(Number(id), dto)
+  }
+
+  @Post(':id/approve-loan-request')
+  @ApiOperation({ summary: '请款审核通过' })
+  approveLoanRequest(@Param('id') id: string, @Body() dto: ApprovalActionDto) {
+    return this.service.approveLoanRequest(Number(id), dto)
+  }
+
+  @Post(':id/reject-loan-request')
+  @ApiOperation({ summary: '请款审核拒绝' })
+  rejectLoanRequest(@Param('id') id: string, @Body() dto: ApprovalActionDto) {
+    return this.service.rejectLoanRequest(Number(id), dto)
   }
 
   @Post(':id/confirm-disbursement')
