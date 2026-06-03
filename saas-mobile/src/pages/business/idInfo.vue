@@ -98,6 +98,7 @@ import { storeToRefs } from "pinia";
 import { useBusinessApi } from "@/api/business";
 import NationConst, { nationLabelToValue } from "@/enums/nation";
 import { recognizeIdCard } from "@/common/ocr";
+import { toFilePreviewUrl } from "@/common/file-url";
 
 const businessApi = useBusinessApi();
 
@@ -154,8 +155,8 @@ const fetchUserBasic = async () => {
         personValidDateStart: data.personValidDateStart || "",
         personValidDateEnd: data.personValidDateEnd || "",
       });
-      frontImage.value = data.idcardFront || "";
-      backImage.value = data.idcardBack || "";
+      frontImage.value = toFilePreviewUrl(data.idcardFront || "");
+      backImage.value = toFilePreviewUrl(data.idcardBack || "");
     }
   } catch (e) {
     console.error("获取身份信息失败", e);
@@ -364,14 +365,16 @@ function pickImage(side) {
             return;
           }
           // 兼容返回结构：data 可能是对象 { url } 或直接是字符串
-          const imageUrl = uploadRes?.url;
+          const uploadData = uploadRes?.data || uploadRes || {};
+          const imageUrl = uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url;
+          const objectKey = uploadData.objectKey || uploadData.fileKey || uploadRes?.objectKey;
 
           if (side === "front") {
             frontImage.value = imageUrl;
-            frontImageObjectKey.value = uploadRes?.objectKey;
+            frontImageObjectKey.value = objectKey;
           } else {
             backImage.value = imageUrl;
-            backImageObjectKey.value = uploadRes?.objectKey;
+            backImageObjectKey.value = objectKey;
           }
         } catch (e) {
           console.error("OCR/上传异常", e);

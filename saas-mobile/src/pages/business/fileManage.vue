@@ -79,6 +79,7 @@
 import { $u, useTheme } from "uview-pro";
 import { computed, onMounted, ref } from "vue";
 import { useBusinessApi } from "@/api/business";
+import { normalizeFileRecord, toFilePreviewUrl } from "@/common/file-url";
 import { useLocalStore } from "@/stores";
 
 const businessApi = useBusinessApi();
@@ -105,7 +106,7 @@ async function fetchFileList() {
   try {
     const res = await businessApi.getFileList(uuid);
     if (res?.code === 200 && res.data) {
-      fileList.value = res.data;
+      fileList.value = res.data.map((file) => normalizeFileRecord(file));
     }
   } catch {
     // 错误已由拦截器处理
@@ -209,10 +210,11 @@ async function deleteFile(id) {
 // 预览文件
 function previewFile(item) {
   const isImage = /\.(?:jpg|jpeg|png|gif|webp)$/i.test(item.fileName);
+  const fileUrl = item.previewUrl || toFilePreviewUrl(item.fileUrl);
   if (isImage) {
     uni.previewImage({
-      urls: [item.fileUrl],
-      current: item.fileUrl,
+      urls: [fileUrl],
+      current: fileUrl,
     });
   } else {
     // 其他文件下载或跳转浏览器
@@ -230,8 +232,9 @@ function previewFile(item) {
 
 // 下载文件
 function downloadFile(item) {
+  const fileUrl = item.previewUrl || toFilePreviewUrl(item.fileUrl);
   uni.downloadFile({
-    url: item.fileUrl,
+    url: fileUrl,
     success: (res) => {
       if (res.statusCode === 200) {
         uni.openDocument({

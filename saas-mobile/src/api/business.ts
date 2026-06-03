@@ -17,6 +17,8 @@ export interface MobileUploadResult {
   id?: number;
   url?: string;
   fileUrl?: string;
+  previewUrl?: string;
+  rawUrl?: string;
   objectKey?: string;
   fileKey?: string;
   fileName?: string;

@@ -81,6 +81,7 @@ import { computed, reactive, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { $u } from "uview-pro";
 import { API_BASE_URL, TENANT_ID, UPLOAD_MAX_SIZE } from "@/common/env";
+import { normalizeFileRecord } from "@/common/file-url";
 import { tokenUtil } from "@/common/token";
 import { useBusinessApi } from "@/api/business";
 import { useLocalStore } from "@/stores/local";
@@ -270,7 +271,7 @@ function getFileExtension(fileName) {
 }
 
 function getPreviewValue(file) {
-  return file?.thumb || file?.url || file?.path || "";
+  return file?.thumb || file?.previewUrl || file?.url || file?.path || "";
 }
 
 function normalizeProductFile(item, index) {
@@ -353,18 +354,20 @@ function getFileKeyFromRecord(file) {
 }
 
 function mapServerFileToUploadItem(file) {
-  const url = file.fileUrl || file.url || "";
-  const name = file.fileName || url.split("/").pop() || "文件";
-  const fileType = isImageUrl(url) ? "image" : "file";
+  const normalized = normalizeFileRecord(file || {});
+  const url = normalized.previewUrl || normalized.url || "";
+  const rawUrl = normalized.fileUrl || normalized.rawUrl || url;
+  const name = normalized.fileName || rawUrl.split("/").pop() || "文件";
+  const fileType = isImageUrl(rawUrl || url) ? "image" : "file";
 
   return {
     url,
     name,
-    size: file.fileSize || 0,
+    size: normalized.fileSize || 0,
     progress: 100,
     error: false,
     fileType,
-    response: file,
+    response: normalized,
     __saved: true,
   };
 }
@@ -441,11 +444,11 @@ async function loadFileList() {
     if (res?.code === 200 && Array.isArray(res.data)) {
       res.data.forEach((file) => {
         const key = getFileKeyFromRecord(file);
-        const url = file.fileUrl || "";
         if (key && files[key]) {
-          files[key].push(mapServerFileToUploadItem(file));
-          if (file.id && url) {
-            fileIdMap[url] = file.id;
+          const uploadItem = mapServerFileToUploadItem(file);
+          files[key].push(uploadItem);
+          if (file.id && uploadItem.url) {
+            fileIdMap[uploadItem.url] = file.id;
           }
         }
       });
@@ -534,10 +537,12 @@ async function handleUploadSuccess(data, index, lists) {
 
   const uploadItem = lists[index];
   const responseData = data?.data || data || {};
-  const objectKey = responseData.objectKey || responseData.fileKey || "";
-  const fileUrl = responseData.fileUrl || responseData.url || uploadItem?.url || "";
-  const fileName = responseData.fileName || responseData.name || uploadItem?.name || "";
-  const fileSize = responseData.fileSize || responseData.size || uploadItem?.size || 0;
+  const normalizedData = normalizeFileRecord(responseData);
+  const objectKey = normalizedData.objectKey || normalizedData.fileKey || "";
+  const fileUrl = normalizedData.previewUrl || normalizedData.url || uploadItem?.url || "";
+  const rawUrl = normalizedData.fileUrl || normalizedData.rawUrl || fileUrl;
+  const fileName = normalizedData.fileName || normalizedData.name || uploadItem?.name || "";
+  const fileSize = normalizedData.fileSize || normalizedData.size || uploadItem?.size || 0;
 
   if (!objectKey && !fileUrl) {
     $u.toast("上传结果异常，请重试", "error");
@@ -545,7 +550,7 @@ async function handleUploadSuccess(data, index, lists) {
   }
 
   try {
-    const savedFile = responseData;
+    const savedFile = normalizedData;
 
     if (fileUrl) {
       fileIdMap[fileUrl] = savedFile?.id || savedFile?.fileId || Date.now();
@@ -555,8 +560,8 @@ async function handleUploadSuccess(data, index, lists) {
       uploadItem.url = fileUrl || uploadItem.url;
       uploadItem.name = fileName || uploadItem.name;
       uploadItem.size = fileSize || uploadItem.size;
-      uploadItem.fileType = isImageUrl(fileUrl || fileName) ? "image" : "file";
-      uploadItem.response = savedFile || responseData;
+      uploadItem.fileType = isImageUrl(rawUrl || fileUrl || fileName) ? "image" : "file";
+      uploadItem.response = savedFile || normalizedData;
       uploadItem.__saved = true;
     }
 
@@ -585,7 +590,7 @@ async function beforeRemoveFile(index, lists) {
   if (readonly.value) return false;
 
   const item = lists[index];
-  const url = item?.url || item?.response?.fileUrl || "";
+  const url = item?.url || item?.response?.previewUrl || item?.response?.fileUrl || "";
   const id = fileIdMap[url] || item?.response?.id || item?.response?.fileId;
 
   if (!id) {

@@ -69,6 +69,7 @@ import AppForm from "@/components/app-form/app-form.vue";
 import { useSessionStore } from "@/stores";
 import { useBusinessApi } from "@/api/business";
 import { recognizeVehicle } from "@/common/ocr";
+import { toFilePreviewUrl } from "@/common/file-url";
 
 const sessionStore = useSessionStore();
 const businessApi = useBusinessApi();
@@ -147,7 +148,7 @@ const fetchVehicleInfo = async () => {
         isInsurance: data.isInsurance,
         insuranceExpirationDate: data.insuranceExpirationDate || "",
       });
-      mainImage.value = data.vehicleImgUrl || "";
+      mainImage.value = toFilePreviewUrl(data.vehicleImgUrl || "");
     }
   } catch (e) {
     console.error("获取车辆信息失败", e);
@@ -407,10 +408,11 @@ function pickImage() {
           $u.toast(uploadRes?.msg || "图片上传失败", "error");
           return;
         }
-        const imageUrl = uploadRes?.url;
+        const uploadData = uploadRes?.data || uploadRes || {};
+        const imageUrl = uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url;
         if (imageUrl) {
           mainImage.value = imageUrl;
-          vehicleImgUrlObjectKey.value = uploadRes.objectKey;
+          vehicleImgUrlObjectKey.value = uploadData.objectKey || uploadData.fileKey || uploadRes.objectKey;
         }
       } catch (e) {
         console.error("行驶证OCR/上传异常", e);

@@ -1,6 +1,7 @@
 import { BullModule } from '@nestjs/bullmq'
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
+import { resolve } from 'path'
 import { TenantMiddleware } from './common/tenant/tenant.middleware'
 import { AuthModule } from './modules/auth/auth.module'
 import { HealthModule } from './modules/health/health.module'
@@ -30,15 +31,20 @@ import { RepaymentModule } from './modules/repayment/repayment.module'
 import { MobileBusinessModule } from './modules/mobile-business/mobile-business.module'
 
 const appEnv = process.env.NODE_ENV || 'development'
+const envFilePaths = [
+  resolve(process.cwd(), 'env', `.env.${appEnv}`),
+  resolve(process.cwd(), 'env', '.env'),
+  resolve(process.cwd(), 'apps', 'admin-api', 'env', `.env.${appEnv}`),
+  resolve(process.cwd(), 'apps', 'admin-api', 'env', '.env'),
+  resolve(process.cwd(), 'saas-api', 'apps', 'admin-api', 'env', `.env.${appEnv}`),
+  resolve(process.cwd(), 'saas-api', 'apps', 'admin-api', 'env', '.env')
+]
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [
-        `env/.env.${appEnv}`,
-        'env/.env'
-      ]
+      envFilePath: envFilePaths
     }),
     BullModule.forRootAsync({
       inject: [ConfigService],

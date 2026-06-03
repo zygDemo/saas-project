@@ -116,12 +116,7 @@ export class MobileBusinessService {
       user
     })
     const responseData = createdFile || result
-    return {
-      code: 200,
-      msg: 'success',
-      data: responseData,
-      ...responseData
-    }
+    return responseData
   }
 
   async uploadWithType(
@@ -143,12 +138,7 @@ export class MobileBusinessService {
       user
     })
     const responseData = createdFile || uploadResult
-    return {
-      code: 200,
-      msg: 'success',
-      data: responseData,
-      ...responseData
-    }
+    return responseData
   }
 
   async getFileList(query: Record<string, string>, user: RequestUser) {

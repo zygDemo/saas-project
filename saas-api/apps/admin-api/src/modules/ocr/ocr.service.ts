@@ -3,6 +3,7 @@ import {
   BadRequestException,
   GatewayTimeoutException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -10,7 +11,7 @@ import { readFile } from 'fs/promises'
 import { basename, extname, resolve, sep } from 'path'
 import { OcrObjectKeyDto } from './dto/ocr.dto'
 
-const OCR_DEFAULT_URL = 'https://www.yugui.store/ocr'
+const OCR_DEFAULT_URL = 'https://www.yugui.store/saas/ocr'
 const OCR_SERVICE_DEFAULT_TIMEOUT_MS = 60_000
 const OCR_IMAGE_LIMIT = 8 * 1024 * 1024
 const ALLOWED_OCR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/bmp'])
@@ -67,7 +68,10 @@ export class OcrService {
   constructor(private readonly config: ConfigService) {}
 
   async health() {
-    const response = await this.fetchWithTimeout(this.getHealthEndpoint(), { method: 'GET' })
+    const response = await this.fetchWithTimeout(this.getHealthEndpoint(), {
+      method: 'GET',
+      headers: this.getAuthHeaders()
+    })
     if (!response.ok) {
       throw new BadGatewayException(`OCR 服务健康检查失败：${response.status}`)
     }
@@ -333,48 +337,72 @@ export class OcrService {
       idNum: ''
     }
 
+    let collectingAddress = false
     for (const line of this.getTextLines(raw)) {
       const nameMatch = line.match(/姓名[：:\s]*([^\s]{2,4})/)
       if (nameMatch) {
         result.name = nameMatch[1]
+        collectingAddress = false
         continue
       }
 
       const genderMatch = line.match(/性别[：:\s]*(男|女)/)
       if (genderMatch) {
         result.gender = genderMatch[1]
+        collectingAddress = false
         continue
       }
 
       const nationMatch = line.match(/民族[：:\s]*(\S{1,4})/)
       if (nationMatch) {
         result.nation = nationMatch[1]
+        collectingAddress = false
         continue
       }
 
       const birthMatch = line.match(/(?:出生|生日)[：:\s]*(\d{4})\D*(\d{1,2})\D*(\d{1,2})/)
       if (birthMatch) {
         result.birth = this.formatDateParts(birthMatch[1], birthMatch[2], birthMatch[3])
+        collectingAddress = false
         continue
       }
 
       const addressMatch = line.match(/(?:住址|地址)[：:\s]*(.+)/)
       if (addressMatch) {
         result.address = addressMatch[1]
+        collectingAddress = true
         continue
       }
 
       const idMatch = line.match(/(?:公民身份号码|身份证号|身份证)[：:\s]*(\d{17}[\dXx])/)
       if (idMatch) {
         result.idNum = idMatch[1].toUpperCase()
+        collectingAddress = false
         continue
       }
 
       const pureIdMatch = line.match(/^(\d{17}[\dXx])$/)
-      if (pureIdMatch) result.idNum = pureIdMatch[1].toUpperCase()
+      if (pureIdMatch) {
+        result.idNum = pureIdMatch[1].toUpperCase()
+        collectingAddress = false
+        continue
+      }
+
+      if (collectingAddress && this.isIdCardAddressContinuation(line)) {
+        result.address += line
+      }
     }
 
     return result
+  }
+
+  private isIdCardAddressContinuation(line: string) {
+    if (!line) return false
+    if (/^(?:姓名|性别|民族|出生|生日|住址|地址|公民身份号码|身份证号|身份证|签发机关|发证机关|有效期限|有效期)/.test(line)) {
+      return false
+    }
+    if (/^\d{17}[\dXx]$/.test(line)) return false
+    return /[\u4e00-\u9fffA-Za-z0-9-]/.test(line)
   }
 
   private parseIdCardBackText(raw: string): IdCardBackParsed {
@@ -527,7 +555,7 @@ export class OcrService {
     if (ocrUrl) return ocrUrl.replace(/\/+$/, '')
 
     const legacyBaseUrl = this.getLegacyServiceBaseUrl()
-    if (legacyBaseUrl) return `${legacyBaseUrl}/ocr`
+    if (legacyBaseUrl) return `${legacyBaseUrl}/saas/ocr`
 
     return OCR_DEFAULT_URL
   }
@@ -537,7 +565,7 @@ export class OcrService {
     if (ocrUrl) return `${ocrUrl.replace(/\/+$/, '')}/health`
 
     const legacyBaseUrl = this.getLegacyServiceBaseUrl()
-    if (legacyBaseUrl) return `${legacyBaseUrl}/health`
+    if (legacyBaseUrl) return `${legacyBaseUrl}/saas/ocr/health`
 
     return `${OCR_DEFAULT_URL}/health`
   }
@@ -547,11 +575,12 @@ export class OcrService {
   }
 
   private getAuthHeaders(): HeadersInit | undefined {
-    const token = this.config.get<string>('OCR_TOKEN') || this.config.get<string>('OCR_SERVICE_TOKEN')
-    if (!token?.trim()) return undefined
-
+    const apiKey = this.config.get<string>('OCR_API_KEY')
+    if (!apiKey?.trim()) {
+      throw new InternalServerErrorException('OCR API Key 未配置')
+    }
     return {
-      'x-ocr-token': token.trim()
+      'X-API-Key': apiKey.trim()
     }
   }
 

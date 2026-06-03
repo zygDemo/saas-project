@@ -5,6 +5,7 @@ import type {
   RequestOptions,
 } from "uview-pro";
 import { API_BASE_URL, TENANT_ID } from "./env";
+import { normalizeUploadResponse } from "./file-url";
 import { tokenUtil } from "./token";
 import { useLocalStore } from "@/stores/local";
 import { useSessionStore } from "@/stores/session";
@@ -155,7 +156,7 @@ export function uploadFile(filePath: string, url: string): Promise<any> {
       success: (res) => {
         try {
           const data = JSON.parse(res.data);
-          resolve(data);
+          resolve(normalizeUploadResponse(data));
         } catch {
           reject(new Error("解析响应失败"));
         }
@@ -188,7 +189,7 @@ export function uploadFileWithData(
       success: (res) => {
         try {
           const data = JSON.parse(res.data);
-          resolve(data);
+          resolve(normalizeUploadResponse(data));
         } catch {
           reject(new Error("解析响应失败"));
         }
