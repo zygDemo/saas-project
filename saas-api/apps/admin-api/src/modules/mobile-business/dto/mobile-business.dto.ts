@@ -1,11 +1,23 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
 import { Transform } from 'class-transformer'
-import { IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator'
+import { IsBoolean, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator'
 
 export function ToNumber() {
   return Transform(({ value }) => {
     if (value === '' || value === null || value === undefined) return undefined
     return Number(value)
+  })
+}
+
+export function ToBoolean() {
+  return Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined) return undefined
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'number') return value === 1
+    const text = String(value).trim().toLowerCase()
+    if (['true', '1', 'yes'].includes(text)) return true
+    if (['false', '0', 'no'].includes(text)) return false
+    return value
   })
 }
 
@@ -73,6 +85,17 @@ export class MobileIdCardInfoDto {
   @IsInt()
   @Min(1)
   salesmanId?: number
+
+  @ApiPropertyOptional({ description: '是否同步创建订单草稿' })
+  @IsOptional()
+  @ToBoolean()
+  @IsBoolean()
+  createOrder?: boolean
+
+  @ApiPropertyOptional({ description: '业务类型，例如 CAR_LOAN 或 PAWN' })
+  @IsOptional()
+  @IsString()
+  businessType?: string
 
   @ApiProperty({ description: '姓名' })
   @IsString()
@@ -267,6 +290,11 @@ export class MobileVehicleInfoDto {
 }
 
 export class MobileCreditApplyDto {
+  @ApiPropertyOptional({ description: '授信订单号，存在草稿时传入用于更新草稿' })
+  @IsOptional()
+  @IsString()
+  creditOrderId?: string
+
   @ApiProperty({ description: '客户唯一标识' })
   @IsString()
   uuid: string

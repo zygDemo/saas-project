@@ -13,6 +13,16 @@ export interface ApiResponse<T = unknown> {
   total?: number;
 }
 
+export interface PageResult<T = unknown> {
+  records?: T[];
+  rows?: T[];
+  current?: number;
+  pageNum?: number;
+  size?: number;
+  pageSize?: number;
+  total?: number;
+}
+
 export interface MobileUploadResult {
   id?: number;
   url?: string;
@@ -38,6 +48,7 @@ export interface MobileFileQuery {
 
 export interface CreditApplyData {
   uuid: string;
+  creditOrderId?: string;
   amount: number;
   periods: number;
   businessType?: string;
@@ -53,17 +64,55 @@ export interface CreditApplyData {
 
 export interface CreditListItem {
   id?: number;
+  tenantId?: number;
+  orgId?: number;
+  orgName?: string;
+  customerId?: number;
   uuid?: string;
   creditOrderId?: string;
+  applicationNo?: string;
+  orderNo?: string;
+  customerName?: string;
+  personName?: string;
   name?: string;
   phone?: string;
-  status?: number;
-  businessNode?: string;
+  telephone?: string;
+  idCard?: string;
+  vehicleId?: number;
+  plateNumber?: string;
+  vehicleBrand?: string;
+  vehicleModel?: string;
+  vehicleOwner?: string;
+  amount?: string | number;
+  term?: string | number;
+  rate?: string | number;
+  approvedAmount?: string | number;
+  approvedTerm?: string | number;
+  approvedRate?: string | number;
+  status?: string | number;
+  businessType?: string;
+  businessNode?: string | number;
+  currentNode?: string | number;
+  nodeCode?: string | number;
+  currentNodeName?: string;
+  nodeName?: string;
+  currentStatus?: string | number;
+  nodeStatus?: string | number;
+  currentStatusName?: string;
+  nodeStatusName?: string;
+  phaseCode?: string | number;
+  phaseName?: string;
   productName?: string;
-  periods?: number;
-  pushQuota?: string;
+  funderName?: string;
+  periods?: string | number;
+  pushQuota?: string | number;
+  isSignContract?: number;
+  isFaceRecognition?: number;
   createTime?: string;
   updateTime?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  applicationId?: number;
 }
 
 export interface StatisticsOverview {
@@ -116,6 +165,14 @@ export interface IdCardInfo {
   uuid?: string;
   /** 业务员id */
   salesmanId?: number;
+  /** 是否同步创建订单草稿 */
+  createOrder?: boolean;
+  /** 业务类型 */
+  businessType?: string;
+  /** 订单ID */
+  applicationId?: number;
+  /** 订单号 */
+  creditOrderId?: string;
   /** 手机号码 */
   telephone?: string;
   /** 是否推送授信 1：已推送；2：未推送 */
@@ -387,6 +444,12 @@ export function useBusinessApi() {
     /** 根据业务员ID获取授信申请列表（进件列表） */
     getCreditList: (params: Record<string, unknown>) =>
       http.get<ApiResponse<CreditListItem[]>>("/m/credit/getCreditList", params),
+    /** 获取订单列表（新流程节点版） */
+    getOrderList: (params: Record<string, unknown>) =>
+      http.get<ApiResponse<PageResult<CreditListItem>>>(
+        "/application/order-list",
+        params,
+      ),
     /** 获取待补充资料列表 */
     getSupplementList: (params: Record<string, unknown>) =>
       http.get("/m/credit/getSupplementList", params),

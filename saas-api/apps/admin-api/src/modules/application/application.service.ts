@@ -14,7 +14,8 @@ import { PrismaService } from '../prisma/prisma.service'
 import {
   CreateApplicationDto,
   UpdateApplicationDto,
-  ApplicationQueryDto
+  ApplicationQueryDto,
+  OrderListQueryDto
 } from './dto/application.dto'
 import {
   ApprovalActionDto,
@@ -72,6 +73,52 @@ const DEFAULT_FLOW_NODE_NAMES: Record<number, string> = {
   7000: '请款资料',
   8000: '资方终审',
   9000: '资方放款'
+}
+
+const DEFAULT_FLOW_NODE_PHASES: Record<number, number> = {
+  1100: 1000,
+  1200: 1000,
+  1300: 1000,
+  1400: 1000,
+  2000: 2000,
+  3000: 3000,
+  4000: 4000,
+  4100: 4000,
+  4200: 4000,
+  4300: 4000,
+  4400: 4000,
+  5000: 5000,
+  6000: 6000,
+  7000: 7000,
+  8000: 8000,
+  9000: 9000
+}
+
+const DEFAULT_FLOW_PHASE_NAMES: Record<number, string> = {
+  1000: '预审进件',
+  2000: '风控模型预审',
+  3000: '资方预审',
+  4000: '资料补充',
+  5000: '风控初审',
+  6000: '风控终审',
+  7000: '请款资料',
+  8000: '资方终审',
+  9000: '资方放款'
+}
+
+function hasQueryValue(value: unknown) {
+  return value !== undefined && value !== null && value !== ''
+}
+
+function firstQueryString(...values: unknown[]) {
+  for (const value of values) {
+    if (hasQueryValue(value)) return String(value).trim()
+  }
+  return ''
+}
+
+function containsText(value: string) {
+  return { contains: value, mode: 'insensitive' as const }
 }
 
 function flowByApplicationStatus(status: ApplicationStatus) {
@@ -200,6 +247,37 @@ export class ApplicationService extends BaseBusinessCrudService<
 
     return toPaginatedResponse(
       records.map((record) => this.mapFlowApplication(record)),
+      total,
+      pagination
+    )
+  }
+
+  async getOrderList(query: OrderListQueryDto) {
+    const pagination = getPagination({
+      current: query.current ?? query.pageNum,
+      size: query.size ?? query.pageSize
+    })
+    const where = this.buildOrderListWhere(query)
+
+    const [records, total] = await this.prisma.$transaction([
+      this.prisma.application.findMany({
+        where,
+        skip: pagination.skip,
+        take: pagination.take,
+        orderBy: { id: 'desc' },
+        include: {
+          org: { include: { flowConfigs: true } },
+          customer: { include: { vehicles: true } },
+          product: true,
+          funder: true,
+          creator: { select: { id: true, userName: true, nickName: true } }
+        }
+      }),
+      this.prisma.application.count({ where })
+    ])
+
+    return toPaginatedResponse(
+      records.map((record) => this.mapOrderListItem(record)),
       total,
       pagination
     )
@@ -797,6 +875,125 @@ export class ApplicationService extends BaseBusinessCrudService<
     if (!allowed.includes(current)) throw new BadRequestException(message)
   }
 
+  private buildOrderListWhere(query: OrderListQueryDto) {
+    const where: Record<string, unknown> = {}
+    const tenantId = getCurrentTenantId()
+    if (tenantId) where.tenantId = tenantId
+    if (hasQueryValue(query.orgId)) where.orgId = query.orgId
+    if (hasQueryValue(query.status)) where.status = query.status
+    if (hasQueryValue(query.customerId)) where.customerId = query.customerId
+    if (hasQueryValue(query.creatorId)) where.creatorId = query.creatorId
+    if (hasQueryValue(query.businessType)) where.businessType = query.businessType
+
+    const nodeCode = query.currentNode ?? query.nodeCode
+    const nodeStatus = query.currentStatus ?? query.nodeStatus
+    if (hasQueryValue(nodeCode)) where.currentNode = nodeCode
+    if (hasQueryValue(nodeStatus)) where.currentStatus = nodeStatus
+
+    const orderNo = firstQueryString(query.applicationNo, query.orderNo, query.creditOrderId)
+    if (orderNo) where.applicationNo = containsText(orderNo)
+
+    const customerWhere: Record<string, unknown> = {}
+    const personName = firstQueryString(query.personName, query.customerName, query.name)
+    if (personName) customerWhere.name = containsText(personName)
+
+    const phone = firstQueryString(query.phone, query.telephone)
+    if (phone) customerWhere.phone = containsText(phone)
+
+    const plateNumber = firstQueryString(query.plateNumber)
+    if (plateNumber) {
+      customerWhere.vehicles = {
+        some: {
+          plateNumber: containsText(plateNumber)
+        }
+      }
+    }
+
+    if (Object.keys(customerWhere).length > 0) {
+      where.customer = customerWhere
+    }
+
+    const keyword = firstQueryString(query.keyword)
+    if (keyword) {
+      where.OR = [
+        { applicationNo: containsText(keyword) },
+        {
+          customer: {
+            OR: [
+              { name: containsText(keyword) },
+              { phone: containsText(keyword) },
+              { vehicles: { some: { plateNumber: containsText(keyword) } } }
+            ]
+          }
+        }
+      ]
+    }
+
+    return where
+  }
+
+  private mapOrderListItem(application: any) {
+    const customer = application.customer
+    const vehicle = customer?.vehicles?.[0] || customer?.vehicles?.at?.(0)
+    const currentNode = Number(application.currentNode)
+    const currentStatus = Number(application.currentStatus)
+    const phaseCode = this.resolveFlowPhaseCode(application)
+    const nodeName = this.resolveFlowNodeName(application)
+    const nodeStatusName = FLOW_STATUS_LABELS[currentStatus] || String(application.currentStatus)
+
+    return {
+      id: application.id,
+      tenantId: application.tenantId,
+      orgId: application.orgId,
+      orgName: application.org?.name,
+      customerId: application.customerId,
+      uuid: customer ? String(customer.id) : String(application.customerId),
+      customerName: customer?.name || '',
+      personName: customer?.name || '',
+      name: customer?.name || '',
+      phone: customer?.phone || '',
+      telephone: customer?.phone || '',
+      idCard: customer?.idCard || '',
+      vehicleId: vehicle?.id,
+      plateNumber: vehicle?.plateNumber || '',
+      vehicleBrand: vehicle?.brand || '',
+      vehicleModel: vehicle?.model || '',
+      vehicleOwner: vehicle?.ownerName || '',
+      applicationNo: application.applicationNo,
+      orderNo: application.applicationNo,
+      creditOrderId: application.applicationNo,
+      amount: application.amount,
+      term: application.term,
+      rate: application.rate,
+      approvedAmount: application.approvedAmount,
+      approvedTerm: application.approvedTerm,
+      approvedRate: application.approvedRate,
+      status: application.status,
+      businessType: application.businessType,
+      currentNode,
+      nodeCode: currentNode,
+      currentNodeName: nodeName,
+      nodeName,
+      currentStatus,
+      nodeStatus: currentStatus,
+      currentStatusName: nodeStatusName,
+      nodeStatusName,
+      phaseCode,
+      phaseName: this.resolveFlowPhaseName(application, phaseCode),
+      productId: application.productId,
+      productName: application.product?.name,
+      funderId: application.funderId,
+      funderName: application.funder?.name,
+      creatorId: application.creatorId,
+      creatorName: application.creator?.nickName || application.creator?.userName,
+      supplementReason: application.supplementReason,
+      supplementDeadline: application.supplementDeadline,
+      remark: application.remark,
+      createdAt: application.createdAt,
+      updatedAt: application.updatedAt
+    }
+  }
+
   private mapFlowApplication(application: any) {
     return {
       ...application,
@@ -826,6 +1023,40 @@ export class ApplicationService extends BaseBusinessCrudService<
       config?.nodeName ||
       DEFAULT_FLOW_NODE_NAMES[Number(application.currentNode)] ||
       String(application.currentNode)
+    )
+  }
+
+  private resolveFlowPhaseCode(application: any) {
+    const currentNode = Number(application.currentNode)
+    const flowConfigs = application.org?.flowConfigs
+    const config = Array.isArray(flowConfigs)
+      ? flowConfigs.find(
+          (item: any) =>
+            item.businessType === application.businessType &&
+            String(item.nodeCode) === String(application.currentNode)
+        )
+      : null
+
+    const ruleConfig = config?.ruleConfig as Record<string, unknown> | undefined
+    const phaseCode = Number(ruleConfig?.phaseCode || DEFAULT_FLOW_NODE_PHASES[currentNode])
+    return Number.isFinite(phaseCode) ? phaseCode : currentNode
+  }
+
+  private resolveFlowPhaseName(application: any, phaseCode: number) {
+    const flowConfigs = application.org?.flowConfigs
+    const config = Array.isArray(flowConfigs)
+      ? flowConfigs.find(
+          (item: any) =>
+            item.businessType === application.businessType &&
+            String(item.nodeCode) === String(application.currentNode)
+        )
+      : null
+
+    const ruleConfig = config?.ruleConfig as Record<string, unknown> | undefined
+    return (
+      (typeof ruleConfig?.phaseName === 'string' ? ruleConfig.phaseName : '') ||
+      DEFAULT_FLOW_PHASE_NAMES[phaseCode] ||
+      this.resolveFlowNodeName(application)
     )
   }
 

@@ -57,12 +57,50 @@ const NationConst = [
   { label: "土家族", value: "56", aliases: ["土家"] },
 ];
 
+const normalizeNationText = (value: string): string => {
+  return String(value || "")
+    .trim()
+    .replace(/^民族/, "")
+    .replace(/[^\u4e00-\u9fff]/g, "")
+    .replace(/^民族/, "")
+    .replace(/族族/g, "族");
+};
+
+const getNationMatchKeys = (item: (typeof NationConst)[number]) => {
+  return Array.from(
+    new Set([item.label, ...(item.aliases || [])].map(normalizeNationText).filter(Boolean))
+  ).sort((a, b) => b.length - a.length);
+};
+
 const nationLabelToValue = (label: string): string | undefined => {
-  if (!label) return undefined;
-  const item = NationConst.find(
-    (n) => n.label === label || n.aliases?.includes(label)
-  );
-  return item?.value;
+  const raw = String(label || "").trim();
+  if (!raw) return undefined;
+
+  const valueItem = NationConst.find((n) => n.value === raw);
+  if (valueItem) return valueItem.value;
+
+  const normalized = normalizeNationText(raw);
+  if (!normalized) return undefined;
+
+  const normalizedWithZu = normalized.endsWith("族") ? normalized : `${normalized}族`;
+  const matched = NationConst.map((item) => ({
+    item,
+    keys: getNationMatchKeys(item),
+  }))
+    .sort((a, b) => (b.keys[0]?.length || 0) - (a.keys[0]?.length || 0))
+    .find(({ keys }) =>
+      keys.some((key) => {
+        const keyWithZu = key.endsWith("族") ? key : `${key}族`;
+        return (
+          normalized === key ||
+          normalizedWithZu === keyWithZu ||
+          normalized.startsWith(keyWithZu) ||
+          normalized.startsWith(key)
+        );
+      })
+    );
+
+  return matched?.item.value;
 };
 
 const nationValueToLabel = (value: string): string | undefined => {

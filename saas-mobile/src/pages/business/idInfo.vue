@@ -99,6 +99,7 @@ import { useBusinessApi } from "@/api/business";
 import NationConst, { nationLabelToValue } from "@/enums/nation";
 import { recognizeIdCard } from "@/common/ocr";
 import { toFilePreviewUrl } from "@/common/file-url";
+import { compressImageForOcr } from "@/common/image-compress";
 
 const businessApi = useBusinessApi();
 
@@ -355,11 +356,11 @@ function pickImage(side) {
 
       if (path) {
         try {
-          // 1. 后端 OCR 识别（先填表）
-          await doIdCardOcr(path, side);
-
-          // 2. 上传图片到服务器
-          const uploadRes = await businessApi.uploadFile(path);
+          const compressedPath = await compressImageForOcr(path);
+          const [, uploadRes] = await Promise.all([
+            doIdCardOcr(compressedPath, side),
+            businessApi.uploadFile(compressedPath),
+          ]);
           if (uploadRes?.code !== 200) {
             $u.toast(uploadRes?.msg || "图片上传失败", "error");
             return;
@@ -390,7 +391,7 @@ function pickImage(side) {
 /** 后端 OCR 识别并自动填表 */
 async function doIdCardOcr(imagePath, side) {
   try {
-    const result = await recognizeIdCard(imagePath, side === "front" ? "front" : "back");
+    const result = await recognizeIdCard(imagePath, side === "front" ? "front" : "back", { compress: false });
     if (!result) return;
 
     if (side === "front") {
@@ -399,7 +400,7 @@ async function doIdCardOcr(imagePath, side) {
       if (data.idNum) idInfo.personIdcard = data.idNum;
       if (data.gender === "男") idInfo.gender = 1;
       else if (data.gender === "女") idInfo.gender = 2;
-      if (data.nation) idInfo.race = nationLabelToValue(data.nation) || data.nation;
+      if (data.race || data.nation) idInfo.race = data.race || nationLabelToValue(data.nation) || data.nation;
       if (data.address) idInfo.personAddress = data.address;
       if (data.birth) {
         // birth 格式: yyyy-MM-dd，暂存到 session 供有效期计算参考
@@ -408,6 +409,12 @@ async function doIdCardOcr(imagePath, side) {
     } else {
       const data = result;
       if (data.authority) idInfo.personIssuingAuthority = data.authority;
+      if (data.validDateStart || data.validDateEnd) {
+        if (data.validDateStart) idInfo.personValidDateStart = data.validDateStart;
+        if (data.validDateEnd) idInfo.personValidDateEnd = data.validDateEnd;
+        $u.toast("已自动识别，请核对修改", "success");
+        return;
+      }
       if (data.validDate) {
         if (data.validDate.includes("长期")) {
           const startMatch = data.validDate.match(/(\d{4}[.\-\\/]\d{2}[.\-\\/]\d{2})/);
@@ -454,6 +461,8 @@ const doSubmit = async () => {
     idcardFront: frontImageObjectKey.value || undefined,
     idcardBack: backImageObjectKey.value || undefined,
     salesmanId: currentSalesmanId.value, // 业务员ID
+    createOrder: !isEditMode.value,
+    businessType: isPawnMode.value ? "pawn" : "CAR_LOAN",
   };
 
   const cleanData = Object.fromEntries(
@@ -463,8 +472,15 @@ const doSubmit = async () => {
   const res = await businessApi.addOrUpdateUserBasic(cleanData);
 
   if (res?.code === 200) {
+  console.log(res);
     sessionStore.setOrderInfo({ idInfo: { ...idInfo } });
     sessionStore.setOrderInfo({ uuid: res?.data?.uuid });
+    if (res?.data?.creditOrderId) {
+      sessionStore.setOrderInfo({
+        creditOrderId: res.data.creditOrderId,
+        applicationId: res.data.applicationId,
+      });
+    }
     if (isPawnMode.value) {
       sessionStore.setOrderInfo({ businessType: "pawn" });
     }
@@ -495,13 +511,18 @@ const handleNext = async () => {
   try {
     const success = await doSubmit();
     if (success) {
+      const orderInfo = sessionStore.orderInfo || {};
+      const uuid = editUuid.value || orderInfo.uuid || "";
+      const query = [
+        uuid ? `uuid=${encodeURIComponent(String(uuid))}` : "",
+        isPawnMode.value ? "businessType=pawn" : "",
+      ].filter(Boolean);
       const nextUrl = isPawnMode.value
-        ? "/pages/business/carInfo?businessType=pawn"
-        : "/pages/business/carInfo";
+        ? `/pages/business/carInfo?${query.join("&")}`
+        : `/pages/business/carInfo${query.length ? `?${query.join("&")}` : ""}`;
       setTimeout(() => {
-        uni.$u.route({
+        uni.redirectTo({
           url: nextUrl,
-          type: "navigateTo",
         });
       }, 800);
     }

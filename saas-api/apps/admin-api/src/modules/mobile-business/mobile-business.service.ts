@@ -258,7 +258,21 @@ export class MobileBusinessService {
 
       await this.linkCustomerImages(customer, dto, user)
 
-      return this.mapCustomer(customer)
+      const mappedCustomer = this.mapCustomer(customer)
+      if (!dto.createOrder) return mappedCustomer
+
+      const application = await this.ensureCustomerDraftApplication(customer, user, {
+        businessType: dto.businessType
+      })
+      await this.linkApplicationFiles(application, customer)
+
+      return {
+        ...mappedCustomer,
+        creditOrderId: application.applicationNo,
+        applicationId: application.id,
+        currentNode: application.currentNode,
+        currentStatus: application.currentStatus
+      }
     })
   }
 
@@ -342,6 +356,14 @@ export class MobileBusinessService {
         })
       }
 
+      const application = await this.findLatestDraftApplication(customer.id)
+      if (application && application.currentNode < 1200) {
+        await this.prisma.application.update({
+          where: { id: application.id },
+          data: { currentNode: 1200, currentStatus: 10 }
+        })
+      }
+
       return this.mapVehicle(vehicle, dto.uuid)
     })
   }
@@ -375,25 +397,38 @@ export class MobileBusinessService {
       dto.remark
     ].filter(Boolean)
 
-    const application = await this.prisma.application.create({
-      data: {
-        orgId: customer.orgId,
-        customerId: customer.id,
-        productId: product?.id,
-        funderId: funder?.id,
-        applicationNo: generateApplicationNo(),
-        amount: dto.amount,
-        term: dto.periods,
-        rate,
-        repaymentMethod: product?.repaymentMethod || '等额本息',
-        status: ApplicationStatus.SUBMITTED,
-        businessType: 'CAR_LOAN',
-        currentNode: 2000,
-        currentStatus: 10,
-        creatorId: user.sub,
-        remark: remarkParts.join('；') || undefined
-      }
-    })
+    const draftApplication = dto.creditOrderId
+      ? await this.findDraftApplicationByNo(customer.id, dto.creditOrderId)
+      : await this.findLatestDraftApplication(customer.id)
+
+    const applicationData = {
+      orgId: customer.orgId,
+      customerId: customer.id,
+      productId: product?.id,
+      funderId: funder?.id,
+      amount: dto.amount,
+      term: dto.periods,
+      rate,
+      repaymentMethod: product?.repaymentMethod || '等额本息',
+      status: ApplicationStatus.SUBMITTED,
+      businessType: dto.businessType === 'pawn' ? 'PAWN' : 'CAR_LOAN',
+      currentNode: 2000,
+      currentStatus: 10,
+      creatorId: user.sub,
+      remark: remarkParts.join('；') || undefined
+    }
+
+    const application = draftApplication
+      ? await this.prisma.application.update({
+          where: { id: draftApplication.id },
+          data: applicationData
+        })
+      : await this.prisma.application.create({
+          data: {
+            ...applicationData,
+            applicationNo: generateApplicationNo()
+          }
+        })
 
     await this.linkApplicationFiles(application, customer)
 
@@ -573,6 +608,67 @@ export class MobileBusinessService {
           })
     if (!application) throw new NotFoundException('授信申请不存在')
     return application
+  }
+
+  private async findLatestDraftApplication(customerId: number) {
+    return this.prisma.application.findFirst({
+      where: {
+        customerId,
+        status: ApplicationStatus.DRAFT
+      },
+      orderBy: { id: 'desc' }
+    })
+  }
+
+  private async findDraftApplicationByNo(customerId: number, applicationNo: string) {
+    return this.prisma.application.findFirst({
+      where: {
+        customerId,
+        applicationNo,
+        status: ApplicationStatus.DRAFT
+      }
+    })
+  }
+
+  private async ensureCustomerDraftApplication(
+    customer: any,
+    user: RequestUser,
+    options: { businessType?: string } = {}
+  ) {
+    const current = await this.findLatestDraftApplication(customer.id)
+    if (current) {
+      if (current.currentNode !== 1100 || current.currentStatus !== 10) {
+        return this.prisma.application.update({
+          where: { id: current.id },
+          data: { currentNode: 1100, currentStatus: 10 }
+        })
+      }
+      return current
+    }
+
+    const product = await this.getDefaultProduct(customer.orgId)
+    const funder = await this.getDefaultFunder(customer.orgId)
+    const rate = product ? Number(product.minRate) : 0.006
+
+    return this.prisma.application.create({
+      data: {
+        orgId: customer.orgId,
+        customerId: customer.id,
+        productId: product?.id,
+        funderId: funder?.id,
+        applicationNo: generateApplicationNo(),
+        amount: 0,
+        term: product?.minTerm || 12,
+        rate,
+        repaymentMethod: product?.repaymentMethod || '等额本息',
+        status: ApplicationStatus.DRAFT,
+        businessType: options.businessType === 'pawn' ? 'PAWN' : 'CAR_LOAN',
+        currentNode: 1100,
+        currentStatus: 10,
+        creatorId: user.sub,
+        remark: '移动端身份证信息提交自动创建订单草稿'
+      }
+    })
   }
 
   private mapCustomer(customer: any) {

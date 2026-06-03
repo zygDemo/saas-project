@@ -121,8 +121,10 @@ const doSubmit = async () => {
 
   const res = await businessApi.creditApply({
     uuid,
+    creditOrderId: info.creditOrderId || undefined,
     amount: Number(amountText),
     periods: Number(form.periods),
+    businessType: info.businessType || undefined,
   });
 
   if (res?.code === 200) {

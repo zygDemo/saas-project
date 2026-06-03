@@ -70,6 +70,7 @@ import { useSessionStore } from "@/stores";
 import { useBusinessApi } from "@/api/business";
 import { recognizeVehicle } from "@/common/ocr";
 import { toFilePreviewUrl } from "@/common/file-url";
+import { compressImageForOcr } from "@/common/image-compress";
 
 const sessionStore = useSessionStore();
 const businessApi = useBusinessApi();
@@ -399,11 +400,11 @@ function pickImage() {
       mainLoading.value = true;
 
       try {
-        // 1. 后端 OCR 识别（先填表）
-        await doVehicleOcr(path);
-
-        // 2. 上传图片到服务器
-        const uploadRes = await businessApi.uploadFile(path);
+        const compressedPath = await compressImageForOcr(path);
+        const [, uploadRes] = await Promise.all([
+          doVehicleOcr(compressedPath),
+          businessApi.uploadFile(compressedPath),
+        ]);
         if (uploadRes?.code !== 200) {
           $u.toast(uploadRes?.msg || "图片上传失败", "error");
           return;
@@ -426,7 +427,7 @@ function pickImage() {
 /** 后端行驶证 OCR 识别并自动填表 */
 async function doVehicleOcr(imagePath) {
   try {
-    const data = await recognizeVehicle(imagePath);
+    const data = await recognizeVehicle(imagePath, { compress: false });
     if (!data) return;
 
     if (data.plateNumber) carInfo.plateNumber = data.plateNumber;
@@ -435,8 +436,9 @@ async function doVehicleOcr(imagePath) {
     if (data.owner) carInfo.vehicleOwner = data.owner;
     if (data.address) carInfo.address = data.address;
     if (data.useCharacter) carInfo.usageNature = data.useCharacter;
-    if (data.engineNumber) carInfo.engineNumber = data.engineNumber;
-    if (data.vin) carInfo.vehicleCode = data.vin;
+    if (data.sealInfo) carInfo.sealInfo = data.sealInfo;
+    if (data.engineNumber) carInfo.engineNumber = data.engineNumber.toUpperCase();
+    if (data.vin) carInfo.vehicleCode = data.vin.toUpperCase();
     if (data.registerDate) carInfo.registerDate = data.registerDate;
 
     $u.toast("已自动识别，请核对修改", "success");

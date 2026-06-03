@@ -5,7 +5,7 @@
       <view class="search-bar">
         <u-search
           v-model="keyword"
-          placeholder="搜索客户姓名"
+          placeholder="姓名/手机号/车牌号/订单号"
           :show-action="false"
           @search="handleSearch"
           @custom="handleSearch"
@@ -34,26 +34,45 @@
         </scroll-view>
       </view>
 
+      <!-- 节点状态筛选 -->
+      <view class="filter-bar filter-bar--status">
+        <scroll-view scroll-x class="filter-scroll">
+          <view class="filter-list">
+            <view
+              v-for="(status, index) in nodeStatusFilterList"
+              :key="index"
+              class="filter-item filter-item--status"
+              :class="{
+                'filter-item--active': currentNodeStatus === status.value,
+              }"
+              @click="handleNodeStatusChange(status.value)"
+            >
+              {{ status.label }}
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
       <!-- 订单列表 -->
       <view class="order-list">
         <view
           v-for="(order, index) in orderList"
           :key="order.id"
           class="order-card"
-          :class="`status-${order.status}`"
+          :class="`status-${order.statusClass}`"
           :style="{ animationDelay: `${index * 0.06}s` }"
-          @click="handleOrderDetail(order)"
+          @click="handleDetailButton(order)"
         >
           <!-- 订单头部 -->
           <view class="order-header">
             <view class="header-left">
-              <view class="avatar" :class="`avatar--${order.status}`">
+              <view class="avatar" :class="`avatar--${order.statusClass}`">
                 {{ order.name?.charAt(0) || "?" }}
               </view>
               <view class="title-block">
                 <text class="customer-name">{{ order.name }}</text>
                 <view class="order-status order-status--business-node">
-                  {{ getBusinessNodeLabel(order.businessNode) }}
+                  {{ order.businessNodeLabel }}
                 </view>
               </view>
             </view>
@@ -77,6 +96,20 @@
               </view>
               <text class="label">联系电话</text>
               <text class="value">{{ order.phone }}</text>
+            </view>
+            <view v-if="order.plateNumber" class="info-row">
+              <view class="info-icon">
+                <u-icon name="car" size="24" color="#8c8c8c" />
+              </view>
+              <text class="label">车牌号</text>
+              <text class="value">{{ order.plateNumber }}</text>
+            </view>
+            <view v-if="order.vehicleDisplay" class="info-row">
+              <view class="info-icon">
+                <u-icon name="grid" size="24" color="#8c8c8c" />
+              </view>
+              <text class="label">车辆信息</text>
+              <text class="value">{{ order.vehicleDisplay }}</text>
             </view>
             <view v-if="order.pushQuota" class="info-row">
               <view class="info-icon">
@@ -104,6 +137,20 @@
           <!-- 订单操作 -->
           <view class="order-footer">
             <view class="order-tags">
+              <u-tag
+                v-if="order.phaseName"
+                :text="order.phaseName"
+                size="mini"
+                type="primary"
+                plain
+              />
+              <u-tag
+                v-if="order.nodeStatusLabel"
+                :text="order.nodeStatusLabel"
+                size="mini"
+                type="info"
+                plain
+              />
               <u-tag
                 v-if="order.isSignContract === 1"
                 text="已签约"
@@ -135,21 +182,12 @@
             </view>
             <view class="order-actions">
               <u-button
-                v-if="order.status === 4"
                 size="mini"
                 type="primary"
                 @click.stop="handleDetailButton(order)"
               >
                 详情
               </u-button>
-              <!-- <u-button
-                size="mini"
-                type="info"
-                plain
-                @click.stop="handleOrderDetail(order)"
-              >
-                处理
-              </u-button> -->
             </view>
           </view>
         </view>
@@ -174,46 +212,125 @@
 <script setup lang="ts">
 import layout from "@/pages/layout/layout.vue";
 import { computed, ref } from "vue";
-import { onLoad } from "@dcloudio/uni-app";
+import { onLoad, onReachBottom } from "@dcloudio/uni-app";
 import { useBusinessApi } from "@/api/business";
-import { useSessionStore } from "@/stores";
+import type { CreditListItem, PageResult } from "@/api/business";
 
 const businessApi = useBusinessApi();
-const sessionStore = useSessionStore();
 
 // 搜索关键词
 const keyword = ref("");
 const lastKeyword = ref("");
 
 type BusinessNodeFilterValue = "all" | string;
+type NodeStatusFilterValue = "all" | string;
+
+interface FilterOption {
+  label: string;
+  value: string;
+  count: number;
+}
+
+interface OrderListViewItem extends CreditListItem {
+  name: string;
+  phone: string;
+  statusClass: string;
+  businessNode: string;
+  businessNodeLabel: string;
+  nodeStatusLabel: string;
+  vehicleDisplay: string;
+  createTime: string;
+  creditOrderId?: string;
+  pushQuota?: string;
+  periods?: string | number;
+}
+
+const ORDER_NODE_OPTIONS: Array<Omit<FilterOption, "count">> = [
+  { label: "身份证信息", value: "1100" },
+  { label: "车辆信息", value: "1200" },
+  { label: "申请信息", value: "1300" },
+  { label: "签署授权书", value: "1400" },
+  { label: "风控模型预审", value: "2000" },
+  { label: "资方预审", value: "3000" },
+  { label: "资料补充", value: "4000" },
+  { label: "客户资料", value: "4100" },
+  { label: "车辆资料", value: "4200" },
+  { label: "订单信息", value: "4300" },
+  { label: "文件信息", value: "4400" },
+  { label: "风控初审", value: "5000" },
+  { label: "风控终审", value: "6000" },
+  { label: "请款资料", value: "7000" },
+  { label: "资方终审", value: "8000" },
+  { label: "资方放款", value: "9000" },
+];
+
+const NODE_STATUS_OPTIONS: Array<Omit<FilterOption, "count">> = [
+  { label: "待处理", value: "10" },
+  { label: "已通过", value: "20" },
+  { label: "已拒绝", value: "30" },
+  { label: "待补充", value: "50" },
+  { label: "已完成", value: "90" },
+];
+
+const APPLICATION_STATUS_CLASS: Record<string, string> = {
+  DRAFT: "3",
+  SUBMITTED: "4",
+  PENDING_FIRST_REVIEW: "4",
+  FIRST_REVIEW_PASSED: "1",
+  FIRST_REVIEW_REJECTED: "2",
+  PENDING_SUPPLEMENT: "3",
+  PENDING_FINAL_REVIEW: "4",
+  FINAL_REVIEW_PASSED: "1",
+  FINAL_REVIEW_REJECTED: "2",
+  PENDING_FUNDER_REVIEW: "4",
+  FUNDER_REVIEW_PASSED: "1",
+  FUNDER_REVIEW_REJECTED: "2",
+  PENDING_SIGN: "4",
+  SIGNED: "1",
+  PENDING_DISBURSEMENT: "4",
+  DISBURSED: "1",
+  CANCELLED: "2",
+};
+
+const NODE_STATUS_CLASS: Record<string, string> = {
+  "10": "4",
+  "20": "1",
+  "30": "2",
+  "50": "3",
+  "90": "1",
+};
 
 // 当前业务节点筛选
 const currentBusinessNode = ref<BusinessNodeFilterValue>("all");
+const currentNodeStatus = ref<NodeStatusFilterValue>("all");
 
 // 列表数据
-const orderList = ref<any[]>([]);
+const orderList = ref<OrderListViewItem[]>([]);
 const loading = ref(false);
 const pageNum = ref(1);
 const pageSize = 10;
 const hasMore = ref(true);
 const total = ref(0);
 
-const businessNodeMap = computed(() => {
-  return sessionStore.loanBusinessNodes.reduce<Record<string, string>>(
-    (map, item) => {
-      map[String(item.code)] =
-        item.name || item.description || String(item.code);
-      return map;
-    },
-    {},
-  );
-});
+const businessNodeMap = computed(() =>
+  ORDER_NODE_OPTIONS.reduce<Record<string, string>>((map, item) => {
+    map[item.value] = item.label;
+    return map;
+  }, {}),
+);
 
-const businessNodeFilterList = computed(() => [
+const businessNodeFilterList = computed<FilterOption[]>(() => [
   { label: "全部", value: "all" as const, count: 0 },
-  ...sessionStore.loanBusinessNodes.map((item) => ({
-    label: item.name || item.description || String(item.code),
-    value: String(item.code),
+  ...ORDER_NODE_OPTIONS.map((item) => ({
+    ...item,
+    count: 0,
+  })),
+]);
+
+const nodeStatusFilterList = computed<FilterOption[]>(() => [
+  { label: "全部状态", value: "all" as const, count: 0 },
+  ...NODE_STATUS_OPTIONS.map((item) => ({
+    ...item,
     count: 0,
   })),
 ]);
@@ -226,13 +343,27 @@ function getBusinessNodeLabel(node: unknown) {
   return businessNodeMap.value[code] || code;
 }
 
+function getNodeStatusLabel(status: unknown) {
+  if (status === undefined || status === null || String(status) === "") {
+    return "";
+  }
+  const code = String(status);
+  const option = NODE_STATUS_OPTIONS.find((item) => item.value === code);
+  return option?.label || code;
+}
+
 const businessNodeCodeList = computed(() =>
-  sessionStore.loanBusinessNodes.map((item) => String(item.code)),
+  ORDER_NODE_OPTIONS.map((item) => item.value),
 );
 
 function isAfterPreAudit(node: unknown) {
   const code = String(node || "");
   if (!code) return false;
+
+  const numericCode = Number(code);
+  if (Number.isFinite(numericCode)) {
+    return numericCode >= 4000;
+  }
 
   const codeList = businessNodeCodeList.value;
   const preAuditIndex = codeList.indexOf("PRE_AUDIT");
@@ -253,9 +384,11 @@ function isAfterPreAudit(node: unknown) {
   return fallbackOrder.indexOf(code) > fallbackOrder.indexOf("PRE_AUDIT");
 }
 
-function handleDetailButton(order: any) {
-  if (isAfterPreAudit(order?.businessNode)) {
-    const creditOrderId = order?.creditOrderId || order?.id;
+function handleDetailButton(order: OrderListViewItem) {
+  const node = order?.nodeCode ?? order?.currentNode ?? order?.businessNode;
+  if (isAfterPreAudit(node)) {
+    const creditOrderId =
+      order?.creditOrderId || order?.orderNo || order?.applicationNo || order?.id;
     if (!creditOrderId) {
       uni.showToast({ title: "缺少订单编号", icon: "none" });
       return;
@@ -270,6 +403,126 @@ function handleDetailButton(order: any) {
   }
 
   handleApprove(order);
+}
+
+function firstText(...values: unknown[]) {
+  for (const value of values) {
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return String(value).trim();
+    }
+  }
+  return "";
+}
+
+function firstValue<T>(...values: Array<T | undefined | null>) {
+  for (const value of values) {
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function formatMoney(value: unknown) {
+  if (value === undefined || value === null || String(value).trim() === "") {
+    return "";
+  }
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return String(value);
+  }
+  if (numericValue <= 0) {
+    return "";
+  }
+  return numericValue.toFixed(2);
+}
+
+function formatDateTime(value: unknown) {
+  if (!value) return "";
+  const text = String(value);
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) {
+    return text;
+  }
+  const pad = (num: number) => String(num).padStart(2, "0");
+  return [
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
+    `${pad(date.getHours())}:${pad(date.getMinutes())}`,
+  ].join(" ");
+}
+
+function resolveStatusClass(status: unknown, nodeStatus: unknown) {
+  const statusText = String(status || "");
+  if (["1", "2", "3", "4"].includes(statusText)) {
+    return statusText;
+  }
+  if (APPLICATION_STATUS_CLASS[statusText]) {
+    return APPLICATION_STATUS_CLASS[statusText];
+  }
+  const nodeStatusText = String(nodeStatus || "");
+  return NODE_STATUS_CLASS[nodeStatusText] || "4";
+}
+
+function buildVehicleDisplay(order: CreditListItem) {
+  return [order.vehicleBrand, order.vehicleModel]
+    .map((item) => firstText(item))
+    .filter(Boolean)
+    .join(" ");
+}
+
+function normalizeOrderItem(order: CreditListItem): OrderListViewItem {
+  const node = firstValue(order.currentNode, order.nodeCode, order.businessNode);
+  const nodeStatus = firstValue(order.currentStatus, order.nodeStatus);
+  const businessNode = firstText(node);
+  const creditOrderId = firstText(
+    order.creditOrderId,
+    order.orderNo,
+    order.applicationNo,
+    order.id,
+  );
+
+  return {
+    ...order,
+    name: firstText(order.name, order.customerName, order.personName, "未知客户"),
+    phone: firstText(order.phone, order.telephone, "-"),
+    creditOrderId,
+    businessNode,
+    businessNodeLabel: firstText(
+      order.currentNodeName,
+      order.nodeName,
+      getBusinessNodeLabel(businessNode),
+    ),
+    nodeStatusLabel: firstText(
+      order.currentStatusName,
+      order.nodeStatusName,
+      getNodeStatusLabel(nodeStatus),
+    ),
+    statusClass: resolveStatusClass(order.status, nodeStatus),
+    vehicleDisplay: buildVehicleDisplay(order),
+    pushQuota: formatMoney(firstValue(order.pushQuota, order.amount)),
+    periods: firstValue(order.periods, order.term, order.approvedTerm),
+    createTime: firstText(
+      order.createTime,
+      formatDateTime(order.createdAt),
+      formatDateTime(order.updatedAt),
+    ),
+  };
+}
+
+function extractRows(res: any) {
+  const pageData = (res?.data || {}) as PageResult<CreditListItem>;
+  if (Array.isArray(pageData.records)) return pageData.records;
+  if (Array.isArray(pageData.rows)) return pageData.rows;
+  if (Array.isArray(res?.records)) return res.records as CreditListItem[];
+  if (Array.isArray(res?.rows)) return res.rows as CreditListItem[];
+  return [];
+}
+
+function extractTotal(res: any, rowsLength: number) {
+  const pageData = (res?.data || {}) as PageResult<CreditListItem>;
+  const totalValue = firstValue(pageData.total, res?.total);
+  const numericTotal = Number(totalValue);
+  return Number.isFinite(numericTotal) ? numericTotal : rowsLength;
 }
 
 /** 获取列表 */
@@ -290,27 +543,27 @@ async function fetchList(isRefresh = false) {
     };
 
     if (currentBusinessNode.value !== "all") {
-      params.businessNode = currentBusinessNode.value;
+      params.nodeCode = Number(currentBusinessNode.value);
+    }
+
+    if (currentNodeStatus.value !== "all") {
+      params.nodeStatus = Number(currentNodeStatus.value);
     }
 
     const kw = keyword.value.trim();
     if (kw) {
-      if (/^\d{7,}$/.test(kw)) {
-        params.phone = kw;
-      } else {
-        params.name = kw;
-      }
+      params.keyword = kw;
     }
 
-    const res = await businessApi.getCreditList(params);
+    const res = await businessApi.getOrderList(params);
     if (res?.code === 200) {
-      const rows = res.rows || [];
+      const rows = extractRows(res).map(normalizeOrderItem);
       if (isRefresh) {
         orderList.value = rows;
       } else {
         orderList.value.push(...rows);
       }
-      total.value = res.total || 0;
+      total.value = extractTotal(res, rows.length);
       hasMore.value = orderList.value.length < total.value;
       pageNum.value++;
     }
@@ -318,18 +571,6 @@ async function fetchList(isRefresh = false) {
     console.error("获取订单列表失败:", e);
   } finally {
     loading.value = false;
-  }
-}
-
-/** 获取贷款业务节点枚举并存入会话存储 */
-async function fetchLoanBusinessNodes() {
-  try {
-    const res = await businessApi.getLoanBusinessNodes();
-    if (res?.code === 200 && Array.isArray(res.data)) {
-      sessionStore.setLoanBusinessNodes(res.data);
-    }
-  } catch (e) {
-    console.error("获取贷款业务节点枚举失败:", e);
   }
 }
 
@@ -347,15 +588,15 @@ function handleBusinessNodeChange(node: BusinessNodeFilterValue) {
   fetchList(true);
 }
 
-// 查看订单详情
-function handleOrderDetail(order: any) {
-  uni.navigateTo({
-    url: `/pages/business/orderDetail?id=${order.id}`,
-  });
+// 切换节点状态筛选
+function handleNodeStatusChange(status: NodeStatusFilterValue) {
+  if (currentNodeStatus.value === status) return;
+  currentNodeStatus.value = status;
+  fetchList(true);
 }
 
 // 处理订单（待授信状态可处理）
-function handleApprove(order: any) {
+function handleApprove(order: OrderListViewItem) {
   uni.navigateTo({
     url: `/pages/business/applyDetail?id=${order.id}`,
   });
@@ -363,8 +604,11 @@ function handleApprove(order: any) {
 
 // 初始加载
 onLoad(() => {
-  fetchLoanBusinessNodes();
   fetchList(true);
+});
+
+onReachBottom(() => {
+  fetchList();
 });
 </script>
 

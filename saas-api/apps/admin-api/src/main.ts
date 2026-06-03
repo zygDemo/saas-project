@@ -9,18 +9,26 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { RequestLoggerInterceptor } from './common/interceptors/request-logger.interceptor'
 import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 
+function parseCorsOrigins(value?: string) {
+  return String(value || 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+}
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
   const config = app.get(ConfigService)
   const apiPrefix = config.get<string>('API_PREFIX', 'saas/api')
   const normalizedApiPrefix = apiPrefix.replace(/^\/+|\/+$/g, '')
+  const allowedOrigins = parseCorsOrigins(config.get<string>('FRONTEND_ORIGIN'))
 
   app.setGlobalPrefix(apiPrefix)
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: `/${normalizedApiPrefix}/uploads/`
   })
   app.enableCors({
-    origin: config.get<string>('FRONTEND_ORIGIN', 'http://localhost:5173'),
+    origin: allowedOrigins,
     credentials: true
   })
   app.useGlobalPipes(

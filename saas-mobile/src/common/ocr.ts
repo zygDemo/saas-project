@@ -2,12 +2,14 @@
  * OCR 工具模块：通过后端 OCR 接口识别，避免前端加载 tesseract 语言模型。
  */
 import { uploadFileWithData } from "@/common/http.interceptor";
+import { compressImageForOcr } from "@/common/image-compress";
 
 /** 身份证人像面 OCR 结果 */
 export interface IdCardFrontResult {
   name: string;
   gender: string;
   nation: string;
+  race: string;
   birth: string;
   address: string;
   idNum: string;
@@ -17,6 +19,8 @@ export interface IdCardFrontResult {
 export interface IdCardBackResult {
   authority: string;
   validDate: string;
+  validDateStart: string;
+  validDateEnd: string;
 }
 
 /** 行驶证 OCR 结果 */
@@ -31,6 +35,7 @@ export interface VehicleOcrResult {
   engineNumber: string;
   registerDate: string;
   issueDate: string;
+  sealInfo: string;
 }
 
 interface OcrApiResponse<TFields = Record<string, unknown>, TParsed = unknown> {
@@ -72,6 +77,11 @@ interface VehicleFields {
   engineNumber?: string;
   registerDate?: string;
   vehicleCode?: string;
+  sealInfo?: string;
+}
+
+interface RecognizeOptions {
+  compress?: boolean;
 }
 
 function unwrapOcrData<TFields, TParsed>(response: OcrApiResponse<TFields, TParsed>) {
@@ -79,6 +89,17 @@ function unwrapOcrData<TFields, TParsed>(response: OcrApiResponse<TFields, TPars
     throw new Error(response?.msg || "OCR 识别失败");
   }
   return response.data;
+}
+
+function showOcrLoading() {
+  uni.showLoading({
+    title: "OCR识别中...",
+    mask: true,
+  });
+}
+
+function hideOcrLoading() {
+  uni.hideLoading();
 }
 
 function genderToText(value: unknown) {
@@ -97,38 +118,50 @@ function buildValidDate(start?: string, end?: string) {
 function mapIdCardFront(parsed: IdCardParsed, fields: IdCardFields): IdCardFrontResult {
   const front = parsed.front || {};
   return {
-    name: front.name || fields.personName || "",
-    gender: front.gender || genderToText(fields.gender),
-    nation: front.nation || fields.race || "",
-    birth: front.birth || fields.birth || "",
-    address: front.address || fields.personAddress || "",
-    idNum: front.idNum || fields.personIdcard || "",
+    name: fields.personName || front.name || "",
+    gender: genderToText(fields.gender) || genderToText(front.gender) || front.gender || "",
+    nation: front.nation || "",
+    race: fields.race || "",
+    birth: fields.birth || front.birth || "",
+    address: fields.personAddress || front.address || "",
+    idNum: fields.personIdcard || front.idNum || "",
   };
 }
 
 function mapIdCardBack(parsed: IdCardParsed, fields: IdCardFields): IdCardBackResult {
   const back = parsed.back || {};
+  const validDateStart = fields.personValidDateStart || "";
+  const validDateEnd = fields.personValidDateEnd || "";
   return {
-    authority: back.authority || fields.personIssuingAuthority || "",
+    authority: fields.personIssuingAuthority || back.authority || "",
+    validDateStart,
+    validDateEnd,
     validDate:
       back.validDate ||
-      buildValidDate(fields.personValidDateStart, fields.personValidDateEnd),
+      (validDateStart || validDateEnd ? `${validDateStart}至${validDateEnd}` : "") ||
+      "",
   };
 }
 
 function mapVehicle(parsed: Partial<VehicleOcrResult>, fields: VehicleFields): VehicleOcrResult {
   return {
-    plateNumber: parsed.plateNumber || fields.plateNumber || "",
-    vehicleType: parsed.vehicleType || fields.vehicleBrand || "",
-    owner: parsed.owner || fields.vehicleOwner || "",
-    address: parsed.address || fields.address || "",
-    useCharacter: parsed.useCharacter || fields.usageNature || "",
-    model: parsed.model || fields.vehicleModel || "",
-    vin: parsed.vin || fields.vehicleCode || "",
-    engineNumber: parsed.engineNumber || fields.engineNumber || "",
-    registerDate: parsed.registerDate || fields.registerDate || "",
+    plateNumber: fields.plateNumber || parsed.plateNumber || "",
+    vehicleType: fields.vehicleBrand || parsed.vehicleType || "",
+    owner: fields.vehicleOwner || parsed.owner || "",
+    address: fields.address || parsed.address || "",
+    useCharacter: fields.usageNature || parsed.useCharacter || "",
+    model: fields.vehicleModel || parsed.model || "",
+    vin: fields.vehicleCode || parsed.vin || "",
+    engineNumber: fields.engineNumber || parsed.engineNumber || "",
+    registerDate: fields.registerDate || parsed.registerDate || "",
     issueDate: parsed.issueDate || "",
+    sealInfo: fields.sealInfo || parsed.sealInfo || "",
   };
+}
+
+async function resolveOcrImagePath(imagePath: string, options?: RecognizeOptions) {
+  if (options?.compress === false) return imagePath;
+  return compressImageForOcr(imagePath);
 }
 
 /**
@@ -137,9 +170,12 @@ function mapVehicle(parsed: Partial<VehicleOcrResult>, fields: VehicleFields): V
 export async function recognizeIdCard(
   imagePath: string,
   side: "front" | "back",
+  options?: RecognizeOptions,
 ): Promise<IdCardFrontResult | IdCardBackResult | null> {
+  showOcrLoading();
   try {
-    const response = await uploadFileWithData(imagePath, "/m/user/getIdCardOcr", { side });
+    const ocrImagePath = await resolveOcrImagePath(imagePath, options);
+    const response = await uploadFileWithData(ocrImagePath, "/m/user/getIdCardOcr", { side });
     const data = unwrapOcrData<IdCardFields, IdCardParsed>(response);
     const parsed = data.parsed || {};
     const fields = data.fields || {};
@@ -150,20 +186,29 @@ export async function recognizeIdCard(
   } catch (error) {
     console.error("[OCR] 身份证识别失败:", error);
     return null;
+  } finally {
+    hideOcrLoading();
   }
 }
 
 /**
  * 行驶证 OCR 识别。
  */
-export async function recognizeVehicle(imagePath: string): Promise<VehicleOcrResult | null> {
+export async function recognizeVehicle(
+  imagePath: string,
+  options?: RecognizeOptions,
+): Promise<VehicleOcrResult | null> {
+  showOcrLoading();
   try {
-    const response = await uploadFileWithData(imagePath, "/m/vehicle/getVehicleOcr", {});
+    const ocrImagePath = await resolveOcrImagePath(imagePath, options);
+    const response = await uploadFileWithData(ocrImagePath, "/m/vehicle/getVehicleOcr", {});
     const data = unwrapOcrData<VehicleFields, Partial<VehicleOcrResult>>(response);
     return mapVehicle(data.parsed || {}, data.fields || {});
   } catch (error) {
     console.error("[OCR] 行驶证识别失败:", error);
     return null;
+  } finally {
+    hideOcrLoading();
   }
 }
 

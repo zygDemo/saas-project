@@ -5,6 +5,7 @@ import { ApplicationService } from './application.service'
 import {
   ApplicationQueryDto,
   CreateApplicationDto,
+  OrderListQueryDto,
   UpdateApplicationDto
 } from './dto/application.dto'
 import {
@@ -39,6 +40,12 @@ export class ApplicationController {
   @ApiOperation({ summary: '按流程节点状态查询订单' })
   flowList(@Query() query: ApplicationQueryDto) {
     return this.service.getFlowList(query)
+  }
+
+  @Get('order-list')
+  @ApiOperation({ summary: '订单列表查询：支持节点、状态、姓名、车牌号、手机号、订单号筛选' })
+  orderList(@Query() query: OrderListQueryDto) {
+    return this.service.getOrderList(query)
   }
 
   @Get(':id')
