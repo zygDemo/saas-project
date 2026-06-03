@@ -84,7 +84,7 @@ pnpm prisma:seed
 pnpm dev
 ```
 
-默认服务地址：`http://localhost:3000`。
+默认服务地址：`http://localhost:3001`。
 
 ## 预置账号
 
@@ -100,7 +100,7 @@ pnpm dev
 
 ```env
 VITE_API_URL=/saas/api
-VITE_API_PROXY_URL=http://localhost:3000
+VITE_API_PROXY_URL=http://localhost:3001
 ```
 
 前端会请求 `/saas/api/...`，Vite proxy 会转发到 NestJS。
@@ -113,7 +113,7 @@ docker logs --tail=100 saas-api
 docker restart saas-api
 
 接口文档
-http://localhost:3000/saas/api/docs
+http://localhost:3001/saas/api/docs
 
 
 ## 下一步建议

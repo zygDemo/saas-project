@@ -23,7 +23,7 @@ services:
       - ./saas-api/apps/admin-api/env/.env.production
     environment:
       NODE_ENV: production
-      PORT: 3000
+      PORT: 3001
       API_PREFIX: saas/api
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-https://www.yugui.store}
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-change-me}@postgres:5432/saas_prod?schema=public
@@ -36,9 +36,9 @@ services:
       redis:
         condition: service_healthy
     expose:
-      - "3000"
+      - "3001"
     ports:
-      - "127.0.0.1:${SAAS_API_PORT:-3000}:3000"
+      - "127.0.0.1:${SAAS_API_PORT:-3001}:3001"
 
   postgres:
     image: postgres:16-alpine

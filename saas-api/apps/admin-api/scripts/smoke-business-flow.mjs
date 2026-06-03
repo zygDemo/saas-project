@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
-const baseUrl = process.env.SMOKE_BASE_URL || 'http://127.0.0.1:3000/saas/api'
+const baseUrl = process.env.SMOKE_BASE_URL || 'http://127.0.0.1:3001/saas/api'
 const tenantCode = 'default'
 const password = '123456'
 

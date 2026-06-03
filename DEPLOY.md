@@ -16,7 +16,7 @@ The Docker stack binds only to localhost:
 
 ```text
 127.0.0.1:8080 -> SaaS web container
-127.0.0.1:3000 -> SaaS API container
+127.0.0.1:3001 -> SaaS API container
 ```
 
 ## 2. Production Environment
@@ -35,7 +35,7 @@ Create a root `.env` file for Docker Compose:
 POSTGRES_PASSWORD=replace-with-a-strong-password
 FRONTEND_ORIGIN=https://www.yugui.store
 SAAS_WEB_PORT=8080
-SAAS_API_PORT=3000
+SAAS_API_PORT=3001
 ```
 
 ## 3. Build And Start
@@ -72,7 +72,7 @@ systemctl reload nginx
 docker compose -f docker-compose.prod.yml ps
 docker compose -f docker-compose.prod.yml logs -f admin-api
 curl http://127.0.0.1:8080/saas/
-curl http://127.0.0.1:3000/saas/api/health
+curl http://127.0.0.1:3001/saas/api/health
 ```
 
 Visit:

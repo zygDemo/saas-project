@@ -18,6 +18,6 @@ RUN pnpm --filter @saas/shared build \
 
 WORKDIR /app/apps/admin-api
 
-EXPOSE 3000
+EXPOSE 3001
 
 CMD ["node", "dist/main.js"]
