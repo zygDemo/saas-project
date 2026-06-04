@@ -71,6 +71,11 @@ function normalizeApiFilePath(value: string) {
   return "";
 }
 
+function toApiPreviewUrl(apiPath: string) {
+  const absoluteBase = parseAbsoluteBase(trimTrailingSlash(IMAGE_BASE_URL || ""));
+  return absoluteBase ? `${absoluteBase.origin}${apiPath}` : apiPath;
+}
+
 export function toFilePreviewUrl(value?: string | null) {
   const raw = String(value || "").trim();
   if (!raw) return "";
@@ -84,7 +89,7 @@ export function toFilePreviewUrl(value?: string | null) {
   if (ABSOLUTE_URL_RE.test(raw)) return raw;
 
   const apiPath = normalizeApiFilePath(raw);
-  if (apiPath) return apiPath;
+  if (apiPath) return toApiPreviewUrl(apiPath);
 
   const base = trimTrailingSlash(IMAGE_BASE_URL || "");
   const filePath = normalizeRelativeFilePath(raw);
