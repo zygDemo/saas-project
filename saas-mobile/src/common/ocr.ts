@@ -102,6 +102,10 @@ function hideOcrLoading() {
   uni.hideLoading();
 }
 
+function logOcrTiming(label: string, stage: string, startedAt: number) {
+  console.log(`[OCR] ${label} ${stage}, cost=${Date.now() - startedAt}ms`);
+}
+
 function genderToText(value: unknown) {
   if (value === 1 || value === "1") return "男";
   if (value === 2 || value === "2") return "女";
@@ -173,9 +177,12 @@ export async function recognizeIdCard(
   options?: RecognizeOptions,
 ): Promise<IdCardFrontResult | IdCardBackResult | null> {
   showOcrLoading();
+  const totalStartedAt = Date.now();
   try {
     const ocrImagePath = await resolveOcrImagePath(imagePath, options);
+    const requestStartedAt = Date.now();
     const response = await uploadFileWithData(ocrImagePath, "/m/user/getIdCardOcr", { side });
+    logOcrTiming(`身份证${side}`, "接口调用完成", requestStartedAt);
     const data = unwrapOcrData<IdCardFields, IdCardParsed>(response);
     const parsed = data.parsed || {};
     const fields = data.fields || {};
@@ -187,6 +194,7 @@ export async function recognizeIdCard(
     console.error("[OCR] 身份证识别失败:", error);
     return null;
   } finally {
+    logOcrTiming(`身份证${side}`, "识别完成", totalStartedAt);
     hideOcrLoading();
   }
 }
@@ -199,15 +207,19 @@ export async function recognizeVehicle(
   options?: RecognizeOptions,
 ): Promise<VehicleOcrResult | null> {
   showOcrLoading();
+  const totalStartedAt = Date.now();
   try {
     const ocrImagePath = await resolveOcrImagePath(imagePath, options);
+    const requestStartedAt = Date.now();
     const response = await uploadFileWithData(ocrImagePath, "/m/vehicle/getVehicleOcr", {});
+    logOcrTiming("行驶证", "接口调用完成", requestStartedAt);
     const data = unwrapOcrData<VehicleFields, Partial<VehicleOcrResult>>(response);
     return mapVehicle(data.parsed || {}, data.fields || {});
   } catch (error) {
     console.error("[OCR] 行驶证识别失败:", error);
     return null;
   } finally {
+    logOcrTiming("行驶证", "识别完成", totalStartedAt);
     hideOcrLoading();
   }
 }

@@ -4,6 +4,7 @@ import {
   GatewayTimeoutException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -14,6 +15,8 @@ import { OcrObjectKeyDto } from './dto/ocr.dto'
 const OCR_DEFAULT_URL = 'https://www.yugui.store/saas/ocr'
 const OCR_SERVICE_DEFAULT_TIMEOUT_MS = 60_000
 const OCR_IMAGE_LIMIT = 8 * 1024 * 1024
+const VEHICLE_DOCUMENT_TYPE = 'vehicle_license'
+const VEHICLE_OWNER_LOW_CONFIDENCE = 0.75
 const ALLOWED_OCR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/bmp'])
 const MIME_TYPE_BY_EXTENSION: Record<string, string> = {
   '.jpg': 'image/jpeg',
@@ -28,6 +31,74 @@ const EXTENSION_BY_MIME_TYPE: Record<string, string> = {
   'image/webp': '.webp',
   'image/bmp': '.bmp'
 }
+const VEHICLE_PLATE_PREFIX_BY_REGION: Record<string, string> = {
+  北京市: '京',
+  北京: '京',
+  天津市: '津',
+  天津: '津',
+  上海市: '沪',
+  上海: '沪',
+  重庆市: '渝',
+  重庆: '渝',
+  河北省: '冀',
+  河北: '冀',
+  山西省: '晋',
+  山西: '晋',
+  辽宁省: '辽',
+  辽宁: '辽',
+  吉林省: '吉',
+  吉林: '吉',
+  黑龙江省: '黑',
+  黑龙江: '黑',
+  江苏省: '苏',
+  江苏: '苏',
+  浙江省: '浙',
+  浙江: '浙',
+  安徽省: '皖',
+  安徽: '皖',
+  福建省: '闽',
+  福建: '闽',
+  江西省: '赣',
+  江西: '赣',
+  山东省: '鲁',
+  山东: '鲁',
+  河南省: '豫',
+  河南: '豫',
+  湖北省: '鄂',
+  湖北: '鄂',
+  湖南省: '湘',
+  湖南: '湘',
+  广东省: '粤',
+  广东: '粤',
+  海南省: '琼',
+  海南: '琼',
+  四川省: '川',
+  四川: '川',
+  贵州省: '贵',
+  贵州: '贵',
+  云南省: '云',
+  云南: '云',
+  陕西省: '陕',
+  陕西: '陕',
+  甘肃省: '甘',
+  甘肃: '甘',
+  青海省: '青',
+  青海: '青',
+  内蒙古自治区: '蒙',
+  内蒙古: '蒙',
+  广西壮族自治区: '桂',
+  广西: '桂',
+  西藏自治区: '藏',
+  西藏: '藏',
+  宁夏回族自治区: '宁',
+  宁夏: '宁',
+  新疆维吾尔自治区: '新',
+  新疆: '新',
+  香港: '港',
+  澳门: '澳'
+}
+const VEHICLE_PLATE_REGION_NAMES = Object.keys(VEHICLE_PLATE_PREFIX_BY_REGION).sort((a, b) => b.length - a.length)
+const VEHICLE_PLATE_PREFIXES = new Set(Object.values(VEHICLE_PLATE_PREFIX_BY_REGION))
 const ID_CARD_NATION_CODES: Record<string, string> = {
   汉: '1',
   回: '2',
@@ -89,6 +160,14 @@ const ID_CARD_NATION_CODES: Record<string, string> = {
 }
 const ID_CARD_NATIONS = Object.keys(ID_CARD_NATION_CODES).sort((a, b) => b.length - a.length)
 
+type OcrMultiPass = 'auto' | 'true' | 'false'
+
+interface OcrRequestOptions {
+  documentType?: string
+  multiPass?: OcrMultiPass
+  enhance?: boolean
+}
+
 export interface OcrImageFile {
   originalname: string
   mimetype: string
@@ -119,6 +198,11 @@ export interface IdCardBackParsed {
 export interface VehicleOcrParsed {
   plateNumber: string
   vehicleType: string
+  vehicleBrand: string
+  vehicleModel: string
+  vehicleOwner: string
+  vehicleCode: string
+  usageNature: string
   owner: string
   address: string
   useCharacter: string
@@ -128,10 +212,13 @@ export interface VehicleOcrParsed {
   registerDate: string
   issueDate: string
   sealInfo: string
+  warnings: string[]
 }
 
 @Injectable()
 export class OcrService {
+  private readonly logger = new Logger(OcrService.name)
+
   constructor(private readonly config: ConfigService) {}
 
   async health() {
@@ -147,8 +234,15 @@ export class OcrService {
 
   async recognize(file: OcrImageFile | undefined) {
     this.validateFile(file)
+    const startedAt = Date.now()
+    const serviceStartedAt = Date.now()
     const response = await this.postImage(file)
+    const serviceDurationMs = Date.now() - serviceStartedAt
     const payload = await this.readResponsePayload(response)
+    this.logOcrTiming(file, payload, {
+      serviceDurationMs,
+      totalDurationMs: Date.now() - startedAt
+    })
 
     if (!response.ok) {
       throw new BadGatewayException(this.extractPayloadMessage(payload) || `OCR 服务异常：${response.status}`)
@@ -238,6 +332,10 @@ export class OcrService {
     }
 
     const record = payload as Record<string, unknown>
+    if (record.data && typeof record.data === 'object') {
+      return this.normalizeRecognizeResult(record.data)
+    }
+
     const items = Array.isArray(record.items) ? record.items : []
     const text = typeof record.text === 'string' ? record.text : this.extractTextFromItems(items)
     const success = typeof record.success === 'boolean' ? record.success : true
@@ -481,6 +579,42 @@ export class OcrService {
     return undefined
   }
 
+  private logOcrTiming(
+    file: OcrImageFile,
+    payload: unknown,
+    timing: { serviceDurationMs: number; totalDurationMs: number }
+  ) {
+    const elapsed = this.extractOcrElapsed(payload)
+    this.logger.log(
+      [
+        'OCR timing',
+        `file=${file.mimetype}`,
+        `size=${this.formatBytes(file.buffer.length)}`,
+        `ocrService=${timing.serviceDurationMs}ms`,
+        `total=${timing.totalDurationMs}ms`,
+        elapsed ? `pythonElapsed=${elapsed}` : undefined
+      ]
+        .filter(Boolean)
+        .join(', ')
+    )
+  }
+
+  private formatBytes(size: number) {
+    if (!Number.isFinite(size) || size <= 0) return '0B'
+    if (size < 1024) return `${size}B`
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)}KB`
+    return `${(size / 1024 / 1024).toFixed(2)}MB`
+  }
+
+  private extractOcrElapsed(payload: unknown) {
+    if (!payload || typeof payload !== 'object') return ''
+    const record = payload as Record<string, unknown>
+    const elapsed = record.elapsed || (record.data && typeof record.data === 'object'
+      ? (record.data as Record<string, unknown>).elapsed
+      : undefined)
+    return Array.isArray(elapsed) ? elapsed.join(',') : typeof elapsed === 'string' ? elapsed : ''
+  }
+
   private normalizeNation(value: string) {
     const text = value
       .replace(/[^\u4e00-\u9fff]/g, '')
@@ -533,6 +667,11 @@ export class OcrService {
     const result: VehicleOcrParsed = {
       plateNumber: '',
       vehicleType: '',
+      vehicleBrand: '',
+      vehicleModel: '',
+      vehicleOwner: '',
+      vehicleCode: '',
+      usageNature: '',
       owner: '',
       address: '',
       useCharacter: '',
@@ -541,7 +680,8 @@ export class OcrService {
       engineNumber: '',
       registerDate: '',
       issueDate: '',
-      sealInfo: ''
+      sealInfo: '',
+      warnings: []
     }
 
     const lines = this.getTextLines(raw)
@@ -560,27 +700,36 @@ export class OcrService {
     }
 
     lines.forEach((line, index) => {
-      if (!result.plateNumber && /(?:号牌号码|车牌号)/.test(line)) {
+      if (!result.plateNumber && /(?:号牌号码|号牌号|车牌号|牌号)/.test(line)) {
         result.plateNumber = this.normalizePlateNumber(
-          getValue(index, /.*?(?:号牌号码|车牌号)[：:\s]*/, /[\u4e00-\u9fffA-Z0-9]{6,8}/i)
+          getValue(index, /.*?(?:号牌号码|号牌号|车牌号|牌号)[：:\s]*/, /[\u4e00-\u9fffA-Z0-9]{6,8}/i)
         )
       }
       if (!result.vehicleType && /车辆类型/.test(line)) {
-        result.vehicleType = getValue(index, /.*?车辆类型[：:\s]*/, /[\u4e00-\u9fffA-Za-z]/)
+        result.vehicleType = this.normalizeVehicleLabelValue(
+          getValue(index, /.*?车辆类型[：:\s]*/, /[\u4e00-\u9fffA-Za-z]/),
+          /^(?:车辆类型)/
+        )
       }
-      if (!result.owner && /(?:所有人|车主)/.test(line)) {
-        result.owner = getValue(index, /.*?(?:所有人|车主)[：:\s]*/, /[\u4e00-\u9fffA-Za-z]/)
+      if (!result.owner && /(?:所有人|车主|^所有$|^所有|^所$)/.test(line)) {
+        result.owner = this.normalizeVehicleOwner(
+          getValue(index, /.*?(?:所有人|车主|所有|所)[：:\s]*/, /[\u4e00-\u9fffA-Za-z]/)
+        )
       }
       if (!result.address && /(?:住址|地址|^住$|^址)/.test(line)) {
         result.address = this.normalizeVehicleAddress(
           getValue(index, /.*?(?:住址|地址)[：:\s]*|^住[：:\s]*|^址[：:\s]*/, /[\u4e00-\u9fffA-Za-z0-9]/)
         )
       }
-      if (!result.useCharacter && /使用性质/.test(line)) {
-        result.useCharacter = getValue(index, /.*?使用性质[：:\s]*/, /[\u4e00-\u9fffA-Za-z]/)
+      if (!result.useCharacter && /使用性/.test(line)) {
+        result.useCharacter = this.normalizeVehicleUseCharacter(
+          getValue(index, /.*?使用性(?:质|维|貭)?[：:\s]*/, /[\u4e00-\u9fffA-Za-z]/)
+        )
       }
-      if (!result.model && /(?:品牌型号|车辆型号)/.test(line)) {
-        result.model = getValue(index, /.*?(?:品牌型号|车辆型号)[：:\s]*/, /[\u4e00-\u9fffA-Z0-9]/i)
+      if (!result.model && /(?:品牌型号|品牌型|车辆型号|车辆型)/.test(line)) {
+        result.model = this.normalizeVehicleModel(
+          getValue(index, /.*?(?:品牌型号|品牌型|车辆型号|车辆型)[：:\s]*/, /[\u4e00-\u9fffA-Z0-9]/i)
+        )
       }
       if (!result.vin && /(?:车辆识别代号|车辆识别代码|车架号|VIN)/i.test(line)) {
         result.vin = this.normalizeVin(
@@ -594,12 +743,12 @@ export class OcrService {
       }
       if (!result.registerDate && /(?:注册日期|注册日|注册目)/.test(line)) {
         result.registerDate = this.normalizeVehicleDate(
-          getValue(index, /.*?(?:注册日期|注册日|注册目)[：:\s]*/, /\d{4}\D\d{1,2}\D\d{1,2}/)
+          getValue(index, /.*?(?:注册日期|注册日|注册目)[：:\s]*/, /\d{3,4}\D\d{1,2}\D\d{1,2}/)
         )
       }
       if (!result.issueDate && /(?:发证日期|发证日|发日期)/.test(line)) {
         result.issueDate = this.normalizeVehicleDate(
-          getValue(index, /.*?(?:发证日期|发证日|发日期)[：:\s]*/, /\d{4}\D\d{1,2}\D\d{1,2}/)
+          getValue(index, /.*?(?:发证日期|发证日|发日期)[：:\s]*/, /\d{3,4}\D\d{1,2}\D\d{1,2}/)
         )
       }
     })
@@ -614,24 +763,47 @@ export class OcrService {
         result.engineNumber = this.normalizeEngineNumber(afterEngine.match(/[A-Z0-9-]{5,30}/i)?.[0] || '')
       }
     }
-    const dates = compactText.match(/\d{4}[.\-/]\d{1,2}[.\-/]\d{1,2}/g) || []
+    const dates = compactText.match(/\d{3,4}[.\-/]\d{1,2}[.\-/]\d{1,2}/g) || []
     if (!result.registerDate && dates[0]) result.registerDate = this.formatDateText(dates[0])
     if (!result.issueDate && dates[1]) result.issueDate = this.formatDateText(dates[1])
     result.sealInfo = this.extractVehicleSealInfo(lines)
+    result.plateNumber = this.normalizePlateNumber(result.plateNumber, `${result.address}\n${result.sealInfo}\n${compactText}`)
 
     return result
   }
 
   private isVehicleFieldLabel(line: string) {
-    return /^(?:号牌号码|车牌号|车辆类型|所有人|车主|住址|地址|使用性质|品牌型号|车辆型号|车辆识别代号|车辆识别代码|车架号|发动机号|注册日期|注册日|注册目|发证日期|发证日|发日期|Plate|Vehicle|Owner|Address|Use|Model|VIN|Engine|Register|Issue)/i.test(line)
+    return /^(?:号牌号码|号牌号|车牌号|牌号|车辆类型|所有人|所有|所$|车主|住址|地址|住$|址|使用性质|使用性|品牌型号|品牌型|车辆型号|车辆型|车辆识别代号|车辆识别代码|车架号|发动机号|注册日期|注册日|注册目|发证日期|发证日|发日期|Plate|Vehicle|Owner|Address|Use|Model|VIN|Engine|Register|Issue)/i.test(line)
   }
 
   private isVehicleOcrNoiseLine(line: string) {
     return /^(?:Plate|Vehicle\s*Type|VehicleType|Owner|Owne|Address|Use\s*Char|Use\s*Character|Model|VIN|Engine\s*No|Register|Reglsier|Issue)/i.test(line)
   }
 
-  private normalizePlateNumber(value: string) {
-    return value.replace(/[^\u4e00-\u9fffA-Z0-9]/gi, '').toUpperCase()
+  private normalizeVehicleLabelValue(value: string, labelPattern: RegExp) {
+    return value.replace(labelPattern, '').replace(/^[：:\s]+/, '').trim()
+  }
+
+  private normalizePlateNumber(value: string, context = '') {
+    const compact = value
+      .replace(/(?:号牌号码|号牌号|车牌号|牌号|号码)/g, '')
+      .replace(/[^\u4e00-\u9fffA-Z0-9]/gi, '')
+      .toUpperCase()
+
+    const fullMatch = compact.match(/[\u4e00-\u9fff][A-Z][A-Z0-9]{5,6}/i)
+    if (fullMatch) {
+      const plateNumber = fullMatch[0].toUpperCase()
+      if (VEHICLE_PLATE_PREFIXES.has(plateNumber[0])) return plateNumber
+
+      const prefix = this.inferVehiclePlatePrefix(context)
+      return prefix ? `${prefix}${plateNumber.slice(1)}` : plateNumber.slice(1)
+    }
+
+    const missingPrefixMatch = compact.match(/[A-Z][A-Z0-9]{5,6}$/i)
+    if (!missingPrefixMatch) return compact
+
+    const prefix = this.inferVehiclePlatePrefix(context)
+    return prefix ? `${prefix}${missingPrefixMatch[0].toUpperCase()}` : missingPrefixMatch[0].toUpperCase()
   }
 
   private normalizeVin(value: string) {
@@ -645,23 +817,57 @@ export class OcrService {
   }
 
   private normalizeVehicleAddress(value: string) {
-    return value.replace(/^址[：:\s]*/, '').trim()
+    return value
+      .replace(/^址[：:\s]*/, '')
+      .replace(/^徽省/, '安徽省')
+      .replace(/颖上县/g, '颍上县')
+      .replace(/颖阳/g, '颍阳')
+      .replace(/(?<=\d)[一—–-](?=\d)/g, '-')
+      .trim()
+  }
+
+  private normalizeVehicleOwner(value: string) {
+    const text = this.normalizeVehicleLabelValue(value, /^(?:所有人|所有|所|车主)/)
+    if (!text || this.isVehicleFieldLabel(text) || this.isVehicleOcrNoiseLine(text)) return ''
+    return text
+  }
+
+  private normalizeVehicleUseCharacter(value: string) {
+    const text = value.replace(/^(?:使用性质|使用性|质|维|貭)[：:\s]*/, '').trim()
+    if (/(?:非|啡)\s*(?:营运|运营)/.test(text)) return '非营运'
+    if (/营运/.test(text)) return '营运'
+    if (/运营/.test(text)) return '营运'
+    return text
+  }
+
+  private normalizeVehicleModel(value: string) {
+    return value.replace(/^(?:品牌型号|品牌型|车辆型号|车辆型)[：:\s]*/, '').trim()
   }
 
   private normalizeVehicleDate(value: string) {
-    const match = value.match(/\d{4}\D\d{1,2}\D\d{1,2}/)
+    const match = value.match(/\d{3,4}\D\d{1,2}\D\d{1,2}/)
     return match ? this.formatDateText(match[0]) : ''
   }
 
+  private inferVehiclePlatePrefix(context: string) {
+    const regionName = VEHICLE_PLATE_REGION_NAMES.find((item) => context.includes(item))
+    return regionName ? VEHICLE_PLATE_PREFIX_BY_REGION[regionName] : ''
+  }
+
   private extractVehicleSealInfo(lines: string[]) {
-    const anchorIndex = lines.findIndex((line) => /(?:公安|车管所|支队|大队)/.test(line))
+    const normalizedLines = lines.map((line) => this.normalizeVehicleSealLine(line))
+    const anchorIndex = normalizedLines.findIndex((line) => /(?:公安|车管所|支队|大队|警察|交通)/.test(line))
     if (anchorIndex < 0) return ''
 
-    return lines
+    return normalizedLines
       .map((line, index) => ({ line, index }))
       .filter(({ line, index }) => Math.abs(index - anchorIndex) <= 4 && this.isVehicleSealCandidate(line))
       .map(({ line }) => line)
       .join('')
+  }
+
+  private normalizeVehicleSealLine(line: string) {
+    return line.trim()
   }
 
   private isVehicleSealCandidate(line: string) {
@@ -718,7 +924,8 @@ export class OcrService {
   }
 
   private formatDateParts(year: string, month: string, day: string) {
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    const normalizedYear = year.length === 3 ? `2${year}` : year
+    return `${normalizedYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
   }
 
   private normalizeFilename(filename: string, mimetype?: string) {

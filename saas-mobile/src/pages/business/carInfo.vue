@@ -70,7 +70,7 @@ import { useSessionStore } from "@/stores";
 import { useBusinessApi } from "@/api/business";
 import { recognizeVehicle } from "@/common/ocr";
 import { toFilePreviewUrl } from "@/common/file-url";
-import { compressImageForOcr } from "@/common/image-compress";
+import { compressVehicleLicenseForOcr } from "@/common/image-compress";
 
 const sessionStore = useSessionStore();
 const businessApi = useBusinessApi();
@@ -400,7 +400,7 @@ function pickImage() {
       mainLoading.value = true;
 
       try {
-        const compressedPath = await compressImageForOcr(path);
+        const compressedPath = await compressVehicleLicenseForOcr(path);
         const [, uploadRes] = await Promise.all([
           doVehicleOcr(compressedPath),
           businessApi.uploadFile(compressedPath),
