@@ -289,6 +289,7 @@ import { useBusinessApi } from "@/api/business";
 import { useConfirm } from "@/composables/useConfirm";
 import { useSessionStore } from "@/stores";
 import { closeBrowser } from "@/composables/useCloseBrowser";
+import { toFilePreviewUrl } from "@/common/file-url";
 
 // ========== 常量 ==========
 
@@ -940,7 +941,7 @@ function previewContractFile(file: ContractFile) {
     return;
   }
 
-  const fileUrl = file.fileUrl;
+  const fileUrl = toFilePreviewUrl(file.fileUrl);
   const fileName = file.name || fileUrl;
   const isImage = /\.(?:jpg|jpeg|png|gif|webp)(?:\?.*)?$/i.test(fileName);
 

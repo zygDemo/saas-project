@@ -15,8 +15,8 @@ import { OcrObjectKeyDto } from './dto/ocr.dto'
 const OCR_DEFAULT_URL = 'https://www.yugui.store/saas/ocr'
 const OCR_SERVICE_DEFAULT_TIMEOUT_MS = 60_000
 const OCR_IMAGE_LIMIT = 8 * 1024 * 1024
+const ID_CARD_DOCUMENT_TYPE = 'id_card'
 const VEHICLE_DOCUMENT_TYPE = 'vehicle_license'
-const VEHICLE_OWNER_LOW_CONFIDENCE = 0.75
 const ALLOWED_OCR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/bmp'])
 const MIME_TYPE_BY_EXTENSION: Record<string, string> = {
   '.jpg': 'image/jpeg',
@@ -232,11 +232,11 @@ export class OcrService {
     return this.readResponsePayload(response)
   }
 
-  async recognize(file: OcrImageFile | undefined) {
+  async recognize(file: OcrImageFile | undefined, options: OcrRequestOptions = {}) {
     this.validateFile(file)
     const startedAt = Date.now()
     const serviceStartedAt = Date.now()
-    const response = await this.postImage(file)
+    const response = await this.postImage(file, options)
     const serviceDurationMs = Date.now() - serviceStartedAt
     const payload = await this.readResponsePayload(response)
     this.logOcrTiming(file, payload, {
@@ -256,40 +256,77 @@ export class OcrService {
     return result
   }
 
-  async recognizeByObjectKey(dto: OcrObjectKeyDto) {
+  async recognizeByObjectKey(dto: OcrObjectKeyDto, options: OcrRequestOptions = {}) {
     const file = await this.loadUploadedImage(dto)
-    return this.recognize(file)
+    return this.recognize(file, options)
   }
 
   async recognizeVehicle(file: OcrImageFile | undefined) {
-    return this.withVehicleFields(await this.recognize(file))
+    return this.withVehicleFields(
+      await this.recognize(file, this.getVehicleOcrOptions())
+    )
   }
 
   async recognizeVehicleByObjectKey(dto: OcrObjectKeyDto) {
-    return this.withVehicleFields(await this.recognizeByObjectKey(dto))
+    return this.withVehicleFields(
+      await this.recognizeByObjectKey(dto, this.getVehicleOcrOptions())
+    )
   }
 
   async recognizeIdCard(file: OcrImageFile | undefined, side?: 'front' | 'back') {
-    return this.withIdCardFields(await this.recognize(file), side)
+    return this.withIdCardFields(
+      await this.recognize(file, this.getIdCardOcrOptions()),
+      side
+    )
   }
 
   async recognizeIdCardByObjectKey(dto: OcrObjectKeyDto) {
-    return this.withIdCardFields(await this.recognizeByObjectKey(dto), dto.side)
+    return this.withIdCardFields(
+      await this.recognizeByObjectKey(dto, this.getIdCardOcrOptions()),
+      dto.side
+    )
   }
 
-  private async postImage(file: OcrImageFile) {
+  private async postImage(file: OcrImageFile, options: OcrRequestOptions = {}) {
     const form = new FormData()
     form.append(
       'file',
       new Blob([new Uint8Array(file.buffer)], { type: file.mimetype }),
       this.normalizeFilename(file.originalname, file.mimetype)
     )
+    this.appendOcrOptions(form, options)
 
     return this.fetchWithTimeout(this.getRecognizeEndpoint(), {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: form
     })
+  }
+
+  private appendOcrOptions(form: FormData, options: OcrRequestOptions) {
+    if (options.documentType) {
+      form.append('document_type', options.documentType)
+    }
+    if (options.multiPass) {
+      form.append('multi_pass', options.multiPass)
+    }
+    if (options.enhance !== undefined) {
+      form.append('enhance', String(options.enhance))
+    }
+  }
+
+  private getIdCardOcrOptions(): OcrRequestOptions {
+    return {
+      documentType: ID_CARD_DOCUMENT_TYPE,
+      multiPass: 'false',
+      enhance: false
+    }
+  }
+
+  private getVehicleOcrOptions(): OcrRequestOptions {
+    return {
+      documentType: VEHICLE_DOCUMENT_TYPE
+    }
   }
 
   private async fetchWithTimeout(url: string, init: RequestInit) {

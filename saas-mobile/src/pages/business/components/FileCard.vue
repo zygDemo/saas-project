@@ -2,12 +2,12 @@
   <view class="file-card" @click="$emit('click')">
     <view class="upload-box" :class="{ 'has-file': files.length > 0 }">
       <image
-        v-if="isImageFile(files[0])"
-        :src="files[0]"
+        v-if="isImageFile(firstFileUrl)"
+        :src="firstFileUrl"
         mode="aspectFill"
         class="uploaded-image"
       />
-      <view v-else-if="files[0]" class="file-placeholder">
+      <view v-else-if="firstFileUrl" class="file-placeholder">
         <u-icon name="file-text" size="56rpx" color="var(--u-type-primary)" />
       </view>
       <view v-else-if="!readonly" class="upload-placeholder">
@@ -26,7 +26,10 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from "vue";
+import { toFilePreviewUrl } from "@/common/file-url";
+
+const props = defineProps({
   label: {
     type: String,
     required: true,
@@ -50,6 +53,8 @@ defineProps({
 });
 
 defineEmits(["click"]);
+
+const firstFileUrl = computed(() => toFilePreviewUrl(String(props.files[0] || "")));
 
 function isImageFile(file) {
   return !!file && /\.(?:jpg|jpeg|png|gif|webp|bmp)(?:[?#].*)?$/i.test(String(file));

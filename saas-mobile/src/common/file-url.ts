@@ -1,6 +1,6 @@
 import { IMAGE_BASE_URL } from "./env";
 
-const ABSOLUTE_URL_RE = /^(?:https?:|data:|blob:|file:|\/\/)/i;
+const ABSOLUTE_URL_RE = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i;
 
 type FileRecord = Record<string, any>;
 
@@ -10,6 +10,16 @@ function trimTrailingSlash(value: string) {
 
 function trimLeadingSlash(value: string) {
   return value.replace(/^\/+/, "");
+}
+
+function hasPathPrefix(path: string, prefix: string) {
+  const normalizedPath = trimLeadingSlash(path);
+  const normalizedPrefix = trimLeadingSlash(prefix);
+  return Boolean(
+    normalizedPrefix &&
+    (normalizedPath === normalizedPrefix ||
+      normalizedPath.startsWith(`${normalizedPrefix}/`)),
+  );
 }
 
 function parseAbsoluteBase(base: string) {
@@ -70,12 +80,17 @@ export function toFilePreviewUrl(value?: string | null) {
     return filePath;
   }
 
+  if (base.startsWith("/") && hasPathPrefix(filePath, base)) {
+    return `/${trimLeadingSlash(filePath)}`;
+  }
+
   return `${base}/${trimLeadingSlash(filePath)}`;
 }
 
 export function normalizeFileRecord<T extends FileRecord>(file: T) {
   const rawUrl = String(file?.fileUrl || file?.url || file?.objectKey || file?.fileKey || "");
-  const previewUrl = String(file?.previewUrl || file?.fullUrl || toFilePreviewUrl(rawUrl));
+  const rawPreviewUrl = String(file?.previewUrl || file?.fullUrl || "");
+  const previewUrl = toFilePreviewUrl(rawPreviewUrl || rawUrl);
 
   return {
     ...file,
