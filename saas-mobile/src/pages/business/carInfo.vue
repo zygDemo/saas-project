@@ -10,7 +10,7 @@
         <view class="upload-box" @click="pickImage()">
           <u-image
             v-if="mainImage"
-            :src="mainImage"
+            :src="mainImageSrc"
             width="100%"
             height="200rpx"
             mode="aspectFill"
@@ -79,6 +79,7 @@ const submitLoading = ref(false);
 const isPawnMode = ref(false);
 const pageTitle = computed(() => isPawnMode.value ? "典当车辆信息" : "车辆信息");
 const mainImage = ref("");
+const mainImageSrc = computed(() => toFilePreviewUrl(mainImage.value));
 const vehicleImgUrlObjectKey = ref("");
 const mainLoading = ref(false);
 const editUuid = ref("");

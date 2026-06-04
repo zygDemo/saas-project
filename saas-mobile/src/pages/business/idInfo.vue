@@ -12,7 +12,7 @@
           <view class="upload-box" @click="pickImage('front')">
             <u-image
               v-if="frontImage"
-              :src="frontImage"
+              :src="frontImageSrc"
               width="100%"
               height="200rpx"
               mode="aspectFill"
@@ -35,7 +35,7 @@
           <view class="upload-box" @click="pickImage('back')">
             <u-image
               v-if="backImage"
-              :src="backImage"
+              :src="backImageSrc"
               width="100%"
               height="200rpx"
               mode="aspectFill"
@@ -120,6 +120,8 @@ const currentSalesmanId = computed(() => {
 
 const frontImage = ref("");
 const backImage = ref("");
+const frontImageSrc = computed(() => toFilePreviewUrl(frontImage.value));
+const backImageSrc = computed(() => toFilePreviewUrl(backImage.value));
 const frontImageObjectKey = ref("");
 const backImageObjectKey = ref("");
 const frontLoading = ref(false);
