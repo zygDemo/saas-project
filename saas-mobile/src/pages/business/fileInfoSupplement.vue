@@ -81,7 +81,7 @@ import { computed, reactive, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { $u } from "uview-pro";
 import { API_BASE_URL, TENANT_ID, UPLOAD_MAX_SIZE } from "@/common/env";
-import { normalizeFileRecord } from "@/common/file-url";
+import { normalizeFileRecord, normalizeUploadItem, toFilePreviewUrl } from "@/common/file-url";
 import { tokenUtil } from "@/common/token";
 import { useBusinessApi } from "@/api/business";
 import { useLocalStore } from "@/stores/local";
@@ -271,7 +271,7 @@ function getFileExtension(fileName) {
 }
 
 function getPreviewValue(file) {
-  return file?.thumb || file?.previewUrl || file?.url || file?.path || "";
+  return toFilePreviewUrl(file?.thumb || file?.previewUrl || file?.url || file?.path || "");
 }
 
 function normalizeProductFile(item, index) {
@@ -362,6 +362,9 @@ function mapServerFileToUploadItem(file) {
 
   return {
     url,
+    path: url,
+    previewUrl: url,
+    thumb: url,
     name,
     size: normalized.fileSize || 0,
     progress: 100,
@@ -466,7 +469,7 @@ function openUpload(item) {
   currentFileLabel.value = item.label;
   currentAcceptType.value = item.acceptType || "";
   currentMaxCount.value = maxFiles[item.key] || 1;
-  currentUploadList.value = (files[item.key] || []).map((file) => ({ ...file }));
+  currentUploadList.value = (files[item.key] || []).map((file) => normalizeUploadItem(file));
   if (readonly.value && currentUploadList.value.length === 0) {
     $u.toast("暂无文件");
     return;
@@ -539,7 +542,7 @@ async function handleUploadSuccess(data, index, lists) {
   const responseData = data?.data || data || {};
   const normalizedData = normalizeFileRecord(responseData);
   const objectKey = normalizedData.objectKey || normalizedData.fileKey || "";
-  const fileUrl = normalizedData.previewUrl || normalizedData.url || uploadItem?.url || "";
+  const fileUrl = normalizedData.previewUrl || normalizedData.url || toFilePreviewUrl(uploadItem?.url || "");
   const rawUrl = normalizedData.fileUrl || normalizedData.rawUrl || fileUrl;
   const fileName = normalizedData.fileName || normalizedData.name || uploadItem?.name || "";
   const fileSize = normalizedData.fileSize || normalizedData.size || uploadItem?.size || 0;
@@ -558,6 +561,9 @@ async function handleUploadSuccess(data, index, lists) {
 
     if (uploadItem) {
       uploadItem.url = fileUrl || uploadItem.url;
+      uploadItem.path = fileUrl || uploadItem.path;
+      uploadItem.previewUrl = fileUrl || uploadItem.previewUrl;
+      uploadItem.thumb = fileUrl || uploadItem.thumb;
       uploadItem.name = fileName || uploadItem.name;
       uploadItem.size = fileSize || uploadItem.size;
       uploadItem.fileType = isImageUrl(rawUrl || fileUrl || fileName) ? "image" : "file";
@@ -583,7 +589,7 @@ function syncCurrentFilesToStore() {
 
   files[currentFileType.value] = currentUploadList.value
     .filter((item) => item && item.progress === 100)
-    .map((item) => ({ ...item }));
+    .map((item) => normalizeUploadItem(item));
 }
 
 async function beforeRemoveFile(index, lists) {

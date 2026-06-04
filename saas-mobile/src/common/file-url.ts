@@ -37,6 +37,10 @@ function normalizeRelativeFilePath(value: string) {
   if (!raw || raw.startsWith("/") || ABSOLUTE_URL_RE.test(raw)) return raw;
 
   const path = trimLeadingSlash(raw);
+  if (/^(?:saas\/api|api)\/uploads\//i.test(path)) {
+    return `/${path}`;
+  }
+
   if (/^(?:images|files|documents|videos|audio)\//i.test(path)) {
     return `/uploads/${path}`;
   }
@@ -91,15 +95,37 @@ export function normalizeFileRecord<T extends FileRecord>(file: T) {
   const rawUrl = String(file?.fileUrl || file?.url || file?.objectKey || file?.fileKey || "");
   const rawPreviewUrl = String(file?.previewUrl || file?.fullUrl || "");
   const previewUrl = toFilePreviewUrl(rawPreviewUrl || rawUrl);
+  const fileUrl = toFilePreviewUrl(file?.fileUrl || rawUrl);
 
   return {
     ...file,
     rawUrl,
     previewUrl,
     url: previewUrl || rawUrl,
-    fileUrl: file?.fileUrl || rawUrl,
+    fileUrl: fileUrl || rawUrl,
     objectKey: file?.objectKey || file?.fileKey,
     fileKey: file?.fileKey || file?.objectKey,
+  };
+}
+
+export function normalizeUploadItem<T extends FileRecord>(file: T) {
+  const normalizedResponse = normalizeFileRecord(file?.response || file || {});
+  const previewUrl = toFilePreviewUrl(
+    file?.previewUrl ||
+      normalizedResponse.previewUrl ||
+      file?.url ||
+      file?.path ||
+      file?.thumb ||
+      "",
+  );
+
+  return {
+    ...file,
+    previewUrl,
+    url: previewUrl || file?.url || "",
+    path: previewUrl || file?.path || "",
+    thumb: toFilePreviewUrl(file?.thumb || previewUrl),
+    response: file?.response ? normalizeFileRecord(file.response) : normalizedResponse,
   };
 }
 
