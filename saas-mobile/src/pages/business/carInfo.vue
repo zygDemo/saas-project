@@ -410,7 +410,7 @@ function pickImage() {
           return;
         }
         const uploadData = uploadRes?.data || uploadRes || {};
-        const imageUrl = uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url;
+        const imageUrl = toFilePreviewUrl(uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url);
         if (imageUrl) {
           mainImage.value = imageUrl;
           vehicleImgUrlObjectKey.value = uploadData.objectKey || uploadData.fileKey || uploadRes.objectKey;

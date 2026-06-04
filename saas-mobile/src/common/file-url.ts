@@ -1,6 +1,8 @@
 import { IMAGE_BASE_URL } from "./env";
 
 const ABSOLUTE_URL_RE = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i;
+const API_PREFIX = "/saas/api";
+const FRONTEND_BASE_PREFIX = "/saas/mobile";
 
 type FileRecord = Record<string, any>;
 
@@ -48,10 +50,41 @@ function normalizeRelativeFilePath(value: string) {
   return path;
 }
 
+function normalizeApiFilePath(value: string) {
+  const raw = value.trim();
+  if (!raw) return "";
+
+  const path = raw.startsWith("/") ? raw : `/${raw}`;
+  if (path.startsWith(`${FRONTEND_BASE_PREFIX}${API_PREFIX}/`)) {
+    return path.replace(FRONTEND_BASE_PREFIX, "");
+  }
+
+  if (path.startsWith(`${API_PREFIX}/`)) return path;
+  if (path.startsWith("/api/uploads/")) return `${API_PREFIX}${path.slice("/api".length)}`;
+  if (path.startsWith("/uploads/")) return `${API_PREFIX}${path}`;
+
+  const withoutSlash = trimLeadingSlash(raw);
+  if (/^(?:images|files|documents|videos|audio)\//i.test(withoutSlash)) {
+    return `${API_PREFIX}/uploads/${withoutSlash}`;
+  }
+
+  return "";
+}
+
 export function toFilePreviewUrl(value?: string | null) {
   const raw = String(value || "").trim();
   if (!raw) return "";
+
+  const absoluteMatch = raw.match(/^(https?:\/\/[^/]+)(\/.*)$/i);
+  if (absoluteMatch) {
+    const apiPath = normalizeApiFilePath(absoluteMatch[2]);
+    return apiPath ? `${absoluteMatch[1]}${apiPath}` : raw;
+  }
+
   if (ABSOLUTE_URL_RE.test(raw)) return raw;
+
+  const apiPath = normalizeApiFilePath(raw);
+  if (apiPath) return apiPath;
 
   const base = trimTrailingSlash(IMAGE_BASE_URL || "");
   const filePath = normalizeRelativeFilePath(raw);

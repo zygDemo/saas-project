@@ -367,7 +367,7 @@ function pickImage(side) {
           }
           // 兼容返回结构：data 可能是对象 { url } 或直接是字符串
           const uploadData = uploadRes?.data || uploadRes || {};
-          const imageUrl = uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url;
+          const imageUrl = toFilePreviewUrl(uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url);
           const objectKey = uploadData.objectKey || uploadData.fileKey || uploadRes?.objectKey;
 
           if (side === "front") {
