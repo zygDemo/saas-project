@@ -2,6 +2,12 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { ConfigService } from '@nestjs/config'
 import { ApplicationStatus, Gender, Prisma } from '@prisma/client'
 import { RequestUser } from '../../common/types/request-user'
+import {
+  buildUploadUrl,
+  normalizeFileUrl,
+  normalizeApiPrefix,
+  resolveObjectKeyFromFileUrl
+} from '../../common/utils/file-url'
 import { getPagination } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
 import { UploadedImageFile } from '../file/file.service'
@@ -80,8 +86,11 @@ const MOBILE_ENTRY_STORAGE_ERROR =
 
 export interface MobileUploadResult {
   url: string
+  fileUrl: string
+  previewUrl: string
   fileName: string
   objectKey: string
+  fileKey: string
   mimeType: string
   fileExt: string
   fileSize: number
@@ -554,13 +563,17 @@ export class MobileBusinessService {
     await mkdir(join(process.cwd(), 'uploads', 'images', folder), { recursive: true })
     await writeFile(absolutePath, file.buffer)
 
-    const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api').replace(/^\/+|\/+$/g, '')
+    const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
+    const url = buildUploadUrl(objectKey, apiPrefix)
     const fileName = this.decodeOriginalName(file.originalname)
 
     return {
-      url: `/${apiPrefix}/uploads/${objectKey.replace(/\\/g, '/')}`,
+      url,
+      fileUrl: url,
+      previewUrl: url,
       fileName,
       objectKey,
+      fileKey: objectKey,
       mimeType: file.mimetype,
       fileExt: extension.slice(1),
       fileSize: file.size,
@@ -964,10 +977,12 @@ export class MobileBusinessService {
   }
 
   private mapFileAsset(file: any) {
+    const fileUrl = normalizeFileUrl(file.fileUrl, this.config.get<string>('API_PREFIX', 'saas/api'))
     return {
       ...file,
-      url: file.fileUrl,
-      fileUrl: file.fileUrl,
+      url: fileUrl,
+      fileUrl,
+      previewUrl: fileUrl,
       objectKey: file.objectKey,
       fileKey: file.objectKey,
       fileType: file.categoryCode,
@@ -977,18 +992,12 @@ export class MobileBusinessService {
   }
 
   private normalizeFileReference(reference: string) {
-    const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api').replace(/^\/+|\/+$/g, '')
+    const apiPrefix = normalizeApiPrefix(this.config.get<string>('API_PREFIX', 'saas/api'))
     if (!reference) return { url: '', objectKey: undefined }
-    if (reference.startsWith('/')) {
-      const marker = `/${apiPrefix}/uploads/`
-      return {
-        url: reference,
-        objectKey: reference.startsWith(marker) ? reference.slice(marker.length) : undefined
-      }
-    }
+    const url = normalizeFileUrl(reference, apiPrefix)
     return {
-      url: `/${apiPrefix}/uploads/${reference.replace(/^\/+/, '')}`,
-      objectKey: reference
+      url,
+      objectKey: resolveObjectKeyFromFileUrl(reference, apiPrefix)
     }
   }
 

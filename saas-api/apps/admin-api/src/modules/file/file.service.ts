@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto'
 import { mkdir, writeFile } from 'fs/promises'
 import { extname, join } from 'path'
 import { RequestUser } from '../../common/types/request-user'
+import { buildUploadUrl, normalizeFileUrl } from '../../common/utils/file-url'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
@@ -64,13 +65,17 @@ export class FileService {
     await mkdir(join(process.cwd(), 'uploads', 'images', dateFolder), { recursive: true })
     await writeFile(absolutePath, file.buffer)
 
-    const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api').replace(/^\/+|\/+$/g, '')
+    const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
+    const url = buildUploadUrl(objectKey, apiPrefix)
     const fileName = this.decodeOriginalName(file.originalname)
 
     return {
-      url: `/${apiPrefix}/uploads/${objectKey.replace(/\\/g, '/')}`,
+      url,
+      fileUrl: url,
+      previewUrl: url,
       fileName,
       objectKey,
+      fileKey: objectKey,
       mimeType: file.mimetype,
       fileExt: extension.slice(1),
       fileSize: file.size,
@@ -96,7 +101,11 @@ export class FileService {
         }),
         fileAsset.count({ where })
       ])
-      return toPaginatedResponse(records, total, pagination)
+      return toPaginatedResponse(
+        records.map((file) => this.mapFileAsset(file)),
+        total,
+        pagination
+      )
     } catch (error) {
       if (this.isMissingFileAssetStorage(error)) return this.getLegacyApplicationFileList(query)
       throw error
@@ -115,7 +124,7 @@ export class FileService {
       throw error
     }
     if (!item) throw new NotFoundException('文件不存在')
-    return item
+    return this.mapFileAsset(item)
   }
 
   async create(dto: CreateFileAssetDto, user: RequestUser) {
@@ -191,7 +200,7 @@ export class FileService {
         files: []
       }
       current.count += 1
-      current.files.push(file)
+      current.files.push(this.mapFileAsset(file))
       groupMap.set(file.categoryCode, current)
     }
     return Array.from(groupMap.values())
@@ -324,6 +333,7 @@ export class FileService {
 
   private mapLegacyApplicationFile(file: LegacyApplicationFile) {
     const fileName = file.fileName || this.getFileNameFromUrl(file.fileUrl)
+    const fileUrl = normalizeFileUrl(file.fileUrl, this.config.get<string>('API_PREFIX', 'saas/api'))
 
     return {
       id: file.id,
@@ -333,8 +343,11 @@ export class FileService {
       categoryCode: file.fileType,
       categoryName: this.resolveCategoryName(file.fileType),
       fileName,
-      fileUrl: file.fileUrl,
+      url: fileUrl,
+      fileUrl,
+      previewUrl: fileUrl,
       objectKey: undefined,
+      fileKey: undefined,
       mimeType: undefined,
       fileExt: this.resolveFileExt(fileName),
       fileSize: undefined,
@@ -344,6 +357,21 @@ export class FileService {
       remark: file.application?.applicationNo ? `进件编号：${file.application.applicationNo}` : undefined,
       createdAt: file.createdAt,
       updatedAt: file.createdAt
+    }
+  }
+
+  private mapFileAsset(file: unknown) {
+    const item = file as Record<string, unknown>
+    const fileUrl = normalizeFileUrl(String(item.fileUrl || item.url || ''), this.config.get<string>('API_PREFIX', 'saas/api'))
+    const objectKey = item.objectKey ? String(item.objectKey) : undefined
+
+    return {
+      ...item,
+      url: fileUrl,
+      fileUrl,
+      previewUrl: fileUrl,
+      objectKey,
+      fileKey: objectKey
     }
   }
 
