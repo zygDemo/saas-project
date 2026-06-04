@@ -76,6 +76,16 @@ function toApiPreviewUrl(apiPath: string) {
   return absoluteBase ? `${absoluteBase.origin}${apiPath}` : apiPath;
 }
 
+function logPreviewUrl(raw: string, normalized: string, source: string) {
+  console.log("[file-url] image src before render:", {
+    source,
+    raw,
+    normalized,
+    imageBaseUrl: IMAGE_BASE_URL,
+  });
+  return normalized;
+}
+
 export function toFilePreviewUrl(value?: string | null) {
   const raw = String(value || "").trim();
   if (!raw) return "";
@@ -83,13 +93,13 @@ export function toFilePreviewUrl(value?: string | null) {
   const absoluteMatch = raw.match(/^(https?:\/\/[^/]+)(\/.*)$/i);
   if (absoluteMatch) {
     const apiPath = normalizeApiFilePath(absoluteMatch[2]);
-    return apiPath ? `${absoluteMatch[1]}${apiPath}` : raw;
+    return apiPath ? logPreviewUrl(raw, `${absoluteMatch[1]}${apiPath}`, "absolute-api") : raw;
   }
 
   if (ABSOLUTE_URL_RE.test(raw)) return raw;
 
   const apiPath = normalizeApiFilePath(raw);
-  if (apiPath) return toApiPreviewUrl(apiPath);
+  if (apiPath) return logPreviewUrl(raw, toApiPreviewUrl(apiPath), "api-path");
 
   const base = trimTrailingSlash(IMAGE_BASE_URL || "");
   const filePath = normalizeRelativeFilePath(raw);

@@ -412,6 +412,10 @@ function pickImage() {
         const uploadData = uploadRes?.data || uploadRes || {};
         const imageUrl = toFilePreviewUrl(uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url);
         if (imageUrl) {
+          console.log("[carInfo] image src before render:", {
+            raw: uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url,
+            normalized: imageUrl,
+          });
           mainImage.value = imageUrl;
           vehicleImgUrlObjectKey.value = uploadData.objectKey || uploadData.fileKey || uploadRes.objectKey;
         }

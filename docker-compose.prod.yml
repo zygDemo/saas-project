@@ -24,7 +24,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      API_PREFIX: saas/api
+      API_PREFIX: /saas/api
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-https://www.yugui.store}
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-change-me}@postgres:5432/saas_prod?schema=public
       REDIS_HOST: redis
@@ -39,6 +39,8 @@ services:
       - "3001"
     ports:
       - "127.0.0.1:${SAAS_API_PORT:-3001}:3001"
+    volumes:
+      - /opt/saas/uploads:/app/apps/admin-api/uploads
 
   postgres:
     image: postgres:16-alpine

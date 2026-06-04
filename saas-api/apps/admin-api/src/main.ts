@@ -23,7 +23,7 @@ async function bootstrap() {
   const normalizedApiPrefix = apiPrefix.replace(/^\/+|\/+$/g, '')
   const allowedOrigins = parseCorsOrigins(config.get<string>('FRONTEND_ORIGIN'))
 
-  app.setGlobalPrefix(apiPrefix)
+  app.setGlobalPrefix(normalizedApiPrefix)
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: `/${normalizedApiPrefix}/uploads/`
   })
@@ -48,7 +48,7 @@ async function bootstrap() {
     .addBearerAuth()
     .build()
   const document = SwaggerModule.createDocument(app, swaggerConfig)
-  SwaggerModule.setup(`${apiPrefix}/docs`, app, document)
+  SwaggerModule.setup(`${normalizedApiPrefix}/docs`, app, document)
 
   await app.listen(config.get<number>('PORT', 3001), '0.0.0.0')
 }

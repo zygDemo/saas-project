@@ -369,6 +369,11 @@ function pickImage(side) {
           const uploadData = uploadRes?.data || uploadRes || {};
           const imageUrl = toFilePreviewUrl(uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url);
           const objectKey = uploadData.objectKey || uploadData.fileKey || uploadRes?.objectKey;
+          console.log("[idInfo] image src before render:", {
+            side,
+            raw: uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url,
+            normalized: imageUrl,
+          });
 
           if (side === "front") {
             frontImage.value = imageUrl;
