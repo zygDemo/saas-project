@@ -73,7 +73,11 @@ function normalizeApiFilePath(value: string) {
 
 function toApiPreviewUrl(apiPath: string) {
   const absoluteBase = parseAbsoluteBase(trimTrailingSlash(IMAGE_BASE_URL || ""));
-  return absoluteBase ? `${absoluteBase.origin}${apiPath}` : apiPath;
+  if (absoluteBase) return `${absoluteBase.origin}${apiPath}`;
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return `${window.location.origin}${apiPath}`;
+  }
+  return apiPath;
 }
 
 function logPreviewUrl(raw: string, normalized: string, source: string) {
