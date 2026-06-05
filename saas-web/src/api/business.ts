@@ -19,9 +19,19 @@ export interface FlowNodeMeta {
   phaseCode: number
   phaseName: string
   sort: number
+  operationSide?: string
+  executor?: string
   parentNode?: number
   parallel?: boolean
   required?: boolean
+  steps?: Array<{
+    code: string
+    name: string
+    operationSide?: string
+    executor?: string
+    sort?: number
+    required?: boolean
+  }>
   transitions?: Array<{
     action: number
     toNode: number
@@ -39,10 +49,11 @@ export interface FlowConfigMeta {
 
 export function fetchBusinessList<T = Record<string, unknown>>(
   module: string,
-  params: BusinessQuery
+  params: BusinessQuery,
+  listApi = 'list'
 ) {
   return request.get<BusinessPage<T>>({
-    url: `/${module}/list`,
+    url: `/${module}/${listApi}`,
     params
   })
 }

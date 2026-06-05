@@ -8,39 +8,57 @@
 
 ## 一、业务主流程图
 
+> 📁 高清可打印版流程图见同目录 [`car-loan-flow-diagram.html`](./car-loan-flow-diagram.html)（可直接在浏览器打开查看/截图）。
+
 ```mermaid
 flowchart TD
-    subgraph 预审阶段["预审阶段"]
-        A[预审进件<br/>移动端] --> A1[身份证信息]
+    classDef pre fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a
+    classDef review fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#78350f
+    classDef sign fill:#d1fae5,stroke:#10b981,stroke-width:2px,color:#064e3b
+    classDef loan fill:#ede9fe,stroke:#8b5cf6,stroke-width:2px,color:#4c1d95
+    classDef endNode fill:#f3f4f6,stroke:#6b7280,stroke-width:2px,color:#374151
+    classDef decision fill:#fff7ed,stroke:#f97316,stroke-width:2px,color:#7c2d12
+
+    subgraph SG1["📱 预审阶段"]
+        A[预审进件
+移动端] --> A1[身份证信息]
         A1 --> A2[车辆信息]
         A2 --> A3[申请信息]
         A3 --> A4[签署授权书]
     end
 
-    A4 --> B[风控预审<br/>系统自动]
-    B --> C[资方预审<br/>三方接口]
+    A4 --> B[风控预审
+系统自动化]
+    B --> C[资方预审
+三方接口]
     C --> D{预审结果}
 
-    D -->|通过| E[资料补充<br/>移动端]
+    D -->|通过| E[资料补充
+移动端]
     D -->|拒绝| END1[流程结束]
+    D -->|补件| E
 
-    subgraph 补件阶段["补件阶段"]
+    subgraph SG2["📎 补件阶段"]
         E --> E1[客户资料]
         E1 --> E2[车辆资料]
         E2 --> E3[订单信息]
         E3 --> E4[文件信息]
     end
 
-    E4 --> F[风控初审<br/>Web端]
-    F --> G[风控终审<br/>Web端]
-    G --> H[资方终审<br/>三方接口]
+    E4 --> F[风控初审
+Web端]
+    F --> G[风控终审
+Web端]
+    G --> H[资方终审
+三方接口]
     H --> I{终审结果}
 
-    I -->|通过| J[客户签约<br/>移动端]
+    I -->|通过| J[客户签约
+移动端]
     I -->|拒绝| END2[流程结束]
     I -->|补件| E
 
-    subgraph 签约阶段["签约阶段"]
+    subgraph SG3["✅ 客户签约"]
         J --> J1[确认额度]
         J1 --> J2[绑卡]
         J2 --> J3[合同签约]
@@ -48,10 +66,30 @@ flowchart TD
         J4 --> J5[抵押办理]
     end
 
-    J5 --> K[请款资料<br/>Web端]
-    K --> L[资方放款<br/>三方接口]
+    J5 --> K[请款资料
+Web端]
+    K --> L[资方放款
+三方接口]
     L --> M[放款完成]
+
+    class A,A1,A2,A3,A4,E,E1,E2,E3,E4 pre
+    class J,J1,J2,J3,J4,J5 sign
+    class B,C,H pre
+    class F,G review
+    class K,L loan
+    class END1,END2,M endNode
+    class D,I decision
 ```
+
+**图例说明**
+
+| 颜色 | 阶段 | 涉及节点 |
+|------|------|----------|
+| 🔵 蓝色 | 预审阶段 | 预审进件、身份证/车辆/申请信息、授权书、风控/资方预审、资料补充 |
+| 🟡 橙色 | 风控审批 | 风控初审、风控终审 |
+| 🟢 绿色 | 客户签约 | 确认额度、绑卡、合同签约、GPS预约、抵押办理 |
+| 🟣 紫色 | 请款放款 | 请款资料、资方放款 |
+| ⚪ 灰色 | 终态 | 拒绝、流程结束、放款完成 |
 
 ---
 

@@ -1,0 +1,13 @@
+🚀 API_URL = /saas/api
+🚀 VERSION = 3.0.2
+
+  [32m[1mVITE[22m v7.1.7[39m  [2mready in [0m[1m3156[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m3006[22m/saas/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://169.254.83.107:[1m3006[22m/saas/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://172.18.144.1:[1m3006[22m/saas/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.226.1:[1m3006[22m/saas/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.217.1:[1m3006[22m/saas/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.7.20:[1m3006[22m/saas/[39m
+  ➜  Vue DevTools: Open http://localhost:3006/saas/__devtools__/ as a separate window
+  ➜  Vue DevTools: Press Alt(⌥)+Shift(⇧)+D in App to toggle the Vue DevTools

@@ -48,7 +48,13 @@ async function bootstrap() {
     .addBearerAuth()
     .build()
   const document = SwaggerModule.createDocument(app, swaggerConfig)
-  SwaggerModule.setup(`${normalizedApiPrefix}/docs`, app, document)
+  SwaggerModule.setup(`${normalizedApiPrefix}/docs`, app, document, {
+    swaggerOptions: {
+      docExpansion: 'list',
+      defaultModelExpandDepth: 5,
+      defaultModelsExpandDepth: 2
+    }
+  })
 
   await app.listen(config.get<number>('PORT', 3001), '0.0.0.0')
 }

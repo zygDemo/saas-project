@@ -49,36 +49,48 @@ export const businessRoutes: AppRouteRecord = {
       }
     },
     applicationRoute('pre-entry', 'BusinessPreEntry', '预审进件', 'ri:file-edit-line', 1100),
-    applicationRoute('risk-pre', 'BusinessRiskPre', '风控模型预审', 'ri:robot-2-line', 2000, [
+    applicationRoute('risk-pre', 'BusinessRiskPre', '风控预审', 'ri:robot-2-line', 1200, [
       'R_SUPER',
       'R_ADMIN',
       'R_APPROVER'
     ]),
-    applicationRoute('funder-pre', 'BusinessFunderPre', '资方预审', 'ri:bank-card-line', 3000),
-    applicationRoute('supplement', 'BusinessSupplement', '资料补充', 'ri:folder-upload-line', 4000),
-    applicationRoute('first-review', 'BusinessFirstReview', '风控初审', 'ri:shield-check-line', 5000, [
+    applicationRoute('funder-pre', 'BusinessFunderPre', '资方预审', 'ri:bank-card-line', 1300),
+    applicationRoute('supplement', 'BusinessSupplement', '资料补充', 'ri:folder-upload-line', 1400),
+    applicationRoute('first-review', 'BusinessFirstReview', '风控初审', 'ri:shield-check-line', 2100, [
       'R_SUPER',
       'R_ADMIN',
       'R_APPROVER'
     ]),
-    applicationRoute('final-review', 'BusinessFinalReview', '风控终审', 'ri:verified-badge-line', 6000, [
+    applicationRoute('final-review', 'BusinessFinalReview', '风控终审', 'ri:verified-badge-line', 2200, [
       'R_SUPER',
       'R_ADMIN',
       'R_APPROVER'
     ]),
-    applicationRoute('loan-request', 'BusinessLoanRequest', '请款资料', 'ri:file-paper-2-line', 7000, [
+    applicationRoute('loan-request', 'BusinessLoanRequest', '请款资料', 'ri:file-paper-2-line', 5100, [
       'R_SUPER',
       'R_ADMIN',
       'R_FINANCE',
       'R_SALES_MANAGER'
     ]),
-    applicationRoute('funder-final', 'BusinessFunderFinal', '资方终审', 'ri:bank-line', 8000),
-    applicationRoute('disbursement-node', 'BusinessDisbursementNode', '资方放款', 'ri:money-cny-circle-line', 9000, [
+    applicationRoute('funder-final', 'BusinessFunderFinal', '资方终审', 'ri:bank-line', 3100),
+    applicationRoute('disbursement-node', 'BusinessDisbursementNode', '资方放款', 'ri:money-cny-circle-line', 6100, [
       'R_SUPER',
       'R_ADMIN',
       'R_FINANCE'
     ]),
     applicationRoute('application', 'BusinessApplication', '全部进件', 'ri:file-list-3-line'),
+    {
+      path: 'order-query',
+      name: 'BusinessOrderQuery',
+      component: businessPage,
+      meta: {
+        title: '综合查询',
+        icon: 'ri:search-eye-line',
+        keepAlive: true,
+        roles,
+        businessModule: 'order-query'
+      }
+    },
     {
       path: 'customer',
       name: 'BusinessCustomer',
@@ -201,4 +213,3 @@ export const businessRoutes: AppRouteRecord = {
     }
   ]
 }
-

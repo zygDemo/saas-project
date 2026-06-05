@@ -17,7 +17,7 @@
         </view>
       </view>
 
-      <view class="section-title">进件资料</view>
+      <view class="section-title">预审进件资料</view>
 
       <view class="entry-grid">
         <view
@@ -30,7 +30,16 @@
             <u-icon :name="item.icon" size="44" color="#fff" />
           </view>
           <view class="card-body">
-            <text class="card-title">{{ item.title }}</text>
+            <view class="card-title-row">
+              <text class="card-title">{{ item.title }}</text>
+              <u-tag
+                class="mobile-status-tag"
+                :text="getEntryStatusTag(item).text"
+                :type="getEntryStatusTag(item).type"
+                size="mini"
+                plain
+              />
+            </view>
             <text class="card-desc">{{ item.desc }}</text>
           </view>
           <view class="card-arrow">
@@ -66,37 +75,57 @@ const customerPhone = ref("");
 const orderNo = ref("");
 const uuidVal = ref("");
 const submitting = ref(false);
+const ENTRY_PROGRESS_STORAGE_KEY = "ENTRY_PROGRESS_MAP";
+const entryProgress = ref({});
 
 onLoad((options) => {
   uuidVal.value = options?.uuid || "";
   customerName.value = options?.name || "";
   customerPhone.value = options?.phone || "";
   orderNo.value = options?.creditOrderId || "";
+  loadEntryProgress();
 });
 
 const entryItems = computed(() => [
   {
     type: "idInfo",
+    key: "idInfo",
     title: "身份证信息",
-    desc: "完善客户身份、联系方式等",
+    desc: "完善客户身份、证件、联系方式等",
     icon: "account",
     iconClass: "card-icon-customer",
   },
   {
     type: "carInfo",
+    key: "carInfo",
     title: "车辆信息",
     desc: "完善车辆品牌、型号、年限等",
     icon: "car",
     iconClass: "card-icon-car",
   },
-  // {
-  //   type: "applyInfo",
-  //   title: "申请信息",
-  //   desc: "完善申请金额、期限等",
-  //   icon: "order",
-  //   iconClass: "card-icon-order",
-  // },
+  {
+    type: "applyInfo",
+    key: "applyInfo",
+    title: "申请信息",
+    desc: "完善申请金额、期限、产品等",
+    icon: "order",
+    iconClass: "card-icon-order",
+  },
 ]);
+
+function loadEntryProgress() {
+  const progressMap = uni.getStorageSync(ENTRY_PROGRESS_STORAGE_KEY) || {};
+  const key = orderNo.value || uuidVal.value;
+  entryProgress.value = key ? progressMap[key] || {} : {};
+}
+
+function getEntryStatusTag(item) {
+  const status = entryProgress.value?.[item.key];
+  if (status === 1 || status === true || status === "done") {
+    return { text: "已完善", type: "success" };
+  }
+  return { text: "待完善", type: "warning" };
+}
 
 function goEntry(type) {
   if (!uuidVal.value) {
@@ -104,7 +133,12 @@ function goEntry(type) {
     return;
   }
 
-  const params = `uuid=${encodeURIComponent(uuidVal.value)}`;
+  const params = [
+    `uuid=${encodeURIComponent(uuidVal.value)}`,
+    orderNo.value ? `creditOrderId=${encodeURIComponent(orderNo.value)}` : "",
+    customerName.value ? `name=${encodeURIComponent(customerName.value)}` : "",
+    customerPhone.value ? `phone=${encodeURIComponent(customerPhone.value)}` : "",
+  ].filter(Boolean).join("&");
   const urlMap = {
     idInfo: `/pages/business/idInfo?${params}`,
     carInfo: `/pages/business/carInfo?${params}`,
@@ -219,11 +253,24 @@ async function handleSubmit() {
 }
 
 .section-title {
-  font-size: 28rpx;
+  position: relative;
+  font-size: 30rpx;
   font-weight: 700;
-  color: #64748b;
+  color: #1e293b;
   margin-bottom: 20rpx;
-  padding-left: 8rpx;
+  padding-left: 22rpx;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 7rpx;
+    height: 30rpx;
+    border-radius: 8rpx;
+    background: linear-gradient(180deg, #5da7ff, #3b82f6);
+    transform: translateY(-50%);
+  }
 }
 
 .entry-grid {
@@ -274,8 +321,19 @@ async function handleSubmit() {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6rpx;
+  gap: 8rpx;
   min-width: 0;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.mobile-status-tag {
+  flex-shrink: 0;
 }
 
 .card-title {

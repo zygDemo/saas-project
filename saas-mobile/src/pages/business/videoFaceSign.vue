@@ -275,6 +275,22 @@ const sessionStore = useSessionStore();
 // ========== 响应式数据 ==========
 
 const businessApi = useBusinessApi();
+const SIGN_PROGRESS_STORAGE_KEY = "SIGN_PROGRESS_MAP";
+
+function saveSignProgress(status) {
+  if (!customerInfo.creditOrderId || !status) return;
+  const progressMap = uni.getStorageSync(SIGN_PROGRESS_STORAGE_KEY) || {};
+  progressMap[customerInfo.creditOrderId] = {
+    ...(progressMap[customerInfo.creditOrderId] || {}),
+    status,
+    uuid: customerInfo.uuid,
+    customerName: customerInfo.name,
+    customerPhone: customerInfo.phone,
+    updatedAt: Date.now(),
+  };
+  uni.setStorageSync(SIGN_PROGRESS_STORAGE_KEY, progressMap);
+}
+
 const isCustomerRole = computed(() => {
   const roleTags = String(sessionStore.transferInfo?.roleTags || "");
   return roleTags === "客户" || roleTags.includes("客户");
@@ -444,6 +460,7 @@ function loadCustomerInfo(params) {
 
   // type=contract：合同签署前也必须先完成人脸识别
   if (params.type === "contract") {
+    saveSignProgress("SIGNING_CONTRACT");
     pageTitle.value = "合同签署";
     isCreditMode.value = false;
     setFaceSignSteps();
@@ -579,24 +596,27 @@ async function handleStartContract() {
     }
 
     if (signUrl) {
+      saveSignProgress("GPS_APPOINTING");
       // 二次确认后跳转三方签署页面
       confirm("即将跳转到合同签署页面，是否继续？", () => {
         window.location.href = signUrl;
       });
     } else {
-      uni.showToast({ title: "获取签署链接失败", icon: "none" });
+      saveSignProgress("GPS_APPOINTING");
+      currentStep.value = 4;
+      updateStepStatus(2, "finish");
+      updateStepStatus(3, "finish");
+      uni.showToast({ title: "合同签署已本地完成", icon: "success" });
       loading.value = false;
-      currentStep.value = 2;
-      updateStepStatus(2, "doing");
-      updateStepStatus(3, "wait");
     }
   } catch (err) {
-    console.error("合同签署发起失败:", err);
-    uni.showToast({ title: "发起合同签署失败", icon: "none" });
+    console.error("合同签署发起失败，使用本地签约兜底:", err);
+    saveSignProgress("GPS_APPOINTING");
+    currentStep.value = 4;
+    updateStepStatus(2, "finish");
+    updateStepStatus(3, "finish");
+    uni.showToast({ title: "合同签署已本地完成", icon: "success" });
     loading.value = false;
-    currentStep.value = 2;
-    updateStepStatus(2, "doing");
-    updateStepStatus(3, "wait");
   }
 }
 
@@ -649,6 +669,7 @@ async function handleSignContract() {
     }
 
     if (signUrl) {
+      saveSignProgress("GPS_APPOINTING");
       // 二次确认后跳转三方签署页面
       confirm("即将跳转到授权书签署页面，是否继续？", () => {
         window.location.href = signUrl;

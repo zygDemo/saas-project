@@ -8,6 +8,7 @@ import {
   normalizeApiPrefix,
   resolveObjectKeyFromFileUrl
 } from '../../common/utils/file-url'
+import { createApplicationWithUniqueNo } from '../../common/utils/application-no'
 import { getPagination } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
 import { UploadedImageFile } from '../file/file.service'
@@ -100,20 +101,6 @@ export interface MobileUploadResult {
 
 function hasValue(value: unknown) {
   return value !== undefined && value !== null && value !== ''
-}
-
-function generateApplicationNo() {
-  const now = new Date()
-  const yyyy = now.getFullYear()
-  const mm = String(now.getMonth() + 1).padStart(2, '0')
-  const dd = String(now.getDate()).padStart(2, '0')
-  const hh = String(now.getHours()).padStart(2, '0')
-  const mi = String(now.getMinutes()).padStart(2, '0')
-  const ss = String(now.getSeconds()).padStart(2, '0')
-  const rand = Math.floor(Math.random() * 10000)
-    .toString()
-    .padStart(4, '0')
-  return `APP${yyyy}${mm}${dd}${hh}${mi}${ss}${rand}`
 }
 
 @Injectable()
@@ -382,10 +369,10 @@ export class MobileBusinessService {
       }
 
       const application = await this.findLatestDraftApplication(customer.id)
-      if (application && application.currentNode < 1200) {
+      if (application && application.currentNode !== 1100) {
         await this.prisma.application.update({
           where: { id: application.id },
-          data: { currentNode: 1200, currentStatus: 10 }
+          data: { currentNode: 1100, currentStatus: 10 }
         })
       }
 
@@ -437,7 +424,7 @@ export class MobileBusinessService {
       repaymentMethod: product?.repaymentMethod || '等额本息',
       status: ApplicationStatus.PENDING_RISK_PRE,
       businessType: dto.businessType === 'pawn' ? 'PAWN' : 'CAR_LOAN',
-      currentNode: 2000,
+      currentNode: 1200,
       currentStatus: 10,
       creatorId: user.sub,
       remark: remarkParts.join('；') || undefined
@@ -448,12 +435,14 @@ export class MobileBusinessService {
           where: { id: draftApplication.id },
           data: applicationData
         })
-      : await this.prisma.application.create({
-          data: {
-            ...applicationData,
-            applicationNo: generateApplicationNo()
-          }
-        })
+      : await createApplicationWithUniqueNo((applicationNo) =>
+          this.prisma.application.create({
+            data: {
+              ...applicationData,
+              applicationNo
+            }
+          })
+        )
 
     await this.linkApplicationFiles(application, customer)
 
@@ -679,25 +668,27 @@ export class MobileBusinessService {
     const funder = await this.getDefaultFunder(customer.orgId)
     const rate = product ? Number(product.minRate) : 0.006
 
-    return this.prisma.application.create({
-      data: {
-        orgId: customer.orgId,
-        customerId: customer.id,
-        productId: product?.id,
-        funderId: funder?.id,
-        applicationNo: generateApplicationNo(),
-        amount: 0,
-        term: product?.minTerm || 12,
-        rate,
-        repaymentMethod: product?.repaymentMethod || '等额本息',
-        status: ApplicationStatus.DRAFT,
-        businessType: options.businessType === 'pawn' ? 'PAWN' : 'CAR_LOAN',
-        currentNode: 1100,
-        currentStatus: 10,
-        creatorId: user.sub,
-        remark: '移动端身份证信息提交自动创建订单草稿'
-      }
-    })
+    return createApplicationWithUniqueNo((applicationNo) =>
+      this.prisma.application.create({
+        data: {
+          orgId: customer.orgId,
+          customerId: customer.id,
+          productId: product?.id,
+          funderId: funder?.id,
+          applicationNo,
+          amount: 0,
+          term: product?.minTerm || 12,
+          rate,
+          repaymentMethod: product?.repaymentMethod || '等额本息',
+          status: ApplicationStatus.DRAFT,
+          businessType: options.businessType === 'pawn' ? 'PAWN' : 'CAR_LOAN',
+          currentNode: 1100,
+          currentStatus: 10,
+          creatorId: user.sub,
+          remark: '移动端身份证信息提交自动创建订单草稿'
+        }
+      })
+    )
   }
 
   private mapCustomer(customer: any) {

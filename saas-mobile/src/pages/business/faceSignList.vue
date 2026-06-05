@@ -1,5 +1,5 @@
 <template>
-  <app-page nav-title="面签列表">
+  <app-page nav-title="签约列表">
     <view class="face-sign-page">
       <!-- 筛选栏 -->
       <view class="filter-box">
@@ -16,7 +16,7 @@
       <view class="face-sign-list">
         <view
           v-for="(item, index) in list"
-          :key="index"
+          :key="item.creditOrderId || item.uuid || item.id || index"
           class="face-sign-card"
           :class="`status-${getStatusType(item.status)}`"
           :style="{ animationDelay: `${index * 0.06}s` }"
@@ -25,7 +25,7 @@
           <view class="face-sign-header">
             <view class="face-sign-name">
               <view class="avatar" :class="`avatar--${getStatusType(item.status)}`">
-                {{ item.customerName?.charAt(0) || '?' }}
+                {{ item.customerName?.charAt(0) || "?" }}
               </view>
               <view class="title-block">
                 <text class="name">{{ item.customerName }}</text>
@@ -42,42 +42,51 @@
 
           <view class="face-sign-info">
             <view class="info-row">
-              <view class="info-icon"><u-icon name="chat" size="24" color="#8c8c8c" /></view>
-              <text class="label">面签方式</text>
-              <text class="value">{{ item.type }}</text>
+              <view class="info-icon"><u-icon name="order" size="24" color="#8c8c8c" /></view>
+              <text class="label">授信单号</text>
+              <text class="value">{{ item.creditOrderId || item.id || "-" }}</text>
+            </view>
+            <view class="info-row">
+              <view class="info-icon"><u-icon name="phone" size="24" color="#8c8c8c" /></view>
+              <text class="label">联系电话</text>
+              <text class="value">{{ item.customerPhone || "-" }}</text>
             </view>
             <view class="info-row">
               <view class="info-icon"><u-icon name="coupon" size="24" color="#8c8c8c" /></view>
-              <text class="label">面签金额</text>
+              <text class="label">签约金额</text>
               <text class="value amount-value">￥{{ item.amount }}</text>
             </view>
             <view class="info-row">
               <view class="info-icon"><u-icon name="clock" size="24" color="#8c8c8c" /></view>
-              <text class="label">面签时间</text>
+              <text class="label">更新时间</text>
               <text class="value">{{ item.appointmentTime }}</text>
             </view>
           </view>
 
           <view class="face-sign-footer">
-            <text class="sales">面签官：{{ item.officerName }}</text>
+            <text class="sales">{{ item.officerName }}</text>
             <u-button
-              v-if="item.status === '待面签'"
               type="primary"
               size="mini"
               shape="circle"
               plain
               @click.stop="handleFaceSign(item)"
             >
-              开始面签
+              {{ item.status === "已完成" ? "查看签约" : "继续签约" }}
             </u-button>
           </view>
         </view>
       </view>
 
+      <view v-if="loading" class="loading-state">
+        <u-loading mode="circle" />
+        <text>加载中...</text>
+      </view>
+
       <!-- 空状态 -->
       <u-empty
         v-if="list.length === 0 && !loading"
-        text="暂无面签记录"
+        text="暂无签约记录"
         mode="list"
       />
     </view>
@@ -86,67 +95,200 @@
 
 <script setup>
 import { ref } from "vue";
+import { onLoad, onPullDownRefresh } from "@dcloudio/uni-app";
+import { useBusinessApi } from "@/api/business";
 
+const businessApi = useBusinessApi();
 const currentTab = ref(0);
 const loading = ref(false);
+const allList = ref([]);
+const list = ref([]);
 
-const tabList = [{ name: "待面签" }, { name: "已完成" }, { name: "已取消" }];
+const SIGN_PROGRESS_STORAGE_KEY = "SIGN_PROGRESS_MAP";
+const SIGN_STATUS_LABEL_MAP = {
+  CONFIRMING_AMOUNT: "待签约",
+  BINDING_CARD: "待签约",
+  SIGNING_CONTRACT: "待签约",
+  GPS_APPOINTING: "待签约",
+  MORTGAGING: "待签约",
+  SIGNED: "已完成",
+  CANCELLED: "已取消",
+};
 
-const list = ref([
-  {
-    id: 1,
-    customerName: "张三",
-    amount: "150,000",
-    status: "待面签",
-    type: "视频面签",
-    appointmentTime: "2026-04-09 14:00",
-    officerName: "王面签",
-  },
-  {
-    id: 2,
-    customerName: "李四",
-    amount: "200,000",
-    status: "已完成",
-    type: "AI 面签",
-    appointmentTime: "2026-04-08 10:00",
-    officerName: "AI 助手",
-  },
-]);
+const tabList = [{ name: "待签约" }, { name: "已完成" }, { name: "已取消" }];
+
+onLoad(() => {
+  fetchList(true);
+});
+
+onPullDownRefresh(async () => {
+  await fetchList(true);
+  uni.stopPullDownRefresh();
+});
+
+function firstText(...values) {
+  for (const value of values) {
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return String(value).trim();
+    }
+  }
+  return "";
+}
+
+function firstValue(...values) {
+  for (const value of values) {
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function getProgressMap() {
+  const value = uni.getStorageSync(SIGN_PROGRESS_STORAGE_KEY);
+  return value && typeof value === "object" ? value : {};
+}
+
+function resolveSignStatus(row) {
+  const orderId = firstText(row.creditOrderId, row.orderNo, row.applicationNo, row.id);
+  const localStatus = getProgressMap()[orderId]?.status;
+  if (localStatus) return localStatus;
+  if (row.isSignContract === 1 || row.signStatus === "SIGNED") return "SIGNED";
+  return row.signStatus || row.currentStatus || row.nodeStatus || "CONFIRMING_AMOUNT";
+}
+
+function resolveStatusLabel(signStatus) {
+  return SIGN_STATUS_LABEL_MAP[signStatus] || "待签约";
+}
+
+function formatMoney(value) {
+  const num = Number(value || 0);
+  if (!Number.isFinite(num) || num <= 0) return "-";
+  return num.toLocaleString("zh-CN", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
+
+function extractRows(res) {
+  const data = res?.data || {};
+  if (Array.isArray(data.records)) return data.records;
+  if (Array.isArray(data.rows)) return data.rows;
+  if (Array.isArray(data.list)) return data.list;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(res?.rows)) return res.rows;
+  if (Array.isArray(res?.records)) return res.records;
+  return [];
+}
+
+function normalizeItem(row, index) {
+  const creditOrderId = firstText(row.creditOrderId, row.orderNo, row.applicationNo, row.id);
+  const signStatus = resolveSignStatus(row);
+  return {
+    id: row.id || creditOrderId || index,
+    uuid: firstText(row.uuid, row.userUuid, row.customerUuid),
+    creditOrderId,
+    customerName: firstText(row.customerName, row.personName, row.name, "未知客户"),
+    customerPhone: firstText(row.phone, row.telephone, row.mobile),
+    amount: formatMoney(firstValue(row.approvedAmount, row.pushQuota, row.amount, row.loanAmount)),
+    status: resolveStatusLabel(signStatus),
+    signStatus,
+    appointmentTime: firstText(row.updateTime, row.updatedAt, row.createTime, row.createdAt, "-"),
+    officerName: firstText(row.officerName, row.salesmanName, row.funderName, "签约中心"),
+    raw: row,
+  };
+}
+
+function isSignRelated(row) {
+  const node = String(row.nodeCode ?? row.currentNode ?? row.businessNode ?? "");
+  const status = resolveSignStatus(row);
+  if (status === "SIGNED") return true;
+  if (["CONFIRMING_AMOUNT", "BINDING_CARD", "SIGNING_CONTRACT", "GPS_APPOINTING", "MORTGAGING"].includes(status)) return true;
+  const numericNode = Number(node);
+  return Number.isFinite(numericNode) && numericNode >= 4100;
+}
+
+function buildLocalMockList() {
+  const progressMap = getProgressMap();
+  return Object.keys(progressMap).map((creditOrderId, index) => {
+    const item = progressMap[creditOrderId] || {};
+    return normalizeItem({
+      id: creditOrderId,
+      creditOrderId,
+      uuid: item.uuid,
+      customerName: item.customerName || "本地签约客户",
+      phone: item.customerPhone,
+      signStatus: item.status,
+      updatedAt: item.updatedAt ? new Date(item.updatedAt).toLocaleString("zh-CN") : "-",
+    }, index);
+  });
+}
+
+async function fetchList(isRefresh = false) {
+  if (loading.value) return;
+  loading.value = true;
+  try {
+    const params = {
+      pageNum: 1,
+      pageSize: 50,
+    };
+    const res = await businessApi.getOrderList(params);
+    const rows = extractRows(res).filter(isSignRelated).map(normalizeItem);
+    const localRows = buildLocalMockList();
+    const mergedMap = new Map();
+    [...rows, ...localRows].forEach((item) => {
+      const key = item.creditOrderId || item.uuid || String(item.id);
+      if (key) mergedMap.set(key, { ...(mergedMap.get(key) || {}), ...item });
+    });
+    allList.value = Array.from(mergedMap.values());
+    applyFilter();
+  } catch (e) {
+    console.error("获取签约列表失败，使用本地mock兜底", e);
+    allList.value = buildLocalMockList();
+    applyFilter();
+  } finally {
+    loading.value = false;
+  }
+}
 
 function getStatusType(status) {
   const typeMap = {
-    待面签: "warning",
+    待签约: "warning",
     已完成: "success",
     已取消: "error",
   };
   return typeMap[status] || "info";
 }
 
-function onTabClick(index) {
-  currentTab.value = index;
-  loading.value = true;
-  setTimeout(() => {
-    loading.value = false;
-  }, 500);
+function applyFilter() {
+  const status = tabList[currentTab.value]?.name || "待签约";
+  list.value = allList.value.filter((item) => item.status === status);
+}
+
+function onTabClick(item) {
+  currentTab.value = typeof item === "number" ? item : item?.index || 0;
+  applyFilter();
+}
+
+function buildSignCenterUrl(item) {
+  const query = [
+    `creditOrderId=${encodeURIComponent(item.creditOrderId || item.id || "")}`,
+    `uuid=${encodeURIComponent(item.uuid || "")}`,
+    `customerName=${encodeURIComponent(item.customerName || "")}`,
+    `customerPhone=${encodeURIComponent(item.customerPhone || "")}`,
+    `signStatus=${encodeURIComponent(item.signStatus || "CONFIRMING_AMOUNT")}`,
+  ];
+  return `/pages/business/signCenter?${query.join("&")}`;
 }
 
 function goToDetail(item) {
-  uni.navigateTo({
-    url: `/pages/business/faceSignDetail?id=${item.id}`,
-  });
+  handleFaceSign(item);
 }
 
 function handleFaceSign(item) {
-  if (item.type === "视频面签") {
-    item.uuid = item.uuid || 'a6da46d2681c4037b1d5bbe1dbe4df47';
-    uni.navigateTo({
-      url: `/pages/business/videoFaceSign?uuid=${item.uuid}`,
-    });
-  } else {
-    uni.navigateTo({
-      url: `/pages/business/aiFaceSign?id=${item.id}`,
-    });
-  }
+  uni.navigateTo({
+    url: buildSignCenterUrl(item),
+  });
 }
 </script>
 
@@ -171,6 +313,16 @@ function handleFaceSign(item) {
   display: flex;
   flex-direction: column;
   gap: 24rpx;
+}
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12rpx;
+  padding: 40rpx 0;
+  color: #8c8c8c;
+  font-size: 26rpx;
 }
 
 // ===== 卡片 - 统一风格 =====
@@ -259,12 +411,13 @@ function handleFaceSign(item) {
 }
 
 .face-sign-time {
-  font-size: 22rpx;
-  color: #bfbfbf;
+  font-size: 24rpx;
+  color: #8c8c8c;
   flex-shrink: 0;
+  margin-left: 16rpx;
 }
 
-// ===== 卡片内容区 =====
+// ===== 信息区 =====
 .face-sign-info {
   display: flex;
   flex-direction: column;
@@ -275,40 +428,36 @@ function handleFaceSign(item) {
 .info-row {
   display: flex;
   align-items: center;
+  gap: 12rpx;
   font-size: 26rpx;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .info-icon {
-  width: 40rpx;
+  width: 36rpx;
   display: flex;
-  align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-right: 4rpx;
 }
 
 .label {
   color: #8c8c8c;
-  width: 140rpx;
-  flex-shrink: 0;
-  font-size: 26rpx;
+  min-width: 120rpx;
 }
 
 .value {
-  flex: 1;
   color: #262626;
+  flex: 1;
   font-weight: 500;
-  font-size: 26rpx;
+  word-break: break-all;
 }
 
 .amount-value {
-  color: #cf1322;
+  color: #fa541c;
   font-weight: 700;
-  font-size: 28rpx;
 }
 
-// ===== 卡片底部 =====
+// ===== 底部 =====
 .face-sign-footer {
   display: flex;
   justify-content: space-between;
@@ -318,18 +467,7 @@ function handleFaceSign(item) {
 }
 
 .sales {
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: #8c8c8c;
-  font-weight: 500;
-}
-
-// ===== 入场动画 =====
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(30rpx); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.face-sign-card {
-  animation: slideUp 0.4s ease-out both;
 }
 </style>

@@ -354,11 +354,24 @@ function goSupplement(item) {
 
 // ===== 区域标题 =====
 .section-title {
-  font-size: 28rpx;
+  position: relative;
+  font-size: 30rpx;
   font-weight: 700;
-  color: #64748b;
+  color: #1e293b;
   margin-bottom: 20rpx;
-  padding-left: 8rpx;
+  padding-left: 22rpx;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 7rpx;
+    height: 30rpx;
+    border-radius: 8rpx;
+    background: linear-gradient(180deg, #5da7ff, #3b82f6);
+    transform: translateY(-50%);
+  }
 }
 
 // ===== 补充模块网格 =====

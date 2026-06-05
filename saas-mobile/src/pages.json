@@ -97,6 +97,21 @@
       "path": "pages/business/applyDetail"
     },
     {
+      "path": "pages/business/signCenter"
+    },
+    {
+      "path": "pages/business/signConfirmAmount"
+    },
+    {
+      "path": "pages/business/signBindCard"
+    },
+    {
+      "path": "pages/business/signGpsAppointment"
+    },
+    {
+      "path": "pages/business/signMortgage"
+    },
+    {
       "path": "pages/business/pawnMaterials"
     },
     {

@@ -182,6 +182,14 @@
             </view>
             <view class="order-actions">
               <u-button
+                v-if="canGoSign(order)"
+                size="mini"
+                type="success"
+                @click.stop="handleSignButton(order)"
+              >
+                签约
+              </u-button>
+              <u-button
                 size="mini"
                 type="primary"
                 @click.stop="handleDetailButton(order)"
@@ -249,22 +257,16 @@ interface OrderListViewItem extends CreditListItem {
 }
 
 const ORDER_NODE_OPTIONS: Array<Omit<FilterOption, "count">> = [
-  { label: "身份证信息", value: "1100" },
-  { label: "车辆信息", value: "1200" },
-  { label: "申请信息", value: "1300" },
-  { label: "签署授权书", value: "1400" },
-  { label: "风控模型预审", value: "2000" },
-  { label: "资方预审", value: "3000" },
-  { label: "资料补充", value: "4000" },
-  { label: "客户资料", value: "4100" },
-  { label: "车辆资料", value: "4200" },
-  { label: "订单信息", value: "4300" },
-  { label: "文件信息", value: "4400" },
-  { label: "风控初审", value: "5000" },
-  { label: "风控终审", value: "6000" },
-  { label: "请款资料", value: "7000" },
-  { label: "资方终审", value: "8000" },
-  { label: "资方放款", value: "9000" },
+  { label: "预审进件", value: "1100" },
+  { label: "风控预审", value: "1200" },
+  { label: "资方预审", value: "1300" },
+  { label: "资料补充", value: "1400" },
+  { label: "风控初审", value: "2100" },
+  { label: "风控终审", value: "2200" },
+  { label: "资方终审", value: "3100" },
+  { label: "客户签约", value: "4100" },
+  { label: "请款资料", value: "5100" },
+  { label: "资方放款", value: "6100" },
 ];
 
 const NODE_STATUS_OPTIONS: Array<Omit<FilterOption, "count">> = [
@@ -376,7 +378,7 @@ function isAfterPreAudit(node: unknown) {
 
   const numericCode = Number(code);
   if (Number.isFinite(numericCode)) {
-    return numericCode >= 4000;
+    return numericCode >= 4100;
   }
 
   const codeList = businessNodeCodeList.value;
@@ -396,6 +398,38 @@ function isAfterPreAudit(node: unknown) {
     "LOAN_DISBURSEMENT",
   ];
   return fallbackOrder.indexOf(code) > fallbackOrder.indexOf("PRE_AUDIT");
+}
+
+function resolveSignStatus(order: OrderListViewItem) {
+  if (order.isSignContract === 1 || order.currentStatus === "SIGNED") return "SIGNED";
+  const status = firstText(order.currentStatus, order.nodeStatus, order.status);
+  if (status === "SIGNING_PROGRESS" || status === "PENDING_SIGN") return "CONFIRMING_AMOUNT";
+  return status || "CONFIRMING_AMOUNT";
+}
+
+function canGoSign(order: OrderListViewItem) {
+  const node = order?.nodeCode ?? order?.currentNode ?? order?.businessNode;
+  if (order.isSignContract === 1) return true;
+  const status = String(order.currentStatus || order.status || "");
+  return isAfterPreAudit(node) || ["PENDING_SIGN", "SIGNING_PROGRESS", "SIGNED"].includes(status);
+}
+
+function handleSignButton(order: OrderListViewItem) {
+  const creditOrderId = order?.creditOrderId || order?.orderNo || order?.applicationNo || order?.id;
+  if (!creditOrderId) {
+    uni.showToast({ title: "缺少订单编号", icon: "none" });
+    return;
+  }
+  const query = [
+    `creditOrderId=${encodeURIComponent(String(creditOrderId))}`,
+    `uuid=${encodeURIComponent(firstText(order.uuid))}`,
+    `customerName=${encodeURIComponent(order.name || "")}`,
+    `customerPhone=${encodeURIComponent(order.phone || "")}`,
+    `signStatus=${encodeURIComponent(resolveSignStatus(order))}`,
+  ];
+  uni.navigateTo({
+    url: `/pages/business/signCenter?${query.join("&")}`,
+  });
 }
 
 function handleDetailButton(order: OrderListViewItem) {

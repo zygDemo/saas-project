@@ -14,167 +14,221 @@ const statusMap: Record<string, UserStatus> = {
 const defaultFlowNodes = [
   {
     code: 1100,
-    name: '身份证信息',
+    name: '预审进件',
     phaseCode: 1000,
-    phaseName: '预审进件',
+    phaseName: '预审阶段',
     sort: 1100,
+    operationSide: '移动端',
+    executor: '客户/业务员',
     requireMaterials: true,
     requireApproval: false,
+    steps: [
+      {
+        code: 'ID_CARD',
+        name: '身份证信息',
+        operationSide: '移动端',
+        executor: '客户/业务员',
+        sort: 1110,
+        required: true
+      },
+      {
+        code: 'VEHICLE',
+        name: '车辆信息',
+        operationSide: '移动端',
+        executor: '客户/业务员',
+        sort: 1120,
+        required: true
+      },
+      {
+        code: 'APPLICATION',
+        name: '申请信息',
+        operationSide: '移动端',
+        executor: '客户/业务员',
+        sort: 1130,
+        required: true
+      },
+      {
+        code: 'AUTH_SIGN',
+        name: '签署授权书',
+        operationSide: '移动端',
+        executor: '客户/业务员',
+        sort: 1140,
+        required: true
+      }
+    ],
     transitions: [{ action: 10, toNode: 1200 }]
   },
   {
     code: 1200,
-    name: '车辆信息',
+    name: '风控预审',
     phaseCode: 1000,
-    phaseName: '预审进件',
+    phaseName: '预审阶段',
     sort: 1200,
-    requireMaterials: true,
+    operationSide: '系统',
+    executor: '系统自动化',
+    requireMaterials: false,
     requireApproval: false,
-    transitions: [{ action: 10, toNode: 1300 }]
+    autoPass: true,
+    transitions: [{ action: 20, toNode: 1300 }]
   },
   {
     code: 1300,
-    name: '申请信息',
+    name: '资方预审',
     phaseCode: 1000,
-    phaseName: '预审进件',
+    phaseName: '预审阶段',
     sort: 1300,
-    requireMaterials: true,
-    requireApproval: false,
-    transitions: [{ action: 10, toNode: 1400 }]
+    operationSide: '三方接口',
+    executor: '资方接口',
+    requireApproval: true,
+    transitions: [
+      { action: 20, toNode: 1400 },
+      { action: 50, toNode: 1400 }
+    ]
   },
   {
     code: 1400,
-    name: '签署授权书',
-    phaseCode: 1000,
-    phaseName: '预审进件',
-    sort: 1400,
-    requireMaterials: true,
-    requireApproval: false,
-    transitions: [{ action: 10, toNode: 2000 }]
-  },
-  {
-    code: 2000,
-    name: '风控模型预审',
-    phaseCode: 2000,
-    phaseName: '风控模型预审',
-    sort: 2000,
-    requireApproval: false,
-    autoPass: true,
-    transitions: [{ action: 20, toNode: 3000 }]
-  },
-  {
-    code: 3000,
-    name: '资方预审',
-    phaseCode: 3000,
-    phaseName: '资方预审',
-    sort: 3000,
-    requireApproval: true,
-    transitions: [{ action: 20, toNode: 4000 }]
-  },
-  {
-    code: 4000,
     name: '资料补充',
-    phaseCode: 4000,
-    phaseName: '资料补充',
-    sort: 4000,
+    phaseCode: 1400,
+    phaseName: '补件阶段',
+    sort: 1400,
+    operationSide: '移动端',
+    executor: '客户',
     requireMaterials: true,
     requireApproval: false,
-    transitions: [{ action: 10, toNode: 5000, condition: 'REQUIRED_TASKS_COMPLETED' }]
+    steps: [
+      {
+        code: 'CUSTOMER_INFO',
+        name: '客户资料',
+        operationSide: '移动端',
+        executor: '客户',
+        sort: 1410,
+        required: true
+      },
+      {
+        code: 'VEHICLE_INFO',
+        name: '车辆资料',
+        operationSide: '移动端',
+        executor: '客户',
+        sort: 1420,
+        required: true
+      },
+      {
+        code: 'ORDER_INFO',
+        name: '订单信息',
+        operationSide: '移动端',
+        executor: '客户',
+        sort: 1430,
+        required: true
+      },
+      {
+        code: 'FILE_INFO',
+        name: '文件信息',
+        operationSide: '移动端',
+        executor: '客户',
+        sort: 1440,
+        required: true
+      }
+    ],
+    transitions: [{ action: 10, toNode: 2100, condition: 'REQUIRED_TASKS_COMPLETED' }]
+  },
+  {
+    code: 2100,
+    name: '风控初审',
+    phaseCode: 2000,
+    phaseName: '风控审批',
+    sort: 2100,
+    operationSide: 'Web',
+    executor: '风控专员',
+    requireApproval: true,
+    transitions: [
+      { action: 20, toNode: 2200 },
+      { action: 50, toNode: 1400 }
+    ]
+  },
+  {
+    code: 2200,
+    name: '风控终审',
+    phaseCode: 2000,
+    phaseName: '风控审批',
+    sort: 2200,
+    operationSide: 'Web',
+    executor: '风控主管',
+    requireApproval: true,
+    approveLevel: 2,
+    transitions: [
+      { action: 20, toNode: 3100 },
+      { action: 50, toNode: 1400 }
+    ]
+  },
+  {
+    code: 3100,
+    name: '资方终审',
+    phaseCode: 3000,
+    phaseName: '资方终审',
+    sort: 3100,
+    operationSide: '三方接口',
+    executor: '资方接口',
+    requireApproval: true,
+    transitions: [
+      { action: 20, toNode: 4100 },
+      { action: 50, toNode: 1400 }
+    ]
   },
   {
     code: 4100,
-    name: '客户资料',
+    name: '客户签约',
     phaseCode: 4000,
-    phaseName: '资料补充',
+    phaseName: '客户签约',
     sort: 4100,
-    parentNode: 4000,
-    parallel: true,
-    required: true,
-    requireMaterials: true,
-    requireApproval: false
-  },
-  {
-    code: 4200,
-    name: '车辆资料',
-    phaseCode: 4000,
-    phaseName: '资料补充',
-    sort: 4200,
-    parentNode: 4000,
-    parallel: true,
-    required: true,
-    requireMaterials: true,
-    requireApproval: false
-  },
-  {
-    code: 4300,
-    name: '订单信息',
-    phaseCode: 4000,
-    phaseName: '资料补充',
-    sort: 4300,
-    parentNode: 4000,
-    parallel: true,
-    required: true,
-    requireMaterials: true,
-    requireApproval: false
-  },
-  {
-    code: 4400,
-    name: '文件信息',
-    phaseCode: 4000,
-    phaseName: '资料补充',
-    sort: 4400,
-    parentNode: 4000,
-    parallel: true,
-    required: true,
-    requireMaterials: true,
-    requireApproval: false
-  },
-  {
-    code: 5000,
-    name: '风控初审',
-    phaseCode: 5000,
-    phaseName: '风控初审',
-    sort: 5000,
-    requireApproval: true,
-    transitions: [{ action: 20, toNode: 6000 }]
-  },
-  {
-    code: 6000,
-    name: '风控终审',
-    phaseCode: 6000,
-    phaseName: '风控终审',
-    sort: 6000,
-    requireApproval: true,
-    approveLevel: 2,
-    transitions: [{ action: 20, toNode: 7000 }]
-  },
-  {
-    code: 7000,
-    name: '请款资料',
-    phaseCode: 7000,
-    phaseName: '请款资料',
-    sort: 7000,
+    operationSide: '移动端',
+    executor: '客户',
     requireMaterials: true,
     requireApproval: false,
-    transitions: [{ action: 10, toNode: 8000 }]
+    steps: [
+      { code: 'CONFIRM_AMOUNT', name: '确认额度', operationSide: '移动端', executor: '客户', sort: 4110 },
+      { code: 'BIND_CARD', name: '绑卡', operationSide: '移动端', executor: '客户', sort: 4120 },
+      { code: 'SIGN_CONTRACT', name: '合同签约', operationSide: '移动端', executor: '客户', sort: 4130 },
+      { code: 'GPS_APPOINTMENT', name: 'GPS安装预约', operationSide: '移动端', executor: '客户', sort: 4140 },
+      { code: 'MORTGAGE', name: '抵押办理', operationSide: '移动端', executor: '客户', sort: 4150 }
+    ],
+    transitions: [{ action: 10, toNode: 5100 }]
   },
   {
-    code: 8000,
-    name: '资方终审',
-    phaseCode: 8000,
-    phaseName: '资方终审',
-    sort: 8000,
-    requireApproval: true,
-    transitions: [{ action: 20, toNode: 9000 }]
+    code: 5100,
+    name: '请款资料',
+    phaseCode: 5000,
+    phaseName: '请款放款',
+    sort: 5100,
+    operationSide: 'Web',
+    executor: '业务专员',
+    requireMaterials: true,
+    requireApproval: false,
+    transitions: [{ action: 20, toNode: 6100 }]
   },
   {
-    code: 9000,
+    code: 6100,
     name: '资方放款',
-    phaseCode: 9000,
-    phaseName: '资方放款',
-    sort: 9000,
+    phaseCode: 5000,
+    phaseName: '请款放款',
+    sort: 6100,
+    operationSide: '三方接口',
+    executor: '资方接口',
     requireApproval: false
   }
+]
+
+const obsoleteDefaultFlowNodeCodes = [
+  '2000',
+  '3000',
+  '4000',
+  '4200',
+  '4300',
+  '4400',
+  '5000',
+  '6000',
+  '7000',
+  '8000',
+  '9000'
 ]
 
 async function main() {
@@ -860,7 +914,7 @@ async function seedAllMenus(tenantId: number) {
     path: 'risk-pre',
     name: 'RiskPre',
     component: bp,
-    title: '风控模型预审',
+    title: '风控预审',
     icon: 'ri:robot-2-line',
     sort: 68,
     keepAlive: true
@@ -955,6 +1009,16 @@ async function seedAllMenus(tenantId: number) {
     sort: 77,
     keepAlive: true
   })
+  const orderQuery = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'order-query',
+    name: 'BusinessOrderQuery',
+    component: bp,
+    title: '综合查询',
+    icon: 'ri:search-eye-line',
+    sort: 78,
+    keepAlive: true
+  })
   const approval = await upsertMenu(tenantId, {
     parentId: business.id,
     path: 'approval',
@@ -962,7 +1026,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '审批记录',
     icon: 'ri:shield-check-line',
-    sort: 78,
+    sort: 79,
     keepAlive: true
   })
   const signing = await upsertMenu(tenantId, {
@@ -972,7 +1036,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '签约管理',
     icon: 'ri:pen-nib-line',
-    sort: 79,
+    sort: 80,
     keepAlive: true
   })
   const disbursement = await upsertMenu(tenantId, {
@@ -982,7 +1046,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '放款管理',
     icon: 'ri:money-cny-circle-line',
-    sort: 80,
+    sort: 81,
     keepAlive: true
   })
   const orderMgmt = await upsertMenu(tenantId, {
@@ -992,7 +1056,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '订单管理',
     icon: 'ri:file-list-2-line',
-    sort: 81,
+    sort: 82,
     keepAlive: true
   })
   const repayment = await upsertMenu(tenantId, {
@@ -1002,7 +1066,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '还款管理',
     icon: 'ri:refund-line',
-    sort: 82,
+    sort: 83,
     keepAlive: true
   })
   const reports = await upsertMenu(tenantId, {
@@ -1012,7 +1076,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '报表统计',
     icon: 'ri:pie-chart-line',
-    sort: 83,
+    sort: 84,
     keepAlive: true
   })
   const orgConfig = await upsertMenu(tenantId, {
@@ -1022,7 +1086,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '机构配置',
     icon: 'ri:tools-line',
-    sort: 84,
+    sort: 85,
     keepAlive: true
   })
 
@@ -1121,6 +1185,7 @@ async function seedAllMenus(tenantId: number) {
     disbursementNode,
     customer,
     application,
+    orderQuery,
     approval,
     signing,
     disbursement,
@@ -1180,11 +1245,22 @@ function buildDefaultFlowRule(node: (typeof defaultFlowNodes)[number]): Prisma.I
     required: Boolean('required' in node && node.required),
     initialStatus: 'parentNode' in node && node.parentNode ? 0 : 10,
     transitions: ('transitions' in node ? node.transitions || [] : []) as Prisma.InputJsonValue,
+    operationSide: 'operationSide' in node ? node.operationSide : undefined,
+    executor: 'executor' in node ? node.executor : undefined,
+    steps: ('steps' in node ? node.steps || [] : []) as Prisma.InputJsonValue,
     ...(parentNode ? { parentNode } : {})
   }
 }
 
 async function seedDefaultFlowConfigs(tenantId: number, orgId: number, businessType = 'CAR_LOAN') {
+  await prisma.flowConfig.deleteMany({
+    where: {
+      orgId,
+      businessType,
+      nodeCode: { in: obsoleteDefaultFlowNodeCodes }
+    }
+  })
+
   for (const node of defaultFlowNodes) {
     await prisma.flowConfig.upsert({
       where: {
@@ -1495,6 +1571,8 @@ async function seedBusinessData(tenantId: number) {
       repaymentMethod: '等额本息',
       purpose: '经营周转',
       status: 'PENDING_DISBURSEMENT',
+      currentNode: 6100,
+      currentStatus: 10,
       creatorId: sales.id,
       sourceLeadId: lead.id,
       approvedAmount: 115000,
@@ -1515,6 +1593,8 @@ async function seedBusinessData(tenantId: number) {
       repaymentMethod: '等额本息',
       purpose: '经营周转',
       status: 'PENDING_DISBURSEMENT',
+      currentNode: 6100,
+      currentStatus: 10,
       creatorId: sales.id,
       sourceLeadId: lead.id,
       approvedAmount: 115000,

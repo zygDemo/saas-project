@@ -175,6 +175,21 @@
               </div>
             </template>
           </ElTableColumn>
+          <ElTableColumn label="子步骤" min-width="170">
+            <template #default="{ row }">
+              <ElSpace v-if="nodeSteps(row).length" wrap>
+                <ElTag
+                  v-for="step in nodeSteps(row)"
+                  :key="step.code"
+                  :type="step.required ? 'danger' : 'info'"
+                  effect="plain"
+                >
+                  {{ step.name }}
+                </ElTag>
+              </ElSpace>
+              <span v-else>-</span>
+            </template>
+          </ElTableColumn>
           <ElTableColumn prop="status" label="状态" width="90">
             <template #default="{ row }">
               <ElTag :type="row.status === 'ACTIVE' ? 'success' : 'info'" effect="light">
@@ -356,6 +371,7 @@
     fetchBusinessUpdate,
     fetchFlowConfigMeta,
     fetchInitDefaultFlowConfig,
+    FlowNodeMeta,
     FlowConfigMeta
   } from '@/api/business'
 
@@ -382,6 +398,8 @@
     condition?: string
   }
 
+  type FlowStepMeta = NonNullable<FlowNodeMeta['steps']>[number]
+
   interface FlowFormModel {
     id?: number
     orgId?: number
@@ -395,6 +413,7 @@
     sort?: number
     parallel: boolean
     required: boolean
+    steps: FlowStepMeta[]
     requireMaterials: boolean
     requireApproval: boolean
     autoPass: boolean
@@ -434,6 +453,7 @@
     phaseName: '',
     parallel: false,
     required: false,
+    steps: [],
     requireMaterials: false,
     requireApproval: true,
     autoPass: false,
@@ -571,6 +591,7 @@
     formModel.sort = numberOrUndefined(rule.sort)
     formModel.parallel = Boolean(rule.parallel)
     formModel.required = Boolean(rule.required)
+    formModel.steps = normalizeSteps(rule.steps)
     formModel.requireMaterials = Boolean(row.requireMaterials)
     formModel.requireApproval = row.requireApproval !== false
     formModel.autoPass = Boolean(row.autoPass)
@@ -599,6 +620,7 @@
     formModel.sort = undefined
     formModel.parallel = false
     formModel.required = false
+    formModel.steps = []
     formModel.requireMaterials = false
     formModel.requireApproval = true
     formModel.autoPass = false
@@ -619,6 +641,7 @@
     formModel.sort = node.sort
     formModel.parallel = Boolean(node.parallel)
     formModel.required = Boolean(node.required)
+    formModel.steps = normalizeSteps(node.steps)
     formModel.transitions = normalizeTransitions(node.transitions)
   }
 
@@ -679,6 +702,7 @@
       sort: formModel.sort || formModel.nodeCode,
       parallel: formModel.parallel,
       required: formModel.required,
+      steps: formModel.steps,
       initialStatus: formModel.parentNode ? 0 : 10,
       transitions: formModel.transitions.map((item) => ({
         action: item.action,
@@ -713,9 +737,14 @@
       parentNode: fallback?.parentNode,
       parallel: fallback?.parallel,
       required: fallback?.required,
+      steps: fallback?.steps || [],
       transitions: fallback?.transitions || [],
       ...config
     }
+  }
+
+  function nodeSteps(row: FlowRecord) {
+    return normalizeSteps(nodeRule(row).steps)
   }
 
   function getSort(row: FlowRecord) {
@@ -740,6 +769,25 @@
       transitions.push(transition)
     }
     return transitions
+  }
+
+  function normalizeSteps(value: unknown): FlowStepMeta[] {
+    if (!Array.isArray(value)) return []
+    return value
+      .filter((item) => item && typeof item === 'object')
+      .map((item) => {
+        const source = item as Record<string, unknown>
+        return {
+          code: String(source.code || ''),
+          name: String(source.name || ''),
+          operationSide: source.operationSide ? String(source.operationSide) : undefined,
+          executor: source.executor ? String(source.executor) : undefined,
+          sort: Number(source.sort || 0),
+          required: Boolean(source.required)
+        }
+      })
+      .filter((item) => item.code && item.name)
+      .sort((a, b) => Number(a.sort || 0) - Number(b.sort || 0))
   }
 
   function numberOrUndefined(value: unknown) {

@@ -490,39 +490,29 @@ const sectionsRaw = [
         path: "/pages/business/applyResult",
       },
       {
-        text: "进件列表",
-        icon: "list",
-        path: "/pages/business/entryList",
+        text: "风控预审",
+        icon: "chart",
+        orderNode: "1200",
+      },
+      {
+        text: "资方预审",
+        icon: "handshake",
+        orderNode: "1300",
       },
       {
         text: "预审列表",
-        icon: "file-text",
+        icon: "list",
         path: "/pages/business/applyListPage",
       },
     ],
   },
   {
-    title: "预审跟进",
+    title: "订单跟进",
     items: [
       {
         text: "订单列表",
         icon: "list",
         path: "/pages/business/orderList",
-      },
-      {
-        text: "风控预审",
-        icon: "chart",
-        orderNode: "2000",
-      },
-      {
-        text: "资方预审",
-        icon: "handshake",
-        orderNode: "3000",
-      },
-      {
-        text: "预审结果",
-        icon: "checkmark-circle",
-        path: "/pages/business/applyListPage",
       },
     ],
   },
@@ -557,23 +547,28 @@ const sectionsRaw = [
     ],
   },
   {
-    title: "审核签约",
+    title: "审批环节",
     items: [
       {
         text: "风控初审",
         icon: "hourglass",
-        orderNode: "5000",
+        orderNode: "2100",
       },
       {
         text: "风控终审",
         icon: "hourglass-half-fill",
-        orderNode: "6000",
+        orderNode: "2200",
       },
       {
         text: "资方终审",
         icon: "handshake",
-        orderNode: "8000",
+        orderNode: "3100",
       },
+    ],
+  },
+  {
+    title: "签约放款",
+    items: [
       {
         text: "签约中心",
         icon: "edit",
@@ -582,12 +577,12 @@ const sectionsRaw = [
       {
         text: "请款资料",
         icon: "file",
-        orderNode: "7000",
+        orderNode: "5100",
       },
       {
         text: "资方放款",
         icon: "money-circle",
-        orderNode: "9000",
+        orderNode: "6100",
       },
     ],
   },

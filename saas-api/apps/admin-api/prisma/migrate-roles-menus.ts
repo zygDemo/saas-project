@@ -383,11 +383,20 @@ async function main() {
     },
     {
       parentKey: 'Business',
+      path: 'order-query',
+      name: 'BusinessOrderQuery',
+      title: '综合查询',
+      icon: 'ri:search-eye-line',
+      sort: 69,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
       path: 'approval',
       name: 'Approval',
       title: '审批管理',
       icon: 'ri:shield-check-line',
-      sort: 69,
+      sort: 70,
       keepAlive: true
     },
     {
@@ -396,7 +405,7 @@ async function main() {
       name: 'Signing',
       title: '签约管理',
       icon: 'ri:pen-nib-line',
-      sort: 70,
+      sort: 71,
       keepAlive: true
     },
     {
@@ -405,7 +414,7 @@ async function main() {
       name: 'Disbursement',
       title: '放款管理',
       icon: 'ri:money-cny-circle-line',
-      sort: 71,
+      sort: 72,
       keepAlive: true
     },
     {
@@ -414,7 +423,7 @@ async function main() {
       name: 'OrderMgmt',
       title: '订单管理',
       icon: 'ri:file-list-2-line',
-      sort: 72,
+      sort: 73,
       keepAlive: true
     },
     {
@@ -423,7 +432,7 @@ async function main() {
       name: 'Repayment',
       title: '还款管理',
       icon: 'ri:refund-line',
-      sort: 73,
+      sort: 74,
       keepAlive: true
     },
     {
@@ -432,7 +441,7 @@ async function main() {
       name: 'PawnBusiness',
       title: '典当业务',
       icon: 'ri:swap-box-line',
-      sort: 74,
+      sort: 75,
       keepAlive: true
     },
     {
@@ -441,7 +450,7 @@ async function main() {
       name: 'Reports',
       title: '报表统计',
       icon: 'ri:pie-chart-line',
-      sort: 75,
+      sort: 76,
       keepAlive: true
     },
     {

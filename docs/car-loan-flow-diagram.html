@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>嗨车无忧 — 车抵贷业务流程图</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #f5f7fa;
+      color: #1f2937;
+      line-height: 1.6;
+    }
+    .header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      color: white;
+      padding: 40px 20px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .header p { font-size: 14px; opacity: 0.9; }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+    .dot-pre { background: #3b82f6; }
+    .dot-review { background: #f59e0b; }
+    .dot-sign { background: #10b981; }
+    .dot-loan { background: #8b5cf6; }
+    .dot-end { background: #6b7280; }
+    .diagram-wrap {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      overflow-x: auto;
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      min-width: 900px;
+    }
+    .node-table {
+      margin-top: 30px;
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .node-table h2 {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: #1e3a8a;
+      border-left: 4px solid #3b82f6;
+      padding-left: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #374151;
+      white-space: nowrap;
+    }
+    tr:hover td { background: #f8fafc; }
+    .tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .tag-mobile { background: #dbeafe; color: #1e40af; }
+    .tag-web { background: #fef3c7; color: #92400e; }
+    .tag-system { background: #e0e7ff; color: #3730a3; }
+    .tag-third { background: #fce7f3; color: #9d174d; }
+    .footer {
+      text-align: center;
+      padding: 30px;
+      color: #9ca3af;
+      font-size: 12px;
+    }
+    @media print {
+      body { background: white; }
+      .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>嗨车无忧 — 车抵贷业务流程图</h1>
+    <p>saas-project（admin-api + saas-web + saas-mobile）| 文档阶段 v1.0</p>
+  </div>
+
+  <div class="container">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot dot-pre"></div>预审阶段（移动端 + 三方）</div>
+      <div class="legend-item"><div class="legend-dot dot-review"></div>风控审批（Web端）</div>
+      <div class="legend-item"><div class="legend-dot dot-sign"></div>客户签约（移动端）</div>
+      <div class="legend-item"><div class="legend-dot dot-loan"></div>请款放款（Web + 三方）</div>
+      <div class="legend-item"><div class="legend-dot dot-end"></div>终态节点</div>
+    </div>
+
+    <div class="diagram-wrap">
+      <pre class="mermaid">
+flowchart TD
+    classDef pre fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a
+    classDef review fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#78350f
+    classDef sign fill:#d1fae5,stroke:#10b981,stroke-width:2px,color:#064e3b
+    classDef loan fill:#ede9fe,stroke:#8b5cf6,stroke-width:2px,color:#4c1d95
+    classDef endNode fill:#f3f4f6,stroke:#6b7280,stroke-width:2px,color:#374151
+    classDef decision fill:#fff7ed,stroke:#f97316,stroke-width:2px,color:#7c2d12
+
+    subgraph SG1["📱 预审阶段"]
+        A[预审进件
+移动端] --> A1[身份证信息]
+        A1 --> A2[车辆信息]
+        A2 --> A3[申请信息]
+        A3 --> A4[签署授权书]
+    end
+
+    A4 --> B[风控预审
+系统自动化]
+    B --> C[资方预审
+三方接口]
+    C --> D{预审结果}
+
+    D -->|通过| E[资料补充
+移动端]
+    D -->|拒绝| END1[流程结束]
+    D -->|补件| E
+
+    subgraph SG2["📎 补件阶段"]
+        E --> E1[客户资料]
+        E1 --> E2[车辆资料]
+        E2 --> E3[订单信息]
+        E3 --> E4[文件信息]
+    end
+
+    E4 --> F[风控初审
+Web端]
+    F --> G[风控终审
+Web端]
+    G --> H[资方终审
+三方接口]
+    H --> I{终审结果}
+
+    I -->|通过| J[客户签约
+移动端]
+    I -->|拒绝| END2[流程结束]
+    I -->|补件| E
+
+    subgraph SG3["✅ 客户签约"]
+        J --> J1[确认额度]
+        J1 --> J2[绑卡]
+        J2 --> J3[合同签约]
+        J3 --> J4[GPS安装预约]
+        J4 --> J5[抵押办理]
+    end
+
+    J5 --> K[请款资料
+Web端]
+    K --> L[资方放款
+三方接口]
+    L --> M[放款完成]
+
+    class A,A1,A2,A3,A4,E,E1,E2,E3,E4 pre
+    class J,J1,J2,J3,J4,J5 sign
+    class B,C,H pre
+    class F,G review
+    class K,L loan
+    class END1,END2,M endNode
+    class D,I decision
+      </pre>
+    </div>
+
+    <div class="node-table">
+      <h2>流程节点明细</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>节点码</th>
+            <th>节点名称</th>
+            <th>操作端</th>
+            <th>执行者</th>
+            <th>阶段</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1100</td><td>预审进件</td><td><span class="tag tag-mobile">移动端</span></td><td>客户 / 业务员</td><td>预审</td></tr>
+          <tr><td>1200</td><td>风控预审</td><td><span class="tag tag-system">系统</span></td><td>规则引擎</td><td>预审</td></tr>
+          <tr><td>1300</td><td>资方预审</td><td><span class="tag tag-third">三方接口</span></td><td>资方系统</td><td>预审</td></tr>
+          <tr><td>1400</td><td>资料补充</td><td><span class="tag tag-mobile">移动端</span></td><td>客户</td><td>预审</td></tr>
+          <tr><td>2100</td><td>风控初审</td><td><span class="tag tag-web">Web端</span></td><td>风控专员</td><td>审批</td></tr>
+          <tr><td>2200</td><td>风控终审</td><td><span class="tag tag-web">Web端</span></td><td>风控主管</td><td>审批</td></tr>
+          <tr><td>3100</td><td>资方终审</td><td><span class="tag tag-third">三方接口</span></td><td>资方系统</td><td>审批</td></tr>
+          <tr><td>4100</td><td>客户签约</td><td><span class="tag tag-mobile">移动端</span></td><td>客户</td><td>签约</td></tr>
+          <tr><td>5100</td><td>请款资料</td><td><span class="tag tag-web">Web端</span></td><td>业务专员</td><td>放款</td></tr>
+          <tr><td>6100</td><td>资方放款</td><td><span class="tag tag-third">三方接口</span></td><td>资方系统</td><td>放款</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">
+    上海瞬力矩阵科技有限公司 · 嗨车无忧业务系统 · 文档版本 v1.0
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      themeVariables: {
+        primaryColor: '#ffffff',
+        primaryTextColor: '#1f2937',
+        primaryBorderColor: '#3b82f6',
+        lineColor: '#6b7280',
+        secondaryColor: '#f8fafc',
+        tertiaryColor: '#f8fafc',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        fontSize: '13px'
+      },
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis',
+        padding: 16,
+        nodeSpacing: 40,
+        rankSpacing: 60
+      }
+    });
+  </script>
+</body>
+</html>

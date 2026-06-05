@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import {
   ApplicationStatus,
   ApprovalAction,
@@ -9,6 +9,7 @@ import {
 } from '@prisma/client'
 import { BaseBusinessCrudService, omitNested } from '../base-business-crud.service'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
+import { createApplicationWithUniqueNo } from '../../common/utils/application-no'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
 import {
@@ -33,20 +34,6 @@ import {
   SupplementActionDto
 } from './dto/business-action.dto'
 
-function generateApplicationNo() {
-  const now = new Date()
-  const yyyy = now.getFullYear()
-  const mm = String(now.getMonth() + 1).padStart(2, '0')
-  const dd = String(now.getDate()).padStart(2, '0')
-  const hh = String(now.getHours()).padStart(2, '0')
-  const mi = String(now.getMinutes()).padStart(2, '0')
-  const ss = String(now.getSeconds()).padStart(2, '0')
-  const rand = Math.floor(Math.random() * 10000)
-    .toString()
-    .padStart(4, '0')
-  return `APP${yyyy}${mm}${dd}${hh}${mi}${ss}${rand}`
-}
-
 const FLOW_STATUS_LABELS: Record<number, string> = {
   0: '未开始',
   10: '处理中',
@@ -58,53 +45,38 @@ const FLOW_STATUS_LABELS: Record<number, string> = {
 }
 
 const DEFAULT_FLOW_NODE_NAMES: Record<number, string> = {
-  1100: '身份证信息',
-  1200: '车辆信息',
-  1300: '申请信息',
-  1400: '签署授权书',
-  2000: '风控模型预审',
-  3000: '资方预审',
-  4000: '资料补充',
-  4100: '客户资料',
-  4200: '车辆资料',
-  4300: '订单信息',
-  4400: '文件信息',
-  5000: '风控初审',
-  6000: '风控终审',
-  7000: '请款资料',
-  8000: '资方终审',
-  9000: '资方放款'
+  1100: '预审进件',
+  1200: '风控预审',
+  1300: '资方预审',
+  1400: '资料补充',
+  2100: '风控初审',
+  2200: '风控终审',
+  3100: '资方终审',
+  4100: '客户签约',
+  5100: '请款资料',
+  6100: '资方放款'
 }
 
 const DEFAULT_FLOW_NODE_PHASES: Record<number, number> = {
   1100: 1000,
   1200: 1000,
   1300: 1000,
-  1400: 1000,
-  2000: 2000,
-  3000: 3000,
-  4000: 4000,
+  1400: 1400,
+  2100: 2000,
+  2200: 2000,
+  3100: 3000,
   4100: 4000,
-  4200: 4000,
-  4300: 4000,
-  4400: 4000,
-  5000: 5000,
-  6000: 6000,
-  7000: 7000,
-  8000: 8000,
-  9000: 9000
+  5100: 5000,
+  6100: 5000
 }
 
 const DEFAULT_FLOW_PHASE_NAMES: Record<number, string> = {
-  1000: '预审进件',
-  2000: '风控模型预审',
-  3000: '资方预审',
-  4000: '资料补充',
-  5000: '风控初审',
-  6000: '风控终审',
-  7000: '请款资料',
-  8000: '资方终审',
-  9000: '资方放款'
+  1000: '预审阶段',
+  1400: '补件阶段',
+  2000: '风控审批',
+  3000: '资方终审',
+  4000: '客户签约',
+  5000: '请款放款'
 }
 
 function hasQueryValue(value: unknown) {
@@ -125,39 +97,53 @@ function containsText(value: string) {
 function flowByApplicationStatus(status: ApplicationStatus) {
   const map: Record<ApplicationStatus, { currentNode: number; currentStatus: number }> = {
     [ApplicationStatus.DRAFT]: { currentNode: 1100, currentStatus: 10 },
-    [ApplicationStatus.SUBMITTED]: { currentNode: 2000, currentStatus: 10 },
-    [ApplicationStatus.PENDING_RISK_PRE]: { currentNode: 2000, currentStatus: 10 },
-    [ApplicationStatus.RISK_PRE_PASSED]: { currentNode: 3000, currentStatus: 20 },
-    [ApplicationStatus.RISK_PRE_REJECTED]: { currentNode: 2000, currentStatus: 30 },
-    [ApplicationStatus.PENDING_FUNDER_PRE]: { currentNode: 3000, currentStatus: 10 },
-    [ApplicationStatus.FUNDER_PRE_PASSED]: { currentNode: 4000, currentStatus: 20 },
-    [ApplicationStatus.FUNDER_PRE_REJECTED]: { currentNode: 3000, currentStatus: 30 },
-    [ApplicationStatus.PENDING_FIRST_REVIEW]: { currentNode: 5000, currentStatus: 10 },
-    [ApplicationStatus.FIRST_REVIEW_PASSED]: { currentNode: 6000, currentStatus: 20 },
-    [ApplicationStatus.FIRST_REVIEW_REJECTED]: { currentNode: 5000, currentStatus: 30 },
-    [ApplicationStatus.PENDING_SUPPLEMENT]: { currentNode: 4000, currentStatus: 50 },
-    [ApplicationStatus.PENDING_FINAL_REVIEW]: { currentNode: 6000, currentStatus: 10 },
-    [ApplicationStatus.FINAL_REVIEW_PASSED]: { currentNode: 8000, currentStatus: 10 },
-    [ApplicationStatus.FINAL_REVIEW_REJECTED]: { currentNode: 6000, currentStatus: 30 },
-    [ApplicationStatus.PENDING_FUNDER_REVIEW]: { currentNode: 8000, currentStatus: 10 },
-    [ApplicationStatus.FUNDER_REVIEW_PASSED]: { currentNode: 1400, currentStatus: 20 },
-    [ApplicationStatus.FUNDER_REVIEW_REJECTED]: { currentNode: 8000, currentStatus: 30 },
-    [ApplicationStatus.PENDING_SIGN]: { currentNode: 1400, currentStatus: 10 },
-    [ApplicationStatus.SIGNING_PROGRESS]: { currentNode: 1400, currentStatus: 10 },
-    [ApplicationStatus.SIGNED]: { currentNode: 7000, currentStatus: 10 },
-    [ApplicationStatus.PENDING_LOAN_REQUEST]: { currentNode: 7000, currentStatus: 10 },
-    [ApplicationStatus.LOAN_REQUEST_REVIEWING]: { currentNode: 7000, currentStatus: 10 },
-    [ApplicationStatus.LOAN_REQUEST_APPROVED]: { currentNode: 9000, currentStatus: 10 },
-    [ApplicationStatus.LOAN_REQUEST_REJECTED]: { currentNode: 7000, currentStatus: 30 },
-    [ApplicationStatus.PENDING_DISBURSEMENT]: { currentNode: 9000, currentStatus: 10 },
-    [ApplicationStatus.DISBURSED]: { currentNode: 9000, currentStatus: 90 },
-    [ApplicationStatus.CANCELLED]: { currentNode: 9000, currentStatus: 30 }
+    [ApplicationStatus.SUBMITTED]: { currentNode: 1200, currentStatus: 10 },
+    [ApplicationStatus.PENDING_RISK_PRE]: { currentNode: 1200, currentStatus: 10 },
+    [ApplicationStatus.RISK_PRE_PASSED]: { currentNode: 1300, currentStatus: 20 },
+    [ApplicationStatus.RISK_PRE_REJECTED]: { currentNode: 1200, currentStatus: 30 },
+    [ApplicationStatus.PENDING_FUNDER_PRE]: { currentNode: 1300, currentStatus: 10 },
+    [ApplicationStatus.FUNDER_PRE_PASSED]: { currentNode: 1400, currentStatus: 20 },
+    [ApplicationStatus.FUNDER_PRE_REJECTED]: { currentNode: 1300, currentStatus: 30 },
+    [ApplicationStatus.PENDING_SUPPLEMENT]: { currentNode: 1400, currentStatus: 50 },
+    [ApplicationStatus.PENDING_FIRST_REVIEW]: { currentNode: 2100, currentStatus: 10 },
+    [ApplicationStatus.FIRST_REVIEW_PASSED]: { currentNode: 2200, currentStatus: 20 },
+    [ApplicationStatus.FIRST_REVIEW_REJECTED]: { currentNode: 2100, currentStatus: 30 },
+    [ApplicationStatus.PENDING_FINAL_REVIEW]: { currentNode: 2200, currentStatus: 10 },
+    [ApplicationStatus.FINAL_REVIEW_PASSED]: { currentNode: 3100, currentStatus: 10 },
+    [ApplicationStatus.FINAL_REVIEW_REJECTED]: { currentNode: 2200, currentStatus: 30 },
+    [ApplicationStatus.PENDING_FUNDER_REVIEW]: { currentNode: 3100, currentStatus: 10 },
+    [ApplicationStatus.FUNDER_REVIEW_PASSED]: { currentNode: 4100, currentStatus: 20 },
+    [ApplicationStatus.FUNDER_REVIEW_REJECTED]: { currentNode: 3100, currentStatus: 30 },
+    [ApplicationStatus.PENDING_SIGN]: { currentNode: 4100, currentStatus: 10 },
+    [ApplicationStatus.SIGNING_PROGRESS]: { currentNode: 4100, currentStatus: 10 },
+    [ApplicationStatus.SIGNED]: { currentNode: 5100, currentStatus: 10 },
+    [ApplicationStatus.PENDING_LOAN_REQUEST]: { currentNode: 5100, currentStatus: 10 },
+    [ApplicationStatus.LOAN_REQUEST_REVIEWING]: { currentNode: 5100, currentStatus: 10 },
+    [ApplicationStatus.LOAN_REQUEST_APPROVED]: { currentNode: 6100, currentStatus: 10 },
+    [ApplicationStatus.LOAN_REQUEST_REJECTED]: { currentNode: 5100, currentStatus: 30 },
+    [ApplicationStatus.PENDING_DISBURSEMENT]: { currentNode: 6100, currentStatus: 10 },
+    [ApplicationStatus.DISBURSED]: { currentNode: 6100, currentStatus: 90 },
+    [ApplicationStatus.CANCELLED]: { currentNode: 6100, currentStatus: 30 }
   }
   return map[status]
 }
 
 function flowPatch(status: ApplicationStatus) {
   return flowByApplicationStatus(status)
+}
+
+const DETAIL_FILE_TYPE_LABELS: Record<string, string> = {
+  ID_CARD_FRONT: '身份证人像面',
+  ID_CARD_BACK: '身份证国徽面',
+  VEHICLE_LICENSE: '行驶证',
+  VEHICLE_IMAGE: '车辆照片',
+  BANK_CARD: '银行卡',
+  CONTRACT: '合同',
+  OTHER: '其他材料'
+}
+
+function omitEmptyValues(source: Record<string, unknown>) {
+  return Object.fromEntries(Object.entries(source).filter(([, value]) => value !== undefined))
 }
 
 @Injectable()
@@ -209,7 +195,6 @@ export class ApplicationService extends BaseBusinessCrudService<
       },
       beforeCreate: (dto) => {
         const data = omitNested(dto as unknown as Record<string, unknown>, ['files'])
-        data.applicationNo = dto.applicationNo || generateApplicationNo()
         data.status = dto.status || ApplicationStatus.DRAFT
         data.businessType = dto.businessType || 'CAR_LOAN'
         const flow = flowPatch(data.status as ApplicationStatus)
@@ -222,6 +207,57 @@ export class ApplicationService extends BaseBusinessCrudService<
       },
       beforeUpdate: (dto) => omitNested(dto as unknown as Record<string, unknown>, ['files'])
     })
+  }
+
+  override async create(dto: CreateApplicationDto) {
+    if (dto.applicationNo) return super.create(dto)
+
+    return createApplicationWithUniqueNo((applicationNo) =>
+      super.create({
+        ...dto,
+        applicationNo
+      })
+    )
+  }
+
+  override async getDetail(id: number) {
+    const where: Record<string, unknown> = { id }
+    const tenantId = getCurrentTenantId()
+    if (tenantId) where.tenantId = tenantId
+
+    const application = await this.prisma.application.findFirst({
+      where,
+      include: {
+        org: {
+          include: {
+            flowConfigs: true
+          }
+        },
+        customer: {
+          include: {
+            vehicles: {
+              orderBy: { id: 'desc' }
+            }
+          }
+        },
+        product: true,
+        funder: true,
+        creator: { select: { id: true, userName: true, nickName: true } },
+        files: { orderBy: { createdAt: 'desc' } },
+        approvals: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            approver: { select: { id: true, userName: true, nickName: true } }
+          }
+        },
+        signRecord: true,
+        disbursement: true,
+        repayments: { orderBy: { period: 'asc' } }
+      }
+    })
+
+    if (!application) throw new NotFoundException('数据不存在')
+    return this.mapApplicationDetail(application)
   }
 
   async getFlowList(query: ApplicationQueryDto) {
@@ -1214,6 +1250,343 @@ export class ApplicationService extends BaseBusinessCrudService<
       remark: application.remark,
       createdAt: application.createdAt,
       updatedAt: application.updatedAt
+    }
+  }
+
+  private mapApplicationDetail(application: any) {
+    const customer = application.customer
+    const vehicles = Array.isArray(customer?.vehicles) ? customer.vehicles : []
+    const vehicle = vehicles[0] || vehicles.at?.(0)
+    const currentNode = Number(application.currentNode)
+    const currentStatus = Number(application.currentStatus)
+    const phaseCode = this.resolveFlowPhaseCode(application)
+    const currentNodeName = this.resolveFlowNodeName(application)
+    const currentStatusName = FLOW_STATUS_LABELS[currentStatus] || String(application.currentStatus)
+    const files = this.mapDetailFiles(application.files)
+    const repayments = this.mapRepayments(application.repayments)
+
+    return omitEmptyValues({
+      id: application.id,
+      applicationNo: application.applicationNo,
+      orderNo: application.applicationNo,
+      creditOrderId: application.applicationNo,
+      customerName: customer?.name || '',
+      phone: customer?.phone || '',
+      idCard: customer?.idCard || '',
+      vehicleId: vehicle?.id,
+      plateNumber: vehicle?.plateNumber || '',
+      vehicleBrand: vehicle?.brand || '',
+      vehicleModel: vehicle?.model || '',
+      vehicleOwner: vehicle?.ownerName || '',
+      productName: application.product?.name || '',
+      funderName: application.funder?.name || '',
+      orgName: application.org?.name || '',
+      amount: application.amount,
+      term: application.term,
+      rate: application.rate,
+      approvedAmount: application.approvedAmount,
+      approvedTerm: application.approvedTerm,
+      approvedRate: application.approvedRate,
+      repaymentMethod: application.repaymentMethod,
+      purpose: application.purpose,
+      status: application.status,
+      businessType: application.businessType,
+      currentNode,
+      nodeCode: currentNode,
+      currentNodeName,
+      currentStatus,
+      nodeStatus: currentStatus,
+      currentStatusName,
+      phaseCode,
+      phaseName: this.resolveFlowPhaseName(application, phaseCode),
+      supplementReason: application.supplementReason,
+      supplementDeadline: application.supplementDeadline,
+      remark: application.remark,
+      creatorName: application.creator?.nickName || application.creator?.userName,
+      createdAt: application.createdAt,
+      updatedAt: application.updatedAt,
+      order: this.mapDetailOrder(
+        application,
+        currentNode,
+        currentStatus,
+        currentNodeName,
+        currentStatusName,
+        phaseCode
+      ),
+      customer: customer ? this.mapDetailCustomer(customer) : undefined,
+      vehicle: vehicle ? this.mapDetailVehicle(vehicle) : undefined,
+      vehicles: vehicles.map((item: any) => this.mapDetailVehicle(item)),
+      product: application.product ? this.mapDetailProduct(application.product) : undefined,
+      funder: application.funder ? this.mapDetailFunder(application.funder) : undefined,
+      org: application.org ? this.mapDetailOrg(application.org) : undefined,
+      creator: application.creator ? this.mapDetailCreator(application.creator) : undefined,
+      files,
+      approvals: this.mapApprovals(application.approvals),
+      sign: application.signRecord ? this.mapSignRecord(application.signRecord) : null,
+      disbursement: application.disbursement
+        ? this.mapDisbursement(application.disbursement)
+        : null,
+      repaymentSummary: this.buildRepaymentSummary(repayments),
+      repayments
+    })
+  }
+
+  private mapDetailOrder(
+    application: any,
+    currentNode: number,
+    currentStatus: number,
+    currentNodeName: string,
+    currentStatusName: string,
+    phaseCode: number
+  ) {
+    return omitEmptyValues({
+      id: application.id,
+      applicationNo: application.applicationNo,
+      orderNo: application.applicationNo,
+      creditOrderId: application.applicationNo,
+      amount: application.amount,
+      term: application.term,
+      rate: application.rate,
+      repaymentMethod: application.repaymentMethod,
+      purpose: application.purpose,
+      status: application.status,
+      businessType: application.businessType,
+      currentNode,
+      currentNodeName,
+      currentStatus,
+      currentStatusName,
+      phaseCode,
+      phaseName: this.resolveFlowPhaseName(application, phaseCode),
+      approvedAmount: application.approvedAmount,
+      approvedTerm: application.approvedTerm,
+      approvedRate: application.approvedRate,
+      supplementReason: application.supplementReason,
+      supplementDeadline: application.supplementDeadline,
+      remark: application.remark,
+      createdAt: application.createdAt,
+      updatedAt: application.updatedAt
+    })
+  }
+
+  private mapDetailCustomer(customer: any) {
+    return omitEmptyValues({
+      id: customer.id,
+      name: customer.name,
+      phone: customer.phone,
+      idCard: customer.idCard,
+      gender: customer.gender,
+      birthDate: customer.birthDate,
+      nation: customer.nation,
+      householdAddress: customer.householdAddress,
+      issuingAuthority: customer.issuingAuthority,
+      idCardValidFrom: customer.idCardValidFrom,
+      idCardValidTo: customer.idCardValidTo,
+      idCardFront: customer.idCardFront,
+      idCardBack: customer.idCardBack,
+      maritalStatus: customer.maritalStatus,
+      education: customer.education,
+      occupation: customer.occupation,
+      companyName: customer.companyName,
+      monthlyIncome: customer.monthlyIncome,
+      address: customer.address,
+      emergencyName: customer.emergencyName,
+      emergencyPhone: customer.emergencyPhone,
+      status: customer.status
+    })
+  }
+
+  private mapDetailVehicle(vehicle: any) {
+    return omitEmptyValues({
+      id: vehicle.id,
+      plateNumber: vehicle.plateNumber,
+      vin: vehicle.vin,
+      vehicleCode: vehicle.vin,
+      brand: vehicle.brand,
+      model: vehicle.model,
+      ownerName: vehicle.ownerName,
+      address: vehicle.address,
+      usageNature: vehicle.usageNature,
+      sealInfo: vehicle.sealInfo,
+      engineNumber: vehicle.engineNumber,
+      registerDate: vehicle.registerDate,
+      vehicleImgUrl: vehicle.vehicleImgUrl,
+      color: vehicle.color,
+      year: vehicle.year,
+      mileage: vehicle.mileage,
+      purchasePrice: vehicle.purchasePrice,
+      estimateValue: vehicle.estimateValue,
+      isMortgaged: vehicle.isMortgaged,
+      mortgageInfo: vehicle.mortgageInfo
+    })
+  }
+
+  private mapDetailProduct(product: any) {
+    return omitEmptyValues({
+      id: product.id,
+      name: product.name,
+      productType: product.productType,
+      minRate: product.minRate,
+      maxRate: product.maxRate,
+      minAmount: product.minAmount,
+      maxAmount: product.maxAmount,
+      minTerm: product.minTerm,
+      maxTerm: product.maxTerm,
+      repaymentMethod: product.repaymentMethod,
+      minAge: product.minAge,
+      maxAge: product.maxAge,
+      maxCarAge: product.maxCarAge,
+      maxMileage: product.maxMileage,
+      ltvLimit: product.ltvLimit,
+      minDownPayment: product.minDownPayment,
+      regions: product.regions,
+      valuationDiscountRate: product.valuationDiscountRate,
+      status: product.status,
+      fileChecklist: product.fileChecklist
+    })
+  }
+
+  private mapDetailFunder(funder: any) {
+    return omitEmptyValues({
+      id: funder.id,
+      name: funder.name,
+      code: funder.code,
+      funderType: funder.funderType,
+      contactName: funder.contactName,
+      contactPhone: funder.contactPhone,
+      integrationMode: funder.integrationMode,
+      creditLimit: funder.creditLimit,
+      priority: funder.priority,
+      status: funder.status
+    })
+  }
+
+  private mapDetailOrg(org: any) {
+    return omitEmptyValues({
+      id: org.id,
+      name: org.name,
+      code: org.code,
+      creditCode: org.creditCode,
+      contactName: org.contactName,
+      contactPhone: org.contactPhone,
+      address: org.address,
+      status: org.status,
+      packageType: org.packageType,
+      expireAt: org.expireAt,
+      apiEnabled: org.apiEnabled
+    })
+  }
+
+  private mapDetailCreator(creator: any) {
+    return omitEmptyValues({
+      id: creator.id,
+      userName: creator.userName,
+      nickName: creator.nickName,
+      name: creator.nickName || creator.userName
+    })
+  }
+
+  private mapDetailFiles(files: any[] = []) {
+    const result: Record<string, unknown>[] = []
+    const seen = new Set<string>()
+
+    for (const file of files) {
+      if (!file?.fileUrl) continue
+      const key = `${file.fileType || ''}:${file.fileUrl}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      result.push(
+        omitEmptyValues({
+          id: file.id,
+          fileType: file.fileType,
+          fileTypeName: DETAIL_FILE_TYPE_LABELS[file.fileType] || file.fileType,
+          fileUrl: file.fileUrl,
+          fileName: file.fileName,
+          isValid: file.isValid,
+          createdAt: file.createdAt
+        })
+      )
+    }
+
+    return result
+  }
+
+  private mapApprovals(approvals: any[] = []) {
+    return approvals.map((approval) =>
+      omitEmptyValues({
+        id: approval.id,
+        stage: approval.stage,
+        action: approval.action,
+        opinion: approval.opinion,
+        amount: approval.amount,
+        term: approval.term,
+        rate: approval.rate,
+        approverId: approval.approverId,
+        approverName: approval.approver?.nickName || approval.approver?.userName,
+        createdAt: approval.createdAt
+      })
+    )
+  }
+
+  private mapSignRecord(record: any) {
+    return omitEmptyValues({
+      id: record.id,
+      status: record.status,
+      contractUrl: record.contractUrl,
+      signedAt: record.signedAt,
+      videoUrl: record.videoUrl,
+      expiredAt: record.expiredAt,
+      cancelledReason: record.cancelledReason
+    })
+  }
+
+  private mapDisbursement(disbursement: any) {
+    return omitEmptyValues({
+      id: disbursement.id,
+      status: disbursement.status,
+      gpsDeviceNo: disbursement.gpsDeviceNo,
+      gpsInstallImg: disbursement.gpsInstallImg,
+      gpsInstallAt: disbursement.gpsInstallAt,
+      mortgageStatus: disbursement.mortgageStatus,
+      mortgageImg: disbursement.mortgageImg,
+      mortgageAt: disbursement.mortgageAt,
+      disburseAmount: disbursement.disburseAmount,
+      disburseAccount: disbursement.disburseAccount,
+      disburseAt: disbursement.disburseAt,
+      transactionNo: disbursement.transactionNo,
+      voucherUrl: disbursement.voucherUrl,
+      remark: disbursement.remark
+    })
+  }
+
+  private mapRepayments(repayments: any[] = []) {
+    return repayments.map((repayment) =>
+      omitEmptyValues({
+        id: repayment.id,
+        period: repayment.period,
+        dueDate: repayment.dueDate,
+        principal: repayment.principal,
+        interest: repayment.interest,
+        totalAmount: repayment.totalAmount,
+        paidPrincipal: repayment.paidPrincipal,
+        paidInterest: repayment.paidInterest,
+        paidTotal: repayment.paidTotal,
+        status: repayment.status,
+        overdueDays: repayment.overdueDays,
+        penaltyAmount: repayment.penaltyAmount,
+        paidAt: repayment.paidAt
+      })
+    )
+  }
+
+  private buildRepaymentSummary(repayments: Record<string, unknown>[] = []) {
+    return {
+      totalPeriods: repayments.length,
+      paidPeriods: repayments.filter((item) => item.status === RepaymentStatus.PAID).length,
+      overduePeriods: repayments.filter((item) => item.status === RepaymentStatus.OVERDUE).length,
+      unpaidAmount: repayments.reduce((sum, item) => {
+        if (item.status === RepaymentStatus.PAID) return sum
+        return sum + Number(item.totalAmount || 0) - Number(item.paidTotal || 0)
+      }, 0)
     }
   }
 

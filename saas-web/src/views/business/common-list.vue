@@ -44,6 +44,14 @@
             style="width: 160px"
             @keyup.enter="handleSearch"
           />
+          <ElInput
+            v-else-if="filter.type === 'text'"
+            v-model="extraFilterModel[filter.prop] as string"
+            clearable
+            :placeholder="filter.label"
+            style="width: 180px"
+            @keyup.enter="handleSearch"
+          />
           <ElSelect
             v-else
             v-model="extraFilterModel[filter.prop]"
@@ -77,7 +85,7 @@
         <div class="flex-cb">
           <h4 class="m-0">{{ config.title }}列表</h4>
           <ElSpace>
-            <ElButton type="primary" @click="openCreate">
+            <ElButton v-if="!config.readonly" type="primary" @click="openCreate">
               <ArtSvgIcon icon="ri:add-line" class="mr-1" />
               新增
             </ElButton>
@@ -195,8 +203,12 @@
           <template #default="{ row }">
             <ElSpace wrap>
               <ElButton link type="primary" @click="openDetail(row)">详情</ElButton>
-              <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
-              <ElButton link type="danger" @click="handleDelete(row)">删除</ElButton>
+              <ElButton v-if="!config.readonly" link type="primary" @click="openEdit(row)">
+                编辑
+              </ElButton>
+              <ElButton v-if="!config.readonly" link type="danger" @click="handleDelete(row)">
+                删除
+              </ElButton>
               <ElButton
                 v-for="action in rowActions(row)"
                 :key="action.name"
@@ -366,7 +378,7 @@
   type FilterConfig = {
     prop: string
     label: string
-    type: 'select' | 'number'
+    type: 'select' | 'number' | 'text'
     options?: OptionConfig[]
     remoteOptions?: RemoteOptionsConfig
   }
@@ -404,6 +416,8 @@
     title: string
     description: string
     api: string
+    listApi?: string
+    readonly?: boolean
     keywordField?: string
     keywordParam?: string
     keywordPlaceholder?: string
@@ -442,14 +456,14 @@
   const routeMeta = computed(() => route.meta as BusinessRouteMeta)
   const applicationNodeByPath: Record<string, number> = {
     'pre-entry': 1100,
-    'risk-pre': 2000,
-    'funder-pre': 3000,
-    supplement: 4000,
-    'first-review': 5000,
-    'final-review': 6000,
-    'loan-request': 7000,
-    'funder-final': 8000,
-    'disbursement-node': 9000
+    'risk-pre': 1200,
+    'funder-pre': 1300,
+    supplement: 1400,
+    'first-review': 2100,
+    'final-review': 2200,
+    'loan-request': 5100,
+    'funder-final': 3100,
+    'disbursement-node': 6100
   }
 
   const commonStatusMap: Record<string, string> = {
@@ -590,12 +604,16 @@
     { label: '典当', value: 'PAWN' }
   ]
   const flowNodeOptions = [
-    { label: '线索', value: 'LEAD' },
-    { label: '进件', value: 'APPLICATION' },
-    { label: '审批', value: 'APPROVAL' },
-    { label: '签约', value: 'SIGNING' },
-    { label: '放款', value: 'DISBURSEMENT' },
-    { label: '还款', value: 'REPAYMENT' }
+    { label: '1100 预审进件', value: '1100' },
+    { label: '1200 风控预审', value: '1200' },
+    { label: '1300 资方预审', value: '1300' },
+    { label: '1400 资料补充', value: '1400' },
+    { label: '2100 风控初审', value: '2100' },
+    { label: '2200 风控终审', value: '2200' },
+    { label: '3100 资方终审', value: '3100' },
+    { label: '4100 客户签约', value: '4100' },
+    { label: '5100 请款资料', value: '5100' },
+    { label: '6100 资方放款', value: '6100' }
   ]
   const applicationStatusOptions = [
     'DRAFT',
@@ -1225,7 +1243,7 @@
           label: '流程节点',
           type: 'select',
           options: flowNodeOptions,
-          defaultValue: 'APPLICATION',
+          defaultValue: '1100',
           required: true
         },
         { prop: 'nodeName', label: '节点名称', required: true },
@@ -1397,6 +1415,47 @@
       ],
       actions: applicationActions
     },
+    'order-query': {
+      title: '综合查询',
+      description: '按订单号、客户、手机号、车牌号、流程节点和状态查询订单列表。',
+      api: 'application',
+      listApi: 'order-list',
+      readonly: true,
+      keywordField: 'keyword',
+      keywordParam: 'keyword',
+      keywordPlaceholder: '订单号/姓名/手机号/车牌号',
+      statusMap: commonStatusMap,
+      columns: [
+        { prop: 'orderNo', label: '订单号', width: 200 },
+        { prop: 'customerName', label: '客户姓名', width: 120 },
+        { prop: 'phone', label: '手机号', width: 140 },
+        { prop: 'plateNumber', label: '车牌号', width: 120 },
+        { prop: 'productName', label: '产品', width: 140 },
+        { prop: 'funderName', label: '资方', width: 140 },
+        { prop: 'amount', label: '申请金额', width: 120 },
+        { prop: 'approvedAmount', label: '审批金额', width: 120 },
+        { prop: 'currentNodeName', label: '当前节点', width: 140 },
+        { prop: 'status', label: '状态', width: 160 }
+      ],
+      detailColumns: [
+        { prop: 'orderNo', label: '订单号' },
+        { prop: 'creditOrderId', label: '授信订单号' },
+        { prop: 'customerName', label: '客户姓名' },
+        { prop: 'phone', label: '手机号' },
+        { prop: 'idCard', label: '身份证号' },
+        { prop: 'plateNumber', label: '车牌号' },
+        { prop: 'productName', label: '产品' },
+        { prop: 'funderName', label: '资方' },
+        { prop: 'amount', label: '申请金额' },
+        { prop: 'approvedAmount', label: '审批金额' },
+        { prop: 'term', label: '期限(月)' },
+        { prop: 'currentNodeName', label: '当前节点' },
+        { prop: 'currentStatusName', label: '节点状态' },
+        { prop: 'status', label: '订单状态' }
+      ],
+      formFields: [],
+      actions: []
+    },
     approval: {
       title: '审批管理',
       description: '查看审批记录和审批意见。',
@@ -1507,6 +1566,7 @@
       lead: leadStatusOptions,
       customer: activeStatusOptions,
       application: applicationStatusOptions,
+      'order-query': applicationStatusOptions,
       signing: signingStatusOptions,
       disbursement: disbursementStatusOptions,
       repayment: repaymentStatusOptions
@@ -1517,7 +1577,11 @@
   const extraFilters = computed(() => {
     const m = moduleName.value
     const filters: FilterConfig[] = []
-    if (['dept', 'product', 'funder', 'flow-config', 'lead', 'customer', 'application'].includes(m)) {
+    if (
+      ['dept', 'product', 'funder', 'flow-config', 'lead', 'customer', 'application', 'order-query'].includes(
+        m
+      )
+    ) {
       filters.push({
         prop: 'orgId',
         label: '所属机构',
@@ -1548,6 +1612,13 @@
     if (m === 'application') {
       filters.push({ prop: 'customerId', label: '客户ID', type: 'number' })
       filters.push({ prop: 'creatorId', label: '创建人ID', type: 'number' })
+    }
+    if (m === 'order-query') {
+      filters.push({ prop: 'orderNo', label: '订单号', type: 'text' })
+      filters.push({ prop: 'customerName', label: '客户姓名', type: 'text' })
+      filters.push({ prop: 'phone', label: '手机号', type: 'text' })
+      filters.push({ prop: 'plateNumber', label: '车牌号', type: 'text' })
+      filters.push({ prop: 'nodeCode', label: '流程节点', type: 'select', options: flowNodeOptions })
     }
     if (['approval', 'signing', 'disbursement', 'repayment'].includes(m)) {
       filters.push({ prop: 'applicationId', label: '进件ID', type: 'number' })
@@ -1693,7 +1764,7 @@
         if (v !== undefined && v !== null && v !== '') params[filter.prop] = v
       }
       Object.assign(params, resolveDefaultQuery())
-      const result = await fetchBusinessList(config.value.api, params)
+      const result = await fetchBusinessList(config.value.api, params, config.value.listApi)
       const rawRecords = (result.records || []) as Record<string, unknown>[]
       records.value = rawRecords.map((r) => flattenRelations(r))
       pagination.value.total = result.total || 0
@@ -1734,9 +1805,10 @@
     currentRow.value = row
     detailVisible.value = true
     try {
-      currentRow.value = flattenRelations(
-        await fetchBusinessDetail(config.value.api, Number(row.id))
-      )
+      currentRow.value = {
+        ...row,
+        ...flattenRelations(await fetchBusinessDetail(config.value.api, Number(row.id)))
+      }
     } catch {
       currentRow.value = row
     }
