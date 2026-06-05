@@ -16,7 +16,7 @@ import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nes
 import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { RequestUser } from '../../common/types/request-user'
-import { CreateFileAssetDto, FileQueryDto, UpdateFileAssetDto } from './dto/file.dto'
+import { BatchDeleteFileAssetDto, CreateFileAssetDto, FileQueryDto, UpdateFileAssetDto } from './dto/file.dto'
 import { FileService, UploadedImageFile } from './file.service'
 
 const IMAGE_UPLOAD_LIMIT = 10 * 1024 * 1024
@@ -96,6 +96,12 @@ export class FileController {
     return this.fileService.create(dto, user)
   }
 
+  @Post('batch-delete')
+  @ApiOperation({ summary: '批量删除文件记录' })
+  batchRemove(@Body() dto: BatchDeleteFileAssetDto) {
+    return this.fileService.batchRemove(dto.ids)
+  }
+
   @Post(':id')
   @ApiOperation({ summary: '编辑文件记录' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateFileAssetDto) {
@@ -107,4 +113,5 @@ export class FileController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.fileService.remove(id)
   }
+
 }

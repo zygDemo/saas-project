@@ -17,7 +17,8 @@ export class MenuProcessor {
   }
 
   processMenuList(menuList: AppRouteRecord[]): AppRouteRecord[] {
-    const filteredMenuList = this.filterEmptyMenus(menuList)
+    const visibleMenuList = this.filterHiddenMenus(menuList)
+    const filteredMenuList = this.filterEmptyMenus(visibleMenuList)
     this.validateMenuPaths(filteredMenuList)
     return this.normalizeMenuPaths(filteredMenuList)
   }
@@ -37,6 +38,15 @@ export class MenuProcessor {
 
   private async processBackendMenu(): Promise<AppRouteRecord[]> {
     return fetchGetMenuList()
+  }
+
+  private filterHiddenMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
+    return menuList
+      .filter((item) => !item.meta?.isHide)
+      .map((item) => ({
+        ...item,
+        children: item.children?.length ? this.filterHiddenMenus(item.children) : item.children
+      }))
   }
 
   private filterMenuByRoles(menu: AppRouteRecord[], roles: string[]): AppRouteRecord[] {

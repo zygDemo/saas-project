@@ -72,6 +72,13 @@ export class OrderListQueryDto extends ApplicationQueryDto {
   @Min(0)
   nodeCode?: number
 
+  @ApiPropertyOptional({ description: '阶段编码，按大节点过滤订单' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(0)
+  phaseCode?: number
+
   @ApiPropertyOptional({ description: '节点状态，兼容 nodeStatus 字段' })
   @IsOptional()
   @ToNumber()

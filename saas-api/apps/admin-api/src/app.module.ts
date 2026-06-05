@@ -29,6 +29,7 @@ import { SigningModule } from './modules/signing/signing.module'
 import { DisbursementModule } from './modules/disbursement/disbursement.module'
 import { RepaymentModule } from './modules/repayment/repayment.module'
 import { MobileBusinessModule } from './modules/mobile-business/mobile-business.module'
+import { DataCenterModule } from './modules/data-center/data-center.module'
 
 const appEnv = process.env.NODE_ENV || 'development'
 const envFilePaths = [
@@ -80,7 +81,8 @@ const envFilePaths = [
     SigningModule,
     DisbursementModule,
     RepaymentModule,
-    MobileBusinessModule
+    MobileBusinessModule,
+    DataCenterModule
   ]
 })
 export class AppModule implements NestModule {

@@ -39,12 +39,30 @@
           </div>
           <ElSpace>
             <ElButton type="primary" @click="openDialog()">新增文件</ElButton>
+            <ElButton
+              type="danger"
+              plain
+              :disabled="selectedRows.length === 0"
+              @click="batchDeleteFiles"
+            >
+              批量删除<span v-if="selectedRows.length">({{ selectedRows.length }})</span>
+            </ElButton>
+            <ElButton v-if="selectedRows.length" @click="clearSelection">取消选择</ElButton>
             <ElButton :loading="loading" @click="loadData">刷新</ElButton>
           </ElSpace>
         </div>
       </template>
 
-      <ElTable v-loading="loading" :data="list" row-key="id" border stripe>
+      <ElTable
+        ref="tableRef"
+        v-loading="loading"
+        :data="list"
+        row-key="id"
+        border
+        stripe
+        @selection-change="handleSelectionChange"
+      >
+        <ElTableColumn type="selection" width="48" reserve-selection />
         <ElTableColumn label="预览" width="88" align="center">
           <template #default="{ row }">
             <ElImage
@@ -178,6 +196,7 @@
 
 <script setup lang="ts">
   import {
+    fetchBatchDeleteFileAssets,
     fetchCreateFileAsset,
     fetchDeleteFileAsset,
     fetchGetFileAssetList,
@@ -265,6 +284,8 @@
   const submitting = ref(false)
   const dialogVisible = ref(false)
   const list = ref<FileAssetItem[]>([])
+  const selectedRows = ref<FileAssetItem[]>([])
+  const tableRef = ref()
   const pagination = reactive({ current: 1, size: 20, total: 0 })
   const search = reactive<Api.SystemManage.FileAssetSearchParams>({
     current: 1,
@@ -290,6 +311,7 @@
       }))
       list.value = result.records || []
       pagination.total = result.total || 0
+      clearSelection()
     } finally {
       loading.value = false
     }
@@ -402,6 +424,30 @@
   async function deleteFile(row: FileAssetItem) {
     await ElMessageBox.confirm(`确认删除文件「${row.fileName}」？`, '删除确认', { type: 'warning' })
     await fetchDeleteFileAsset(row.id)
+    await loadData()
+  }
+
+  function handleSelectionChange(rows: FileAssetItem[]) {
+    selectedRows.value = rows
+  }
+
+  function clearSelection() {
+    selectedRows.value = []
+    tableRef.value?.clearSelection?.()
+  }
+
+  async function batchDeleteFiles() {
+    const ids = selectedRows.value.map((row) => row.id)
+    if (!ids.length) {
+      ElMessage.warning('请先选择要删除的文件')
+      return
+    }
+
+    await ElMessageBox.confirm(`确认删除选中的 ${ids.length} 个文件？`, '批量删除确认', {
+      type: 'warning'
+    })
+    const result = await fetchBatchDeleteFileAssets(ids)
+    ElMessage.success(`已删除 ${result.count} 个文件`)
     await loadData()
   }
 

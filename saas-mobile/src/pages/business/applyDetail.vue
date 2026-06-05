@@ -292,14 +292,16 @@ const businessApi = useBusinessApi();
 const detail = ref(null);
 const loading = ref(true);
 let detailId = null;
+const detailCreditOrderId = ref("");
 const uuid = ref("");
 
 onLoad((query) => {
   detailId = query.id;
+  detailCreditOrderId.value = query.creditOrderId || query.orderNo || "";
 });
 
 onMounted(() => {
-  if (detailId) {
+  if (detailCreditOrderId.value || detailId) {
     fetchDetail();
   }
 });
@@ -307,7 +309,9 @@ onMounted(() => {
 async function fetchDetail() {
   loading.value = true;
   try {
-    const res = await businessApi.getCreditDetail(detailId);
+    const res = detailCreditOrderId.value
+      ? await businessApi.getCreditDetailByOrderId(detailCreditOrderId.value)
+      : await businessApi.getCreditDetail(detailId);
     if (res?.code === 200) {
       // 详情接口返回结构可能是 res.data 或 res 本身
       detail.value = res.data || {};

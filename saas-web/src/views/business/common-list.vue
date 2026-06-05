@@ -4,7 +4,7 @@
       <template #header>
         <div class="flex-cb">
           <div>
-            <h3 class="m-0">{{ config.title }}</h3>
+            <h3 class="m-0">{{ displayTitle }}</h3>
             <p class="m-0 mt-1 text-sm text-g-600">{{ config.description }}</p>
           </div>
           <ElTag type="primary" effect="light">/{{ config.api }}</ElTag>
@@ -83,7 +83,7 @@
     <ElCard class="art-table-card" style="margin-top: 0">
       <template #header>
         <div class="flex-cb">
-          <h4 class="m-0">{{ config.title }}列表</h4>
+          <h4 class="m-0">{{ displayTitle }}列表</h4>
           <ElSpace>
             <ElButton v-if="!config.readonly" type="primary" @click="openCreate">
               <ArtSvgIcon icon="ri:add-line" class="mr-1" />
@@ -238,7 +238,7 @@
 
     <ElDialog
       v-model="formVisible"
-      :title="formMode === 'create' ? `新增${config.title}` : `编辑${config.title}`"
+      :title="formMode === 'create' ? `新增${displayTitle}` : `编辑${displayTitle}`"
       width="680px"
     >
       <ElForm label-width="130px" class="business-form">
@@ -344,7 +344,7 @@
       </template>
     </ElDialog>
 
-    <ElDrawer v-model="detailVisible" :title="`${config.title}详情`" size="640px">
+    <ElDrawer v-model="detailVisible" :title="`${displayTitle}详情`" size="640px">
       <ElDescriptions v-if="currentRow" :column="1" border>
         <ElDescriptionsItem
           v-for="column in detailColumns"
@@ -464,6 +464,22 @@
     'loan-request': 5100,
     'funder-final': 3100,
     'disbursement-node': 6100
+  }
+  const applicationPhaseByPath: Record<string, number> = {
+    precheck: 1000,
+    supplement: 1400,
+    'risk-approval': 2000,
+    'funder-final': 3000,
+    signing: 4000,
+    disbursement: 5000
+  }
+  const phaseTitleMap: Record<number, string> = {
+    1000: '预审阶段',
+    1400: '补件阶段',
+    2000: '风控审批',
+    3000: '资方终审',
+    4000: '客户签约',
+    5000: '请款放款'
   }
 
   const commonStatusMap: Record<string, string> = {
@@ -1547,6 +1563,10 @@
 
   const moduleName = computed(() => resolveBusinessModule())
   const config = computed(() => configs[moduleName.value] || configs.application)
+  const displayTitle = computed(() => {
+    const phaseCode = Number(routeMeta.value.defaultQuery?.phaseCode || applicationPhaseByPath[getRoutePathModule()])
+    return phaseTitleMap[phaseCode] || config.value.title
+  })
   const isOrgModule = computed(() => moduleName.value === 'org')
   const showActionOverview = computed(() => config.value.actions.length > 0 && !isOrgModule.value)
   const formFields = computed(() => config.value.formFields)
@@ -1715,7 +1735,10 @@
 
   function resolveDefaultQuery() {
     if (routeMeta.value.defaultQuery) return routeMeta.value.defaultQuery
-    const currentNode = applicationNodeByPath[getRoutePathModule()]
+    const pathModule = getRoutePathModule()
+    const phaseCode = applicationPhaseByPath[pathModule]
+    if (phaseCode) return { phaseCode }
+    const currentNode = applicationNodeByPath[pathModule]
     return currentNode ? { currentNode } : {}
   }
 
@@ -1724,6 +1747,7 @@
     if (metaModule && configs[String(metaModule)]) return String(metaModule)
 
     const pathModule = getRoutePathModule()
+    if (applicationPhaseByPath[pathModule]) return 'order-query'
     if (pathModule && configs[pathModule]) return pathModule
 
     const name = String(route.name || '').replace(/^Business/i, '')

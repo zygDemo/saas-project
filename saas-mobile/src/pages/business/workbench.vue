@@ -154,11 +154,15 @@
             :style="{ animationDelay: `${gi * 0.08 + idx * 0.04}s` }"
             @click="handleItem(item)"
           >
-            <view class="icon-wrap">
-              <u-icon :name="iconOf(item.icon)" size="40" :color="themeColor" />
-              <u-badge v-if="item.badge" :value="item.badge" type="error" />
+            <view class="grid-topline">
+              <view class="icon-wrap">
+                <u-icon :name="iconOf(item.icon)" size="38" :color="themeColor" />
+                <u-badge v-if="item.badge" :value="item.badge" type="error" />
+              </view>
+              <text v-if="item.orderNode" class="node-code">{{ item.orderNode }}</text>
             </view>
             <text class="grid-text">{{ item.text }}</text>
+            <text class="grid-hint">查看待处理订单</text>
           </view>
         </view>
       </view>
@@ -452,42 +456,12 @@ const DEV_ONLY_PATHS = new Set([
 
 const sectionsRaw = [
   {
-    title: "线索",
+    title: "预审阶段",
     items: [
       {
-        text: "线索查询",
-        icon: "search",
-        path: "/pages/business/leadList",
-      },
-    ],
-  },
-  {
-    title: "预审进件",
-    items: [
-      {
-        text: "身份证信息",
-        icon: "account",
-        path: "/pages/business/idInfo",
-      },
-      {
-        text: "车辆信息",
-        icon: "car",
-        path: "/pages/business/carInfo",
-      },
-      {
-        text: "申请信息",
+        text: "预审进件",
         icon: "file-text",
-        path: "/pages/business/applyInfo",
-      },
-      {
-        text: "签署授权书",
-        icon: "edit",
-        orderNode: "1400",
-      },
-      {
-        text: "申请结果",
-        icon: "checkmark-circle",
-        path: "/pages/business/applyResult",
+        orderNode: "1100",
       },
       {
         text: "风控预审",
@@ -499,55 +473,20 @@ const sectionsRaw = [
         icon: "handshake",
         orderNode: "1300",
       },
-      {
-        text: "预审列表",
-        icon: "list",
-        path: "/pages/business/applyListPage",
-      },
     ],
   },
   {
-    title: "订单跟进",
+    title: "补件阶段",
     items: [
       {
-        text: "订单列表",
-        icon: "list",
-        path: "/pages/business/orderList",
+        text: "资料补充",
+        icon: "folder",
+        orderNode: "1400",
       },
     ],
   },
   {
-    title: "资料补充",
-    items: [
-      {
-        text: "客户资料",
-        icon: "account",
-        path: "/pages/business/idInfoSupplement",
-      },
-      {
-        text: "车辆资料",
-        icon: "car",
-        path: "/pages/business/carInfoSupplement",
-      },
-      {
-        text: "订单信息",
-        icon: "file-text",
-        path: "/pages/business/orderInfoSupplement",
-      },
-      {
-        text: "文件信息",
-        icon: "file-text",
-        path: "/pages/business/fileInfoSupplement",
-      },
-      {
-        text: "补充列表",
-        icon: "list",
-        path: "/pages/business/supplementList",
-      },
-    ],
-  },
-  {
-    title: "审批环节",
+    title: "风控审批",
     items: [
       {
         text: "风控初审",
@@ -559,6 +498,11 @@ const sectionsRaw = [
         icon: "hourglass-half-fill",
         orderNode: "2200",
       },
+    ],
+  },
+  {
+    title: "资方终审",
+    items: [
       {
         text: "资方终审",
         icon: "handshake",
@@ -567,13 +511,18 @@ const sectionsRaw = [
     ],
   },
   {
-    title: "签约放款",
+    title: "客户签约",
     items: [
       {
-        text: "签约中心",
+        text: "客户签约",
         icon: "edit",
-        path: "/pages/business/faceSignList",
+        orderNode: "4100",
       },
+    ],
+  },
+  {
+    title: "请款放款",
+    items: [
       {
         text: "请款资料",
         icon: "file",
@@ -904,36 +853,81 @@ const sections = computed(() => {
 }
 
 .section {
+  position: relative;
   margin-top: 28rpx;
+  padding: 22rpx;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1rpx solid #e7edf6;
+  border-radius: 22rpx;
+  box-shadow: 0 12rpx 34rpx rgba(15, 23, 42, 0.045);
 }
 
 .section-head {
-  margin-bottom: 16rpx;
+  margin-bottom: 18rpx;
+}
+
+.section-title {
+  position: relative;
+  padding-left: 18rpx;
+  letter-spacing: 0.2rpx;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 6rpx;
+    height: 28rpx;
+    background: linear-gradient(180deg, #2563eb, #14b8a6);
+    border-radius: 999rpx;
+    transform: translateY(-50%);
+  }
+}
+
+.section-count {
+  padding: 4rpx 14rpx;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 999rpx;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14rpx;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16rpx;
 }
 
 .grid-item {
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10rpx;
-  min-height: 132rpx;
-  padding: 14rpx 8rpx;
-  background: #fff;
-  border: 1rpx solid #e8edf5;
-  border-radius: 12rpx;
+  align-items: stretch;
+  justify-content: space-between;
+  min-height: 152rpx;
+  padding: 20rpx;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1rpx solid #e5ecf6;
+  border-radius: 18rpx;
   animation: slideUp 0.4s ease-out both;
-  transition: all 0.3s ease;
+  box-shadow: 0 8rpx 22rpx rgba(15, 23, 42, 0.04);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+
+  &::after {
+    content: "";
+    position: absolute;
+    right: -26rpx;
+    bottom: -34rpx;
+    width: 104rpx;
+    height: 104rpx;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.1), transparent 65%);
+    pointer-events: none;
+  }
 
   &:active {
-    background: #eef5ff;
-    transform: scale(0.98);
+    background: #eef6ff;
+    box-shadow: 0 4rpx 12rpx rgba(37, 99, 235, 0.08);
+    transform: scale(0.985);
   }
 }
 
@@ -948,22 +942,53 @@ const sections = computed(() => {
   }
 }
 
+.grid-topline {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  margin-bottom: 18rpx;
+}
+
 .icon-wrap {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 58rpx;
-  height: 58rpx;
-  background: #eef5ff;
-  border-radius: 14rpx;
+  width: 64rpx;
+  height: 64rpx;
+  background: #eef6ff;
+  border: 1rpx solid #dbeafe;
+  border-radius: 18rpx;
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
+}
+
+.node-code {
+  font-size: 24rpx;
+  font-weight: 800;
+  line-height: 1;
+  color: #94a3b8;
+  font-family: DINAlternate-Bold, Arial, sans-serif;
 }
 
 .grid-text {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  font-size: 23rpx;
+  font-size: 30rpx;
+  font-weight: 800;
   line-height: 1.25;
-  color: #263449;
-  text-align: center;
+  color: #1e293b;
+}
+
+.grid-hint {
+  position: relative;
+  z-index: 1;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  line-height: 1.3;
+  color: #64748b;
 }
 </style>

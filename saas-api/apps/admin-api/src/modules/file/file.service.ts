@@ -18,6 +18,7 @@ interface FileAssetModel {
   create(args: Record<string, unknown>): Promise<unknown>
   update(args: Record<string, unknown>): Promise<unknown>
   delete(args: Record<string, unknown>): Promise<unknown>
+  deleteMany(args: Record<string, unknown>): Promise<{ count: number }>
 }
 
 interface LegacyApplicationFile {
@@ -162,6 +163,22 @@ export class FileService {
       throw error
     }
     return { id }
+  }
+
+  async batchRemove(ids: number[]) {
+    const uniqueIds = Array.from(new Set(ids.filter((id) => Number.isInteger(id) && id > 0)))
+    if (!uniqueIds.length) throw new BadRequestException('请选择要删除的文件')
+
+    const fileAsset = this.requireFileAssetModel()
+    try {
+      const result = await fileAsset.deleteMany({
+        where: this.withTenant({ id: { in: uniqueIds } })
+      })
+      return { ids: uniqueIds, count: result.count }
+    } catch (error) {
+      this.throwIfMissingFileAssetStorage(error)
+      throw error
+    }
   }
 
   async getBusinessFiles(query: FileQueryDto) {

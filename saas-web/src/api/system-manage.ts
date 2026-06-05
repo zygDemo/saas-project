@@ -227,3 +227,11 @@ export function fetchDeleteFileAsset(id: number) {
     showSuccessMessage: true
   })
 }
+
+export function fetchBatchDeleteFileAssets(ids: number[]) {
+  return request.post<{ ids: number[]; count: number }>({
+    url: '/file/batch-delete',
+    params: { ids },
+    showSuccessMessage: true
+  })
+}

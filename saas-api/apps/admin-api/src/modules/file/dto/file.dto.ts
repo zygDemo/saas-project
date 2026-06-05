@@ -1,11 +1,18 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
 import { Transform } from 'class-transformer'
-import { IsInt, IsOptional, IsString, Min } from 'class-validator'
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsInt, IsOptional, IsString, Min } from 'class-validator'
 
 export function ToNumber() {
   return Transform(({ value }) => {
     if (value === '' || value === null || value === undefined) return undefined
     return Number(value)
+  })
+}
+
+function ToNumberArray() {
+  return Transform(({ value }) => {
+    if (!Array.isArray(value)) return value
+    return value.map((item) => Number(item))
   })
 }
 
@@ -141,3 +148,14 @@ export class CreateFileAssetDto {
 }
 
 export class UpdateFileAssetDto extends PartialType(CreateFileAssetDto) {}
+
+export class BatchDeleteFileAssetDto {
+  @ApiProperty({ description: '文件ID列表', type: [Number] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(200)
+  @ToNumberArray()
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  ids: number[]
+}

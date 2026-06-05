@@ -8,6 +8,7 @@ import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { RequestLoggerInterceptor } from './common/interceptors/request-logger.interceptor'
 import { ResponseInterceptor } from './common/interceptors/response.interceptor'
+import { PrismaService } from './modules/prisma/prisma.service'
 
 function parseCorsOrigins(value?: string) {
   return String(value || 'http://localhost:5173')
@@ -38,7 +39,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true
     })
   )
-  app.useGlobalInterceptors(new RequestLoggerInterceptor(), new ResponseInterceptor())
+  app.useGlobalInterceptors(new RequestLoggerInterceptor(app.get(PrismaService)), new ResponseInterceptor())
   app.useGlobalFilters(new HttpExceptionFilter())
 
   const swaggerConfig = new DocumentBuilder()

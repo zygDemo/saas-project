@@ -13,44 +13,50 @@
       </view>
 
       <!-- 业务节点筛选 -->
-      <view class="filter-bar">
-        <scroll-view scroll-x class="filter-scroll">
-          <view class="filter-list">
-            <view
-              v-for="(node, index) in businessNodeFilterList"
-              :key="index"
-              class="filter-item"
-              :class="{
-                'filter-item--active': currentBusinessNode === node.value,
-              }"
-              @click="handleBusinessNodeChange(node.value)"
-            >
-              {{ node.label }}
-              <view v-if="node.count > 0" class="filter-badge">
-                {{ node.count }}
+      <view class="filter-card">
+        <view class="filter-title-row">
+          <text class="filter-title">业务节点</text>
+          <text class="filter-subtitle">按流程节点快速定位订单</text>
+        </view>
+        <view class="filter-bar">
+          <scroll-view scroll-x class="filter-scroll">
+            <view class="filter-list">
+              <view
+                v-for="(node, index) in businessNodeFilterList"
+                :key="index"
+                class="filter-item"
+                :class="{
+                  'filter-item--active': currentBusinessNode === node.value,
+                }"
+                @click="handleBusinessNodeChange(node.value)"
+              >
+                {{ node.label }}
+                <view v-if="node.count > 0" class="filter-badge">
+                  {{ node.count }}
+                </view>
               </view>
             </view>
-          </view>
-        </scroll-view>
-      </view>
+          </scroll-view>
+        </view>
 
-      <!-- 节点状态筛选 -->
-      <view class="filter-bar filter-bar--status">
-        <scroll-view scroll-x class="filter-scroll">
-          <view class="filter-list">
-            <view
-              v-for="(status, index) in nodeStatusFilterList"
-              :key="index"
-              class="filter-item filter-item--status"
-              :class="{
-                'filter-item--active': currentNodeStatus === status.value,
-              }"
-              @click="handleNodeStatusChange(status.value)"
-            >
-              {{ status.label }}
+        <!-- 节点状态筛选 -->
+        <view class="filter-bar filter-bar--status">
+          <scroll-view scroll-x class="filter-scroll">
+            <view class="filter-list filter-list--status">
+              <view
+                v-for="(status, index) in nodeStatusFilterList"
+                :key="index"
+                class="filter-item filter-item--status"
+                :class="{
+                  'filter-item--active': currentNodeStatus === status.value,
+                }"
+                @click="handleNodeStatusChange(status.value)"
+              >
+                {{ status.label }}
+              </view>
             </view>
-          </view>
-        </scroll-view>
+          </scroll-view>
+        </view>
       </view>
 
       <!-- 订单列表 -->
@@ -136,68 +142,68 @@
 
           <!-- 订单操作 -->
           <view class="order-footer">
-            <view class="order-tags">
-              <u-tag
-                v-if="order.phaseName"
-                :text="order.phaseName"
-                size="mini"
-                type="primary"
-                plain
-              />
-              <u-tag
-                v-if="order.nodeStatusLabel"
-                :text="order.nodeStatusLabel"
-                size="mini"
-                type="info"
-                plain
-              />
-              <u-tag
-                v-if="order.isSignContract === 1"
-                text="已签约"
-                size="mini"
-                type="success"
-                plain
-              />
-              <u-tag
-                v-if="order.isSignContract === 2"
-                text="未签约"
-                size="mini"
-                type="warning"
-                plain
-              />
-              <u-tag
-                v-if="order.isFaceRecognition === 2"
-                text="人脸认证通过"
-                size="mini"
-                type="success"
-                plain
-              />
-              <u-tag
-                v-if="order.isFaceRecognition === 3"
-                text="人脸认证失败"
-                size="mini"
-                type="error"
-                plain
-              />
-            </view>
-            <view class="order-actions">
-              <u-button
-                v-if="canGoSign(order)"
-                size="mini"
-                type="success"
-                @click.stop="handleSignButton(order)"
-              >
-                签约
-              </u-button>
-              <u-button
-                size="mini"
-                type="primary"
-                @click.stop="handleDetailButton(order)"
-              >
-                详情
-              </u-button>
-            </view>
+          <view class="order-tags">
+            <u-tag
+              v-if="order.phaseName"
+              :text="order.phaseName"
+              size="mini"
+              type="primary"
+              plain
+            />
+            <u-tag
+              v-if="order.nodeStatusLabel"
+              :text="order.nodeStatusLabel"
+              size="mini"
+              type="info"
+              plain
+            />
+            <u-tag
+              v-if="order.isSignContract === 1"
+              text="已签约"
+              size="mini"
+              type="success"
+              plain
+            />
+            <u-tag
+              v-if="order.isSignContract === 2"
+              text="未签约"
+              size="mini"
+              type="warning"
+              plain
+            />
+            <u-tag
+              v-if="order.isFaceRecognition === 2"
+              text="人脸认证通过"
+              size="mini"
+              type="success"
+              plain
+            />
+            <u-tag
+              v-if="order.isFaceRecognition === 3"
+              text="人脸认证失败"
+              size="mini"
+              type="error"
+              plain
+            />
           </view>
+          <view class="order-actions">
+            <u-button
+              v-if="canGoSign(order)"
+              size="mini"
+              type="success"
+              @click.stop="handleSignButton(order)"
+            >
+              签约
+            </u-button>
+            <u-button
+              size="mini"
+              type="primary"
+              @click.stop="handleDetailButton(order)"
+            >
+              详情
+            </u-button>
+          </view>
+        </view>
         </view>
       </view>
 
@@ -356,7 +362,47 @@ function getBusinessNodeLabel(node: unknown) {
     return "未知节点";
   }
   const code = String(node);
-  return businessNodeMap.value[code] || code;
+  const normalizedCode = code.endsWith("00") ? code : `${code.charAt(0)}000`;
+  return businessNodeMap.value[code] || businessNodeMap.value[normalizedCode] || code;
+}
+
+const NODE_DETAIL_ROUTE_MAP: Record<string, string> = {
+  "1100": "/pages/business/applyDetail",
+  "1200": "/pages/business/applyDetail",
+  "1300": "/pages/business/applyDetail",
+  "1400": "/pages/business/supplementDetail",
+  "2100": "/pages/business/applyDetail",
+  "2200": "/pages/business/applyDetail",
+  "3100": "/pages/business/applyDetail",
+  "4100": "/pages/business/signCenter",
+  "5100": "/pages/business/supplementDetail",
+  "6100": "/pages/business/supplementDetail",
+};
+
+function normalizeNodeCode(node: unknown) {
+  const code = String(node || "");
+  if (!code) return "";
+  if (NODE_DETAIL_ROUTE_MAP[code]) return code;
+  const stageCode = `${code.charAt(0)}000`;
+  return NODE_DETAIL_ROUTE_MAP[stageCode] ? stageCode : code;
+}
+
+function buildOrderQuery(order: OrderListViewItem) {
+  const creditOrderId = firstText(
+    order?.creditOrderId,
+    order?.orderNo,
+    order?.applicationNo,
+    order?.id,
+  );
+  const query = [
+    `id=${encodeURIComponent(firstText(order?.id))}`,
+    `creditOrderId=${encodeURIComponent(creditOrderId)}`,
+    `uuid=${encodeURIComponent(firstText(order?.uuid))}`,
+    `customerName=${encodeURIComponent(firstText(order?.name, order?.customerName, order?.personName))}`,
+    `customerPhone=${encodeURIComponent(firstText(order?.phone, order?.telephone))}`,
+    `nodeCode=${encodeURIComponent(normalizeNodeCode(order?.nodeCode ?? order?.currentNode ?? order?.businessNode))}`,
+  ];
+  return query.join("&");
 }
 
 function getNodeStatusLabel(status: unknown) {
@@ -433,24 +479,18 @@ function handleSignButton(order: OrderListViewItem) {
 }
 
 function handleDetailButton(order: OrderListViewItem) {
-  const node = order?.nodeCode ?? order?.currentNode ?? order?.businessNode;
-  if (isAfterPreAudit(node)) {
-    const creditOrderId =
-      order?.creditOrderId || order?.orderNo || order?.applicationNo || order?.id;
-    if (!creditOrderId) {
-      uni.showToast({ title: "缺少订单编号", icon: "none" });
-      return;
-    }
+  const nodeCode = normalizeNodeCode(order?.nodeCode ?? order?.currentNode ?? order?.businessNode);
+  const route = NODE_DETAIL_ROUTE_MAP[nodeCode] || "/pages/business/applyDetail";
+  const query = buildOrderQuery(order);
 
-    uni.navigateTo({
-      url: `/pages/business/supplementDetail?creditOrderId=${encodeURIComponent(
-        String(creditOrderId),
-      )}`,
-    });
+  if (route === "/pages/business/signCenter") {
+    handleSignButton(order);
     return;
   }
 
-  handleApprove(order);
+  uni.navigateTo({
+    url: `${route}?${query}`,
+  });
 }
 
 function firstText(...values: unknown[]) {
@@ -643,10 +683,11 @@ function handleNodeStatusChange(status: NodeStatusFilterValue) {
   fetchList(true);
 }
 
-// 处理订单（待授信状态可处理）
+// 处理订单（统一订单详情入口兜底）
 function handleApprove(order: OrderListViewItem) {
+  const query = buildOrderQuery(order);
   uni.navigateTo({
-    url: `/pages/business/applyDetail?id=${order.id}`,
+    url: `/pages/business/applyDetail?${query}`,
   });
 }
 
@@ -686,17 +727,64 @@ onReachBottom(() => {
 <style lang="scss" scoped>
 .order-list-page {
   min-height: 100vh;
-  background: #f5f6f7;
+  background: linear-gradient(180deg, #eef4ff 0%, #f6f8fb 260rpx, #f6f8fb 100%);
 }
 
 .search-bar {
-  padding: 20rpx 24rpx;
-  background: #fff;
+  padding: 22rpx 24rpx 16rpx;
+  background: transparent;
+}
+
+.filter-card {
+  margin: 0 24rpx 8rpx;
+  padding: 22rpx 0 18rpx;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1rpx solid #e5edf7;
+  border-radius: 22rpx;
+  box-shadow: 0 12rpx 32rpx rgba(15, 23, 42, 0.055);
+}
+
+.filter-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 0 24rpx 14rpx;
+}
+
+.filter-title {
+  position: relative;
+  padding-left: 18rpx;
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #172033;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 6rpx;
+    height: 28rpx;
+    background: linear-gradient(180deg, #2563eb, #14b8a6);
+    border-radius: 999rpx;
+    transform: translateY(-50%);
+  }
+}
+
+.filter-subtitle {
+  font-size: 22rpx;
+  color: #94a3b8;
 }
 
 .filter-bar {
-  background: #fff;
-  border-bottom: 1rpx solid #eee;
+  background: transparent;
+}
+
+.filter-bar--status {
+  margin-top: 6rpx;
+  border-top: 1rpx dashed #e5edf7;
 }
 
 .filter-scroll {
@@ -705,30 +793,46 @@ onReachBottom(() => {
 
 .filter-list {
   display: inline-flex;
-  padding: 20rpx 24rpx;
-  gap: 20rpx;
+  gap: 16rpx;
+  padding: 12rpx 24rpx;
+}
+
+.filter-list--status {
+  padding-bottom: 0;
 }
 
 .filter-item {
   position: relative;
-  padding: 12rpx 24rpx;
-  border-radius: 32rpx;
-  background: #f5f6f7;
-  font-size: 26rpx;
-  color: #666;
+  min-height: 56rpx;
+  padding: 0 24rpx;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 999rpx;
+  background: #f8fafc;
+  box-sizing: border-box;
+  font-size: 25rpx;
+  font-weight: 600;
+  line-height: 54rpx;
+  color: #475569;
   white-space: nowrap;
-  transition: all 0.3s ease;
+  transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
 
   &--active {
-    background: var(--u-type-primary);
+    background: linear-gradient(135deg, #2563eb, #14b8a6);
+    border-color: transparent;
     color: #fff;
-    font-weight: 600;
+    box-shadow: 0 8rpx 18rpx rgba(37, 99, 235, 0.16);
   }
 
   &:active {
-    opacity: 0.8;
-    transform: scale(0.95);
+    transform: scale(0.96);
   }
+}
+
+.filter-item--status {
+  min-height: 50rpx;
+  padding: 0 22rpx;
+  font-size: 24rpx;
+  line-height: 48rpx;
 }
 
 @keyframes slideUp {
@@ -758,58 +862,58 @@ onReachBottom(() => {
 }
 
 .order-list {
-  padding: 24rpx;
+  padding: 18rpx 24rpx 28rpx;
 }
 
 .order-card {
   position: relative;
-  margin-bottom: 24rpx;
-  background: #fff;
-  border-radius: 24rpx;
-  padding: 28rpx 28rpx 28rpx 36rpx;
+  margin-bottom: 22rpx;
   overflow: hidden;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #fff;
+  border: 1rpx solid #e7edf6;
+  border-radius: 22rpx;
+  box-shadow: 0 12rpx 32rpx rgba(15, 23, 42, 0.055);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
   animation: slideUp 0.4s ease-out both;
 
   &::before {
     content: "";
     position: absolute;
     left: 0;
-    top: 24rpx;
-    bottom: 24rpx;
-    width: 6rpx;
-    border-radius: 0 6rpx 6rpx 0;
-    background: #d9d9d9;
+    top: 0;
+    bottom: 0;
+    width: 8rpx;
+    background: #cbd5e1;
   }
 
   // 状态色条映射
   &.status-1::before {
-    background: linear-gradient(180deg, #52c41a, #73d13d);
+    background: linear-gradient(180deg, #22c55e, #16a34a);
   }
   &.status-2::before {
-    background: linear-gradient(180deg, #ff4d4f, #ff7875);
+    background: linear-gradient(180deg, #ef4444, #f97316);
   }
   &.status-3::before {
-    background: linear-gradient(180deg, #faad14, #ffc53d);
+    background: linear-gradient(180deg, #f59e0b, #facc15);
   }
   &.status-4::before {
-    background: linear-gradient(180deg, #4096ff, #69b1ff);
+    background: linear-gradient(180deg, #2563eb, #14b8a6);
   }
 
   &:active {
-    transform: scale(0.98);
-    box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+    box-shadow: 0 6rpx 18rpx rgba(37, 99, 235, 0.1);
+    transform: scale(0.99);
   }
 }
 
 .order-header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20rpx;
-  padding-bottom: 20rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  gap: 18rpx;
+  padding: 26rpx 26rpx 20rpx 34rpx;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  border-bottom: 1rpx solid #edf2f7;
 }
 
 .header-left {
@@ -821,159 +925,175 @@ onReachBottom(() => {
 }
 
 .avatar {
-  width: 68rpx;
-  height: 68rpx;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28rpx;
-  font-weight: 700;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 18rpx;
   color: #fff;
+  font-size: 30rpx;
+  font-weight: 800;
   flex-shrink: 0;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8rpx 18rpx rgba(15, 23, 42, 0.12);
 
   &--1 {
-    background: linear-gradient(135deg, #52c41a, #73d13d);
+    background: linear-gradient(135deg, #16a34a, #22c55e);
   }
   &--2 {
-    background: linear-gradient(135deg, #ff4d4f, #ff7875);
+    background: linear-gradient(135deg, #ef4444, #f97316);
   }
   &--3 {
-    background: linear-gradient(135deg, #faad14, #ffc53d);
+    background: linear-gradient(135deg, #f59e0b, #facc15);
   }
   &--4 {
-    background: linear-gradient(135deg, #4096ff, #69b1ff);
+    background: linear-gradient(135deg, #2563eb, #14b8a6);
   }
 }
 
 .title-block {
   display: flex;
-  align-items: center;
-  gap: 12rpx;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10rpx;
   min-width: 0;
 }
 
 .customer-name {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: #1f1f1f;
-  letter-spacing: 0.5rpx;
+  font-size: 34rpx;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #111827;
 }
 
 .order-time-text {
+  max-width: 180rpx;
   font-size: 22rpx;
-  color: #bfbfbf;
+  line-height: 1.3;
+  color: #94a3b8;
+  text-align: right;
   flex-shrink: 0;
 }
 
 .order-status {
-  padding: 8rpx 20rpx;
-  border-radius: 24rpx;
-  font-size: 24rpx;
-  font-weight: 500;
+  padding: 7rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  line-height: 1.2;
 
   &--1 {
-    background: #f6ffed;
-    color: #52c41a;
+    background: #ecfdf3;
+    color: #16a34a;
   }
 
   &--2 {
-    background: #fff1f0;
-    color: #f5222d;
+    background: #fff1f2;
+    color: #e11d48;
   }
 
   &--3 {
-    background: #fff7e6;
-    color: #fa8c16;
+    background: #fffbeb;
+    color: #d97706;
   }
 
   &--4 {
-    background: #e6f7ff;
-    color: #1890ff;
+    background: #eff6ff;
+    color: #2563eb;
   }
 
   &--business-node {
-    background: #e6f7ff;
-    color: #1890ff;
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1rpx solid #dbeafe;
   }
 }
 
 .order-body {
   display: flex;
   flex-direction: column;
-  gap: 14rpx;
-  margin-bottom: 20rpx;
+  gap: 12rpx;
+  padding: 22rpx 26rpx 20rpx 34rpx;
 }
 
 .info-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  min-height: 42rpx;
   font-size: 26rpx;
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
 .info-icon {
-  width: 40rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 42rpx;
+  padding-top: 3rpx;
   flex-shrink: 0;
   margin-right: 4rpx;
 }
 
 .label {
-  color: #8c8c8c;
-  width: 140rpx;
+  width: 132rpx;
+  color: #94a3b8;
   flex-shrink: 0;
-  font-size: 26rpx;
+  font-size: 25rpx;
 }
 
 .value {
   flex: 1;
-  color: #262626;
-  font-weight: 500;
+  min-width: 0;
+  color: #334155;
+  font-weight: 600;
   font-size: 26rpx;
+  word-break: break-all;
 }
 
 .amount-value {
-  color: #cf1322;
-  font-weight: 700;
-  font-size: 28rpx;
+  color: #dc2626;
+  font-weight: 800;
+  font-size: 30rpx;
 }
 
 .order-no {
   font-size: 24rpx;
-  color: #8c8c8c;
-  font-family: monospace;
+  color: #64748b;
+  font-family: DINAlternate-Bold, Arial, sans-serif;
 }
 
 .order-footer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 20rpx 24rpx;
-  background: #fafafa;
-  border-top: 1rpx solid #f0f0f0;
+  justify-content: space-between;
+  gap: 18rpx;
+  padding: 18rpx 26rpx 22rpx 34rpx;
+  background: #f8fafc;
+  border-top: 1rpx solid #edf2f7;
 }
 
 .order-tags {
   display: flex;
-  gap: 12rpx;
+  gap: 10rpx;
   flex-wrap: wrap;
   flex: 1;
+  min-width: 0;
 }
 
 .order-actions {
   display: flex;
-  gap: 16rpx;
+  align-items: center;
+  gap: 14rpx;
+  flex-shrink: 0;
 }
 
 .empty-state {
+  margin: 24rpx;
   padding: 120rpx 0;
   background: #fff;
-  margin-top: 24rpx;
+  border: 1rpx solid #e7edf6;
+  border-radius: 22rpx;
+  box-shadow: 0 10rpx 28rpx rgba(15, 23, 42, 0.04);
 }
 
 .load-more {

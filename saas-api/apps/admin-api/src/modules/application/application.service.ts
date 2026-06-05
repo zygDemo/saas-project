@@ -1147,6 +1147,13 @@ export class ApplicationService extends BaseBusinessCrudService<
     const nodeCode = query.currentNode ?? query.nodeCode
     const nodeStatus = query.currentStatus ?? query.nodeStatus
     if (hasQueryValue(nodeCode)) where.currentNode = nodeCode
+    else if (hasQueryValue(query.phaseCode)) {
+      const phaseCode = Number(query.phaseCode)
+      const phaseNodeCodes = Object.entries(DEFAULT_FLOW_NODE_PHASES)
+        .filter(([, code]) => code === phaseCode)
+        .map(([node]) => Number(node))
+      where.currentNode = phaseNodeCodes.length ? { in: phaseNodeCodes } : phaseCode
+    }
     if (hasQueryValue(nodeStatus)) where.currentStatus = nodeStatus
 
     const orderNo = firstQueryString(query.applicationNo, query.orderNo, query.creditOrderId)

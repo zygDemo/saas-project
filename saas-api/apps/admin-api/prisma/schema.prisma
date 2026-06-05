@@ -824,6 +824,7 @@ model RepaymentRecord {
 
 model OperationLog {
   id          Int      @id @default(autoincrement())
+  tenantId    Int?
   orgId       Int?
   userId      Int?
   userName    String?
@@ -836,6 +837,7 @@ model OperationLog {
   userAgent   String?
   createdAt   DateTime @default(now())
 
+  @@index([tenantId])
   @@index([orgId])
   @@index([userId])
   @@index([module])
