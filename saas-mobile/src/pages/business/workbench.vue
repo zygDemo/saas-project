@@ -8,6 +8,10 @@
           <text class="home-desc">线索、进件、补件和审批集中处理</text>
         </view>
         <view class="home-status">
+          <view class="msg-badge" @click.stop="goTo('/pages/business/messageCenter')">
+            <u-icon name="bell" size="36" color="#1a1a1a" />
+            <view v-if="unreadCount > 0" class="badge-dot">{{ unreadCount > 99 ? '99+' : unreadCount }}</view>
+          </view>
           <u-icon name="checkmark-circle" size="26" color="#16a34a" />
           <text>在线</text>
         </view>
@@ -80,7 +84,10 @@
       <view class="todo-panel">
         <view class="overview-head">
           <text class="overview-title">待办中心</text>
-          <text class="overview-sub">优先处理高时效任务</text>
+          <view class="overview-right" @click="goTo('/pages/business/todoCenter')">
+            <text class="overview-sub">查看全部</text>
+            <u-icon name="arrow-right" size="24" color="#999" />
+          </view>
         </view>
         <view class="todo-list">
           <view
@@ -186,6 +193,20 @@ const themeColor = computed(() => {
 const localStore = useLocalStore();
 const businessApi = useBusinessApi();
 
+// 消息未读数
+const unreadCount = ref(0);
+
+function loadUnreadCount() {
+  try {
+    const stored = uni.getStorageSync("MESSAGE_CENTER_DATA");
+    if (stored && Array.isArray(stored)) {
+      unreadCount.value = stored.filter((m) => !m.read).length;
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+
 const userDisplayName = computed(() => {
   const userInfo = localStore.userInfo || {};
   return (
@@ -287,7 +308,10 @@ const loadOverview = async () => {
   }
 };
 
-onMounted(loadOverview);
+onMounted(() => {
+  loadOverview();
+  loadUnreadCount();
+});
 
 const ORDER_FILTER_STORAGE_KEY = "WORKBENCH_ORDER_FILTER";
 
@@ -606,6 +630,30 @@ const sections = computed(() => {
   background: rgba(255, 255, 255, 0.16);
   border: 1rpx solid rgba(255, 255, 255, 0.22);
   border-radius: 999rpx;
+}
+
+.msg-badge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8rpx;
+}
+
+.badge-dot {
+  position: absolute;
+  top: -8rpx;
+  right: -10rpx;
+  min-width: 28rpx;
+  height: 28rpx;
+  line-height: 28rpx;
+  text-align: center;
+  font-size: 18rpx;
+  font-weight: 700;
+  color: #fff;
+  background: #ef4444;
+  border-radius: 28rpx;
+  padding: 0 6rpx;
 }
 
 .block-head,
