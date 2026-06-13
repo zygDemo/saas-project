@@ -98,16 +98,14 @@
                 <button
                   v-for="node in phase.nodes"
                   :key="node.nodeCode"
-                  type="button"
-                  class="node-pill"
-                  :class="{
-                    'is-parallel': nodeRule(node).parallel,
-                    'is-inactive': node.status !== 'ACTIVE'
-                  }"
+                  :class="[
+                    'node-pill',
+                    nodeRule(node).parallel && 'is-parallel',
+                    node.status !== 'ACTIVE' && 'is-inactive'
+                  ]"
                   @click="focusNode(node)"
                 >
-                  <span>{{ node.nodeCode }}</span>
-                  {{ node.nodeName }}
+                  <span>{{ node.nodeCode }}</span>{{ node.nodeName }}
                 </button>
               </div>
             </div>
@@ -122,88 +120,14 @@
             <ElTag type="primary" effect="light">{{ businessTypeLabel(query.businessType) }}</ElTag>
           </div>
         </template>
-        <ElTable
+        <ArtTable
           ref="tableRef"
-          v-loading="loading"
+          :loading="loading"
           :data="filteredRecords"
-          row-key="id"
-          border
-          stripe
+          :columns="tableColumns"
+          :show-table-header="false"
           empty-text="暂无流程节点"
-        >
-          <ElTableColumn prop="nodeCode" label="节点编号" width="110" />
-          <ElTableColumn prop="nodeName" label="节点名称" min-width="150">
-            <template #default="{ row }">
-              <div class="node-name-cell">
-                <strong>{{ row.nodeName }}</strong>
-                <span>{{ row.name }}</span>
-              </div>
-            </template>
-          </ElTableColumn>
-          <ElTableColumn label="阶段" min-width="140">
-            <template #default="{ row }">{{ nodeRule(row).phaseName || '-' }}</template>
-          </ElTableColumn>
-          <ElTableColumn label="父节点" width="110">
-            <template #default="{ row }">{{ nodeRule(row).parentNode || '-' }}</template>
-          </ElTableColumn>
-          <ElTableColumn label="模式" width="120">
-            <template #default="{ row }">
-              <ElTag v-if="nodeRule(row).parallel" type="success" effect="light">并行子节点</ElTag>
-              <ElTag v-else type="info" effect="plain">主流程</ElTag>
-            </template>
-          </ElTableColumn>
-          <ElTableColumn label="要求" min-width="160">
-            <template #default="{ row }">
-              <ElSpace wrap>
-                <ElTag v-if="row.requireMaterials" type="warning" effect="light">资料</ElTag>
-                <ElTag v-if="row.requireApproval" type="primary" effect="light">审批</ElTag>
-                <ElTag v-if="row.autoPass" type="success" effect="light">自动通过</ElTag>
-                <ElTag v-if="nodeRule(row).required" type="danger" effect="plain">必填</ElTag>
-              </ElSpace>
-            </template>
-          </ElTableColumn>
-          <ElTableColumn label="流转" min-width="180">
-            <template #default="{ row }">
-              <div class="transition-cell">
-                <span
-                  v-for="item in nodeRule(row).transitions"
-                  :key="`${item.action}-${item.toNode}`"
-                >
-                  {{ actionLabel(item.action) }} -> {{ item.toNode }}
-                </span>
-                <span v-if="!nodeRule(row).transitions?.length">-</span>
-              </div>
-            </template>
-          </ElTableColumn>
-          <ElTableColumn label="子步骤" min-width="170">
-            <template #default="{ row }">
-              <ElSpace v-if="nodeSteps(row).length" wrap>
-                <ElTag
-                  v-for="step in nodeSteps(row)"
-                  :key="step.code"
-                  :type="step.required ? 'danger' : 'info'"
-                  effect="plain"
-                >
-                  {{ step.name }}
-                </ElTag>
-              </ElSpace>
-              <span v-else>-</span>
-            </template>
-          </ElTableColumn>
-          <ElTableColumn prop="status" label="状态" width="90">
-            <template #default="{ row }">
-              <ElTag :type="row.status === 'ACTIVE' ? 'success' : 'info'" effect="light">
-                {{ row.status === 'ACTIVE' ? '启用' : '停用' }}
-              </ElTag>
-            </template>
-          </ElTableColumn>
-          <ElTableColumn label="操作" width="150" fixed="right">
-            <template #default="{ row }">
-              <ElButton link type="primary" @click="openEdit(row)">编辑</ElButton>
-              <ElButton link type="danger" @click="handleDelete(row)">删除</ElButton>
-            </template>
-          </ElTableColumn>
-        </ElTable>
+        />
       </ElCard>
     </div>
 
@@ -345,6 +269,25 @@
             添加流转
           </ElButton>
         </div>
+        <ElFormItem label="子步骤" class="mt-4">
+          <div class="transition-editor">
+            <div
+              v-for="(step, index) in formModel.steps"
+              :key="index"
+              class="transition-editor__row"
+            >
+              <ElInput v-model="step.code" placeholder="步骤编码" style="width: 120px" />
+              <ElInput v-model="step.name" placeholder="步骤名称" style="width: 160px" />
+              <ElInput v-model="step.operationSide" placeholder="操作方" style="width: 100px" />
+              <ElSwitch v-model="step.required" style="flex-shrink: 0" />
+              <ElButton link type="danger" @click="removeStep(index)">删除</ElButton>
+            </div>
+            <ElButton plain type="primary" @click="addStep">
+              <ArtSvgIcon icon="ri:add-line" class="mr-1" />
+              添加步骤
+            </ElButton>
+          </div>
+        </ElFormItem>
         <ElFormItem label="备注" class="mt-4">
           <ElInput
             v-model="formModel.remark"
@@ -362,8 +305,8 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, reactive, ref } from 'vue'
-  import { ElMessage, ElMessageBox, ElTable } from 'element-plus'
+  import { computed, h, onMounted, reactive, ref } from 'vue'
+  import { ElMessage, ElMessageBox, ElTag, ElButton, ElSpace } from 'element-plus'
   import {
     fetchBusinessCreate,
     fetchBusinessDelete,
@@ -431,7 +374,7 @@
     phases: []
   }
 
-  const tableRef = ref<InstanceType<typeof ElTable>>()
+  const tableRef = ref()
   const loading = ref(false)
   const orgLoading = ref(false)
   const initLoading = ref(false)
@@ -461,6 +404,95 @@
     status: 'ACTIVE',
     transitions: []
   })
+
+  // ArtTable columns 配置
+  const tableColumns = computed(() => [
+    { prop: 'nodeCode', label: '节点编号', width: 110 },
+    {
+      prop: 'nodeName',
+      label: '节点名称',
+      minWidth: 150,
+      formatter: (row: FlowRecord) =>
+        h('div', { class: 'node-name-cell' }, [
+          h('strong', {}, row.nodeName),
+          h('span', {}, row.name)
+        ])
+    },
+    {
+      label: '阶段',
+      minWidth: 140,
+      formatter: (row: FlowRecord) => nodeRule(row).phaseName || '-'
+    },
+    {
+      label: '父节点',
+      width: 110,
+      formatter: (row: FlowRecord) => nodeRule(row).parentNode || '-'
+    },
+    {
+      label: '模式',
+      width: 120,
+      formatter: (row: FlowRecord) =>
+        nodeRule(row).parallel
+          ? h(ElTag, { type: 'success', effect: 'light' }, () => '并行子节点')
+          : h(ElTag, { type: 'info', effect: 'plain' }, () => '主流程')
+    },
+    {
+      label: '要求',
+      minWidth: 160,
+      formatter: (row: FlowRecord) =>
+        h(ElSpace, { wrap: true }, () => [
+          row.requireMaterials && h(ElTag, { type: 'warning', effect: 'light' }, () => '资料'),
+          row.requireApproval && h(ElTag, { type: 'primary', effect: 'light' }, () => '审批'),
+          row.autoPass && h(ElTag, { type: 'success', effect: 'light' }, () => '自动通过'),
+          nodeRule(row).required && h(ElTag, { type: 'danger', effect: 'plain' }, () => '必填')
+        ].filter(Boolean))
+    },
+    {
+      label: '流转',
+      minWidth: 180,
+      formatter: (row: FlowRecord) => {
+        const transitions = nodeRule(row).transitions || []
+        if (!transitions.length) return h('span', {}, '-')
+        return h('div', { class: 'transition-cell' }, [
+          transitions.map((item: any) =>
+            h('span', { key: `${item.action}-${item.toNode}` }, `${actionLabel(item.action)} -> ${item.toNode}`)
+          )
+        ])
+      }
+    },
+    {
+      label: '子步骤',
+      minWidth: 170,
+      formatter: (row: FlowRecord) => {
+        const steps = nodeSteps(row)
+        if (!steps.length) return h('span', {}, '-')
+        return h(ElSpace, { wrap: true }, () =>
+          steps.map((step) =>
+            h(ElTag, { key: step.code, type: step.required ? 'danger' : 'info', effect: 'plain' }, () => step.name)
+          )
+        )
+      }
+    },
+    {
+      prop: 'status',
+      label: '状态',
+      width: 90,
+      formatter: (row: FlowRecord) =>
+        h(ElTag, { type: row.status === 'ACTIVE' ? 'success' : 'info', effect: 'light' }, () =>
+          row.status === 'ACTIVE' ? '启用' : '停用'
+        )
+    },
+    {
+      label: '操作',
+      width: 150,
+      fixed: 'right',
+      formatter: (row: FlowRecord) =>
+        h('div', [
+          h(ElButton, { link: true, type: 'primary', onClick: () => openEdit(row) }, () => '编辑'),
+          h(ElButton, { link: true, type: 'danger', onClick: () => handleDelete(row) }, () => '删除')
+        ])
+    }
+  ])
 
   const filteredRecords = computed(() => {
     const text = keyword.value.trim().toLowerCase()
@@ -603,7 +635,7 @@
   }
 
   function focusNode(row: FlowRecord) {
-    tableRef.value?.setCurrentRow(row)
+    tableRef.value?.elTableRef?.setCurrentRow(row)
     openEdit(row)
   }
 
@@ -653,6 +685,14 @@
     formModel.transitions.splice(index, 1)
   }
 
+  function addStep() {
+    formModel.steps.push({ code: '', name: '', sort: formModel.steps.length + 1, required: false })
+  }
+
+  function removeStep(index: number) {
+    formModel.steps.splice(index, 1)
+  }
+
   async function submitForm() {
     const error = validateForm()
     if (error) {
@@ -676,7 +716,7 @@
   }
 
   async function handleDelete(row: FlowRecord) {
-    await ElMessageBox.confirm(`确认删除节点“${row.nodeName}”？`, '删除确认', { type: 'warning' })
+    await ElMessageBox.confirm(`确认删除节点"${row.nodeName}"？`, '删除确认', { type: 'warning' })
     await fetchBusinessDelete('flow-config', row.id)
     ElMessage.success('删除成功')
     await loadData()
@@ -860,12 +900,17 @@
   .flow-table-card {
     min-height: 0;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   .flow-map :deep(.el-card__body),
   .flow-table-card :deep(.el-card__body) {
-    height: calc(100% - 58px);
-    overflow: auto;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
 
   .flow-card-title {
@@ -935,44 +980,22 @@
     gap: 4px;
   }
 
-  .flow-form {
-    padding-right: 10px;
-  }
-
   .transition-editor {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
+    width: 100%;
   }
 
   .transition-editor__row {
-    display: grid;
-    grid-template-columns: 130px 150px minmax(0, 1fr) 48px;
+    display: flex;
     gap: 8px;
     align-items: center;
   }
 
-  @media (max-width: 1180px) {
-    .flow-layout {
-      grid-template-columns: 1fr;
-    }
-
-    .flow-map :deep(.el-card__body),
-    .flow-table-card :deep(.el-card__body) {
-      height: auto;
-      max-height: none;
-    }
-  }
-
-  @media (max-width: 720px) {
-    .flow-toolbar__main,
-    .flow-toolbar__actions {
-      align-items: stretch;
-      flex-direction: column;
-    }
-
-    .transition-editor__row {
-      grid-template-columns: 1fr;
-    }
+  .flow-form {
+    max-height: 70vh;
+    padding-right: 10px;
+    overflow: auto;
   }
 </style>

@@ -1,13 +1,6 @@
 <template>
   <layout :active-tab="1" nav-title="订单" show-tabbar>
-    <scroll-view
-      scroll-y
-      class="order-list-page"
-      :refresher-enabled="true"
-      :refresher-triggered="isRefreshing"
-      @refresherrefresh="onRefresh"
-      @scroll="onScroll"
-    >
+    <view class="order-list-page">
       <!-- 搜索栏 -->
       <view class="search-bar">
         <u-search
@@ -65,6 +58,17 @@
           </scroll-view>
         </view>
       </view>
+
+      <!-- 订单列表（带下拉刷新） -->
+      <scroll-view
+        scroll-y
+        class="order-list-scroll"
+        :scroll-top="scrollTopValue"
+        :refresher-enabled="true"
+        :refresher-triggered="isRefreshing"
+        @refresherrefresh="onRefresh"
+        @scroll="onScroll"
+      >
 
       <!-- 订单列表 -->
       <view class="order-list">
@@ -212,6 +216,7 @@
           </view>
         </view>
       </view>
+      </view>
 
       <!-- 加载状态 -->
       <view v-if="loading && orderList.length > 0" class="load-more">
@@ -235,6 +240,7 @@
         <u-icon name="arrow-up" color="#fff" size="40" />
       </view>
     </scroll-view>
+    </view>
   </layout>
 </template>
 
@@ -259,6 +265,7 @@ const isRefreshing = ref(false);
 
 // 返回顶部相关
 const showBackToTop = ref(false);
+const scrollTopValue = ref(0);
 const SCROLL_THRESHOLD = 500; // 滚动超过500rpx显示返回顶部按钮
 
 type BusinessNodeFilterValue = "all" | string;
@@ -760,19 +767,22 @@ function onScroll(e: any) {
 
 // 返回顶部
 function handleBackToTop() {
-  // scroll-view 需要通过 ref 来控制滚动位置
-  // 这里使用 uni.pageScrollTo 作为备选方案
-  uni.pageScrollTo({
-    scrollTop: 0,
-    duration: 300,
-  });
+  // scroll-view 需要通过 scroll-top 属性来控制滚动位置
+  scrollTopValue.value = 0;
 }
 </script>
 
 <style lang="scss" scoped>
 .order-list-page {
   height: 100%;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(180deg, #eef4ff 0%, #f6f8fb 260rpx, #f6f8fb 100%);
+}
+
+.order-list-scroll {
+  flex: 1;
+  min-height: 0;
 }
 
 .search-bar {

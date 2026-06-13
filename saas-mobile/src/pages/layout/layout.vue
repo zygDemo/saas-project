@@ -178,13 +178,10 @@ page {
   bottom: calc(50px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain; // 阻止滚动链，避免嵌套滚动卡顿
+  overflow: hidden;
 
   .content-page {
-    min-height: 100%;
+    height: 100%;
   }
 }
 

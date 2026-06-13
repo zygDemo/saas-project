@@ -53,65 +53,16 @@
         </div>
       </template>
 
-      <ElTable
+      <ArtTable
         ref="tableRef"
-        v-loading="loading"
+        :loading="loading"
         :data="list"
-        row-key="id"
-        border
-        stripe
+        :columns="columns"
+        :pagination="pagination"
         @selection-change="handleSelectionChange"
-      >
-        <ElTableColumn type="selection" width="48" reserve-selection />
-        <ElTableColumn label="预览" width="88" align="center">
-          <template #default="{ row }">
-            <ElImage
-              v-if="isImageFile(row)"
-              class="file-thumb"
-              :src="resolveFileUrl(row.fileUrl)"
-              :preview-src-list="[resolveFileUrl(row.fileUrl)]"
-              preview-teleported
-              fit="cover"
-            />
-            <span v-else class="file-empty">-</span>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="fileName" label="文件名" min-width="220" show-overflow-tooltip />
-        <ElTableColumn prop="categoryName" label="分类" min-width="130" show-overflow-tooltip />
-        <ElTableColumn prop="businessType" label="业务类型" width="120">
-          <template #default="{ row }">{{ businessTypeLabel(row.businessType) }}</template>
-        </ElTableColumn>
-        <ElTableColumn prop="businessId" label="业务ID" width="100" />
-        <ElTableColumn prop="storageType" label="存储" width="90" />
-        <ElTableColumn prop="fileSize" label="大小" width="110">
-          <template #default="{ row }">{{ formatSize(row.fileSize) }}</template>
-        </ElTableColumn>
-        <ElTableColumn prop="status" label="状态" width="90">
-          <template #default="{ row }">
-            <ElTag :type="row.status === 'ACTIVE' ? 'success' : 'info'">{{ statusLabel(row.status) }}</ElTag>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="createdAt" label="上传时间" width="180" />
-        <ElTableColumn label="操作" width="190" fixed="right">
-          <template #default="{ row }">
-            <ElButton link type="primary" @click="openFile(row)">打开</ElButton>
-            <ElButton link type="primary" @click="openDialog(row)">编辑</ElButton>
-            <ElButton link type="danger" @click="deleteFile(row)">删除</ElButton>
-          </template>
-        </ElTableColumn>
-      </ElTable>
-
-      <div class="file-pagination">
-        <ElPagination
-          v-model:current-page="pagination.current"
-          v-model:page-size="pagination.size"
-          background
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="pagination.total"
-          @size-change="loadData"
-          @current-change="loadData"
-        />
-      </div>
+        @pagination:size-change="handleSizeChange"
+        @pagination:current-change="handleCurrentChange"
+      />
     </ElCard>
 
     <ElDialog v-model="dialogVisible" :title="form.id ? '编辑文件' : '新增文件'" width="680px">
@@ -204,7 +155,7 @@
   } from '@/api/system-manage'
   import { useUserStore } from '@/store/modules/user'
   import { API_BASE_URL } from '@/utils/http'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage, ElMessageBox, ElTag, ElButton, ElImage } from 'element-plus'
 
   defineOptions({ name: 'FileManage' })
 
@@ -299,7 +250,74 @@
     status: 'ACTIVE'
   })
 
+  // 表格列配置
+  const columns = computed(() => [
+    { type: 'selection', width: 48, reserveSelection: true },
+    {
+      label: '预览',
+      width: 88,
+      align: 'center',
+      formatter: (row: FileAssetItem) =>
+        isImageFile(row)
+          ? h(ElImage, {
+              class: 'file-thumb',
+              src: resolveFileUrl(row.fileUrl),
+              previewSrcList: [resolveFileUrl(row.fileUrl)],
+              previewTeleported: true,
+              fit: 'cover'
+            })
+          : h('span', { class: 'file-empty' }, '-')
+    },
+    { prop: 'fileName', label: '文件名', minWidth: 220, showOverflowTooltip: true },
+    { prop: 'categoryName', label: '分类', minWidth: 130, showOverflowTooltip: true },
+    {
+      prop: 'businessType',
+      label: '业务类型',
+      width: 120,
+      formatter: (row: FileAssetItem) => businessTypeLabel(row.businessType)
+    },
+    { prop: 'businessId', label: '业务ID', width: 100 },
+    { prop: 'storageType', label: '存储', width: 90 },
+    {
+      prop: 'fileSize',
+      label: '大小',
+      width: 110,
+      formatter: (row: FileAssetItem) => formatSize(row.fileSize)
+    },
+    {
+      prop: 'status',
+      label: '状态',
+      width: 90,
+      formatter: (row: FileAssetItem) =>
+        h(ElTag, { type: row.status === 'ACTIVE' ? 'success' : 'info' }, () => statusLabel(row.status))
+    },
+    { prop: 'createdAt', label: '上传时间', width: 180 },
+    {
+      prop: 'operation',
+      label: '操作',
+      width: 190,
+      fixed: 'right',
+      formatter: (row: FileAssetItem) =>
+        h('div', [
+          h(ElButton, { link: true, type: 'primary', onClick: () => openFile(row) }, () => '打开'),
+          h(ElButton, { link: true, type: 'primary', onClick: () => openDialog(row) }, () => '编辑'),
+          h(ElButton, { link: true, type: 'danger', onClick: () => deleteFile(row) }, () => '删除')
+        ])
+    }
+  ])
+
   onMounted(loadData)
+
+  const handleSizeChange = (size: number) => {
+    pagination.size = size
+    pagination.current = 1
+    loadData()
+  }
+
+  const handleCurrentChange = (current: number) => {
+    pagination.current = current
+    loadData()
+  }
 
   async function loadData() {
     loading.value = true
@@ -548,12 +566,6 @@
         color: var(--el-text-color-secondary);
         font-size: 13px;
       }
-    }
-
-    .file-pagination {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 16px;
     }
 
     .file-thumb {

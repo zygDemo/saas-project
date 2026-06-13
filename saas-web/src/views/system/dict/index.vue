@@ -26,39 +26,14 @@
             </ElFormItem>
           </ElForm>
 
-          <ElTable
-            v-loading="typeLoading"
+          <ArtTable
+            :loading="typeLoading"
             :data="typeList"
-            row-key="id"
+            :columns="typeColumns"
+            :pagination="typePagination"
             highlight-current-row
-            height="calc(100vh - 340px)"
             @row-click="selectType"
-          >
-            <ElTableColumn prop="name" label="名称" min-width="120" show-overflow-tooltip />
-            <ElTableColumn prop="code" label="编码" min-width="130" show-overflow-tooltip />
-            <ElTableColumn prop="itemCount" label="项" width="60" />
-            <ElTableColumn prop="status" label="状态" width="80">
-              <template #default="{ row }">
-                <ElTag :type="row.status === 'ACTIVE' ? 'success' : 'info'">
-                  {{ statusLabel(row.status) }}
-                </ElTag>
-              </template>
-            </ElTableColumn>
-            <ElTableColumn label="操作" width="120" fixed="right">
-              <template #default="{ row }">
-                <ElButton link type="primary" @click.stop="openTypeDialog(row)">编辑</ElButton>
-                <ElButton link type="danger" @click.stop="deleteType(row)">删除</ElButton>
-              </template>
-            </ElTableColumn>
-          </ElTable>
-
-          <ElPagination
-            v-model:current-page="typePagination.current"
-            v-model:page-size="typePagination.size"
-            class="dict-pagination"
-            layout="prev, pager, next"
-            :total="typePagination.total"
-            @current-change="loadTypes"
+            @pagination:current-change="handleTypePageChange"
           />
         </ElCard>
       </ElCol>
@@ -88,39 +63,13 @@
             </ElFormItem>
           </ElForm>
 
-          <ElTable
-            v-loading="dataLoading"
+          <ArtTable
+            :loading="dataLoading"
             :data="dataList"
-            row-key="id"
-            height="calc(100vh - 340px)"
+            :columns="dataColumns"
+            :pagination="dataPagination"
             empty-text="请选择左侧字典类型"
-          >
-            <ElTableColumn prop="label" label="标签" min-width="130" show-overflow-tooltip />
-            <ElTableColumn prop="value" label="值" min-width="130" show-overflow-tooltip />
-            <ElTableColumn prop="sort" label="排序" width="80" />
-            <ElTableColumn prop="status" label="状态" width="90">
-              <template #default="{ row }">
-                <ElTag :type="row.status === 'ACTIVE' ? 'success' : 'info'">
-                  {{ statusLabel(row.status) }}
-                </ElTag>
-              </template>
-            </ElTableColumn>
-            <ElTableColumn prop="remark" label="备注" min-width="150" show-overflow-tooltip />
-            <ElTableColumn label="操作" width="120" fixed="right">
-              <template #default="{ row }">
-                <ElButton link type="primary" @click="openDataDialog(row)">编辑</ElButton>
-                <ElButton link type="danger" @click="deleteData(row)">删除</ElButton>
-              </template>
-            </ElTableColumn>
-          </ElTable>
-
-          <ElPagination
-            v-model:current-page="dataPagination.current"
-            v-model:page-size="dataPagination.size"
-            class="dict-pagination"
-            layout="prev, pager, next"
-            :total="dataPagination.total"
-            @current-change="loadData"
+            @pagination:current-change="handleDataPageChange"
           />
         </ElCard>
       </ElCol>
@@ -191,7 +140,7 @@
     fetchUpdateDictData,
     fetchUpdateDictType
   } from '@/api/system-manage'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage, ElMessageBox, ElTag, ElButton } from 'element-plus'
 
   defineOptions({ name: 'DictMgmt' })
 
@@ -215,56 +164,104 @@
   const typePagination = reactive({ current: 1, size: 20, total: 0 })
   const dataPagination = reactive({ current: 1, size: 20, total: 0 })
 
+  const statusLabel = (status: string) => status === 'ACTIVE' ? '启用' : '停用'
+
+  // 字典类型表格列配置
+  const typeColumns = computed(() => [
+    { prop: 'name', label: '名称', minWidth: 120, showOverflowTooltip: true },
+    { prop: 'code', label: '编码', minWidth: 130, showOverflowTooltip: true },
+    { prop: 'itemCount', label: '项', width: 60 },
+    {
+      prop: 'status',
+      label: '状态',
+      width: 80,
+      formatter: (row: DictTypeItem) =>
+        h(ElTag, { type: row.status === 'ACTIVE' ? 'success' : 'info' }, () => statusLabel(row.status))
+    },
+    {
+      prop: 'operation',
+      label: '操作',
+      width: 120,
+      fixed: 'right',
+      formatter: (row: DictTypeItem) =>
+        h('div', [
+          h(ElButton, { link: true, type: 'primary', onClick: () => openTypeDialog(row) }, () => '编辑'),
+          h(ElButton, { link: true, type: 'danger', onClick: () => deleteType(row) }, () => '删除')
+        ])
+    }
+  ])
+
+  // 字典项表格列配置
+  const dataColumns = computed(() => [
+    { prop: 'label', label: '标签', minWidth: 130, showOverflowTooltip: true },
+    { prop: 'value', label: '值', minWidth: 130, showOverflowTooltip: true },
+    { prop: 'sort', label: '排序', width: 80 },
+    {
+      prop: 'status',
+      label: '状态',
+      width: 90,
+      formatter: (row: DictDataItem) =>
+        h(ElTag, { type: row.status === 'ACTIVE' ? 'success' : 'info' }, () => statusLabel(row.status))
+    },
+    { prop: 'remark', label: '备注', minWidth: 150, showOverflowTooltip: true },
+    {
+      prop: 'operation',
+      label: '操作',
+      width: 120,
+      fixed: 'right',
+      formatter: (row: DictDataItem) =>
+        h('div', [
+          h(ElButton, { link: true, type: 'primary', onClick: () => openDataDialog(row) }, () => '编辑'),
+          h(ElButton, { link: true, type: 'danger', onClick: () => deleteData(row) }, () => '删除')
+        ])
+    }
+  ])
+
+  // 字典类型弹窗
   const typeDialogVisible = ref(false)
+  const typeForm = reactive({ id: 0, name: '', code: '', status: 'ACTIVE', remark: '' })
+
+  // 字典项弹窗
   const dataDialogVisible = ref(false)
-  const typeForm = reactive<Partial<DictTypeItem>>({ status: 'ACTIVE' })
-  const dataForm = reactive<Partial<DictDataItem>>({ status: 'ACTIVE', sort: 0 })
+  const dataForm = reactive({ id: 0, label: '', value: '', sort: 0, status: 'ACTIVE', remark: '' })
 
-  onMounted(() => {
+  const handleTypePageChange = (page: number) => {
+    typePagination.current = page
     loadTypes()
-  })
+  }
 
-  function statusLabel(value: string) {
-    return statusOptions.find((item) => item.value === value)?.label || value
+  const handleDataPageChange = (page: number) => {
+    dataPagination.current = page
+    loadData()
   }
 
   async function loadTypes() {
     typeLoading.value = true
     try {
-      const result = await fetchGetDictTypeList({
+      const res = await fetchGetDictTypeList({
         current: typePagination.current,
         size: typePagination.size,
         ...typeSearch
       })
-      typeList.value = result.records
-      typePagination.total = result.total
-      if (!selectedType.value && result.records.length) {
-        selectType(result.records[0])
-      } else if (selectedType.value) {
-        const latest = result.records.find((item) => item.id === selectedType.value?.id)
-        if (latest) selectedType.value = latest
-      }
+      typeList.value = res.records || []
+      typePagination.total = res.total || 0
     } finally {
       typeLoading.value = false
     }
   }
 
   async function loadData() {
-    if (!selectedType.value) {
-      dataList.value = []
-      dataPagination.total = 0
-      return
-    }
+    if (!selectedType.value) return
     dataLoading.value = true
     try {
-      const result = await fetchGetDictDataList({
+      const res = await fetchGetDictDataList({
         current: dataPagination.current,
         size: dataPagination.size,
         typeId: selectedType.value.id,
         ...dataSearch
       })
-      dataList.value = result.records
-      dataPagination.total = result.total
+      dataList.value = res.records || []
+      dataPagination.total = res.total || 0
     } finally {
       dataLoading.value = false
     }
@@ -291,83 +288,78 @@
   }
 
   function openTypeDialog(row?: DictTypeItem) {
-    Object.assign(typeForm, row || { id: undefined, name: '', code: '', status: 'ACTIVE', remark: '' })
+    if (row) {
+      Object.assign(typeForm, row)
+    } else {
+      Object.assign(typeForm, { id: 0, name: '', code: '', status: 'ACTIVE', remark: '' })
+    }
     typeDialogVisible.value = true
   }
 
   function openDataDialog(row?: DictDataItem) {
-    if (!selectedType.value) return
-    Object.assign(dataForm, row || { id: undefined, label: '', value: '', sort: 0, status: 'ACTIVE', remark: '' })
+    if (row) {
+      Object.assign(dataForm, row)
+    } else {
+      Object.assign(dataForm, { id: 0, label: '', value: '', sort: 0, status: 'ACTIVE', remark: '' })
+    }
     dataDialogVisible.value = true
   }
 
   async function submitType() {
-    if (!typeForm.name || !typeForm.code) {
-      ElMessage.warning('请填写字典名称和编码')
-      return
-    }
     submitting.value = true
     try {
-      const payload = {
-        name: typeForm.name,
-        code: typeForm.code,
-        status: typeForm.status || 'ACTIVE',
-        remark: typeForm.remark || ''
+      if (typeForm.id) {
+        await fetchUpdateDictType(typeForm.id, typeForm)
+        ElMessage.success('更新成功')
+      } else {
+        await fetchCreateDictType(typeForm)
+        ElMessage.success('创建成功')
       }
-      if (typeForm.id) await fetchUpdateDictType(typeForm.id, payload)
-      else await fetchCreateDictType(payload)
       typeDialogVisible.value = false
-      await loadTypes()
+      loadTypes()
     } finally {
       submitting.value = false
     }
   }
 
   async function submitData() {
-    if (!selectedType.value) return
-    if (!dataForm.label || !dataForm.value) {
-      ElMessage.warning('请填写字典标签和值')
-      return
-    }
     submitting.value = true
     try {
-      const payload = {
-        typeId: selectedType.value.id,
-        label: dataForm.label,
-        value: dataForm.value,
-        sort: dataForm.sort || 0,
-        status: dataForm.status || 'ACTIVE',
-        remark: dataForm.remark || ''
+      if (dataForm.id) {
+        await fetchUpdateDictData(dataForm.id, dataForm)
+        ElMessage.success('更新成功')
+      } else {
+        await fetchCreateDictData(dataForm)
+        ElMessage.success('创建成功')
       }
-      if (dataForm.id) await fetchUpdateDictData(dataForm.id, payload)
-      else await fetchCreateDictData(payload)
       dataDialogVisible.value = false
-      await Promise.all([loadTypes(), loadData()])
+      loadData()
     } finally {
       submitting.value = false
     }
   }
 
   async function deleteType(row: DictTypeItem) {
-    await ElMessageBox.confirm(`确定删除字典类型“${row.name}”吗？其字典项会一并删除。`, '删除确认', {
-      type: 'warning'
-    })
+    await ElMessageBox.confirm(`确定删除字典类型"${row.name}"吗？`, '删除确认', { type: 'warning' })
     await fetchDeleteDictType(row.id)
+    ElMessage.success('删除成功')
     if (selectedType.value?.id === row.id) {
       selectedType.value = null
       dataList.value = []
-      dataPagination.total = 0
     }
-    await loadTypes()
+    loadTypes()
   }
 
   async function deleteData(row: DictDataItem) {
-    await ElMessageBox.confirm(`确定删除字典项“${row.label}”吗？`, '删除确认', {
-      type: 'warning'
-    })
+    await ElMessageBox.confirm(`确定删除字典项"${row.label}"吗？`, '删除确认', { type: 'warning' })
     await fetchDeleteDictData(row.id)
-    await Promise.all([loadTypes(), loadData()])
+    ElMessage.success('删除成功')
+    loadData()
   }
+
+  onMounted(() => {
+    loadTypes()
+  })
 </script>
 
 <style scoped lang="scss">
@@ -402,9 +394,14 @@
 
     .dict-search {
       margin-bottom: 12px;
+
+      :deep(.el-form-item) {
+        margin-bottom: 0;
+      }
     }
 
     .dict-pagination {
+      display: flex;
       justify-content: flex-end;
       margin-top: 12px;
     }

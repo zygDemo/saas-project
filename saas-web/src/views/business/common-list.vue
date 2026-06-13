@@ -131,14 +131,16 @@
         </div>
       </div>
 
-      <ElTable
-        v-loading="loading"
-        :data="records"
-        row-key="id"
-        border
-        stripe
-        :empty-text="isOrgModule ? '暂无机构数据' : '暂无数据'"
-      >
+      <div class="table-wrapper">
+        <ElTable
+          v-loading="loading"
+          :data="records"
+          row-key="id"
+          border
+          stripe
+          height="100%"
+          :empty-text="isOrgModule ? '暂无机构数据' : '暂无数据'"
+        >
         <ElTableColumn prop="id" label="ID" width="80" />
         <ElTableColumn
           v-for="column in config.columns"
@@ -221,7 +223,8 @@
             </ElSpace>
           </template>
         </ElTableColumn>
-      </ElTable>
+        </ElTable>
+      </div>
 
       <div class="flex justify-end mt-4">
         <ElPagination
@@ -2264,6 +2267,12 @@
 </script>
 
 <style scoped>
+  .table-wrapper {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+  }
+
   .detail-json {
     padding: 16px;
     overflow: auto;
