@@ -211,7 +211,6 @@
             </u-button>
           </view>
         </view>
-        </view>
       </view>
 
       <!-- 加载状态 -->
