@@ -306,6 +306,11 @@
       "title": "Safeguard",
       "server": "Server"
     },
+    "dataCenter": {
+      "title": "Data Center",
+      "stats": "Statistics",
+      "auditLog": "Audit Log"
+    },
     "plan": {
       "title": "Version Plan",
       "log": "Change Log"
