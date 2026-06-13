@@ -1,6 +1,13 @@
 <template>
   <layout :active-tab="1" nav-title="订单" show-tabbar>
-    <view class="order-list-page">
+    <scroll-view
+      scroll-y
+      class="order-list-page"
+      :refresher-enabled="true"
+      :refresher-triggered="isRefreshing"
+      @refresherrefresh="onRefresh"
+      @scroll="onScroll"
+    >
       <!-- 搜索栏 -->
       <view class="search-bar">
         <u-search
@@ -219,7 +226,16 @@
       <view v-if="!loading && orderList.length === 0" class="empty-state">
         <u-empty mode="list" text="暂无订单数据" />
       </view>
-    </view>
+
+      <!-- 返回顶部按钮 -->
+      <view
+        v-if="showBackToTop"
+        class="back-to-top"
+        @click="handleBackToTop"
+      >
+        <u-icon name="arrow-up" color="#fff" size="40" />
+      </view>
+    </scroll-view>
   </layout>
 </template>
 
@@ -238,6 +254,13 @@ const ORDER_FILTER_MAX_AGE = 60 * 1000;
 // 搜索关键词
 const keyword = ref("");
 const lastKeyword = ref("");
+
+// 下拉刷新相关
+const isRefreshing = ref(false);
+
+// 返回顶部相关
+const showBackToTop = ref(false);
+const SCROLL_THRESHOLD = 500; // 滚动超过500rpx显示返回顶部按钮
 
 type BusinessNodeFilterValue = "all" | string;
 type NodeStatusFilterValue = "all" | string;
@@ -722,11 +745,34 @@ onShow(() => {
 onReachBottom(() => {
   fetchList();
 });
+
+// 下拉刷新处理
+async function onRefresh() {
+  isRefreshing.value = true;
+  await fetchList(true);
+  isRefreshing.value = false;
+}
+
+// 滚动事件处理
+function onScroll(e: any) {
+  const scrollTop = e.detail.scrollTop;
+  showBackToTop.value = scrollTop > SCROLL_THRESHOLD;
+}
+
+// 返回顶部
+function handleBackToTop() {
+  // scroll-view 需要通过 ref 来控制滚动位置
+  // 这里使用 uni.pageScrollTo 作为备选方案
+  uni.pageScrollTo({
+    scrollTop: 0,
+    duration: 300,
+  });
+}
 </script>
 
 <style lang="scss" scoped>
 .order-list-page {
-  min-height: 100vh;
+  height: 100%;
   background: linear-gradient(180deg, #eef4ff 0%, #f6f8fb 260rpx, #f6f8fb 100%);
 }
 
@@ -1107,5 +1153,38 @@ onReachBottom(() => {
   font-size: 24rpx;
   color: #cbd5e1;
   font-weight: 500;
+}
+
+.back-to-top {
+  position: fixed;
+  right: 30rpx;
+  bottom: 200rpx;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(37, 99, 235, 0.35);
+  z-index: 999;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  animation: fadeInScale 0.3s ease-out;
+
+  &:active {
+    transform: scale(0.92);
+    opacity: 0.9;
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>
