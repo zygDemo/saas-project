@@ -19,6 +19,7 @@
         :data="data"
         :columns="columns"
         :pagination="pagination"
+        :show-table-header="true"
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handleCurrentChange"
       >
@@ -57,7 +58,7 @@
   import { ref, h } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchAuditLogs, type AuditLogItem } from '@/api/data-center'
-  import { ElTag, ElButton, ElDivider } from 'element-plus'
+  import { ElTag, ElButton } from 'element-plus'
   import AuditLogSearch from './modules/audit-log-search.vue'
 
   defineOptions({ name: 'AuditLog' })
@@ -133,6 +134,7 @@
   // 表格配置
   const {
     columns,
+    columnChecks,
     data,
     loading,
     pagination,
@@ -222,13 +224,6 @@
 </script>
 
 <style scoped>
-  .audit-log-page {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-  }
-
   .text-secondary {
     color: var(--el-text-color-secondary);
   }
