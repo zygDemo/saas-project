@@ -22,16 +22,16 @@
       <view class="entry-grid">
         <view
           v-for="item in entryItems"
-          :key="item.type"
+          :key="item.code"
           class="entry-card"
-          @click="goEntry(item.type)"
+          @click="goEntry(item)"
         >
           <view class="card-icon-box" :class="item.iconClass">
             <u-icon :name="item.icon" size="44" color="#fff" />
           </view>
           <view class="card-body">
             <view class="card-title-row">
-              <text class="card-title">{{ item.title }}</text>
+              <text class="card-title">{{ item.name }}</text>
               <u-tag
                 class="mobile-status-tag"
                 :text="getEntryStatusTag(item).text"
@@ -77,41 +77,86 @@ const uuidVal = ref("");
 const submitting = ref(false);
 const ENTRY_PROGRESS_STORAGE_KEY = "ENTRY_PROGRESS_MAP";
 const entryProgress = ref({});
+const flowSteps = ref([]);
 
-onLoad((options) => {
+// 步骤图标和样式映射
+const STEP_META_MAP = {
+  ID_CARD: {
+    icon: "account",
+    iconClass: "card-icon-customer",
+    desc: "完善客户身份、证件、联系方式等",
+    route: "/pages/business/idInfo",
+  },
+  VEHICLE: {
+    icon: "car",
+    iconClass: "card-icon-car",
+    desc: "完善车辆品牌、型号、年限等",
+    route: "/pages/business/carInfo",
+  },
+  APPLICATION: {
+    icon: "order",
+    iconClass: "card-icon-order",
+    desc: "完善申请金额、期限、产品等",
+    route: "/pages/business/applyInfo",
+  },
+  AUTH_SIGN: {
+    icon: "edit-pen",
+    iconClass: "card-icon-sign",
+    desc: "签署授权书，授权资方查询征信等",
+    route: "/pages/business/authSign",
+  },
+  PENDING_PRECHECK: {
+    icon: "clock",
+    iconClass: "card-icon-pending",
+    desc: "等待系统预审，提交后自动进入风控",
+    route: "",
+  },
+};
+
+onLoad(async (options) => {
   uuidVal.value = options?.uuid || "";
   customerName.value = options?.name || "";
   customerPhone.value = options?.phone || "";
   orderNo.value = options?.creditOrderId || "";
   loadEntryProgress();
+  await loadFlowSteps();
 });
 
-const entryItems = computed(() => [
-  {
-    type: "idInfo",
-    key: "idInfo",
-    title: "身份证信息",
-    desc: "完善客户身份、证件、联系方式等",
-    icon: "account",
-    iconClass: "card-icon-customer",
-  },
-  {
-    type: "carInfo",
-    key: "carInfo",
-    title: "车辆信息",
-    desc: "完善车辆品牌、型号、年限等",
-    icon: "car",
-    iconClass: "card-icon-car",
-  },
-  {
-    type: "applyInfo",
-    key: "applyInfo",
-    title: "申请信息",
-    desc: "完善申请金额、期限、产品等",
-    icon: "order",
-    iconClass: "card-icon-order",
-  },
-]);
+async function loadFlowSteps() {
+  try {
+    const res = await businessApi.getFlowSteps("1100");
+    if (res?.code === 200 && Array.isArray(res.data)) {
+      flowSteps.value = res.data;
+    }
+  } catch (err) {
+    console.error("获取流程步骤失败:", err);
+    // 使用默认步骤
+    flowSteps.value = [
+      { code: "ID_CARD", name: "身份证信息", sort: 1110 },
+      { code: "VEHICLE", name: "车辆信息", sort: 1120 },
+      { code: "APPLICATION", name: "申请信息", sort: 1130 },
+      { code: "AUTH_SIGN", name: "签署授权书", sort: 1140 },
+      { code: "PENDING_PRECHECK", name: "待预审", sort: 1150 },
+    ];
+  }
+}
+
+const entryItems = computed(() => {
+  return flowSteps.value
+    .filter((step) => step.code !== "PENDING_PRECHECK") // 待预审不需要可点击
+    .map((step) => {
+      const meta = STEP_META_MAP[step.code] || {};
+      return {
+        code: step.code,
+        name: step.name,
+        sort: step.sort,
+        icon: meta.icon || "list",
+        iconClass: meta.iconClass || "card-icon-default",
+        desc: meta.desc || "完善相关信息",
+        route: meta.route || "",
+      };
+    });
+});
 
 function loadEntryProgress() {
   const progressMap = uni.getStorageSync(ENTRY_PROGRESS_STORAGE_KEY) || {};
@@ -120,16 +165,21 @@ function loadEntryProgress() {
 }
 
 function getEntryStatusTag(item) {
-  const status = entryProgress.value?.[item.key];
+  const status = entryProgress.value?.[item.code];
   if (status === 1 || status === true || status === "done") {
     return { text: "已完善", type: "success" };
   }
   return { text: "待完善", type: "warning" };
 }
 
-function goEntry(type) {
+function goEntry(item) {
   if (!uuidVal.value) {
     uni.showToast({ title: "客户信息缺失", icon: "none" });
+    return;
+  }
+
+  if (!item.route) {
+    uni.showToast({ title: "该步骤暂不需要操作", icon: "none" });
     return;
   }
 
@@ -139,15 +189,8 @@ function goEntry(type) {
     customerName.value ? `name=${encodeURIComponent(customerName.value)}` : "",
     customerPhone.value ? `phone=${encodeURIComponent(customerPhone.value)}` : "",
   ].filter(Boolean).join("&");
-  const urlMap = {
-    idInfo: `/pages/business/idInfo?${params}`,
-    carInfo: `/pages/business/carInfo?${params}`,
-    applyInfo: `/pages/business/applyInfo?${params}`,
-  };
-  const url = urlMap[type];
-  if (url) {
-    uni.navigateTo({ url });
-  }
+
+  uni.navigateTo({ url: `${item.route}?${params}` });
 }
 
 async function handleSubmit() {
@@ -315,6 +358,18 @@ async function handleSubmit() {
 
 .card-icon-order {
   background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.card-icon-sign {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.card-icon-pending {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+}
+
+.card-icon-default {
+  background: linear-gradient(135deg, #94a3b8, #64748b);
 }
 
 .card-body {

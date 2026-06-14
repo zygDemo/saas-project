@@ -529,6 +529,37 @@ export class MobileBusinessService {
     ]
   }
 
+  async getFlowConfigByNodeCode(nodeCode: string, businessType = 'CAR_LOAN') {
+    const config = await this.prisma.flowConfig.findFirst({
+      where: {
+        nodeCode,
+        businessType,
+        status: 'ACTIVE'
+      }
+    })
+    if (!config) return null
+
+    const ruleConfig = (config.ruleConfig as Record<string, unknown>) || {}
+    return {
+      id: config.id,
+      nodeCode: config.nodeCode,
+      nodeName: config.nodeName,
+      name: config.name,
+      requireMaterials: config.requireMaterials,
+      requireApproval: config.requireApproval,
+      autoPass: config.autoPass,
+      ruleConfig
+    }
+  }
+
+  async getFlowSteps(nodeCode: string, businessType = 'CAR_LOAN') {
+    const config = await this.getFlowConfigByNodeCode(nodeCode, businessType)
+    if (!config) return []
+
+    const ruleConfig = config.ruleConfig as Record<string, unknown>
+    return (ruleConfig?.steps as Array<Record<string, unknown>>) || []
+  }
+
   getStatisticsOverview() {
     return {
       todayLeads: 0,

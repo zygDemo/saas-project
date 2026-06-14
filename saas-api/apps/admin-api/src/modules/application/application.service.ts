@@ -97,7 +97,7 @@ function containsText(value: string) {
 function flowByApplicationStatus(status: ApplicationStatus) {
   const map: Record<ApplicationStatus, { currentNode: number; currentStatus: number }> = {
     [ApplicationStatus.DRAFT]: { currentNode: 1100, currentStatus: 10 },
-    [ApplicationStatus.SUBMITTED]: { currentNode: 1200, currentStatus: 10 },
+    [ApplicationStatus.SUBMITTED]: { currentNode: 1100, currentStatus: 10 },
     [ApplicationStatus.PENDING_RISK_PRE]: { currentNode: 1200, currentStatus: 10 },
     [ApplicationStatus.RISK_PRE_PASSED]: { currentNode: 1300, currentStatus: 20 },
     [ApplicationStatus.RISK_PRE_REJECTED]: { currentNode: 1200, currentStatus: 30 },

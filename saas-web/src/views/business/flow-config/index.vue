@@ -907,7 +907,7 @@
   .flow-map :deep(.el-card__body),
   .flow-table-card :deep(.el-card__body) {
     flex: 1;
-    overflow: hidden;
+    overflow: auto;
     display: flex;
     flex-direction: column;
     min-height: 0;

@@ -466,7 +466,7 @@ export function useBusinessApi() {
     updateCredit: (data: Record<string, unknown>) =>
       http.post<ApiResponse<CreditListItem>>("/m/credit/update", data),
     /** 获取产品列表 */
-    getProductList: () => http.get("/m/product/getProductList"),
+    getProductList: () => http.get("/product/list"),
     /** 获取客户身份信息详情 */
     getUserBasic: (uuid: string) =>
       http.get<ApiResponse<IdCardInfo>>("/m/user/getUserBasic", { uuid }),
@@ -495,10 +495,22 @@ export function useBusinessApi() {
 
     /** 字典数据列表查询 */
     getDictDataList: (dictType: string) =>
-      http.get(`/m/dict/data/type/${dictType}`),
+      http.get(`/dict/options/${dictType}`),
     /** 贷款业务节点枚举查询 */
     getLoanBusinessNodes: () =>
       http.get<ApiResponse<LoanBusinessNode[]>>("/m/enum/loanBusinessNodes"),
+    /** 获取流程节点步骤 */
+    getFlowSteps: (nodeCode: string, businessType?: string) =>
+      http.get<ApiResponse<Array<Record<string, unknown>>>>(
+        `/m/enum/flow-steps/${nodeCode}`,
+        businessType ? { businessType } : undefined,
+      ),
+    /** 获取流程节点配置 */
+    getFlowConfig: (nodeCode: string, businessType?: string) =>
+      http.get<ApiResponse<Record<string, unknown>>>(
+        `/m/enum/flow-config/${nodeCode}`,
+        businessType ? { businessType } : undefined,
+      ),
     /** 获取线索列表（dataSource=2，支持客户姓名模糊查询） */
     getUserList: (params: { dataSource?: number; personName?: string }) =>
       http.get<ApiResponse<IdCardInfo[]>>("/m/user/getUserList", params),

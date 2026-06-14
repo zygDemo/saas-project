@@ -182,7 +182,7 @@
       prop: 'operation',
       label: '操作',
       width: 120,
-      fixed: 'right',
+      fixed: 'right' as const,
       formatter: (row: DictTypeItem) =>
         h('div', [
           h(ElButton, { link: true, type: 'primary', onClick: () => openTypeDialog(row) }, () => '编辑'),
@@ -208,7 +208,7 @@
       prop: 'operation',
       label: '操作',
       width: 120,
-      fixed: 'right',
+      fixed: 'right' as const,
       formatter: (row: DictDataItem) =>
         h('div', [
           h(ElButton, { link: true, type: 'primary', onClick: () => openDataDialog(row) }, () => '编辑'),
