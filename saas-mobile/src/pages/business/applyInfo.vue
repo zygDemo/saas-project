@@ -19,14 +19,23 @@
 
       <AppForm v-model="form" :items="formItems" />
 
-      <view class="footer-btn">
+      <view class="footer-btn" :class="{ 'edit-mode': isEditMode }">
+        <u-button
+          v-if="isEditMode"
+          type="default"
+          shape="circle"
+          :loading="submitLoading"
+          @click="handleSave"
+        >
+          保存
+        </u-button>
         <u-button
           type="primary"
           shape="circle"
           :loading="submitLoading"
-          @click="handleSubmit"
+          @click="isEditMode ? handleNext() : handleSubmit()"
         >
-          提交申请
+          {{ isEditMode ? "下一步" : "提交申请" }}
         </u-button>
       </view>
     </view>
@@ -47,6 +56,11 @@ const { orderInfo } = storeToRefs(sessionStore);
 const businessApi = useBusinessApi();
 
 const submitLoading = ref(false);
+const isEditMode = ref(false);
+const editUuid = ref("");
+const entryCreditOrderId = ref("");
+const entryName = ref("");
+const entryPhone = ref("");
 
 // 表单数据（对接接口：uuid、amount、periods）
 const form = reactive({
@@ -84,7 +98,15 @@ const formItems = [
 onLoad((query) => {
   // 从详情页传入的 uuid 保存到 sessionStore，供提交使用
   if (query.uuid) {
+    editUuid.value = query.uuid;
     sessionStore.setOrderInfo({ uuid: query.uuid });
+  }
+  isEditMode.value = query.fromEntry === "1";
+  entryCreditOrderId.value = query.creditOrderId || "";
+  entryName.value = query.name || "";
+  entryPhone.value = query.phone || "";
+  if (entryCreditOrderId.value) {
+    sessionStore.setOrderInfo({ creditOrderId: entryCreditOrderId.value });
   }
 });
 
@@ -131,13 +153,26 @@ const doSubmit = async () => {
     const creditOrderId = res.data?.creditOrderId || "";
     sessionStore.setOrderInfo({
       applyInfo: { ...form },
-      creditOrderId,
+      creditOrderId: creditOrderId || info.creditOrderId || entryCreditOrderId.value,
     });
     $u.toast("申请已提交！", "success");
-    return { uuid, creditOrderId };
+    return { uuid, creditOrderId: creditOrderId || info.creditOrderId || entryCreditOrderId.value };
   }
   return null;
 };
+
+function buildAuthQuery(uuid, creditOrderId) {
+  const info = orderInfo.value || {};
+  const idInfo = info.idInfo || {};
+  const applyData = info.applyInfo || {};
+  return [
+    `uuid=${encodeURIComponent(uuid)}`,
+    `name=${encodeURIComponent(String(entryName.value || idInfo.personName || ""))}`,
+    `phone=${encodeURIComponent(String(entryPhone.value || idInfo.telephone || ""))}`,
+    `amount=${encodeURIComponent(String(applyData.amount || form.amount || ""))}`,
+    creditOrderId ? `creditOrderId=${encodeURIComponent(creditOrderId)}` : "",
+  ].filter(Boolean);
+}
 
 async function handleSubmit() {
   submitLoading.value = true;
@@ -146,19 +181,44 @@ async function handleSubmit() {
     if (result) {
       const { uuid, creditOrderId } = result;
 
-      // 从 orderInfo 中取出对应字段传给授信认证页
-      const info = orderInfo.value || {};
-      const idInfo = info.idInfo || {};
-      const applyData = info.applyInfo || {};
+      const query = buildAuthQuery(uuid, creditOrderId);
 
-      const query = [
-        `uuid=${encodeURIComponent(uuid)}`,
-        `name=${encodeURIComponent(String(idInfo.personName || ""))}`,
-        `phone=${encodeURIComponent(String(idInfo.telephone || ""))}`,
-        `amount=${encodeURIComponent(String(applyData.amount || ""))}`,
-        `creditOrderId=${encodeURIComponent(creditOrderId || "")}`,
-      ];
+      setTimeout(() => {
+        uni.$u.route({
+          url: `/pages/business/videoFaceSign?${query.join("&")}`,
+          type: "redirectTo",
+        });
+      }, 600);
+    }
+  } catch {
+    // 错误已由拦截器处理
+  } finally {
+    submitLoading.value = false;
+  }
+}
 
+async function handleSave() {
+  submitLoading.value = true;
+  try {
+    const result = await doSubmit();
+    if (result) {
+      setTimeout(() => {
+        uni.navigateBack();
+      }, 800);
+    }
+  } catch {
+    // 错误已由拦截器处理
+  } finally {
+    submitLoading.value = false;
+  }
+}
+
+async function handleNext() {
+  submitLoading.value = true;
+  try {
+    const result = await doSubmit();
+    if (result) {
+      const query = buildAuthQuery(result.uuid, result.creditOrderId);
       setTimeout(() => {
         uni.$u.route({
           url: `/pages/business/videoFaceSign?${query.join("&")}`,
@@ -248,5 +308,14 @@ async function handleSubmit() {
   margin-top: 32rpx;
   display: flex;
   justify-content: center;
+
+  &.edit-mode {
+    gap: 24rpx;
+    padding: 0 24rpx;
+
+    :deep(.u-btn) {
+      flex: 1;
+    }
+  }
 }
 </style>

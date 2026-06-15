@@ -84,6 +84,10 @@ const vehicleImgUrlObjectKey = ref("");
 const mainLoading = ref(false);
 const editUuid = ref("");
 const isEditMode = ref(false);
+const fromEntry = ref(false);
+const entryCreditOrderId = ref("");
+const entryName = ref("");
+const entryPhone = ref("");
 
 // 车辆信息字段与接口 VehicleInfo 对齐
 const carInfo = reactive({
@@ -161,6 +165,10 @@ onLoad((query) => {
   editUuid.value = query.uuid || "";
   isPawnMode.value = query.businessType === "pawn";
   isEditMode.value = !!query.uuid;
+  fromEntry.value = query.fromEntry === "1";
+  entryCreditOrderId.value = query.creditOrderId || "";
+  entryName.value = query.name || "";
+  entryPhone.value = query.phone || "";
 });
 
 onMounted(() => {
@@ -520,9 +528,16 @@ async function handleNext() {
     if (success) {
       const orderInfo = sessionStore.orderInfo || {};
       const uuid = editUuid.value || orderInfo.uuid || "";
+      const entryQuery = [
+        uuid ? `uuid=${encodeURIComponent(String(uuid))}` : "",
+        fromEntry.value ? "fromEntry=1" : "",
+        entryCreditOrderId.value ? `creditOrderId=${encodeURIComponent(entryCreditOrderId.value)}` : "",
+        entryName.value ? `name=${encodeURIComponent(entryName.value)}` : "",
+        entryPhone.value ? `phone=${encodeURIComponent(entryPhone.value)}` : "",
+      ].filter(Boolean).join("&");
       const nextUrl = isPawnMode.value
         ? `/pages/business/pawnLoanInfo?uuid=${encodeURIComponent(String(uuid))}`
-        : "/pages/business/applyInfo";
+        : `/pages/business/applyInfo${entryQuery ? `?${entryQuery}` : ""}`;
       setTimeout(() => {
         uni.$u.route({
           url: nextUrl,

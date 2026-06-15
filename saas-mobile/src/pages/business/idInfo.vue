@@ -141,6 +141,10 @@ const idInfo = reactive({
 
 const editUuid = ref("");
 const isEditMode = ref(false);
+const fromEntry = ref(false);
+const entryCreditOrderId = ref("");
+const entryName = ref("");
+const entryPhone = ref("");
 
 const fetchUserBasic = async () => {
   try {
@@ -170,6 +174,10 @@ onLoad((query) => {
   editUuid.value = query.uuid || "";
   isPawnMode.value = query.businessType === "pawn";
   isEditMode.value = !!query.uuid;
+  fromEntry.value = query.fromEntry === "1";
+  entryCreditOrderId.value = query.creditOrderId || "";
+  entryName.value = query.name || "";
+  entryPhone.value = query.phone || "";
 });
 
 onMounted(() => {
@@ -522,6 +530,10 @@ const handleNext = async () => {
       const uuid = editUuid.value || orderInfo.uuid || "";
       const query = [
         uuid ? `uuid=${encodeURIComponent(String(uuid))}` : "",
+        fromEntry.value ? "fromEntry=1" : "",
+        entryCreditOrderId.value ? `creditOrderId=${encodeURIComponent(entryCreditOrderId.value)}` : "",
+        entryName.value ? `name=${encodeURIComponent(entryName.value)}` : "",
+        entryPhone.value ? `phone=${encodeURIComponent(entryPhone.value)}` : "",
         isPawnMode.value ? "businessType=pawn" : "",
       ].filter(Boolean);
       const nextUrl = isPawnMode.value

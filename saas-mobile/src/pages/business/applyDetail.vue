@@ -1,6 +1,64 @@
 <template>
-  <app-page nav-title="预审信息">
-    <view v-if="detail" class="apply-detail-page">
+  <app-page :nav-title="pageTitle">
+    <view v-if="detail && isPreAuditDetail" class="pre-audit-detail-page">
+      <view class="pre-customer-card">
+        <view class="pre-customer-header">
+          <view class="pre-avatar">
+            {{ (customerDisplayName || "?").charAt(0) }}
+          </view>
+          <view class="pre-customer-info">
+            <text class="pre-customer-name">{{ customerDisplayName || "未命名客户" }}</text>
+            <text class="pre-customer-phone">{{ customerDisplayPhone || "-" }}</text>
+          </view>
+        </view>
+        <view v-if="orderNo" class="pre-order-row">
+          <text class="pre-order-label">订单号</text>
+          <text class="pre-order-value">{{ orderNo }}</text>
+        </view>
+      </view>
+
+      <view class="pre-section-title">子步骤</view>
+
+      <view class="pre-supplement-list">
+        <view
+          v-for="item in preAuditEntryItems"
+          :key="item.type"
+          class="pre-supplement-card"
+          :class="{ 'pre-supplement-card--submit': item.code === 'PENDING_PRECHECK' }"
+          @click="goPreAuditStep(item)"
+        >
+          <view class="pre-card-icon" :class="item.iconClass">
+            <u-icon :name="item.icon" size="44" color="#fff" />
+          </view>
+          <view class="pre-card-body">
+            <text class="pre-card-title">{{ item.title }}</text>
+            <text class="pre-card-desc">{{ item.desc }}</text>
+          </view>
+          <view class="pre-card-status">
+            <u-tag
+              :text="getPreAuditStepTag(item).text"
+              :type="getPreAuditStepTag(item).type"
+              size="mini"
+              plain
+            />
+          </view>
+          <view class="pre-card-arrow">
+            <u-button
+              v-if="item.code === 'PENDING_PRECHECK'"
+              type="primary"
+              size="mini"
+              :loading="submitting"
+              @click.stop="handlePreAuditSubmit"
+            >
+              提交
+            </u-button>
+            <u-icon v-else name="arrow-right" size="32" color="#c4c7cc" />
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view v-else-if="detail" class="apply-detail-page">
       <!-- 顶部状态卡片 -->
       <view
         class="status-header"
@@ -283,7 +341,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useBusinessApi } from "@/api/business";
 
@@ -291,13 +349,21 @@ const businessApi = useBusinessApi();
 
 const detail = ref(null);
 const loading = ref(true);
+const submitting = ref(false);
 let detailId = null;
 const detailCreditOrderId = ref("");
 const uuid = ref("");
+const routeNodeCode = ref("");
+const routeCustomerName = ref("");
+const routeCustomerPhone = ref("");
 
 onLoad((query) => {
   detailId = query.id;
   detailCreditOrderId.value = query.creditOrderId || query.orderNo || "";
+  uuid.value = query.uuid || "";
+  routeNodeCode.value = query.nodeCode || "";
+  routeCustomerName.value = query.customerName || query.name || "";
+  routeCustomerPhone.value = query.customerPhone || query.phone || "";
 });
 
 onMounted(() => {
@@ -315,7 +381,7 @@ async function fetchDetail() {
     if (res?.code === 200) {
       // 详情接口返回结构可能是 res.data 或 res 本身
       detail.value = res.data || {};
-      uuid.value = res.data?.uuid;
+      uuid.value = res.data?.uuid || uuid.value;
     }
   } catch (e) {
     console.error("获取详情失败", e);
@@ -335,6 +401,9 @@ const statusMap = {
 
 // 业务节点中文映射
 const businessNodeMap = {
+  "1100": "预审进件",
+  "1200": "风控预审",
+  "1300": "资方预审",
   INITIAL_AUDIT: "初审",
   PRE_AUDIT: "预审",
   SUPPLEMENT_MATERIALS: "补充资料",
@@ -354,6 +423,188 @@ function statusType(val) {
 
 function businessNodeText(val) {
   return businessNodeMap[val] || val || "-";
+}
+
+const customerDisplayName = computed(() =>
+  detail.value?.name ||
+  detail.value?.customerName ||
+  detail.value?.personName ||
+  routeCustomerName.value ||
+  "",
+);
+
+const customerDisplayPhone = computed(() =>
+  detail.value?.phone ||
+  detail.value?.telephone ||
+  detail.value?.mobile ||
+  routeCustomerPhone.value ||
+  "",
+);
+
+const orderNo = computed(() =>
+  detail.value?.creditOrderId ||
+  detail.value?.orderNo ||
+  detail.value?.applicationNo ||
+  detailCreditOrderId.value ||
+  "",
+);
+
+const currentNodeCode = computed(() =>
+  String(
+    routeNodeCode.value ||
+      detail.value?.nodeCode ||
+      detail.value?.currentNode ||
+      detail.value?.businessNode ||
+      "",
+  ),
+);
+
+const isPreAuditDetail = computed(() =>
+  ["1100", "1200", "1300", "PRE_AUDIT", "INITIAL_AUDIT"].includes(
+    currentNodeCode.value,
+  ),
+);
+
+const pageTitle = computed(() => (isPreAuditDetail.value ? "资料补充" : "预审信息"));
+
+const preAuditEntryItems = computed(() => [
+  {
+    type: "idInfo",
+    code: "ID_CARD",
+    title: "身份证信息",
+    desc: "完善客户身份、证件、联系方式等",
+    icon: "account",
+    iconClass: "pre-card-icon-customer",
+  },
+  {
+    type: "carInfo",
+    code: "VEHICLE",
+    title: "车辆信息",
+    desc: "完善车辆品牌、型号、年限等",
+    icon: "car",
+    iconClass: "pre-card-icon-car",
+  },
+  {
+    type: "applyInfo",
+    code: "APPLICATION",
+    title: "申请信息",
+    desc: "完善申请金额、期限、产品等",
+    icon: "order",
+    iconClass: "pre-card-icon-order",
+  },
+  {
+    type: "authSign",
+    code: "AUTH_SIGN",
+    title: "签署授权书",
+    desc: "签署授权书，授权资方查询征信等",
+    icon: "edit-pen",
+    iconClass: "pre-card-icon-file",
+  },
+  {
+    type: "submit",
+    code: "PENDING_PRECHECK",
+    title: "待预审",
+    desc: "资料确认完成后提交，进入预审流程",
+    icon: "clock",
+    iconClass: "pre-card-icon-pending",
+  },
+]);
+
+function getEntryStepDone(code) {
+  if (code === "ID_CARD") {
+    return Boolean(uuid.value);
+  }
+  if (code === "VEHICLE") {
+    return Boolean(
+      detail.value?.vehicle?.plateNumber ||
+        detail.value?.plateNumber ||
+        detail.value?.vehicleInfo?.plateNumber,
+    );
+  }
+  if (code === "APPLICATION") {
+    return Boolean(detail.value?.periods || detail.value?.pushQuota || detail.value?.amount);
+  }
+  if (code === "AUTH_SIGN") {
+    return detail.value?.isSignContract === 1;
+  }
+  return false;
+}
+
+function getPreAuditStepTag(item) {
+  if (item.code === "PENDING_PRECHECK") {
+    return {
+      text: allPreAuditStepsDone.value ? "待提交" : "待完善",
+      type: allPreAuditStepsDone.value ? "info" : "warning",
+    };
+  }
+  return getEntryStepDone(item.code)
+    ? { text: "已完成", type: "success" }
+    : { text: "待完善", type: "warning" };
+}
+
+const allPreAuditStepsDone = computed(() =>
+  preAuditEntryItems.value
+    .filter((item) => item.code !== "PENDING_PRECHECK")
+    .every((item) => getEntryStepDone(item.code)),
+);
+
+function goPreAuditStep(item) {
+  if (item.code === "PENDING_PRECHECK") {
+    handlePreAuditSubmit();
+    return;
+  }
+
+  const params = [
+    uuid.value ? `uuid=${encodeURIComponent(uuid.value)}` : "",
+    orderNo.value ? `creditOrderId=${encodeURIComponent(orderNo.value)}` : "",
+    customerDisplayName.value
+      ? `name=${encodeURIComponent(customerDisplayName.value)}`
+      : "",
+    customerDisplayPhone.value
+      ? `phone=${encodeURIComponent(customerDisplayPhone.value)}`
+      : "",
+    "fromEntry=1",
+  ].filter(Boolean).join("&");
+  const urlMap = {
+    idInfo: `/pages/business/idInfoSupplement?${params}`,
+    carInfo: `/pages/business/carInfo?${params}`,
+    applyInfo: `/pages/business/applyInfo?${params}`,
+    authSign: `/pages/business/videoFaceSign?${params}`,
+  };
+  const url = urlMap[item.type];
+  if (url) {
+    uni.navigateTo({ url });
+  }
+}
+
+async function handlePreAuditSubmit() {
+  if (!allPreAuditStepsDone.value) return;
+  if (!orderNo.value) {
+    uni.showToast({ title: "缺少订单编号", icon: "none" });
+    return;
+  }
+
+  const { confirm } = await uni.showModal({
+    title: "确认提交",
+    content: "提交后将进入预审流程，确认提交吗？",
+    confirmText: "确认提交",
+    cancelText: "再等等",
+  });
+  if (!confirm) return;
+
+  submitting.value = true;
+  try {
+    await businessApi.submitInitialAudit(orderNo.value);
+    uni.showToast({ title: "提交成功", icon: "success" });
+    setTimeout(() => {
+      uni.navigateBack();
+    }, 1200);
+  } catch (err) {
+    console.error("提交预审失败:", err);
+    uni.showToast({ title: "提交失败，请重试", icon: "none" });
+  } finally {
+    submitting.value = false;
+  }
 }
 
 // 格式化额度（字符串类型，单位元）
@@ -395,6 +646,189 @@ const copyText = (text) => {
 </script>
 
 <style lang="scss" scoped>
+.pre-audit-detail-page {
+  min-height: 100vh;
+  padding: 32rpx 24rpx 56rpx;
+  background: linear-gradient(180deg, #f6f9ff 0%, #f8fbff 48%, #eef8fb 100%);
+}
+
+.pre-customer-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 34rpx 32rpx 30rpx;
+  box-shadow: 0 14rpx 34rpx rgba(52, 92, 140, 0.08);
+  margin-bottom: 40rpx;
+}
+
+.pre-customer-header {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.pre-avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  color: #fff;
+  font-size: 38rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pre-customer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  min-width: 0;
+}
+
+.pre-customer-name {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #161b25;
+}
+
+.pre-customer-phone {
+  font-size: 28rpx;
+  color: #9aa3af;
+}
+
+.pre-order-row {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  margin-top: 28rpx;
+  padding-top: 26rpx;
+  border-top: 1rpx solid #eef2f7;
+}
+
+.pre-order-label {
+  font-size: 28rpx;
+  color: #a0a8b5;
+}
+
+.pre-order-value {
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  color: #2f3747;
+  word-break: break-all;
+}
+
+.pre-section-title {
+  position: relative;
+  margin: 0 0 24rpx;
+  padding-left: 16rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #5d6b7c;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8rpx;
+    width: 6rpx;
+    height: 32rpx;
+    border-radius: 8rpx;
+    background: linear-gradient(180deg, #4aa3ff, #7cc2ff);
+  }
+}
+
+.pre-supplement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 22rpx;
+}
+
+.pre-supplement-card {
+  min-height: 126rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 26rpx 24rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  box-shadow: 0 10rpx 28rpx rgba(52, 92, 140, 0.06);
+
+  &:active {
+    transform: scale(0.99);
+    background: #fbfdff;
+  }
+}
+
+.pre-card-icon {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pre-card-icon-customer {
+  background: linear-gradient(135deg, #60a5fa, #3478f6);
+}
+
+.pre-card-icon-car {
+  background: linear-gradient(135deg, #21c89a, #08a875);
+}
+
+.pre-card-icon-order {
+  background: linear-gradient(135deg, #f8a21a, #ed8500);
+}
+
+.pre-card-icon-file {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.pre-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.pre-card-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #111827;
+}
+
+.pre-card-desc {
+  font-size: 26rpx;
+  color: #9aa3af;
+  line-height: 1.35;
+}
+
+.pre-card-status {
+  flex-shrink: 0;
+}
+
+.pre-card-arrow {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.pre-action-area {
+  margin-top: 42rpx;
+  padding-bottom: 28rpx;
+
+  :deep(.u-btn--disabled) {
+    background: #9dccf8 !important;
+    border-color: #9dccf8 !important;
+    color: #fff !important;
+  }
+}
+
 .apply-detail-page {
   padding: 24rpx;
   background: linear-gradient(180deg, #f2f4f8 0%, #f8f9fb 100%);

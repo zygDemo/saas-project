@@ -24,6 +24,7 @@
           v-for="item in entryItems"
           :key="item.code"
           class="entry-card"
+          :class="{ 'entry-card--submit': item.code === 'PENDING_PRECHECK' }"
           @click="goEntry(item)"
         >
           <view class="card-icon-box" :class="item.iconClass">
@@ -43,7 +44,16 @@
             <text class="card-desc">{{ item.desc }}</text>
           </view>
           <view class="card-arrow">
-            <u-icon name="arrow-right" size="30" color="#bfbfbf" />
+            <u-button
+              v-if="item.code === 'PENDING_PRECHECK'"
+              type="primary"
+              size="mini"
+              :loading="submitting"
+              @click.stop="handleSubmit"
+            >
+              提交
+            </u-button>
+            <u-icon v-else name="arrow-right" size="30" color="#bfbfbf" />
           </view>
         </view>
       </view>
@@ -103,13 +113,13 @@ const STEP_META_MAP = {
     icon: "edit-pen",
     iconClass: "card-icon-sign",
     desc: "签署授权书，授权资方查询征信等",
-    route: "/pages/business/authSign",
+    route: "/pages/business/videoFaceSign",
   },
   PENDING_PRECHECK: {
     icon: "clock",
     iconClass: "card-icon-pending",
     desc: "等待系统预审，提交后自动进入风控",
-    route: "",
+    route: "__submit__",
   },
 };
 
@@ -143,7 +153,6 @@ async function loadFlowSteps() {
 
 const entryItems = computed(() => {
   return flowSteps.value
-    .filter((step) => step.code !== "PENDING_PRECHECK") // 待预审不需要可点击
     .map((step) => {
       const meta = STEP_META_MAP[step.code] || {};
       return {
@@ -165,6 +174,10 @@ function loadEntryProgress() {
 }
 
 function getEntryStatusTag(item) {
+  if (item.code === "PENDING_PRECHECK") {
+    return { text: orderNo.value ? "待提交" : "待申请", type: "info" };
+  }
+
   const status = entryProgress.value?.[item.code];
   if (status === 1 || status === true || status === "done") {
     return { text: "已完善", type: "success" };
@@ -178,13 +191,14 @@ function goEntry(item) {
     return;
   }
 
-  if (!item.route) {
-    uni.showToast({ title: "该步骤暂不需要操作", icon: "none" });
+  if (item.code === "PENDING_PRECHECK") {
+    handleSubmit();
     return;
   }
 
   const params = [
     `uuid=${encodeURIComponent(uuidVal.value)}`,
+    "fromEntry=1",
     orderNo.value ? `creditOrderId=${encodeURIComponent(orderNo.value)}` : "",
     customerName.value ? `name=${encodeURIComponent(customerName.value)}` : "",
     customerPhone.value ? `phone=${encodeURIComponent(customerPhone.value)}` : "",

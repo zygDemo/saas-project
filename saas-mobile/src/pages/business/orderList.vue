@@ -69,132 +69,147 @@
         @refresherrefresh="onRefresh"
         @scroll="onScroll"
       >
+        <!-- 订单列表 -->
+        <view class="order-list">
+          <view
+            v-for="(order, index) in orderList"
+            :key="order.id"
+            class="order-card"
+            :class="`status-${order.statusClass}`"
+            :style="{ animationDelay: `${index * 0.05}s` }"
+            @click="handleDetailButton(order)"
+          >
+            <view class="order-main">
+              <!-- 头部：姓名 + 金额 -->
+              <view class="order-header">
+                <view class="order-header__left">
+                  <text class="customer-name">{{ order.name }}</text>
+                  <view v-if="order.nodeStatusLabel" class="status-tag">
+                    <view class="status-tag__dot" />
+                    <text class="status-tag__text">{{
+                      order.nodeStatusLabel
+                    }}</text>
+                  </view>
+                </view>
+                <text v-if="order.pushQuota" class="amount-value"
+                  >¥{{ order.pushQuota }}</text
+                >
+              </view>
 
-      <!-- 订单列表 -->
-      <view class="order-list">
-        <view
-          v-for="(order, index) in orderList"
-          :key="order.id"
-          class="order-card"
-          :class="`status-${order.statusClass}`"
-          :style="{ animationDelay: `${index * 0.05}s` }"
-          @click="handleDetailButton(order)"
-        >
-          <view class="order-main">
-            <!-- 头部：姓名 + 金额 -->
-            <view class="order-header">
-              <view class="order-header__left">
-                <text class="customer-name">{{ order.name }}</text>
-                <view v-if="order.nodeStatusLabel" class="status-tag">
-                  <view class="status-tag__dot" />
-                  <text class="status-tag__text">{{ order.nodeStatusLabel }}</text>
+              <!-- 手机号 + 业务节点 -->
+              <view class="order-subheader">
+                <text class="customer-phone">{{ order.phone }}</text>
+                <text v-if="order.businessNodeLabel" class="business-node">{{
+                  order.businessNodeLabel
+                }}</text>
+              </view>
+
+              <!-- 车牌 + 产品 -->
+              <view
+                v-if="
+                  order.plateNumber || order.productName || order.vehicleDisplay
+                "
+                class="order-meta"
+              >
+                <text v-if="order.plateNumber" class="plate-number">{{
+                  order.plateNumber
+                }}</text>
+                <text v-if="order.productName" class="product-text">{{
+                  order.productName
+                }}</text>
+                <text
+                  v-if="!order.plateNumber && order.vehicleDisplay"
+                  class="vehicle-text"
+                  >{{ order.vehicleDisplay }}</text
+                >
+              </view>
+
+              <!-- 订单操作 -->
+              <view class="order-footer">
+                <view class="order-tags">
+                  <u-tag
+                    v-if="order.phaseName"
+                    :text="order.phaseName"
+                    size="mini"
+                    type="primary"
+                    plain
+                  />
+                  <u-tag
+                    v-if="order.nodeStatusLabel"
+                    :text="order.nodeStatusLabel"
+                    size="mini"
+                    type="info"
+                    plain
+                  />
+                  <u-tag
+                    v-if="order.isSignContract === 1"
+                    text="已签约"
+                    size="mini"
+                    type="success"
+                    plain
+                  />
+                  <u-tag
+                    v-if="order.isSignContract === 2"
+                    text="未签约"
+                    size="mini"
+                    type="warning"
+                    plain
+                  />
+                  <u-tag
+                    v-if="order.isFaceRecognition === 2"
+                    text="人脸认证通过"
+                    size="mini"
+                    type="success"
+                    plain
+                  />
+                  <u-tag
+                    v-if="order.isFaceRecognition === 3"
+                    text="人脸认证失败"
+                    size="mini"
+                    type="error"
+                    plain
+                  />
+                </view>
+                <view class="order-actions">
+                  <u-button
+                    v-if="canGoSign(order)"
+                    size="mini"
+                    type="success"
+                    @click.stop="handleSignButton(order)"
+                  >
+                    签约
+                  </u-button>
+                  <u-button
+                    size="mini"
+                    type="primary"
+                    @click.stop="handleDetailButton(order)"
+                  >
+                    详情
+                  </u-button>
                 </view>
               </view>
-              <text v-if="order.pushQuota" class="amount-value">¥{{ order.pushQuota }}</text>
             </view>
-
-            <!-- 手机号 + 业务节点 -->
-            <view class="order-subheader">
-              <text class="customer-phone">{{ order.phone }}</text>
-              <text v-if="order.businessNodeLabel" class="business-node">{{ order.businessNodeLabel }}</text>
-            </view>
-
-            <!-- 车牌 + 产品 -->
-            <view v-if="order.plateNumber || order.productName || order.vehicleDisplay" class="order-meta">
-              <text v-if="order.plateNumber" class="plate-number">{{ order.plateNumber }}</text>
-              <text v-if="order.productName" class="product-text">{{ order.productName }}</text>
-              <text v-if="!order.plateNumber && order.vehicleDisplay" class="vehicle-text">{{ order.vehicleDisplay }}</text>
-            </view>
-
-          <!-- 订单操作 -->
-          <view class="order-footer">
-          <view class="order-tags">
-            <u-tag
-              v-if="order.phaseName"
-              :text="order.phaseName"
-              size="mini"
-              type="primary"
-              plain
-            />
-            <u-tag
-              v-if="order.nodeStatusLabel"
-              :text="order.nodeStatusLabel"
-              size="mini"
-              type="info"
-              plain
-            />
-            <u-tag
-              v-if="order.isSignContract === 1"
-              text="已签约"
-              size="mini"
-              type="success"
-              plain
-            />
-            <u-tag
-              v-if="order.isSignContract === 2"
-              text="未签约"
-              size="mini"
-              type="warning"
-              plain
-            />
-            <u-tag
-              v-if="order.isFaceRecognition === 2"
-              text="人脸认证通过"
-              size="mini"
-              type="success"
-              plain
-            />
-            <u-tag
-              v-if="order.isFaceRecognition === 3"
-              text="人脸认证失败"
-              size="mini"
-              type="error"
-              plain
-            />
-          </view>
-          <view class="order-actions">
-            <u-button
-              v-if="canGoSign(order)"
-              size="mini"
-              type="success"
-              @click.stop="handleSignButton(order)"
-            >
-              签约
-            </u-button>
-            <u-button
-              size="mini"
-              type="primary"
-              @click.stop="handleDetailButton(order)"
-            >
-              详情
-            </u-button>
           </view>
         </view>
-      </view>
-      </view>
 
-      <!-- 加载状态 -->
-      <view v-if="loading && orderList.length > 0" class="load-more">
-        <u-loading mode="circle" />
-      </view>
-      <view v-if="!hasMore && orderList.length > 0" class="no-more">
-        没有更多了
-      </view>
+        <!-- 加载状态 -->
+        <view v-if="loading && orderList.length > 0" class="load-more">
+          <u-loading mode="circle" />
+        </view>
+        <view v-if="!hasMore && orderList.length > 0" class="no-more">
+          没有更多了
+        </view>
 
-      <!-- 空状态 -->
-      <view v-if="!loading && orderList.length === 0" class="empty-state">
-        <u-empty mode="list" text="暂无订单数据" />
-      </view>
+        <!-- 空状态 -->
+        <view v-if="!loading && orderList.length === 0" class="empty-state">
+          <u-empty mode="list" text="暂无订单数据" />
+        </view>
 
-      <!-- 返回顶部按钮 -->
-      <view
-        v-if="showBackToTop"
-        class="back-to-top"
-        @click="handleBackToTop"
-      >
-        <u-icon name="arrow-up" color="#fff" size="40" />
-      </view>
-    </scroll-view>
+        <!-- 返回顶部按钮 -->
+        <view v-if="showBackToTop" class="back-to-top" @click="handleBackToTop">
+          <u-icon name="arrow-up" color="#fff" size="40" />
+        </view>
+      </scroll-view>
     </view>
   </layout>
 </template>
@@ -347,7 +362,9 @@ function getBusinessNodeLabel(node: unknown) {
   }
   const code = String(node);
   const normalizedCode = code.endsWith("00") ? code : `${code.charAt(0)}000`;
-  return businessNodeMap.value[code] || businessNodeMap.value[normalizedCode] || code;
+  return (
+    businessNodeMap.value[code] || businessNodeMap.value[normalizedCode] || code
+  );
 }
 
 const NODE_DETAIL_ROUTE_MAP: Record<string, string> = {
@@ -431,9 +448,11 @@ function isAfterPreAudit(node: unknown) {
 }
 
 function resolveSignStatus(order: OrderListViewItem) {
-  if (order.isSignContract === 1 || order.currentStatus === "SIGNED") return "SIGNED";
+  if (order.isSignContract === 1 || order.currentStatus === "SIGNED")
+    return "SIGNED";
   const status = firstText(order.currentStatus, order.nodeStatus, order.status);
-  if (status === "SIGNING_PROGRESS" || status === "PENDING_SIGN") return "CONFIRMING_AMOUNT";
+  if (status === "SIGNING_PROGRESS" || status === "PENDING_SIGN")
+    return "CONFIRMING_AMOUNT";
   return status || "CONFIRMING_AMOUNT";
 }
 
@@ -441,11 +460,15 @@ function canGoSign(order: OrderListViewItem) {
   const node = order?.nodeCode ?? order?.currentNode ?? order?.businessNode;
   if (order.isSignContract === 1) return true;
   const status = String(order.currentStatus || order.status || "");
-  return isAfterPreAudit(node) || ["PENDING_SIGN", "SIGNING_PROGRESS", "SIGNED"].includes(status);
+  return (
+    isAfterPreAudit(node) ||
+    ["PENDING_SIGN", "SIGNING_PROGRESS", "SIGNED"].includes(status)
+  );
 }
 
 function handleSignButton(order: OrderListViewItem) {
-  const creditOrderId = order?.creditOrderId || order?.orderNo || order?.applicationNo || order?.id;
+  const creditOrderId =
+    order?.creditOrderId || order?.orderNo || order?.applicationNo || order?.id;
   if (!creditOrderId) {
     uni.showToast({ title: "缺少订单编号", icon: "none" });
     return;
@@ -463,8 +486,11 @@ function handleSignButton(order: OrderListViewItem) {
 }
 
 function handleDetailButton(order: OrderListViewItem) {
-  const nodeCode = normalizeNodeCode(order?.nodeCode ?? order?.currentNode ?? order?.businessNode);
-  const route = NODE_DETAIL_ROUTE_MAP[nodeCode] || "/pages/business/applyDetail";
+  const nodeCode = normalizeNodeCode(
+    order?.nodeCode ?? order?.currentNode ?? order?.businessNode,
+  );
+  const route =
+    NODE_DETAIL_ROUTE_MAP[nodeCode] || "/pages/business/applyDetail";
   const query = buildOrderQuery(order);
 
   if (route === "/pages/business/signCenter") {
@@ -543,7 +569,11 @@ function buildVehicleDisplay(order: CreditListItem) {
 }
 
 function normalizeOrderItem(order: CreditListItem): OrderListViewItem {
-  const node = firstValue(order.currentNode, order.nodeCode, order.businessNode);
+  const node = firstValue(
+    order.currentNode,
+    order.nodeCode,
+    order.businessNode,
+  );
   const nodeStatus = firstValue(order.currentStatus, order.nodeStatus);
   const businessNode = firstText(node);
   const creditOrderId = firstText(
@@ -555,7 +585,12 @@ function normalizeOrderItem(order: CreditListItem): OrderListViewItem {
 
   return {
     ...order,
-    name: firstText(order.name, order.customerName, order.personName, "未知客户"),
+    name: firstText(
+      order.name,
+      order.customerName,
+      order.personName,
+      "未知客户",
+    ),
     phone: firstText(order.phone, order.telephone, "-"),
     creditOrderId,
     businessNode,
@@ -1103,7 +1138,9 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   justify-content: center;
   box-shadow: 0 8rpx 24rpx rgba(37, 99, 235, 0.35);
   z-index: 999;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
   animation: fadeInScale 0.3s ease-out;
 
   &:active {
