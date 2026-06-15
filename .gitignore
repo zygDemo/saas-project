@@ -31,3 +31,8 @@ coverage
 
 # 上传文件目录
 saas-api/apps/admin-api/uploads/
+# New API local deployment secrets and runtime data
+# New API local deployment secrets and runtime data
+saas-api/apps/new-api/.env
+saas-api/apps/new-api/data/
+saas-api/apps/new-api/logs/
