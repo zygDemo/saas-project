@@ -66,144 +66,60 @@
           :key="order.id"
           class="order-card"
           :class="`status-${order.statusClass}`"
-          :style="{ animationDelay: `${index * 0.06}s` }"
+          :style="{ animationDelay: `${index * 0.05}s` }"
           @click="handleDetailButton(order)"
         >
-          <!-- 订单头部 -->
-          <view class="order-header">
-            <view class="header-left">
-              <view class="avatar" :class="`avatar--${order.statusClass}`">
-                {{ order.name?.charAt(0) || "?" }}
-              </view>
-              <view class="title-block">
+          <view class="order-main">
+            <!-- 头部：姓名 + 金额 -->
+            <view class="order-header">
+              <view class="order-header__left">
                 <text class="customer-name">{{ order.name }}</text>
-                <view class="order-status order-status--business-node">
-                  {{ order.businessNodeLabel }}
+                <view v-if="order.nodeStatusLabel" class="status-tag">
+                  <view class="status-tag__dot" />
+                  <text class="status-tag__text">{{ order.nodeStatusLabel }}</text>
                 </view>
               </view>
+              <text v-if="order.pushQuota" class="amount-value">¥{{ order.pushQuota }}</text>
             </view>
-            <text class="order-time-text">{{ order.createTime }}</text>
-          </view>
 
-          <!-- 订单内容 -->
-          <view class="order-body">
-            <view class="info-row">
-              <view class="info-icon">
-                <u-icon name="order" size="24" color="#8c8c8c" />
-              </view>
-              <text class="label">订单号</text>
-              <text class="value order-no">{{
-                order.creditOrderId || order.id
-              }}</text>
+            <!-- 手机号 + 业务节点 -->
+            <view class="order-subheader">
+              <text class="customer-phone">{{ order.phone }}</text>
+              <text v-if="order.businessNodeLabel" class="business-node">{{ order.businessNodeLabel }}</text>
             </view>
-            <view class="info-row">
-              <view class="info-icon">
-                <u-icon name="phone" size="24" color="#8c8c8c" />
-              </view>
-              <text class="label">联系电话</text>
-              <text class="value">{{ order.phone }}</text>
-            </view>
-            <view v-if="order.plateNumber" class="info-row">
-              <view class="info-icon">
-                <u-icon name="car" size="24" color="#8c8c8c" />
-              </view>
-              <text class="label">车牌号</text>
-              <text class="value">{{ order.plateNumber }}</text>
-            </view>
-            <view v-if="order.vehicleDisplay" class="info-row">
-              <view class="info-icon">
-                <u-icon name="grid" size="24" color="#8c8c8c" />
-              </view>
-              <text class="label">车辆信息</text>
-              <text class="value">{{ order.vehicleDisplay }}</text>
-            </view>
-            <view v-if="order.pushQuota" class="info-row">
-              <view class="info-icon">
-                <u-icon name="red-packet" size="24" color="#8c8c8c" />
-              </view>
-              <text class="label">申请金额</text>
-              <text class="value amount-value">¥{{ order.pushQuota }}</text>
-            </view>
-            <view v-if="order.productName" class="info-row">
-              <view class="info-icon">
-                <u-icon name="grid" size="24" color="#8c8c8c" />
-              </view>
-              <text class="label">产品名称</text>
-              <text class="value">{{ order.productName }}</text>
-            </view>
-            <view v-if="order.periods" class="info-row">
-              <view class="info-icon">
-                <u-icon name="calendar" size="24" color="#8c8c8c" />
-              </view>
-              <text class="label">期数</text>
-              <text class="value">{{ order.periods }}期</text>
-            </view>
-          </view>
 
-          <!-- 订单操作 -->
-          <view class="order-footer">
-          <view class="order-tags">
-            <u-tag
-              v-if="order.phaseName"
-              :text="order.phaseName"
-              size="mini"
-              type="primary"
-              plain
-            />
-            <u-tag
-              v-if="order.nodeStatusLabel"
-              :text="order.nodeStatusLabel"
-              size="mini"
-              type="info"
-              plain
-            />
-            <u-tag
-              v-if="order.isSignContract === 1"
-              text="已签约"
-              size="mini"
-              type="success"
-              plain
-            />
-            <u-tag
-              v-if="order.isSignContract === 2"
-              text="未签约"
-              size="mini"
-              type="warning"
-              plain
-            />
-            <u-tag
-              v-if="order.isFaceRecognition === 2"
-              text="人脸认证通过"
-              size="mini"
-              type="success"
-              plain
-            />
-            <u-tag
-              v-if="order.isFaceRecognition === 3"
-              text="人脸认证失败"
-              size="mini"
-              type="error"
-              plain
-            />
+            <!-- 车牌 + 产品 -->
+            <view v-if="order.plateNumber || order.productName || order.vehicleDisplay" class="order-meta">
+              <text v-if="order.plateNumber" class="plate-number">{{ order.plateNumber }}</text>
+              <text v-if="order.productName" class="product-text">{{ order.productName }}</text>
+              <text v-if="!order.plateNumber && order.vehicleDisplay" class="vehicle-text">{{ order.vehicleDisplay }}</text>
+            </view>
+
+            <!-- 订单号 -->
+            <text class="order-no">{{ order.creditOrderId || order.id }}</text>
+
+            <!-- 底部：时间 + 按钮 -->
+            <view class="order-footer">
+              <text v-if="order.createTime" class="order-time">{{ order.createTime }}</text>
+              <view class="order-actions">
+                <u-button
+                  v-if="canGoSign(order)"
+                  size="mini"
+                  type="success"
+                  @click.stop="handleSignButton(order)"
+                >
+                  签约
+                </u-button>
+                <u-button
+                  size="mini"
+                  type="primary"
+                  @click.stop="handleDetailButton(order)"
+                >
+                  详情
+                </u-button>
+              </view>
+            </view>
           </view>
-          <view class="order-actions">
-            <u-button
-              v-if="canGoSign(order)"
-              size="mini"
-              type="success"
-              @click.stop="handleSignButton(order)"
-            >
-              签约
-            </u-button>
-            <u-button
-              size="mini"
-              type="primary"
-              @click.stop="handleDetailButton(order)"
-            >
-              详情
-            </u-button>
-          </view>
-        </view>
         </view>
       </view>
 
@@ -725,49 +641,69 @@ onReachBottom(() => {
 </script>
 
 <style lang="scss" scoped>
+/* ===== 变量系统 ===== */
+$bg-page: #f2f4f7;
+$bg-surface: #ffffff;
+$border-subtle: #ebedf2;
+
+$text-main: #1a1d29;
+$text-body: #4e5566;
+$text-hint: #8b93a7;
+$text-light: #b0b8cc;
+
+$primary: #4f7cff;
+$primary-light: #eef1ff;
+
+$accent-green: #3dd598;
+$accent-red: #ff6b6b;
+$accent-orange: #ff9f43;
+$accent-blue: #4f7cff;
+
+/* 缓动函数 */
+$ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
 .order-list-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #eef4ff 0%, #f6f8fb 260rpx, #f6f8fb 100%);
+  background: $bg-page;
 }
 
+/* ===== 搜索栏 ===== */
 .search-bar {
-  padding: 22rpx 24rpx 16rpx;
-  background: transparent;
+  padding: 20rpx 24rpx 16rpx;
+  background: $bg-page;
 }
 
+/* ===== 筛选区 ===== */
 .filter-card {
-  margin: 0 24rpx 8rpx;
-  padding: 22rpx 0 18rpx;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1rpx solid #e5edf7;
-  border-radius: 22rpx;
-  box-shadow: 0 12rpx 32rpx rgba(15, 23, 42, 0.055);
+  margin: 0 24rpx 20rpx;
+  padding: 16rpx 0 14rpx;
+  background: $bg-surface;
+  border-radius: 20rpx;
+  box-shadow: 0 1rpx 4rpx rgba(26, 29, 41, 0.04);
 }
 
 .filter-title-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: 16rpx;
-  padding: 0 24rpx 14rpx;
+  padding: 0 24rpx 10rpx;
 }
 
 .filter-title {
   position: relative;
-  padding-left: 18rpx;
-  font-size: 30rpx;
-  font-weight: 800;
-  color: #172033;
+  padding-left: 16rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: $text-main;
 
   &::before {
     content: "";
     position: absolute;
     top: 50%;
     left: 0;
-    width: 6rpx;
-    height: 28rpx;
-    background: linear-gradient(180deg, #2563eb, #14b8a6);
+    width: 4rpx;
+    height: 24rpx;
+    background: $primary;
     border-radius: 999rpx;
     transform: translateY(-50%);
   }
@@ -775,16 +711,13 @@ onReachBottom(() => {
 
 .filter-subtitle {
   font-size: 22rpx;
-  color: #94a3b8;
-}
-
-.filter-bar {
-  background: transparent;
+  color: $text-light;
 }
 
 .filter-bar--status {
   margin-top: 6rpx;
-  border-top: 1rpx dashed #e5edf7;
+  padding-top: 10rpx;
+  border-top: 1rpx dashed rgba($border-subtle, 0.8);
 }
 
 .filter-scroll {
@@ -793,52 +726,70 @@ onReachBottom(() => {
 
 .filter-list {
   display: inline-flex;
-  gap: 16rpx;
-  padding: 12rpx 24rpx;
-}
-
-.filter-list--status {
-  padding-bottom: 0;
+  gap: 10rpx;
+  padding: 6rpx 24rpx;
 }
 
 .filter-item {
   position: relative;
-  min-height: 56rpx;
-  padding: 0 24rpx;
-  border: 1rpx solid #e2e8f0;
+  height: 52rpx;
+  padding: 0 22rpx;
+  border: 1rpx solid $border-subtle;
   border-radius: 999rpx;
-  background: #f8fafc;
+  background: #f7f8fc;
   box-sizing: border-box;
-  font-size: 25rpx;
-  font-weight: 600;
-  line-height: 54rpx;
-  color: #475569;
+  font-size: 24rpx;
+  font-weight: 500;
+  line-height: 50rpx;
+  color: $text-body;
   white-space: nowrap;
-  transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
+  transition: all 0.2s $ease-out;
 
   &--active {
-    background: linear-gradient(135deg, #2563eb, #14b8a6);
-    border-color: transparent;
+    background: $primary;
+    border-color: $primary;
     color: #fff;
-    box-shadow: 0 8rpx 18rpx rgba(37, 99, 235, 0.16);
+    box-shadow: 0 2rpx 10rpx rgba(79, 124, 255, 0.3);
+    font-weight: 600;
   }
 
   &:active {
-    transform: scale(0.96);
+    transform: scale(0.95);
   }
 }
 
 .filter-item--status {
-  min-height: 50rpx;
-  padding: 0 22rpx;
-  font-size: 24rpx;
-  line-height: 48rpx;
+  height: 44rpx;
+  padding: 0 18rpx;
+  font-size: 22rpx;
+  line-height: 42rpx;
+}
+
+.filter-badge {
+  position: absolute;
+  top: -6rpx;
+  right: -6rpx;
+  min-width: 28rpx;
+  height: 28rpx;
+  padding: 0 6rpx;
+  background: $accent-red;
+  border-radius: 14rpx;
+  font-size: 19rpx;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  line-height: 28rpx;
+}
+
+/* ===== 列表 ===== */
+.order-list {
+  padding: 0 24rpx calc(24rpx + env(safe-area-inset-bottom));
 }
 
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(30rpx);
+    transform: translateY(20rpx);
   }
   to {
     opacity: 1;
@@ -846,266 +797,215 @@ onReachBottom(() => {
   }
 }
 
-.filter-badge {
-  position: absolute;
-  top: -8rpx;
-  right: -8rpx;
-  min-width: 32rpx;
-  height: 32rpx;
-  padding: 0 8rpx;
-  background: #f56c6c;
-  border-radius: 16rpx;
-  font-size: 20rpx;
-  color: #fff;
-  text-align: center;
-  line-height: 32rpx;
-}
-
-.order-list {
-  padding: 18rpx 24rpx 28rpx;
-}
-
 .order-card {
-  position: relative;
-  margin-bottom: 22rpx;
-  overflow: hidden;
-  background: #fff;
-  border: 1rpx solid #e7edf6;
-  border-radius: 22rpx;
-  box-shadow: 0 12rpx 32rpx rgba(15, 23, 42, 0.055);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
-  animation: slideUp 0.4s ease-out both;
-
-  &::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 8rpx;
-    background: #cbd5e1;
-  }
-
-  // 状态色条映射
-  &.status-1::before {
-    background: linear-gradient(180deg, #22c55e, #16a34a);
-  }
-  &.status-2::before {
-    background: linear-gradient(180deg, #ef4444, #f97316);
-  }
-  &.status-3::before {
-    background: linear-gradient(180deg, #f59e0b, #facc15);
-  }
-  &.status-4::before {
-    background: linear-gradient(180deg, #2563eb, #14b8a6);
-  }
+  margin-bottom: 16rpx;
+  background: $bg-surface;
+  border-radius: 20rpx;
+  box-shadow: 0 1rpx 6rpx rgba(26, 29, 41, 0.04);
+  transition: all 0.2s $ease-out;
+  animation: slideUp 0.35s $ease-out both;
 
   &:active {
-    box-shadow: 0 6rpx 18rpx rgba(37, 99, 235, 0.1);
-    transform: scale(0.99);
+    transform: scale(0.985);
+    box-shadow: 0 2rpx 12rpx rgba(79, 124, 255, 0.1);
   }
 }
 
+.order-main {
+  padding: 24rpx;
+}
+
+/* 头部：姓名 + 金额 */
 .order-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18rpx;
-  padding: 26rpx 26rpx 20rpx 34rpx;
-  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-  border-bottom: 1rpx solid #edf2f7;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
   gap: 16rpx;
-  flex: 1;
-  min-width: 0;
 }
 
-.avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 18rpx;
-  color: #fff;
-  font-size: 30rpx;
-  font-weight: 800;
-  flex-shrink: 0;
-  box-shadow: 0 8rpx 18rpx rgba(15, 23, 42, 0.12);
-
-  &--1 {
-    background: linear-gradient(135deg, #16a34a, #22c55e);
-  }
-  &--2 {
-    background: linear-gradient(135deg, #ef4444, #f97316);
-  }
-  &--3 {
-    background: linear-gradient(135deg, #f59e0b, #facc15);
-  }
-  &--4 {
-    background: linear-gradient(135deg, #2563eb, #14b8a6);
-  }
-}
-
-.title-block {
+.order-header__left {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 10rpx;
+  gap: 8rpx;
   min-width: 0;
 }
 
 .customer-name {
-  font-size: 34rpx;
-  font-weight: 800;
-  line-height: 1.15;
-  color: #111827;
-}
-
-.order-time-text {
-  max-width: 180rpx;
-  font-size: 22rpx;
-  line-height: 1.3;
-  color: #94a3b8;
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.order-status {
-  padding: 7rpx 16rpx;
-  border-radius: 999rpx;
-  font-size: 22rpx;
+  font-size: 32rpx;
   font-weight: 700;
-  line-height: 1.2;
-
-  &--1 {
-    background: #ecfdf3;
-    color: #16a34a;
-  }
-
-  &--2 {
-    background: #fff1f2;
-    color: #e11d48;
-  }
-
-  &--3 {
-    background: #fffbeb;
-    color: #d97706;
-  }
-
-  &--4 {
-    background: #eff6ff;
-    color: #2563eb;
-  }
-
-  &--business-node {
-    background: #eff6ff;
-    color: #2563eb;
-    border: 1rpx solid #dbeafe;
-  }
+  color: $text-main;
 }
 
-.order-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-  padding: 22rpx 26rpx 20rpx 34rpx;
-}
-
-.info-row {
-  display: flex;
-  align-items: flex-start;
-  min-height: 42rpx;
-  font-size: 26rpx;
-  line-height: 1.55;
-}
-
-.info-icon {
-  display: flex;
+.status-tag {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 42rpx;
-  padding-top: 3rpx;
-  flex-shrink: 0;
-  margin-right: 4rpx;
+  gap: 8rpx;
+  align-self: flex-start;
 }
 
-.label {
-  width: 132rpx;
-  color: #94a3b8;
+.status-tag__dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
   flex-shrink: 0;
-  font-size: 25rpx;
 }
 
-.value {
-  flex: 1;
-  min-width: 0;
-  color: #334155;
-  font-weight: 600;
-  font-size: 26rpx;
-  word-break: break-all;
+.status-tag__text {
+  font-size: 22rpx;
+  font-weight: 500;
+  color: $text-hint;
 }
 
 .amount-value {
-  color: #dc2626;
-  font-weight: 800;
-  font-size: 30rpx;
+  color: #e8453c;
+  font-weight: 700;
+  font-size: 32rpx;
+  flex-shrink: 0;
+  letter-spacing: -0.5rpx;
 }
 
-.order-no {
+/* 状态色映射（圆点） */
+.order-card.status-1 .status-tag__dot {
+  background: $accent-green;
+}
+.order-card.status-2 .status-tag__dot {
+  background: $accent-red;
+}
+.order-card.status-3 .status-tag__dot {
+  background: $accent-orange;
+}
+.order-card.status-4 .status-tag__dot {
+  background: $accent-blue;
+}
+
+/* 次头部：手机号 + 业务节点 */
+.order-subheader {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 10rpx;
+}
+
+.customer-phone {
   font-size: 24rpx;
-  color: #64748b;
-  font-family: DINAlternate-Bold, Arial, sans-serif;
+  color: $text-hint;
 }
 
+.business-node {
+  font-size: 22rpx;
+  font-weight: 500;
+  color: $primary;
+  background: $primary-light;
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+/* 中间信息：车牌 + 产品 */
+.order-meta {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 16rpx;
+  min-width: 0;
+}
+
+.plate-number {
+  flex-shrink: 0;
+  padding: 4rpx 12rpx;
+  background: $text-main;
+  border-radius: 6rpx;
+  color: #fff;
+  font-size: 22rpx;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 1rpx;
+}
+
+.product-text,
+.vehicle-text {
+  overflow: hidden;
+  font-size: 24rpx;
+  color: $text-body;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+/* 订单号 */
+.order-no {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: $text-light;
+  font-family: "SF Mono", "Fira Code", Consolas, monospace;
+  letter-spacing: 0.2rpx;
+}
+
+/* 底部：时间 + 按钮 */
 .order-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18rpx;
-  padding: 18rpx 26rpx 22rpx 34rpx;
-  background: #f8fafc;
-  border-top: 1rpx solid #edf2f7;
+  gap: 16rpx;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #f4f5f9;
 }
 
-.order-tags {
-  display: flex;
-  gap: 10rpx;
-  flex-wrap: wrap;
-  flex: 1;
-  min-width: 0;
+.order-time {
+  font-size: 22rpx;
+  color: $text-light;
+  flex-shrink: 0;
 }
 
 .order-actions {
   display: flex;
   align-items: center;
-  gap: 14rpx;
+  gap: 12rpx;
   flex-shrink: 0;
 }
 
+/* ===== 空状态 / 加载 ===== */
 .empty-state {
-  margin: 24rpx;
-  padding: 120rpx 0;
-  background: #fff;
-  border: 1rpx solid #e7edf6;
-  border-radius: 22rpx;
-  box-shadow: 0 10rpx 28rpx rgba(15, 23, 42, 0.04);
+  margin: 40rpx 24rpx;
+  padding: 100rpx 40rpx;
+  background: $bg-surface;
+  border-radius: 24rpx;
+  box-shadow: 0 1rpx 6rpx rgba(26, 29, 41, 0.04);
+
+  :deep(.u-empty__text) {
+    color: $text-hint !important;
+    font-size: 26rpx !important;
+  }
 }
 
 .load-more {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 40rpx 0;
 }
 
 .no-more {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
   padding: 40rpx 0;
   font-size: 24rpx;
-  color: #cbd5e1;
+  color: $text-light;
   font-weight: 500;
+
+  &::before,
+  &::after {
+    content: "";
+    width: 48rpx;
+    height: 1rpx;
+    background: linear-gradient(90deg, transparent, $border-subtle);
+  }
+
+  &::after {
+    background: linear-gradient(90deg, $border-subtle, transparent);
+  }
 }
 </style>

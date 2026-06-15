@@ -1,103 +1,101 @@
 <template>
   <layout :active-tab="2" navTitle="我的" show-tabbar>
-    <view class="about-page">
-      <!-- 用户信息卡片 -->
-      <view class="hero-card" @click="handleUserCardClick">
-        <view class="hero-card__bg" />
-        <view class="hero-card__content">
-          <view class="hero-avatar">
-            <view class="hero-avatar__wrapper">
-              <u-avatar
-                :text="userName.charAt(0)"
-                size="160"
-                bg-color="#fff"
-                color="#2979ff"
-              />
-            </view>
+    <view class="my-page">
+      <view class="profile-hero" @click="handleUserCardClick">
+        <view class="profile-hero__orb profile-hero__orb--primary" />
+        <view class="profile-hero__orb profile-hero__orb--accent" />
+        <view class="profile-hero__header">
+          <view class="avatar-wrap">
+            <u-avatar
+              :text="avatarText"
+              size="136"
+              bg-color="#ffffff"
+              color="#5240FE"
+            />
           </view>
-          <view class="hero-info">
-            <view class="hero-info__name">
-              <text class="hero-info__name-text">
-                {{ userName }}
-              </text>
-              <view class="hero-info__badge">
-                {{ userRole }}
-              </view>
+
+          <view class="profile-info">
+            <view class="profile-name-row">
+              <text class="profile-name">{{ userName }}</text>
+              <view class="role-pill">{{ userRole }}</view>
             </view>
-            <view class="hero-info__desc">
-              <text>{{ userPhone }}</text>
+            <view class="profile-phone">
+              <u-icon name="phone" size="24" color="rgba(255,255,255,.82)" />
+              <text>{{ userPhone || "点击登录后查看账号信息" }}</text>
             </view>
-            <view class="hero-info__tagline"> 车贷业务移动办公平台 </view>
+            <view class="profile-subtitle">嗨车无忧 · 车抵贷移动工作台</view>
+          </view>
+        </view>
+
+        <view class="profile-meta">
+          <view v-for="item in profileMeta" :key="item.label" class="profile-meta__item">
+            <text class="profile-meta__value">{{ item.value }}</text>
+            <text class="profile-meta__label">{{ item.label }}</text>
           </view>
         </view>
       </view>
 
-      <!-- 业务统计 -->
-      <view class="stats-card">
-        <view class="stats-item">
-          <text class="stats-value">{{ businessStats.totalLeads }}</text>
-          <text class="stats-label">累计线索</text>
+      <view class="overview-card">
+        <view class="section-head">
+          <view>
+            <text class="section-title">业务概览</text>
+            <text class="section-subtitle">实时同步进件与放款数据</text>
+          </view>
+          <view class="refresh-chip" @click="loadBusinessStats">
+            <u-icon name="reload" size="24" color="var(--u-type-primary)" />
+            <text>刷新</text>
+          </view>
         </view>
-        <view class="stats-divider" />
-        <view class="stats-item">
-          <text class="stats-value">{{ businessStats.totalDeals }}</text>
-          <text class="stats-label">进件</text>
-        </view>
-        <view class="stats-divider" />
-        <view class="stats-item">
-          <text class="stats-value">{{ businessStats.pendingApproval }}</text>
-          <text class="stats-label">放款笔数</text>
-        </view>
-        <view class="stats-divider" />
-        <view class="stats-item">
-          <text class="stats-value">{{ businessStats.monthlyAmount }}</text>
-          <text class="stats-label">放款金额</text>
+
+        <view class="stats-grid">
+          <view v-for="item in statCards" :key="item.label" class="stat-card">
+            <view class="stat-card__icon" :class="item.iconClass">
+              <u-icon :name="item.icon" size="34" color="#ffffff" />
+            </view>
+            <view class="stat-card__content">
+              <text class="stat-card__value">{{ item.value }}</text>
+              <text class="stat-card__label">{{ item.label }}</text>
+            </view>
+          </view>
         </view>
       </view>
-      <!-- 功能列表 -->
-      <view class="menu-section">
+
+      <view class="quick-card">
+        <view class="section-head section-head--compact">
+          <view>
+            <text class="section-title">常用服务</text>
+            <text class="section-subtitle">账号、安全与帮助入口</text>
+          </view>
+        </view>
+
         <view class="menu-list">
           <view
-            v-for="(item, index) in menuList"
-            :key="index"
-            class="menu-card"
-            :style="{ animationDelay: `${index * 0.08}s` }"
+            v-for="item in menuList"
+            :key="item.path"
+            class="menu-item"
             @click="navigateTo(item.path)"
           >
-            <view
-              class="menu-card__icon"
-              :style="{ background: item.gradient }"
-            >
-              <u-icon :name="item.icon" size="48" color="#fff" />
+            <view class="menu-item__icon" :class="item.iconClass">
+              <u-icon :name="item.icon" size="36" color="#ffffff" />
             </view>
-            <view class="menu-card__info">
-              <text class="menu-card__title">{{ item.title }}</text>
-              <text class="menu-card__desc">{{ item.desc }}</text>
+            <view class="menu-item__content">
+              <text class="menu-item__title">{{ item.title }}</text>
+              <text class="menu-item__desc">{{ item.desc }}</text>
             </view>
-            <u-icon name="arrow-right" size="28" color="#c0c4cc" />
+            <u-icon name="arrow-right" size="28" color="#c7c9d9" />
           </view>
         </view>
       </view>
 
-      <!-- 操作按钮 -->
-      <view class="action-section">
-        <u-button
-          type="warning"
-          shape="circle"
-          icon="trash"
-          @click="handleClearCache"
-        >
-          清除缓存
-        </u-button>
-        <u-button
-          v-if="userInfo"
-          type="error"
-          shape="circle"
-          icon="close-circle"
-          @click="handleLogout"
-        >
-          退出登录
-        </u-button>
+      <view class="action-panel">
+        <view class="action-btn action-btn--cache" @click="handleClearCache">
+          <u-icon name="trash" size="32" color="var(--u-type-warning)" />
+          <text>清除缓存</text>
+        </view>
+        <view v-if="userInfo" class="action-btn action-btn--logout" @click="handleLogout">
+          <u-icon name="close-circle" size="32" color="var(--u-type-error)" />
+          <text>退出登录</text>
+        </view>
       </view>
     </view>
   </layout>
@@ -105,42 +103,53 @@
 
 <script setup lang="ts">
 import layout from "@/pages/layout/layout.vue";
+import { useBusinessApi } from "@/api/business";
 import { useLocalStore, useSessionStore } from "@/stores";
+import { onShow } from "@dcloudio/uni-app";
+import { storeToRefs } from "pinia";
 import { $u, useTheme } from "uview-pro";
 import { computed, ref } from "vue";
-import { storeToRefs } from "pinia";
-import { useI18n } from "vue-i18n";
-import { useBusinessApi } from "@/api/business";
 
-useI18n();
 const sessionStore = useSessionStore();
 const localStore = useLocalStore();
 const businessApi = useBusinessApi();
 const { userInfo } = storeToRefs(localStore);
 const { initTheme, setDarkMode } = useTheme();
 
-// 用户信息
 const userName = computed(() => {
-  const name = userInfo.value?.userName as string;
-  return name || "未登录";
+  const info = userInfo.value || {};
+  return (
+    String(info.nickName || info.realName || info.userName || info.username || "") ||
+    "未登录"
+  );
 });
 
+const avatarText = computed(() => userName.value.slice(0, 1) || "我");
+
 const userPhone = computed(() => {
-  const phone = String(userInfo.value?.phonenumber || "");
+  const info = userInfo.value || {};
+  const phone = String(info.phonenumber || info.phone || info.mobile || "");
   return phone ? `${phone.slice(0, 3)}****${phone.slice(-4)}` : "";
 });
 
 const userRole = computed(() => {
-  const role = userInfo.value?.role as string;
+  const info = userInfo.value || {};
+  const role = String(info.role || info.roleKey || info.roleCode || "");
   const roleMap: Record<string, string> = {
     sales: "业务员",
+    salesman: "业务员",
     approver: "审批员",
     admin: "管理员",
+    customer: "客户",
   };
   return roleMap[role] || "业务员";
 });
 
-// 业务统计
+const orgName = computed(() => {
+  const info = userInfo.value || {};
+  return String(info.orgName || info.dept?.orgName || info.deptName || "默认机构");
+});
+
 const businessStats = ref({
   totalLeads: 0,
   totalDeals: 0,
@@ -148,17 +157,80 @@ const businessStats = ref({
   monthlyAmount: "0",
 });
 
-/** 加载业务统计 */
+const profileMeta = computed(() => [
+  { label: "当前机构", value: orgName.value },
+  { label: "账号角色", value: userRole.value },
+  { label: "登录状态", value: userInfo.value ? "已认证" : "未登录" },
+]);
+
+const statCards = computed(() => [
+  {
+    label: "累计线索",
+    value: businessStats.value.totalLeads,
+    icon: "account",
+    iconClass: "stat-card__icon--lead",
+  },
+  {
+    label: "进件订单",
+    value: businessStats.value.totalDeals,
+    icon: "file-text",
+    iconClass: "stat-card__icon--order",
+  },
+  {
+    label: "放款笔数",
+    value: businessStats.value.pendingApproval,
+    icon: "checkmark-circle",
+    iconClass: "stat-card__icon--loan",
+  },
+  {
+    label: "放款金额",
+    value: businessStats.value.monthlyAmount,
+    icon: "rmb-circle",
+    iconClass: "stat-card__icon--amount",
+  },
+]);
+
+const menuList = ref([
+  {
+    icon: "setting",
+    title: "个人设置",
+    desc: "资料、主题与消息偏好",
+    path: "/pages/my/settings",
+    iconClass: "menu-item__icon--setting",
+  },
+  {
+    icon: "question-circle",
+    title: "帮助中心",
+    desc: "查看常见问题与操作说明",
+    path: "/pages/my/faq",
+    iconClass: "menu-item__icon--help",
+  },
+  {
+    icon: "file-text",
+    title: "隐私政策",
+    desc: "了解数据安全与隐私保护",
+    path: "/pages/my/privacy",
+    iconClass: "menu-item__icon--privacy",
+  },
+  {
+    icon: "file-text-fill",
+    title: "用户协议",
+    desc: "查看平台服务条款",
+    path: "/pages/my/agreement",
+    iconClass: "menu-item__icon--agreement",
+  },
+]);
+
 async function loadBusinessStats() {
   try {
     const res: any = await businessApi.getStatisticsOverview();
-    if (res?.code === 200) {
-      const { leadCount, entryCount, loanCount, loanAmount } = res;
+    const payload = res?.data || res || {};
+    if (res?.code === 200 || payload) {
       businessStats.value = {
-        totalLeads: leadCount ?? 0,
-        totalDeals: entryCount ?? 0,
-        pendingApproval: loanCount ?? 0,
-        monthlyAmount: formatLoanAmount(loanAmount),
+        totalLeads: payload.leadCount ?? payload.totalLeads ?? 0,
+        totalDeals: payload.entryCount ?? payload.totalDeals ?? 0,
+        pendingApproval: payload.loanCount ?? payload.pendingApproval ?? 0,
+        monthlyAmount: formatLoanAmount(payload.loanAmount ?? payload.monthlyAmount),
       };
     }
   } catch (e) {
@@ -166,569 +238,437 @@ async function loadBusinessStats() {
   }
 }
 
-/** 格式化放款金额 */
 function formatLoanAmount(amount: unknown) {
-  if (amount == null) return "0";
+  if (amount == null || amount === "") return "0";
   const num = Number(amount);
-  if (num >= 10000) {
-    return `${(num / 10000).toFixed(1)}万`;
-  }
+  if (Number.isNaN(num)) return String(amount);
+  if (num >= 10000) return `${(num / 10000).toFixed(1)}万`;
   return String(num);
 }
 
-// 功能菜单列表 - 网格样式
-// 功能列表 - 仅保留这几个，从上往下依次排列
-const menuList = ref([
-  {
-    icon: "setting",
-    title: "个人设置",
-    desc: "修改资料与偏好",
-    path: "/pages/my/settings",
-    gradient: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-  },
-  {
-    icon: "question-circle",
-    title: "帮助中心",
-    desc: "常见问题解答",
-    path: "/pages/my/faq",
-    gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-  },
-  {
-    icon: "file-text",
-    title: "隐私政策",
-    desc: "了解隐私保护",
-    path: "/pages/my/privacy",
-    gradient: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
-  },
-  {
-    icon: "file-text-fill",
-    title: "用户协议",
-    desc: "服务条款与协议",
-    path: "/pages/my/agreement",
-    gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-  },
-]);
-
-/**
- * 清除缓存
- * 清除本地存储和会话存储的所有数据，并重置主题设置
- */
 function handleClearCache() {
   uni.showModal({
     title: "清除缓存",
     content: "将清除所有本地数据和会话，需要重新登录",
     success: (res) => {
-      if (res.confirm) {
-        try {
-          // 清除会话存储
-          uni.clearStorageSync();
-          // 清除状态管理
-          sessionStore.clearSession();
-          // 重置主题为默认主题（海洋蓝）
-          initTheme(undefined, undefined, true);
-          setDarkMode("light");
-          $u.toast("缓存已清除");
-          // 延迟跳转到登录页
-          setTimeout(() => {
-            uni.reLaunch({
-              url: "/pages/auth/login",
-            });
-          }, 800);
-        } catch (err) {
-          console.error("清除缓存失败:", err);
-          $u.toast("清除缓存失败", "error");
-        }
+      if (!res.confirm) return;
+      try {
+        uni.clearStorageSync();
+        sessionStore.clearSession();
+        initTheme(undefined, undefined, true);
+        setDarkMode("light");
+        $u.toast("缓存已清除");
+        setTimeout(() => {
+          uni.reLaunch({ url: "/pages/auth/login" });
+        }, 800);
+      } catch (err) {
+        console.error("清除缓存失败:", err);
+        $u.toast("清除缓存失败", "error");
       }
     },
   });
 }
 
-/**
- * 退出登录
- * 为什么：统一处理登出逻辑，清理状态并跳转
- */
 function handleLogout() {
   uni.showModal({
     title: "确认退出",
     content: "退出后需要重新登录",
     success: (res) => {
-      if (res.confirm) {
-        sessionStore.clearSession();
-        $u.toast("已退出登录");
-        setTimeout(() => {
-          uni.reLaunch({ url: "/pages/auth/login" });
-        }, 500);
-      }
+      if (!res.confirm) return;
+      localStore.logout();
+      sessionStore.clearSession();
+      $u.toast("已退出登录");
+      setTimeout(() => {
+        uni.reLaunch({ url: "/pages/auth/login" });
+      }, 500);
     },
   });
 }
 
-/**
- * 点击用户卡片
- * 未登录时点击跳转登录页
- */
 function handleUserCardClick() {
   if (!userInfo.value) {
-    uni.navigateTo({
-      url: "/pages/auth/login",
-    });
+    uni.navigateTo({ url: "/pages/auth/login" });
   }
 }
 
-/**
- * 导航到指定页面
- */
 function navigateTo(path: string) {
-  uni.navigateTo({
-    url: path,
-  });
+  uni.navigateTo({ url: path });
 }
 
-// 初始化加载业务统计
-loadBusinessStats();
+onShow(() => {
+  loadBusinessStats();
+});
 </script>
 
 <style lang="scss" scoped>
-.about-page {
-  padding: 24rpx;
-  background: linear-gradient(
-    180deg,
-    rgba(41, 121, 255, 0.1) 0%,
-    transparent 100%
-  );
+.my-page {
+  min-height: 100%;
+  padding: 24rpx 24rpx 48rpx;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08) 0%, #f6f8ff 46%, #f7f8fa 100%);
+}
+
+.profile-hero,
+.overview-card,
+.quick-card,
+.action-panel {
+  border: 1rpx solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 18rpx 44rpx rgba(31, 45, 88, 0.08);
+}
+
+.profile-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 34rpx 30rpx 28rpx;
+  border-radius: 34rpx;
+  color: #ffffff;
+  background:
+    linear-gradient(135deg, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.98) 0%, rgba(72, 120, 255, 0.96) 48%, rgba(25, 190, 107, 0.9) 100%);
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+.profile-hero__orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(2rpx);
+}
+
+.profile-hero__orb--primary {
+  width: 240rpx;
+  height: 240rpx;
+  right: -84rpx;
+  top: -86rpx;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.profile-hero__orb--accent {
+  width: 180rpx;
+  height: 180rpx;
+  left: -70rpx;
+  bottom: -80rpx;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.profile-hero__header {
+  position: relative;
+  z-index: 1;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 24rpx;
 }
 
-// Hero 卡片
-.hero-card {
+.avatar-wrap {
+  width: 152rpx;
+  height: 152rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 44rpx;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.35), 0 18rpx 36rpx rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(12rpx);
+}
+
+.profile-info {
   position: relative;
-  margin: 0 0 8rpx;
-  border-radius: 24rpx;
-  overflow: hidden;
-  box-shadow: 0 12rpx 32rpx rgba(41, 121, 255, 0.2);
-  transition: all 0.3s ease;
-
-  &:active {
-    transform: scale(0.98);
-  }
-
-  &__bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, #2979ff 0%, #19be6b 50%, #ff9900 100%);
-    opacity: 0.95;
-
-    &::before {
-      content: "";
-      position: absolute;
-      top: -50%;
-      right: -20%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(
-        circle,
-        rgba(255, 255, 255, 0.2) 0%,
-        transparent 70%
-      );
-      animation: heroGlow 8s ease-in-out infinite;
-    }
-  }
-
-  &__content {
-    position: relative;
-    z-index: 2;
-    padding: 40rpx 32rpx;
-    display: flex;
-    align-items: center;
-    gap: 24rpx;
-  }
-}
-
-@keyframes heroGlow {
-  0%,
-  100% {
-    transform: rotate(0deg);
-    opacity: 0.3;
-  }
-  50% {
-    transform: rotate(180deg);
-    opacity: 0.6;
-  }
-}
-
-.hero-avatar {
-  flex-shrink: 0;
-
-  &__wrapper {
-    position: relative;
-    width: 160rpx;
-    height: 160rpx;
-    filter: drop-shadow(0 8rpx 16rpx rgba(0, 0, 0, 0.2));
-  }
-
-  &__ring {
-    position: absolute;
-    top: -8rpx;
-    left: -8rpx;
-    right: -8rpx;
-    bottom: -8rpx;
-    border: 4rpx solid rgba(255, 255, 255, 0.6);
-    border-radius: 50%;
-    animation: ringRotate 3s linear infinite;
-    box-shadow: 0 0 20rpx rgba(255, 255, 255, 0.3);
-  }
-}
-
-@keyframes ringRotate {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.hero-info {
+  z-index: 1;
   flex: 1;
+  min-width: 0;
+}
+
+.profile-name-row {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 12rpx;
-
-  &__name {
-    display: flex;
-    align-items: center;
-    gap: 12rpx;
-  }
-
-  &__name-text {
-    font-size: 44rpx;
-    font-weight: 800;
-    color: #ffffff;
-    letter-spacing: 2rpx;
-    text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
-  }
-
-  &__badge {
-    padding: 4rpx 12rpx;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 8rpx;
-    font-size: 20rpx;
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: 1rpx;
-    backdrop-filter: blur(10rpx);
-  }
-
-  &__desc {
-    display: flex;
-    align-items: center;
-    gap: 8rpx;
-    font-size: 26rpx;
-    color: rgba(255, 255, 255, 0.9);
-  }
-
-  &__desc-icon {
-    font-size: 28rpx;
-  }
-
-  &__tagline {
-    font-size: 24rpx;
-    color: rgba(255, 255, 255, 0.8);
-    margin-top: 4rpx;
-  }
 }
 
-.hero-arrow {
-  flex-shrink: 0;
-  opacity: 0.8;
-  transition: all 0.3s ease;
-}
-
-.hero-card:active .hero-arrow {
-  transform: translateX(4rpx);
-}
-
-// 统计卡片
-.stats-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  background: $u-bg-white;
-  border-radius: 20rpx;
-  padding: 32rpx 24rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.06);
-
-  .stats-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8rpx;
-    flex: 1;
-  }
-
-  .stats-value {
-    font-size: 36rpx;
-    font-weight: 700;
-    color: $u-type-primary;
-  }
-
-  .stats-label {
-    font-size: 24rpx;
-    color: $u-tips-color;
-  }
-
-  .stats-divider {
-    width: 1rpx;
-    height: 60rpx;
-    background: #e5e5e5;
-  }
-}
-
-// 清除缓存和退出登录按钮区域
-.action-section {
-  padding: 32rpx 24rpx;
-  margin-top: 16rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
-
-  :deep(.u-btn) {
-    width: 100%;
-  }
-}
-
-.spacer {
-  height: 20rpx;
-}
-
-// 区块卡片
-.section-card {
-  background: $u-bg-gray-light;
-  border-radius: 20rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.06);
+.profile-name {
+  max-width: 260rpx;
   overflow: hidden;
-  transition: all 0.3s ease;
-
-  &:hover {
-    box-shadow: 0 12rpx 32rpx rgba(41, 121, 255, 0.12);
-  }
-
-  &__header {
-    padding: 28rpx 32rpx;
-    display: flex;
-    align-items: center;
-    gap: 16rpx;
-    background: linear-gradient(
-      135deg,
-      rgba(41, 121, 255, 0.05),
-      rgba(25, 190, 107, 0.05)
-    );
-    border-bottom: 1rpx solid rgba(0, 0, 0, 0.04);
-  }
-
-  &__title {
-    font-size: 32rpx;
-    font-weight: 700;
-    color: $u-main-color;
-    letter-spacing: 1rpx;
-  }
-
-  &__body {
-    padding: 8rpx 0;
-  }
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 42rpx;
+  font-weight: 800;
+  letter-spacing: 1rpx;
 }
 
-// 关于文本
-.about-text {
-  padding: 24rpx 32rpx 32rpx;
-  font-size: 28rpx;
-  line-height: 1.8;
-  color: $u-content-color;
-
-  &__highlight {
-    font-weight: 700;
-    background: linear-gradient(135deg, #2979ff, #19be6b);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+.role-pill {
+  flex-shrink: 0;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.28);
 }
 
-// 信息项
-.info-item {
+.profile-phone,
+.profile-subtitle {
+  margin-top: 10rpx;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 24rpx;
+}
+
+.profile-phone {
   display: flex;
   align-items: center;
-  gap: 20rpx;
-  padding: 24rpx 32rpx;
-  transition: all 0.2s ease;
-  border-bottom: 1rpx solid rgba(0, 0, 0, 0.04);
+  gap: 8rpx;
+}
+
+.profile-meta {
   position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12rpx;
+  margin-top: 30rpx;
+}
+
+.profile-meta__item {
+  min-width: 0;
+  padding: 18rpx 12rpx;
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.22);
+}
+
+.profile-meta__value,
+.profile-meta__label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.profile-meta__value {
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.profile-meta__label {
+  margin-top: 6rpx;
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.overview-card,
+.quick-card,
+.action-panel {
+  margin-top: 24rpx;
+  padding: 28rpx;
+  border-radius: 30rpx;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+
+.section-head--compact {
+  margin-bottom: 14rpx;
+}
+
+.section-title,
+.section-subtitle {
+  display: block;
+}
+
+.section-title {
+  position: relative;
+  padding-left: 18rpx;
+  color: $u-main-color;
+  font-size: 32rpx;
+  font-weight: 800;
 
   &::before {
     content: "";
     position: absolute;
     left: 0;
-    top: 0;
-    bottom: 0;
-    width: 0;
-    background: linear-gradient(
-      135deg,
-      rgba(41, 121, 255, 0.1),
-      rgba(25, 190, 107, 0.1)
-    );
-    transition: width 0.3s ease;
+    top: 50%;
+    width: 6rpx;
+    height: 28rpx;
+    border-radius: 999rpx;
+    background: linear-gradient(180deg, var(--u-type-primary), var(--u-type-success));
+    transform: translateY(-50%);
   }
+}
+
+.section-subtitle {
+  margin-top: 8rpx;
+  color: $u-tips-color;
+  font-size: 22rpx;
+}
+
+.refresh-chip {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  color: var(--u-type-primary);
+  font-size: 22rpx;
+  font-weight: 700;
+  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
+
+  &:active {
+    opacity: 0.72;
+  }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 22rpx 18rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+  box-shadow: inset 0 0 0 1rpx rgba(225, 230, 245, 0.82);
+}
+
+.stat-card__icon,
+.menu-item__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 10rpx 20rpx rgba(31, 45, 88, 0.12);
+}
+
+.stat-card__icon {
+  width: 66rpx;
+  height: 66rpx;
+  border-radius: 20rpx;
+}
+
+.stat-card__icon--lead,
+.menu-item__icon--setting {
+  background: linear-gradient(135deg, var(--u-type-primary), #7c3aed);
+}
+
+.stat-card__icon--order,
+.menu-item__icon--help {
+  background: linear-gradient(135deg, #2f80ed, #56ccf2);
+}
+
+.stat-card__icon--loan,
+.menu-item__icon--privacy {
+  background: linear-gradient(135deg, var(--u-type-success), #38f9d7);
+}
+
+.stat-card__icon--amount,
+.menu-item__icon--agreement {
+  background: linear-gradient(135deg, var(--u-type-warning), #ff6b6b);
+}
+
+.stat-card__content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.stat-card__value {
+  color: $u-main-color;
+  font-size: 34rpx;
+  font-weight: 800;
+}
+
+.stat-card__label {
+  color: $u-tips-color;
+  font-size: 22rpx;
+}
+
+.menu-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid rgba(230, 233, 242, 0.9);
 
   &:last-child {
     border-bottom: none;
   }
 
   &:active {
-    background: rgba(41, 121, 255, 0.04);
+    opacity: 0.72;
     transform: translateX(4rpx);
-
-    &::before {
-      width: 6rpx;
-    }
-  }
-
-  &__icon {
-    flex-shrink: 0;
-    width: 64rpx;
-    height: 64rpx;
-    border-radius: 12rpx;
-    overflow: hidden;
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-  }
-
-  &:active &__icon {
-    transform: scale(1.05);
-    box-shadow: 0 6rpx 16rpx rgba(41, 121, 255, 0.2);
-  }
-
-  &__content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8rpx;
-  }
-
-  &__title {
-    font-size: 30rpx;
-    font-weight: 600;
-    color: $u-main-color;
-    transition: color 0.2s ease;
-  }
-
-  &:active &__title {
-    color: var(--u-type-primary);
-  }
-
-  &__label {
-    font-size: 24rpx;
-    color: $u-tips-color;
-    line-height: 1.5;
-  }
-
-  &__arrow {
-    flex-shrink: 0;
-    opacity: 0.6;
-    transition: all 0.2s ease;
   }
 }
 
-.info-item:active .info-item__arrow {
-  transform: translateX(4rpx);
-  opacity: 1;
-  color: var(--u-type-primary);
-}
-
-// 功能列表
-.menu-section {
-  margin-top: 12rpx;
-}
-
-.menu-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-
-.menu-card {
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 28rpx 24rpx;
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
-  transition: all 0.3s ease;
-  animation: slideUp 0.5s ease-out both;
-
-  &:active {
-    transform: scale(0.98);
-    box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30rpx);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.menu-card__icon {
-  width: 88rpx;
-  height: 88rpx;
+.menu-item__icon {
+  width: 76rpx;
+  height: 76rpx;
   border-radius: 22rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.12);
 }
 
-.menu-card__info {
+.menu-item__content {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 6rpx;
 }
 
-.menu-card__title {
+.menu-item__title {
+  color: $u-main-color;
   font-size: 30rpx;
-  font-weight: 600;
-  color: #333;
+  font-weight: 700;
 }
 
-.menu-card__desc {
-  font-size: 24rpx;
-  color: #999;
+.menu-item__desc {
+  color: $u-tips-color;
+  font-size: 23rpx;
 }
 
-// 操作按钮
-.action-section {
-  margin-top: 32rpx;
+.action-panel {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
 
-  :deep(.u-btn) {
-    width: 100%;
-    height: 88rpx;
-    font-size: 30rpx;
-    font-weight: 600;
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  height: 88rpx;
+  border-radius: 999rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+
+  &:active {
+    transform: scale(0.98);
   }
+}
+
+.action-btn--cache {
+  color: var(--u-type-warning);
+  background: rgba(var(--u-type-warning-rgb, 255, 153, 0), 0.1);
+}
+
+.action-btn--logout {
+  color: var(--u-type-error);
+  background: rgba(var(--u-type-error-rgb, 245, 108, 108), 0.1);
 }
 </style>
