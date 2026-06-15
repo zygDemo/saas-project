@@ -111,6 +111,14 @@ const DEFAULT_FLOW_NODES: DefaultFlowNodeMeta[] = [
         executor: '客户/业务员',
         sort: 1140,
         required: true
+      },
+      {
+        code: 'PENDING_PRECHECK',
+        name: '待预审',
+        operationSide: '系统',
+        executor: '系统',
+        sort: 1150,
+        required: false
       }
     ],
     transitions: [{ action: 10, toNode: 1200 }]

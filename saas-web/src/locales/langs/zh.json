@@ -306,6 +306,11 @@
       "title": "运维管理",
       "server": "服务器管理"
     },
+    "dataCenter": {
+      "title": "数据中心",
+      "stats": "数据统计",
+      "auditLog": "日志审计"
+    },
     "plan": {
       "title": "版本计划",
       "log": "更新日志"

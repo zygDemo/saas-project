@@ -283,6 +283,18 @@ export class MobileEnumController {
   getLoanBusinessNodes() {
     return this.service.getLoanBusinessNodes()
   }
+
+  @Get('flow-steps/:nodeCode')
+  @ApiOperation({ summary: '获取流程节点步骤' })
+  getFlowSteps(@Param('nodeCode') nodeCode: string, @Query('businessType') businessType?: string) {
+    return this.service.getFlowSteps(nodeCode, businessType)
+  }
+
+  @Get('flow-config/:nodeCode')
+  @ApiOperation({ summary: '获取流程节点配置' })
+  getFlowConfig(@Param('nodeCode') nodeCode: string, @Query('businessType') businessType?: string) {
+    return this.service.getFlowConfigByNodeCode(nodeCode, businessType)
+  }
 }
 
 @ApiTags('移动端统计')

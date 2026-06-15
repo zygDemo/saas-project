@@ -124,6 +124,15 @@
       "path": "pages/business/pawnApprovalDetail"
     },
     {
+      "path": "pages/business/todoCenter"
+    },
+    {
+      "path": "pages/business/applyProgress"
+    },
+    {
+      "path": "pages/business/messageCenter"
+    },
+    {
       "path": "pages/my/my"
     },
     {

@@ -59,6 +59,17 @@
         </view>
       </view>
 
+      <!-- 订单列表（带下拉刷新） -->
+      <scroll-view
+        scroll-y
+        class="order-list-scroll"
+        :scroll-top="scrollTopValue"
+        :refresher-enabled="true"
+        :refresher-triggered="isRefreshing"
+        @refresherrefresh="onRefresh"
+        @scroll="onScroll"
+      >
+
       <!-- 订单列表 -->
       <view class="order-list">
         <view
@@ -95,32 +106,71 @@
               <text v-if="!order.plateNumber && order.vehicleDisplay" class="vehicle-text">{{ order.vehicleDisplay }}</text>
             </view>
 
-            <!-- 订单号 -->
-            <text class="order-no">{{ order.creditOrderId || order.id }}</text>
-
-            <!-- 底部：时间 + 按钮 -->
-            <view class="order-footer">
-              <text v-if="order.createTime" class="order-time">{{ order.createTime }}</text>
-              <view class="order-actions">
-                <u-button
-                  v-if="canGoSign(order)"
-                  size="mini"
-                  type="success"
-                  @click.stop="handleSignButton(order)"
-                >
-                  签约
-                </u-button>
-                <u-button
-                  size="mini"
-                  type="primary"
-                  @click.stop="handleDetailButton(order)"
-                >
-                  详情
-                </u-button>
-              </view>
-            </view>
+          <!-- 订单操作 -->
+          <view class="order-footer">
+          <view class="order-tags">
+            <u-tag
+              v-if="order.phaseName"
+              :text="order.phaseName"
+              size="mini"
+              type="primary"
+              plain
+            />
+            <u-tag
+              v-if="order.nodeStatusLabel"
+              :text="order.nodeStatusLabel"
+              size="mini"
+              type="info"
+              plain
+            />
+            <u-tag
+              v-if="order.isSignContract === 1"
+              text="已签约"
+              size="mini"
+              type="success"
+              plain
+            />
+            <u-tag
+              v-if="order.isSignContract === 2"
+              text="未签约"
+              size="mini"
+              type="warning"
+              plain
+            />
+            <u-tag
+              v-if="order.isFaceRecognition === 2"
+              text="人脸认证通过"
+              size="mini"
+              type="success"
+              plain
+            />
+            <u-tag
+              v-if="order.isFaceRecognition === 3"
+              text="人脸认证失败"
+              size="mini"
+              type="error"
+              plain
+            />
+          </view>
+          <view class="order-actions">
+            <u-button
+              v-if="canGoSign(order)"
+              size="mini"
+              type="success"
+              @click.stop="handleSignButton(order)"
+            >
+              签约
+            </u-button>
+            <u-button
+              size="mini"
+              type="primary"
+              @click.stop="handleDetailButton(order)"
+            >
+              详情
+            </u-button>
           </view>
         </view>
+      </view>
       </view>
 
       <!-- 加载状态 -->
@@ -135,6 +185,16 @@
       <view v-if="!loading && orderList.length === 0" class="empty-state">
         <u-empty mode="list" text="暂无订单数据" />
       </view>
+
+      <!-- 返回顶部按钮 -->
+      <view
+        v-if="showBackToTop"
+        class="back-to-top"
+        @click="handleBackToTop"
+      >
+        <u-icon name="arrow-up" color="#fff" size="40" />
+      </view>
+    </scroll-view>
     </view>
   </layout>
 </template>
@@ -154,6 +214,14 @@ const ORDER_FILTER_MAX_AGE = 60 * 1000;
 // 搜索关键词
 const keyword = ref("");
 const lastKeyword = ref("");
+
+// 下拉刷新相关
+const isRefreshing = ref(false);
+
+// 返回顶部相关
+const showBackToTop = ref(false);
+const scrollTopValue = ref(0);
+const SCROLL_THRESHOLD = 500; // 滚动超过500rpx显示返回顶部按钮
 
 type BusinessNodeFilterValue = "all" | string;
 type NodeStatusFilterValue = "all" | string;
@@ -638,6 +706,25 @@ onShow(() => {
 onReachBottom(() => {
   fetchList();
 });
+
+// 下拉刷新处理
+async function onRefresh() {
+  isRefreshing.value = true;
+  await fetchList(true);
+  isRefreshing.value = false;
+}
+
+// 滚动事件处理
+function onScroll(e: any) {
+  const scrollTop = e.detail.scrollTop;
+  showBackToTop.value = scrollTop > SCROLL_THRESHOLD;
+}
+
+// 返回顶部
+function handleBackToTop() {
+  // scroll-view 需要通过 scroll-top 属性来控制滚动位置
+  scrollTopValue.value = 0;
+}
 </script>
 
 <style lang="scss" scoped>
@@ -663,11 +750,17 @@ $accent-blue: #4f7cff;
 $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
 .order-list-page {
-  min-height: 100vh;
-  background: $bg-page;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #eef4ff 0%, #f6f8fb 260rpx, #f6f8fb 100%);
 }
 
-/* ===== 搜索栏 ===== */
+.order-list-scroll {
+  flex: 1;
+  min-height: 0;
+}
+
 .search-bar {
   padding: 20rpx 24rpx 16rpx;
   background: $bg-page;
@@ -995,17 +1088,38 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   font-size: 24rpx;
   color: $text-light;
   font-weight: 500;
+}
 
-  &::before,
-  &::after {
-    content: "";
-    width: 48rpx;
-    height: 1rpx;
-    background: linear-gradient(90deg, transparent, $border-subtle);
+.back-to-top {
+  position: fixed;
+  right: 30rpx;
+  bottom: 200rpx;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #14b8a6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(37, 99, 235, 0.35);
+  z-index: 999;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  animation: fadeInScale 0.3s ease-out;
+
+  &:active {
+    transform: scale(0.92);
+    opacity: 0.9;
   }
+}
 
-  &::after {
-    background: linear-gradient(90deg, $border-subtle, transparent);
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 </style>

@@ -1,49 +1,54 @@
 <template>
   <layout :active-tab="0" navTitle="首页" show-tabbar>
-    <view class="workbench">
-      <view class="home-header">
-        <view class="home-title-block">
-          <text class="home-date">{{ todayText }}</text>
-          <text class="home-title">{{ userDisplayName }}，开始处理业务</text>
-          <text class="home-desc">线索、进件、补件和审批集中处理</text>
-        </view>
-        <view class="home-status">
-          <u-icon name="checkmark-circle" size="26" color="#16a34a" />
-          <text>在线</text>
-        </view>
-      </view>
-
-      <view class="block-head">
-        <text class="block-title">快捷入口</text>
-        <text class="block-tip">扫码或直接发起业务</text>
-      </view>
-
-      <view class="quick-actions">
-        <view
-          class="quick-card quick-card--lead"
-          @click="goTo('/pages/business/leadAdd')"
-        >
-          <view class="quick-left">
-            <view class="quick-title-row">
-              <u-icon name="plus-circle" size="44" color="#fff" />
-              <text class="quick-text">新增线索</text>
+    <scroll-view class="workbench-scroll" scroll-y>
+      <view class="workbench">
+        <view class="home-header">
+          <view class="home-title-block">
+            <text class="home-date">{{ todayText }}</text>
+            <text class="home-title">{{ userDisplayName }}，开始处理业务</text>
+            <text class="home-desc">线索、进件、补件和审批集中处理</text>
+          </view>
+          <view class="home-status">
+            <view class="msg-badge" @click.stop="goTo('/pages/business/messageCenter')">
+              <u-icon name="bell" size="36" color="#1a1a1a" />
+              <view v-if="unreadCount > 0" class="badge-dot">{{ unreadCount > 99 ? '99+' : unreadCount }}</view>
             </view>
-            <text class="quick-sub">快速获客，扫码录入</text>
-          </view>
-          <view class="qr-icon" @click.stop="showQr('lead')">
-            <u-icon
-              name="erweima"
-              custom-prefix="custom-icon"
-              size="65"
-              color="#fff"
-            />
+            <u-icon name="checkmark-circle" size="26" color="#16a34a" />
+            <text>在线</text>
           </view>
         </view>
 
-        <view class="quick-card quick-card--credit" @click="goTo('/pages/business/idInfo')">
-          <view class="quick-left">
-            <view class="quick-title-row">
-              <u-icon name="file-text" size="44" color="#fff" />
+        <view class="block-head">
+          <text class="block-title">快捷入口</text>
+          <text class="block-tip">扫码或直接发起业务</text>
+        </view>
+
+        <view class="quick-actions">
+          <view
+            class="quick-card quick-card--lead"
+            @click="goTo('/pages/business/leadAdd')"
+          >
+            <view class="quick-left">
+              <view class="quick-title-row">
+                <u-icon name="plus-circle" size="44" color="#fff" />
+                <text class="quick-text">新增线索</text>
+              </view>
+              <text class="quick-sub">快速获客，扫码录入</text>
+            </view>
+            <view class="qr-icon" @click.stop="showQr('lead')">
+              <u-icon
+                name="erweima"
+                custom-prefix="custom-icon"
+                size="65"
+                color="#fff"
+              />
+            </view>
+          </view>
+
+          <view class="quick-card quick-card--credit" @click="goTo('/pages/business/idInfo')">
+            <view class="quick-left">
+              <view class="quick-title-row">
+                <u-icon name="file-text" size="44" color="#fff" />
               <text class="quick-text">进件</text>
             </view>
             <text class="quick-sub">快速发起贷款申请</text>
@@ -77,29 +82,7 @@
         </view>
       </view>
 
-      <view class="todo-panel">
-        <view class="overview-head">
-          <text class="overview-title">待办中心</text>
-          <text class="overview-sub">优先处理高时效任务</text>
-        </view>
-        <view class="todo-list">
-          <view
-            v-for="item in todoItems"
-            :key="item.key"
-            class="todo-item"
-            @click="goTo(item.path)"
-          >
-            <view class="todo-left">
-              <u-icon :name="item.icon" size="34" :color="item.color" />
-              <text class="todo-title">{{ item.label }}</text>
-            </view>
-            <view class="todo-right">
-              <text class="todo-count">{{ item.count }}</text>
-              <u-icon name="arrow-right" size="24" color="#999" />
-            </view>
-          </view>
-        </view>
-      </view>
+
 
       <u-popup
         v-model="qrShow"
@@ -167,6 +150,7 @@
         </view>
       </view>
     </view>
+    </scroll-view>
   </layout>
 </template>
 
@@ -185,6 +169,20 @@ const themeColor = computed(() => {
 
 const localStore = useLocalStore();
 const businessApi = useBusinessApi();
+
+// 消息未读数
+const unreadCount = ref(0);
+
+function loadUnreadCount() {
+  try {
+    const stored = uni.getStorageSync("MESSAGE_CENTER_DATA");
+    if (stored && Array.isArray(stored)) {
+      unreadCount.value = stored.filter((m) => !m.read).length;
+    }
+  } catch (e) {
+    // ignore
+  }
+}
 
 const userDisplayName = computed(() => {
   const userInfo = localStore.userInfo || {};
@@ -233,32 +231,7 @@ const overviewItems = computed(() => [
   { key: "approvalRate", label: "审批通过率", value: overview.value.approvalRate || "-" },
 ]);
 
-const todoItems = computed(() => [
-  {
-    key: "supplement",
-    label: "待补件",
-    count: overview.value.pendingSupplement || 0,
-    icon: "file-text",
-    color: "#f59e0b",
-    path: "/pages/business/supplementList",
-  },
-  {
-    key: "signing",
-    label: "待签约",
-    count: overview.value.pendingSigning || 0,
-    icon: "edit",
-    color: "#22c55e",
-    path: "/pages/business/faceSignList",
-  },
-  {
-    key: "approval",
-    label: "待审批",
-    count: overview.value.pendingApproval || 0,
-    icon: "time",
-    color: "#409EFF",
-    path: "/pages/business/approvalList",
-  },
-]);
+
 
 const normalizeOverview = (data) => {
   const source = data?.data || data || {};
@@ -287,7 +260,10 @@ const loadOverview = async () => {
   }
 };
 
-onMounted(loadOverview);
+onMounted(() => {
+  loadOverview();
+  loadUnreadCount();
+});
 
 const ORDER_FILTER_STORAGE_KEY = "WORKBENCH_ORDER_FILTER";
 
@@ -550,6 +526,10 @@ const sections = computed(() => {
 </script>
 
 <style lang="scss" scoped>
+.workbench-scroll {
+  height: 100%;
+}
+
 .workbench {
   min-height: 100vh;
   padding: 22rpx 22rpx 36rpx;
@@ -608,6 +588,30 @@ const sections = computed(() => {
   border-radius: 999rpx;
 }
 
+.msg-badge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8rpx;
+}
+
+.badge-dot {
+  position: absolute;
+  top: -8rpx;
+  right: -10rpx;
+  min-width: 28rpx;
+  height: 28rpx;
+  line-height: 28rpx;
+  text-align: center;
+  font-size: 18rpx;
+  font-weight: 700;
+  color: #fff;
+  background: #ef4444;
+  border-radius: 28rpx;
+  padding: 0 6rpx;
+}
+
 .block-head,
 .section-head {
   display: flex;
@@ -632,8 +636,7 @@ const sections = computed(() => {
   color: #7b8798;
 }
 
-.overview-panel,
-.todo-panel {
+.overview-panel {
   margin-bottom: 24rpx;
   padding: 26rpx;
   background: #fff;
@@ -691,51 +694,12 @@ const sections = computed(() => {
   color: #6b7280;
 }
 
-.todo-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-}
 
-.todo-item,
-.todo-left,
-.todo-right {
-  display: flex;
-  align-items: center;
-}
 
-.todo-item {
-  justify-content: space-between;
-  min-height: 84rpx;
-  padding: 18rpx 20rpx;
-  background: #f8fafc;
-  border: 1rpx solid #edf2f7;
-  border-radius: 12rpx;
 
-  &:active {
-    background: #eef5ff;
-  }
-}
 
-.todo-left {
-  gap: 12rpx;
-  min-width: 0;
-}
 
-.todo-title {
-  font-size: 26rpx;
-  color: #1f2937;
-}
 
-.todo-right {
-  gap: 8rpx;
-}
-
-.todo-count {
-  font-size: 30rpx;
-  font-weight: 800;
-  color: #162033;
-}
 
 .quick-actions {
   display: grid;

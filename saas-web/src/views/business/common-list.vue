@@ -131,109 +131,16 @@
         </div>
       </div>
 
-      <ElTable
-        v-loading="loading"
+      <ArtTable
+        :loading="loading"
         :data="records"
-        row-key="id"
-        border
-        stripe
+        :columns="tableColumns"
+        :pagination="pagination"
+        :show-table-header="false"
         :empty-text="isOrgModule ? '暂无机构数据' : '暂无数据'"
-      >
-        <ElTableColumn prop="id" label="ID" width="80" />
-        <ElTableColumn
-          v-for="column in config.columns"
-          :key="column.prop"
-          :prop="column.prop"
-          :label="column.label"
-          :min-width="column.width || 140"
-          show-overflow-tooltip
-        >
-          <template #default="{ row }">
-            <div v-if="isOrgModule && column.prop === 'name'" class="org-name-cell">
-              <div class="org-name-cell__icon">
-                <ArtSvgIcon icon="ri:building-2-line" />
-              </div>
-              <div class="org-name-cell__content">
-                <strong>{{ formatCell(row, 'name') }}</strong>
-                <span>{{ formatCell(row, 'code') }}</span>
-              </div>
-            </div>
-            <div v-else-if="isOrgModule && column.prop === 'contactName'" class="org-contact-cell">
-              <span>{{ formatCell(row, 'contactName') }}</span>
-              <a v-if="row.contactPhone" :href="`tel:${row.contactPhone}`">{{
-                row.contactPhone
-              }}</a>
-              <span v-else class="text-g-500">未填写联系电话</span>
-            </div>
-            <div v-else-if="isOrgModule && column.prop === 'packageType'" class="org-service-cell">
-              <span class="org-service-cell__package">{{ packageLabel(row.packageType) }}</span>
-              <ElTag :type="orgExpiryMeta(row.expireAt).type" effect="plain" size="small">
-                {{ orgExpiryMeta(row.expireAt).label }}
-              </ElTag>
-            </div>
-            <ElTag
-              v-else-if="isOrgModule && column.prop === 'apiEnabled'"
-              :type="row.apiEnabled === false ? 'info' : 'success'"
-              effect="light"
-            >
-              {{ row.apiEnabled === false ? '已关闭' : '已开启' }}
-            </ElTag>
-            <div v-else-if="isOrgModule && column.prop === 'businessScale'" class="org-scale-cell">
-              <span
-                >部门 <strong>{{ orgCount(row, 'departmentCount') }}</strong></span
-              >
-              <span
-                >产品 <strong>{{ orgCount(row, 'productCount') }}</strong></span
-              >
-              <span
-                >资方 <strong>{{ orgCount(row, 'funderCount') }}</strong></span
-              >
-            </div>
-            <ElTag
-              v-else-if="column.prop === 'status'"
-              :type="statusTagType(row[column.prop])"
-              effect="light"
-            >
-              {{ formatCell(row, column.prop) }}
-            </ElTag>
-            <span v-else>{{ formatCell(row, column.prop) }}</span>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn label="操作" :width="isOrgModule ? 270 : 360" fixed="right">
-          <template #default="{ row }">
-            <ElSpace wrap>
-              <ElButton link type="primary" @click="openDetail(row)">详情</ElButton>
-              <ElButton v-if="!config.readonly" link type="primary" @click="openEdit(row)">
-                编辑
-              </ElButton>
-              <ElButton v-if="!config.readonly" link type="danger" @click="handleDelete(row)">
-                删除
-              </ElButton>
-              <ElButton
-                v-for="action in rowActions(row)"
-                :key="action.name"
-                link
-                :type="action.type || 'success'"
-                @click="openAction(row, action)"
-              >
-                {{ action.label }}
-              </ElButton>
-            </ElSpace>
-          </template>
-        </ElTableColumn>
-      </ElTable>
-
-      <div class="flex justify-end mt-4">
-        <ElPagination
-          v-model:current-page="pagination.current"
-          v-model:page-size="pagination.size"
-          background
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="pagination.total"
-          @size-change="loadData"
-          @current-change="loadData"
-        />
-      </div>
+        @pagination:size-change="handleSizeChange"
+        @pagination:current-change="handleCurrentChange"
+      />
     </ElCard>
 
     <ElDialog
@@ -361,9 +268,9 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onActivated, onMounted, reactive, ref, watch } from 'vue'
+  import { computed, h, onActivated, onMounted, reactive, ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage, ElMessageBox, ElTag, ElButton, ElSpace } from 'element-plus'
   import {
     fetchBusinessAction,
     fetchBusinessCreate,
@@ -454,6 +361,98 @@
   const actionRow = ref<Record<string, unknown> | null>(null)
   const pagination = ref({ current: 1, size: 20, total: 0 })
   const routeMeta = computed(() => route.meta as BusinessRouteMeta)
+
+  // 分页处理
+  const handleSizeChange = (size: number) => {
+    pagination.value.size = size
+    pagination.value.current = 1
+    loadData()
+  }
+  const handleCurrentChange = (current: number) => {
+    pagination.value.current = current
+    loadData()
+  }
+
+  // ArtTable columns 配置
+  const tableColumns = computed(() => {
+    const cols: any[] = [
+      { type: 'index', width: 60, label: '序号' }
+    ]
+
+    // 动态列
+    for (const column of config.value.columns) {
+      cols.push({
+        prop: column.prop,
+        label: column.label,
+        minWidth: column.width || 140,
+        showOverflowTooltip: !isOrgModule.value || !['name', 'contactName', 'packageType', 'businessScale'].includes(column.prop),
+        formatter: (row: Record<string, unknown>) => {
+          // 机构模块特殊列
+          if (isOrgModule.value && column.prop === 'name') {
+            return h('div', { class: 'org-name-cell' }, [
+              h('div', { class: 'org-name-cell__icon' }, [h('i', { class: 'ri-building-2-line' })]),
+              h('div', { class: 'org-name-cell__content' }, [
+                h('strong', {}, formatCell(row, 'name')),
+                h('span', {}, formatCell(row, 'code'))
+              ])
+            ])
+          }
+          if (isOrgModule.value && column.prop === 'contactName') {
+            return h('div', { class: 'org-contact-cell' }, [
+              h('span', {}, formatCell(row, 'contactName')),
+              row.contactPhone
+                ? h('a', { href: `tel:${row.contactPhone}` }, String(row.contactPhone))
+                : h('span', { class: 'text-g-500' }, '未填写联系电话')
+            ])
+          }
+          if (isOrgModule.value && column.prop === 'packageType') {
+            return h('div', { class: 'org-service-cell' }, [
+              h('span', { class: 'org-service-cell__package' }, packageLabel(row.packageType)),
+              h(ElTag, { type: orgExpiryMeta(row.expireAt).type, effect: 'plain', size: 'small' }, () => orgExpiryMeta(row.expireAt).label)
+            ])
+          }
+          if (isOrgModule.value && column.prop === 'apiEnabled') {
+            return h(ElTag, { type: row.apiEnabled === false ? 'info' : 'success', effect: 'light' }, () => row.apiEnabled === false ? '已关闭' : '已开启')
+          }
+          if (isOrgModule.value && column.prop === 'businessScale') {
+            return h('div', { class: 'org-scale-cell' }, [
+              h('span', {}, ['部门 ', h('strong', {}, orgCount(row, 'departmentCount'))]),
+              h('span', {}, ['产品 ', h('strong', {}, orgCount(row, 'productCount'))]),
+              h('span', {}, ['资方 ', h('strong', {}, orgCount(row, 'funderCount'))])
+            ])
+          }
+          // 状态列
+          if (column.prop === 'status') {
+            return h(ElTag, { type: statusTagType(row[column.prop]), effect: 'light' }, () => formatCell(row, column.prop))
+          }
+          return h('span', {}, formatCell(row, column.prop))
+        }
+      })
+    }
+
+    // 操作列
+    cols.push({
+      prop: 'operation',
+      label: '操作',
+      width: isOrgModule.value ? 270 : 360,
+      fixed: 'right',
+      formatter: (row: Record<string, unknown>) => {
+        const buttons: any[] = [
+          h(ElButton, { link: true, type: 'primary', onClick: () => openDetail(row) }, () => '详情')
+        ]
+        if (!config.value.readonly) {
+          buttons.push(h(ElButton, { link: true, type: 'primary', onClick: () => openEdit(row) }, () => '编辑'))
+          buttons.push(h(ElButton, { link: true, type: 'danger', onClick: () => handleDelete(row) }, () => '删除'))
+        }
+        for (const action of rowActions(row)) {
+          buttons.push(h(ElButton, { link: true, type: action.type || 'success', onClick: () => openAction(row, action) }, () => action.label))
+        }
+        return h(ElSpace, { wrap: true }, () => buttons)
+      }
+    })
+
+    return cols
+  })
   const applicationNodeByPath: Record<string, number> = {
     'pre-entry': 1100,
     'risk-pre': 1200,
