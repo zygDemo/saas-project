@@ -383,10 +383,24 @@ async function main() {
 
   // 创建菜单（系统菜单 + 车贷 SaaS 业务菜单）
   const menus = await seedAllMenus(tenant.id)
+  await resetBusinessMenuGrants(tenant.id)
 
   // 分配菜单权限给角色（按 PRD 角色菜单树）
   const filterIds = (...names: string[]) =>
     menus.filter((m) => names.includes(m.name)).map((m) => m.id)
+  const businessMenu = menus.find((m) => m.name === 'Business')
+  const businessStageNames = new Set([
+    'Business',
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessRiskApproval',
+    'BusinessFunderFinal',
+    'BusinessSigning',
+    'BusinessDisbursement'
+  ])
+  const superMenuIds = menus
+    .filter((m) => m.parentId !== businessMenu?.id || businessStageNames.has(m.name))
+    .map((m) => m.id)
 
   // 公共：所有角色都有仪表盘工作台
   const dashIds = filterIds('Dashboard', 'Console', 'Analysis')
@@ -419,154 +433,68 @@ async function main() {
     'UserCenter'
   )
   const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter')
-  // 业务管理 - 全部
-  const bizAllIds = filterIds(
+  // 业务管理：只展示流程阶段菜单
+  const bizStageCommonIds = filterIds(
     'Business',
-    'Org',
-    'Dept',
-    'Product',
-    'Funder',
-    'FlowConfig',
-    'Lead',
-    'PreEntry',
-    'RiskPre',
-    'FunderPre',
-    'Supplement',
-    'FirstReview',
-    'FinalReview',
-    'LoanRequest',
-    'FunderFinal',
-    'DisbursementNode',
-    'Customer',
-    'Application',
-    'Approval',
-    'Signing',
-    'Disbursement',
-    'OrderMgmt',
-    'Repayment',
-    'Reports',
-    'OrgConfig'
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessFunderFinal',
+    'BusinessSigning'
   )
-  // 业务管理 - 核心进件流程
-  const bizCoreIds = filterIds(
-    'Business',
-    'Lead',
-    'PreEntry',
-    'FunderPre',
-    'Supplement',
-    'Application',
-    'Signing'
+  const bizStageApprovalIds = filterIds(
+    ...[
+      'Business',
+      'BusinessPrecheck',
+      'BusinessSupplement',
+      'BusinessRiskApproval',
+      'BusinessFunderFinal',
+      'BusinessSigning'
+    ]
   )
-  // 业务管理 - 审批相关
-  const bizApprovalIds = filterIds(
-    'Business',
-    'Application',
-    'RiskPre',
-    'FirstReview',
-    'FinalReview',
-    'FunderFinal',
-    'Approval'
+  const bizStageFinanceIds = filterIds(
+    ...[
+      'Business',
+      'BusinessPrecheck',
+      'BusinessSupplement',
+      'BusinessFunderFinal',
+      'BusinessSigning',
+      'BusinessDisbursement'
+    ]
   )
-  // 业务管理 - 财务相关
-  const bizFinanceIds = filterIds(
-    'Business',
-    'LoanRequest',
-    'DisbursementNode',
-    'Disbursement',
-    'OrderMgmt',
-    'Repayment',
-    'Reports'
-  )
-  // 业务管理 - 客服催收相关
-  const bizCsIds = filterIds('Business', 'Customer', 'Repayment', 'Reports')
-  // 业务管理 - 经理视角（线索分配 + 业务跟进 + 团队统计）
-  const bizManagerIds = filterIds(
-    'Business',
-    'Org',
-    'Dept',
-    'FlowConfig',
-    'Lead',
-    'PreEntry',
-    'RiskPre',
-    'FunderPre',
-    'Supplement',
-    'FirstReview',
-    'FinalReview',
-    'LoanRequest',
-    'FunderFinal',
-    'DisbursementNode',
-    'Customer',
-    'Application',
-    'Approval',
-    'Signing',
-    'Disbursement',
-    'OrderMgmt',
-    'Repayment',
-    'Reports'
-  )
-  // 业务管理 - 机构管理员（全业务模块）
-  const bizAdminIds = filterIds(
-    'Business',
-    'Org',
-    'Dept',
-    'Product',
-    'Funder',
-    'FlowConfig',
-    'Lead',
-    'PreEntry',
-    'RiskPre',
-    'FunderPre',
-    'Supplement',
-    'FirstReview',
-    'FinalReview',
-    'LoanRequest',
-    'FunderFinal',
-    'DisbursementNode',
-    'Customer',
-    'Application',
-    'Approval',
-    'Signing',
-    'Disbursement',
-    'OrderMgmt',
-    'Repayment',
-    'Reports',
-    'OrgConfig'
+  const bizStageFullIds = filterIds(
+    ...[
+      'Business',
+      'BusinessPrecheck',
+      'BusinessSupplement',
+      'BusinessRiskApproval',
+      'BusinessFunderFinal',
+      'BusinessSigning',
+      'BusinessDisbursement'
+    ]
   )
 
   // R_SUPER: 全部
-  await connectRoleMenus(
-    roleByCode.R_SUPER.id,
-    menus.map((m) => m.id)
-  )
-  // R_OPERATION: 仪表盘 + 平台管理（部分）+ 数据中心 + 公告 + 基础业务查看
+  await connectRoleMenus(roleByCode.R_SUPER.id, superMenuIds)
+  // R_OPERATION: 仪表盘 + 平台管理（部分）+ 数据中心 + 公告
   await connectRoleMenus(roleByCode.R_OPERATION.id, [
     ...dashIds,
     ...platformIds,
     ...dataCenterIds,
     ...filterIds('Notice'),
-    ...filterIds(
-      'Business',
-      'Lead',
-      'Customer',
-      'Application',
-      'Approval',
-      'Disbursement',
-      'Repayment'
-    ),
     ...filterIds('WorkOrder')
   ])
-  // R_ADMIN: 仪表盘 + 系统基础 + 全业务模块
-  await connectRoleMenus(roleByCode.R_ADMIN.id, [...dashIds, ...systemBasicIds, ...bizAdminIds])
-  // R_SALES_MANAGER: 仪表盘 + 业务经理视角
-  await connectRoleMenus(roleByCode.R_SALES_MANAGER.id, [...dashIds, ...bizManagerIds])
-  // R_SALES: 仪表盘 + 核心业务流程
-  await connectRoleMenus(roleByCode.R_SALES.id, [...dashIds, ...bizCoreIds])
-  // R_APPROVER: 仪表盘 + 审批相关
-  await connectRoleMenus(roleByCode.R_APPROVER.id, [...dashIds, ...bizApprovalIds])
-  // R_FINANCE: 仪表盘 + 财务相关
-  await connectRoleMenus(roleByCode.R_FINANCE.id, [...dashIds, ...bizFinanceIds])
-  // R_CS_COLLECTION: 仪表盘 + 客服催收视角
-  await connectRoleMenus(roleByCode.R_CS_COLLECTION.id, [...dashIds, ...bizCsIds])
+  // R_ADMIN: 仪表盘 + 系统基础 + 全流程阶段
+  await connectRoleMenus(roleByCode.R_ADMIN.id, [...dashIds, ...systemBasicIds, ...bizStageFullIds])
+  // R_SALES_MANAGER: 仪表盘 + 业务阶段（含请款放款）
+  await connectRoleMenus(roleByCode.R_SALES_MANAGER.id, [...dashIds, ...bizStageFinanceIds])
+  // R_SALES: 仪表盘 + 业务阶段
+  await connectRoleMenus(roleByCode.R_SALES.id, [...dashIds, ...bizStageCommonIds])
+  // R_APPROVER: 仪表盘 + 审批相关阶段
+  await connectRoleMenus(roleByCode.R_APPROVER.id, [...dashIds, ...bizStageApprovalIds])
+  // R_FINANCE: 仪表盘 + 财务相关阶段
+  await connectRoleMenus(roleByCode.R_FINANCE.id, [...dashIds, ...bizStageFinanceIds])
+  // R_CS_COLLECTION: 仅仪表盘
+  await connectRoleMenus(roleByCode.R_CS_COLLECTION.id, dashIds)
   // R_USER: 仅仪表盘（移动端操作权限，管理后台无业务菜单）
   await connectRoleMenus(roleByCode.R_USER.id, dashIds)
 
@@ -839,6 +767,66 @@ async function seedAllMenus(tenantId: number) {
     icon: 'ri:briefcase-line',
     sort: 60
   })
+  const businessPrecheck = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'precheck',
+    name: 'BusinessPrecheck',
+    component: bp,
+    title: '预审阶段',
+    icon: 'ri:file-search-line',
+    sort: 61,
+    keepAlive: true
+  })
+  const businessSupplement = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'supplement',
+    name: 'BusinessSupplement',
+    component: bp,
+    title: '补件阶段',
+    icon: 'ri:folder-upload-line',
+    sort: 62,
+    keepAlive: true
+  })
+  const businessRiskApproval = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'risk-approval',
+    name: 'BusinessRiskApproval',
+    component: bp,
+    title: '风控审批',
+    icon: 'ri:shield-check-line',
+    sort: 63,
+    keepAlive: true
+  })
+  const businessFunderFinal = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'funder-final',
+    name: 'BusinessFunderFinal',
+    component: bp,
+    title: '资方终审',
+    icon: 'ri:bank-line',
+    sort: 64,
+    keepAlive: true
+  })
+  const businessSigning = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'signing',
+    name: 'BusinessSigning',
+    component: bp,
+    title: '客户签约',
+    icon: 'ri:contract-line',
+    sort: 65,
+    keepAlive: true
+  })
+  const businessDisbursement = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'disbursement',
+    name: 'BusinessDisbursement',
+    component: bp,
+    title: '请款放款',
+    icon: 'ri:money-cny-circle-line',
+    sort: 66,
+    keepAlive: true
+  })
   const org = await upsertMenu(tenantId, {
     parentId: business.id,
     path: 'org',
@@ -1090,6 +1078,42 @@ async function seedAllMenus(tenantId: number) {
     keepAlive: true
   })
 
+  await prisma.menu.updateMany({
+    where: {
+      tenantId,
+      parentId: business.id,
+      name: {
+        notIn: [
+          'BusinessPrecheck',
+          'BusinessSupplement',
+          'BusinessRiskApproval',
+          'BusinessFunderFinal',
+          'BusinessSigning',
+          'BusinessDisbursement'
+        ]
+      }
+    },
+    data: { hidden: true, hiddenTab: true }
+  })
+
+  await prisma.menu.updateMany({
+    where: {
+      tenantId,
+      parentId: business.id,
+      name: {
+        in: [
+          'BusinessPrecheck',
+          'BusinessSupplement',
+          'BusinessRiskApproval',
+          'BusinessFunderFinal',
+          'BusinessSigning',
+          'BusinessDisbursement'
+        ]
+      }
+    },
+    data: { hidden: false, hiddenTab: false }
+  })
+
   // 按钮权限
   const bizMenus = [
     tenantMgmt,
@@ -1100,6 +1124,12 @@ async function seedAllMenus(tenantId: number) {
     workOrder,
     dataStats,
     auditLog,
+    businessPrecheck,
+    businessSupplement,
+    businessRiskApproval,
+    businessFunderFinal,
+    businessSigning,
+    businessDisbursement,
     org,
     dept,
     product,
@@ -1168,6 +1198,12 @@ async function seedAllMenus(tenantId: number) {
     notice,
     userCenter,
     business,
+    businessPrecheck,
+    businessSupplement,
+    businessRiskApproval,
+    businessFunderFinal,
+    businessSigning,
+    businessDisbursement,
     org,
     dept,
     product,
@@ -1232,6 +1268,23 @@ async function connectRoleMenus(roleId: number, menuIds: number[]) {
       })
     )
   )
+}
+
+async function resetBusinessMenuGrants(tenantId: number) {
+  const business = await prisma.menu.findUnique({
+    where: { tenantId_name: { tenantId, name: 'Business' } }
+  })
+
+  if (!business) return
+
+  await prisma.roleMenu.deleteMany({
+    where: {
+      menu: {
+        tenantId,
+        OR: [{ id: business.id }, { parentId: business.id }]
+      }
+    }
+  })
 }
 
 function buildDefaultFlowRule(node: (typeof defaultFlowNodes)[number]): Prisma.InputJsonObject {
