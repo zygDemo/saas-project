@@ -1,3 +1,5 @@
+import { navigateBackOrFallback } from "@/common/navigation";
+
 export function closeBrowser() {
   // #ifdef H5
   const win = window as any;
@@ -19,11 +21,6 @@ export function closeBrowser() {
   // #endif
 
   // #ifndef H5
-  uni.navigateBack({
-    delta: 1,
-    fail: () => {
-      uni.reLaunch({ url: "/pages/business/workbench" });
-    },
-  });
+  navigateBackOrFallback();
   // #endif
 }

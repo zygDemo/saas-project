@@ -137,7 +137,7 @@
           <text class="popup-title">审批处理</text>
           <u-icon name="close" size="32" color="#94a3b8" @click="approvalPopupVisible = false" />
         </view>
-        <AppForm v-model="approvalForm" :items="approvalItems" />
+        <AppForm :modelValue="approvalForm" :items="approvalItems" />
         <u-button type="primary" shape="circle" @click="submitApproval">
           确认提交
         </u-button>
@@ -293,10 +293,10 @@ onLoad((options) => {
 
 function goSection(section) {
   const routeMap = {
-    customer: "/pages/business/idInfo?businessType=pawn",
-    vehicle: "/pages/business/carInfo?businessType=pawn",
-    materials: "/pages/business/pawnMaterials",
-    loan: "/pages/business/pawnLoanInfo",
+    customer: "/pages/carloan/idInfo?businessType=pawn",
+    vehicle: "/pages/carloan/carInfo?businessType=pawn",
+    materials: "/pages/carloan/pawnMaterials",
+    loan: "/pages/carloan/pawnLoanInfo",
   };
   const url = routeMap[section];
   if (!url) return;

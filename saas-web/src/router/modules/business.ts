@@ -1,7 +1,7 @@
 import { AppRouteRecord } from '@/types/router'
 
 const businessPage = '/business/common-list'
-const roles = ['R_SUPER', 'R_ADMIN', 'R_SALES_MANAGER', 'R_SALES', 'R_APPROVER', 'R_FINANCE']
+const roles = ['R_SUPER', 'R_ADMIN', 'R_SALES_MANAGER', 'R_SALES', 'R_APPROVER', 'R_FINANCE', 'R_CS_COLLECTION']
 
 function orderPhaseRoute(
   path: string,
@@ -20,7 +20,7 @@ function orderPhaseRoute(
       icon,
       keepAlive: true,
       roles: visibleRoles,
-      businessModule: 'order-query',
+      businessModule: name,
       defaultQuery: { phaseCode }
     }
   }
@@ -31,24 +31,39 @@ export const businessRoutes: AppRouteRecord = {
   name: 'Business',
   component: '/index/index',
   meta: {
-    title: '业务管理',
+    title: '车贷业务',
     icon: 'ri:briefcase-4-line',
     roles
   },
   children: [
-    orderPhaseRoute('precheck', 'BusinessPrecheck', '预审阶段', 'ri:file-search-line', 1000),
-    orderPhaseRoute('supplement', 'BusinessSupplement', '补件阶段', 'ri:folder-upload-line', 1400),
-    orderPhaseRoute('risk-approval', 'BusinessRiskApproval', '风控审批', 'ri:shield-check-line', 2000, [
+    orderPhaseRoute('lead', 'Lead', '线索管理', 'ri:user-search-line', 900),
+    orderPhaseRoute('pre-review', 'PreReview', '预审阶段', 'ri:file-search-line', 1000),
+    orderPhaseRoute('supplement', 'Supplement', '补件阶段', 'ri:folder-upload-line', 1400),
+    orderPhaseRoute('approval', 'Approval', '风控审批', 'ri:shield-check-line', 2000, [
       'R_SUPER',
       'R_ADMIN',
       'R_APPROVER'
     ]),
-    orderPhaseRoute('funder-final', 'BusinessFunderFinal', '资方终审', 'ri:bank-line', 3000),
-    orderPhaseRoute('signing', 'BusinessSigning', '客户签约', 'ri:contract-line', 4000),
-    orderPhaseRoute('disbursement', 'BusinessDisbursement', '请款放款', 'ri:money-cny-circle-line', 5000, [
+    orderPhaseRoute('funder-review', 'FunderReview', '资方终审', 'ri:bank-line', 3000),
+    orderPhaseRoute('signing', 'Signing', '客户签约', 'ri:contract-line', 4000),
+    orderPhaseRoute('disbursement', 'Disbursement', '请款放款', 'ri:money-cny-circle-line', 5000, [
       'R_SUPER',
       'R_ADMIN',
       'R_FINANCE',
+      'R_SALES_MANAGER'
+    ]),
+    orderPhaseRoute('post-loan', 'PostLoan', '贷后阶段', 'ri:refund-2-line', 6000, [
+      'R_SUPER',
+      'R_ADMIN',
+      'R_FINANCE',
+      'R_CS_COLLECTION',
+      'R_SALES_MANAGER'
+    ]),
+    orderPhaseRoute('reports', 'Reports', '报表统计', 'ri:bar-chart-box-line', 7000, [
+      'R_SUPER',
+      'R_ADMIN',
+      'R_FINANCE',
+      'R_CS_COLLECTION',
       'R_SALES_MANAGER'
     ])
   ]

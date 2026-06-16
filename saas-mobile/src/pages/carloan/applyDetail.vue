@@ -566,10 +566,10 @@ function goPreAuditStep(item) {
     "fromEntry=1",
   ].filter(Boolean).join("&");
   const urlMap = {
-    idInfo: `/pages/business/idInfoSupplement?${params}`,
-    carInfo: `/pages/business/carInfo?${params}`,
-    applyInfo: `/pages/business/applyInfo?${params}`,
-    authSign: `/pages/business/videoFaceSign?${params}`,
+    idInfo: `/pages/carloan/idInfoSupplement?${params}`,
+    carInfo: `/pages/carloan/carInfo?${params}`,
+    applyInfo: `/pages/carloan/applyInfo?${params}`,
+    authSign: `/pages/carloan/videoFaceSign?${params}`,
   };
   const url = urlMap[item.type];
   if (url) {
@@ -623,8 +623,8 @@ function formatDate(val) {
 
 const goEdit = (type) => {
   const editPath = {
-    客户信息: "/pages/business/idInfo",
-    车辆信息: "/pages/business/carInfo",
+    客户信息: "/pages/carloan/idInfo",
+    车辆信息: "/pages/carloan/carInfo",
   };
 
   uni.$u.route({

@@ -1,0 +1,226 @@
+import type { TabbarItem } from "uview-pro/types/global";
+
+export const APP_ROUTES = {
+  portal: {
+    home: "/pages/index/index",
+  },
+  carloan: {
+    home: "/pages/carloan/workbench",
+    orders: "/pages/carloan/orderList",
+  },
+  food: {
+    home: "/pages/food/index/index",
+    orders: "/pages/food/order/list",
+    cart: "/pages/food/order/cart",
+  },
+  credit: {
+    home: "/pages/credit/index/index",
+  },
+  my: {
+    home: "/pages/my/my",
+  },
+  auth: {
+    login: "/pages/auth/login",
+  },
+} as const;
+
+export const TABBAR_SCOPES = {
+  portal: "portal",
+  carloan: "carloan",
+  food: "food",
+} as const;
+
+export type TabbarScope = (typeof TABBAR_SCOPES)[keyof typeof TABBAR_SCOPES];
+type NavigationMode = "switchTab" | "redirectTo" | "reLaunch";
+
+export interface LayoutTabbarItem extends TabbarItem {
+  route: string;
+  navMode: NavigationMode;
+}
+
+const SYSTEM_TABBAR_ROUTES = new Set([
+  APP_ROUTES.portal.home,
+  APP_ROUTES.food.home,
+  APP_ROUTES.food.orders,
+  APP_ROUTES.my.home,
+]);
+
+const PORTAL_TABBAR_ITEMS: LayoutTabbarItem[] = [
+  {
+    text: "\u9996\u9875",
+    iconPath: "home",
+    selectedIconPath: "home-fill",
+    route: APP_ROUTES.portal.home,
+    navMode: "switchTab",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    text: "\u70b9\u9910",
+    iconPath: "shopping",
+    selectedIconPath: "shopping-fill",
+    route: APP_ROUTES.food.home,
+    navMode: "switchTab",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    text: "\u6211\u7684",
+    iconPath: "account",
+    selectedIconPath: "account-fill",
+    route: APP_ROUTES.my.home,
+    navMode: "switchTab",
+    customIcon: false,
+    count: 0,
+  },
+];
+
+const CARLOAN_TABBAR_ITEMS: LayoutTabbarItem[] = [
+  {
+    text: "\u5de5\u4f5c\u53f0",
+    iconPath: "home",
+    selectedIconPath: "home-fill",
+    route: APP_ROUTES.carloan.home,
+    navMode: "redirectTo",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    text: "\u8ba2\u5355",
+    iconPath: "list",
+    selectedIconPath: "list-fill",
+    route: APP_ROUTES.carloan.orders,
+    navMode: "redirectTo",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    text: "\u95e8\u6237",
+    iconPath: "grid",
+    selectedIconPath: "grid",
+    route: APP_ROUTES.portal.home,
+    navMode: "switchTab",
+    customIcon: false,
+    count: 0,
+  },
+];
+
+const FOOD_TABBAR_ITEMS: LayoutTabbarItem[] = [
+  {
+    text: "\u95e8\u5e97",
+    iconPath: "shopping",
+    selectedIconPath: "shopping-fill",
+    route: APP_ROUTES.food.home,
+    navMode: "switchTab",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    text: "\u8ba2\u5355",
+    iconPath: "list",
+    selectedIconPath: "list-fill",
+    route: APP_ROUTES.food.orders,
+    navMode: "switchTab",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    text: "\u95e8\u6237",
+    iconPath: "grid",
+    selectedIconPath: "grid",
+    route: APP_ROUTES.portal.home,
+    navMode: "switchTab",
+    customIcon: false,
+    count: 0,
+  },
+];
+
+export function getLayoutTabbar(scope: TabbarScope = TABBAR_SCOPES.portal): LayoutTabbarItem[] {
+  const source =
+    scope === TABBAR_SCOPES.carloan
+      ? CARLOAN_TABBAR_ITEMS
+      : scope === TABBAR_SCOPES.food
+        ? FOOD_TABBAR_ITEMS
+        : PORTAL_TABBAR_ITEMS;
+
+  return source.map((item) => ({ ...item }));
+}
+
+export function getCurrentPageRoute(): string {
+  const pages = getCurrentPages();
+  const currentPage = pages[pages.length - 1];
+  return normalizeRoute(currentPage?.route || "");
+}
+
+export function isSystemTabbarRoute(route: string): boolean {
+  return SYSTEM_TABBAR_ROUTES.has(normalizeRoute(route));
+}
+
+export function navigateFromTabbar(item?: Pick<LayoutTabbarItem, "route" | "navMode"> | null) {
+  if (!item?.route) return;
+
+  const route = normalizeRoute(item.route);
+  if (!route || route === getCurrentPageRoute()) {
+    return;
+  }
+
+  if (item.navMode === "switchTab") {
+    uni.switchTab({ url: route });
+    return;
+  }
+
+  if (item.navMode === "reLaunch") {
+    uni.reLaunch({ url: route });
+    return;
+  }
+
+  if (getCurrentPages().length > 1) {
+    uni.redirectTo({ url: route });
+    return;
+  }
+
+  uni.reLaunch({ url: route });
+}
+
+export function getFallbackRouteByPage(route = getCurrentPageRoute()): string {
+  const currentRoute = normalizeRoute(route);
+
+  if (currentRoute.startsWith("/pages/carloan/")) {
+    return APP_ROUTES.carloan.home;
+  }
+
+  if (currentRoute.startsWith("/pages/food/")) {
+    return APP_ROUTES.food.home;
+  }
+
+  if (currentRoute.startsWith("/pages/credit/")) {
+    return APP_ROUTES.credit.home;
+  }
+
+  if (currentRoute.startsWith("/pages/my/")) {
+    return APP_ROUTES.my.home;
+  }
+
+  return APP_ROUTES.portal.home;
+}
+
+export function navigateBackOrFallback() {
+  const pages = getCurrentPages();
+  if (pages.length > 1) {
+    uni.navigateBack({ delta: 1 });
+    return;
+  }
+
+  const fallbackRoute = getFallbackRouteByPage();
+  if (isSystemTabbarRoute(fallbackRoute)) {
+    uni.switchTab({ url: fallbackRoute });
+    return;
+  }
+
+  uni.reLaunch({ url: fallbackRoute });
+}
+
+function normalizeRoute(route: string): string {
+  if (!route) return "";
+  return route.startsWith("/") ? route : `/${route}`;
+}

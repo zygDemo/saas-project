@@ -48,12 +48,29 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 ## 4. Initialize The Database
 
-Run migrations and seed data inside the API container:
+Run migrations, seed data, and menu sync inside the API container:
 
 ```bash
 docker compose -f docker-compose.prod.yml exec admin-api pnpm exec prisma migrate deploy --schema prisma/schema.prisma
 docker compose -f docker-compose.prod.yml exec admin-api pnpm exec tsx prisma/seed.ts
+docker compose -f docker-compose.prod.yml exec admin-api pnpm run db:sync-roles:prod
 ```
+
+### Manual post-deploy menu sync
+
+If the API image is already deployed and you only need to manually sync the latest menu / role-menu / button-permission definitions to production, run:
+
+如果 API 镜像已经发版完成，但你只需要把最新的菜单、角色菜单、按钮权限定义手动同步到生产环境，请执行下面这组命令：
+
+```bash
+cd /opt/saas/api
+docker compose run --rm --no-deps api pnpm run db:sync-roles:prod
+docker compose up -d api
+```
+
+This is the manual post-deploy command set for forcing production menu sync after deployment.
+
+中文说明：以上命令用于“发版后手动补同步生产菜单”。其中 `db:sync-roles:prod` 会把后台菜单结构、角色菜单关联、按钮权限配置同步到生产数据库；随后执行 `docker compose up -d api`，确保 API 服务以最新同步结果继续运行。
 
 ## 5. Host Nginx
 

@@ -1,5 +1,5 @@
 <template>
-  <layout :active-tab="0" nav-title="首页" show-tabbar>
+  <layout :active-tab="0" nav-title="首页" show-tabbar tabbar-scope="portal">
     <view class="index-page">
       <view class="header">
         <view class="welcome">
@@ -71,6 +71,7 @@
 </template>
 
 <script setup lang="ts">
+import { APP_ROUTES } from "@/common/navigation";
 import { computed, ref } from "vue";
 import { onLoad, onShow } from "@dcloudio/uni-app";
 import layout from "@/pages/layout/layout.vue";
@@ -113,15 +114,15 @@ onShow(() => {
 });
 
 const goCarLoan = () => {
-  uni.navigateTo({ url: "/pages/carloan/workbench" });
+  uni.navigateTo({ url: APP_ROUTES.carloan.home });
 };
 
 const goFoodOrder = () => {
-  uni.switchTab({ url: "/pages/food/index/index" });
+  uni.switchTab({ url: APP_ROUTES.food.home });
 };
 
 const goCreditQuery = () => {
-  uni.navigateTo({ url: "/pages/credit/index/index" });
+  uni.navigateTo({ url: APP_ROUTES.credit.home });
 };
 
 const goMore = () => {
@@ -129,7 +130,7 @@ const goMore = () => {
 };
 
 const goProfile = () => {
-  uni.switchTab({ url: "/pages/my/my" });
+  uni.switchTab({ url: APP_ROUTES.my.home });
 };
 
 const goMyCarLoanApply = () => {
@@ -137,7 +138,7 @@ const goMyCarLoanApply = () => {
 };
 
 const goMyFoodOrders = () => {
-  uni.switchTab({ url: "/pages/food/order/list" });
+  uni.switchTab({ url: APP_ROUTES.food.orders });
 };
 
 const goNotice = () => {

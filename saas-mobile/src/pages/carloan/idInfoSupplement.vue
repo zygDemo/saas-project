@@ -6,7 +6,7 @@
         <u-text text="客户信息" size="32rpx" bold />
       </view>
 
-      <AppForm v-model="form" :items="readonlyCustomerFormItems" />
+      <AppForm :modelValue="form" :items="readonlyCustomerFormItems" />
 
       <!-- 联系人信息 -->
       <view class="section-title">
@@ -100,7 +100,7 @@
               bold
             />
           </view>
-          <AppForm v-model="contactForm" :items="readonlyContactFormItems" />
+          <AppForm :modelValue="contactForm" :items="readonlyContactFormItems" />
           <view class="popup-footer">
             <u-button
               text="取消"
@@ -680,7 +680,7 @@ async function handleNext() {
     readonly.value ? "readonly=1" : "",
   ].filter(Boolean).join("&");
   uni.navigateTo({
-    url: `/pages/business/carInfoSupplement?${params}`,
+    url: `/pages/carloan/carInfoSupplement?${params}`,
   });
 }
 

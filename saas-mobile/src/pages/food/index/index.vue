@@ -1,60 +1,74 @@
 <template>
-  <view class="food-index-page">
-    <view class="search-bar">
-      <u-search v-model="keyword" placeholder="搜索门店/商品" @change="onSearch"></u-search>
-    </view>
+  <layout :active-tab="0" nav-title="点餐" show-tabbar tabbar-scope="food">
+    <scroll-view class="food-scroll" scroll-y>
+      <view class="food-index-page">
+        <view class="search-bar">
+          <u-search
+            v-model="keyword"
+            placeholder="搜索门店/商品"
+            @change="onSearch"
+          />
+        </view>
 
-    <view class="banner-section">
-      <u-swiper :list="bannerList" :autoplay="true" :interval="3000" @click="bannerClick"></u-swiper>
-    </view>
+        <view class="banner-section">
+          <u-swiper
+            :list="bannerList"
+            :autoplay="true"
+            :interval="3000"
+            @click="bannerClick"
+          />
+        </view>
 
-    <view class="category-section">
-      <scroll-view class="category-scroll" scroll-x>
-        <view class="category-list">
+        <view class="category-section">
+          <scroll-view class="category-scroll" scroll-x>
+            <view class="category-list">
+              <view
+                v-for="(item, index) in categoryList"
+                :key="item.id"
+                class="category-item"
+                :class="{ active: currentCategory === index }"
+                @click="selectCategory(index, item.id)"
+              >
+                {{ item.name }}
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+
+        <view class="store-list">
           <view
-            v-for="(item, index) in categoryList"
-            :key="item.id"
-            class="category-item"
-            :class="{ active: currentCategory === index }"
-            @click="selectCategory(index, item.id)"
+            v-for="store in filteredStoreList"
+            :key="store.id"
+            class="store-card"
+            @click="goStoreGoods(store)"
           >
-            {{ item.name }}
+            <image class="store-img" :src="store.logo" mode="aspectFill" />
+            <view class="store-info">
+              <view class="store-name">{{ store.name }}</view>
+              <view class="store-desc">{{ store.desc }}</view>
+              <view class="store-meta">
+                <text class="distance">{{ store.distance }}m</text>
+                <text class="sales">月售{{ store.sales }}</text>
+              </view>
+            </view>
+            <u-icon name="right-arrow" color="#c0c4cc" size="26" />
           </view>
         </view>
-      </scroll-view>
-    </view>
 
-    <view class="store-list">
-      <view
-        v-for="store in filteredStoreList"
-        :key="store.id"
-        class="store-card"
-        @click="goStoreGoods(store)"
-      >
-        <image class="store-img" :src="store.logo" mode="aspectFill"></image>
-        <view class="store-info">
-          <view class="store-name">{{ store.name }}</view>
-          <view class="store-desc">{{ store.desc }}</view>
-          <view class="store-meta">
-            <text class="distance">{{ store.distance }}m</text>
-            <text class="sales">月售{{ store.sales }}</text>
-          </view>
+        <view class="cart-btn" @click="goCart">
+          <u-icon name="cart" color="#fff" size="40" />
+          <view v-if="cartCount > 0" class="badge">{{ cartCount }}</view>
         </view>
-        <u-icon name="right-arrow" color="#c0c4cc" size="26"></u-icon>
       </view>
-    </view>
-
-    <view class="cart-btn" @click="goCart">
-      <u-icon name="cart" color="#fff" size="40"></u-icon>
-      <view v-if="cartCount > 0" class="badge">{{ cartCount }}</view>
-    </view>
-  </view>
+    </scroll-view>
+  </layout>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { onLoad, onShow } from "@dcloudio/uni-app";
+import { APP_ROUTES } from "@/common/navigation";
+import layout from "@/pages/layout/layout.vue";
 import { useFoodStore } from "@/stores/food";
+import { computed, ref } from "vue";
 
 interface CategoryItem {
   id: number;
@@ -96,7 +110,7 @@ const storeList = ref<StoreItem[]>([
     id: 1,
     name: "李家厨房",
     desc: "精品家常菜 · 特色风味",
-    logo: "https://via.placeholder.com/160x160/FF6B6B/ffffff?text=餐馆",
+    logo: "https://via.placeholder.com/160x160/FF6B6B/ffffff?text=%E9%A4%90%E5%8E%85",
     distance: 580,
     sales: 328,
     categoryId: 1,
@@ -105,7 +119,7 @@ const storeList = ref<StoreItem[]>([
     id: 2,
     name: "快客汉堡",
     desc: "西式快餐 · 干净卫生",
-    logo: "https://via.placeholder.com/160x160/4ECDC4/ffffff?text=汉堡",
+    logo: "https://via.placeholder.com/160x160/4ECDC4/ffffff?text=%E6%B1%89%E5%A0%A1",
     distance: 1200,
     sales: 256,
     categoryId: 2,
@@ -114,7 +128,7 @@ const storeList = ref<StoreItem[]>([
     id: 3,
     name: "老城火锅",
     desc: "重庆火锅 · 地道口味",
-    logo: "https://via.placeholder.com/160x160/FFA62B/ffffff?text=火锅",
+    logo: "https://via.placeholder.com/160x160/FFA62B/ffffff?text=%E7%81%AB%E9%94%85",
     distance: 2100,
     sales: 189,
     categoryId: 3,
@@ -127,7 +141,8 @@ const filteredStoreList = computed(() => {
   const kw = keyword.value.trim().toLowerCase();
 
   return storeList.value.filter((store) => {
-    const categoryMatched = selectedCategoryId.value === 0 || store.categoryId === selectedCategoryId.value;
+    const categoryMatched =
+      selectedCategoryId.value === 0 || store.categoryId === selectedCategoryId.value;
     const keywordMatched =
       !kw ||
       store.name.toLowerCase().includes(kw) ||
@@ -136,9 +151,6 @@ const filteredStoreList = computed(() => {
     return categoryMatched && keywordMatched;
   });
 });
-
-onLoad(() => {});
-onShow(() => {});
 
 const onSearch = (value: string) => {
   keyword.value = value;
@@ -158,15 +170,19 @@ const goStoreGoods = (store: StoreItem) => {
 };
 
 const goCart = () => {
-  uni.navigateTo({ url: "/pages/food/order/cart" });
+  uni.navigateTo({ url: APP_ROUTES.food.cart });
 };
 </script>
 
 <style scoped lang="scss">
+.food-scroll {
+  height: 100%;
+}
+
 .food-index-page {
-  min-height: 100vh;
+  min-height: 100%;
   background-color: #f5f5f5;
-  padding-bottom: 100rpx;
+  padding-bottom: 120rpx;
 }
 
 .search-bar {

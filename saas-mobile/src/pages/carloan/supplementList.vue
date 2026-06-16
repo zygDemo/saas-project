@@ -226,7 +226,7 @@ function handleDetail(item) {
   });
 
   uni.navigateTo({
-    url: `/pages/business/supplementDetail?uuid=${uuid}&creditOrderId=${creditOrderId}&id=${item.id}&name=${encodeURIComponent(name)}&phone=${phone}&remark=${encodeURIComponent(remark)}&isSupplementCustomer=${item.isSupplementCustomer || ""}&isSupplementVehicle=${item.isSupplementVehicle || ""}&isSupplementOrder=${item.isSupplementOrder || ""}&isSupplementFile=${item.isSupplementFile || ""}`,
+    url: `/pages/carloan/supplementDetail?uuid=${uuid}&creditOrderId=${creditOrderId}&id=${item.id}&name=${encodeURIComponent(name)}&phone=${phone}&remark=${encodeURIComponent(remark)}&isSupplementCustomer=${item.isSupplementCustomer || ""}&isSupplementVehicle=${item.isSupplementVehicle || ""}&isSupplementOrder=${item.isSupplementOrder || ""}&isSupplementFile=${item.isSupplementFile || ""}`,
   });
 }
 

@@ -32,6 +32,7 @@
 </template>
 
 <script setup lang="ts">
+import { APP_ROUTES } from "@/common/navigation";
 import { useFoodStore } from '@/stores/food'
 import { storeToRefs } from 'pinia'
 
@@ -48,7 +49,7 @@ const increase = (goods: any) => {
 
 const goIndex = () => {
   uni.switchTab({
-    url: '/pages/index/index'
+    url: APP_ROUTES.food.home
   })
 }
 

@@ -364,7 +364,7 @@ const handleClearSearch = () => {
 
 const goToDetail = (item: LeadItem) => {
   uni.navigateTo({
-    url: `/pages/business/leadDetail?uuid=${item.uuid}`,
+    url: `/pages/carloan/idInfo?uuid=${encodeURIComponent(item.uuid)}`,
   });
 };
 

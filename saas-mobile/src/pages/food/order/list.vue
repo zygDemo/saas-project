@@ -1,42 +1,70 @@
 <template>
-  <view class="order-list-page">
-    <u-tabs :list="tabs" :current="current" @change="handleChange"></u-tabs>
+  <layout :active-tab="1" nav-title="订单" show-tabbar tabbar-scope="food">
+    <view class="order-list-page">
+      <u-tabs :list="tabs" :current="current" @change="handleChange" />
 
-    <view v-if="filteredOrders.length > 0" class="order-list">
-      <view v-for="order in filteredOrders" :key="order.id" class="order-card">
-        <view class="order-header">
-          <text class="order-no">订单号 {{ order.no }}</text>
-          <text class="order-status" :class="`status-${order.status}`">{{ statusText[order.status] }}</text>
-        </view>
-
-        <view class="order-items">
-          <view v-for="item in order.items" :key="item.goods.id" class="order-item">
-            <image :src="item.goods.image" class="item-img"></image>
-            <view class="item-info">
-              <text class="item-name">{{ item.goods.name }}</text>
-              <text class="item-price">¥{{ item.goods.price }} × {{ item.count }}</text>
-            </view>
-            <text class="item-total">¥{{ (item.goods.price * item.count).toFixed(2) }}</text>
+      <view v-if="filteredOrders.length > 0" class="order-list">
+        <view
+          v-for="order in filteredOrders"
+          :key="order.id"
+          class="order-card"
+        >
+          <view class="order-header">
+            <text class="order-no">订单号 {{ order.no }}</text>
+            <text class="order-status" :class="`status-${order.status}`">
+              {{ statusText[order.status] }}
+            </text>
           </view>
-        </view>
 
-        <view class="order-footer">
-          <text class="order-total">合计: ¥{{ order.total.toFixed(2) }}</text>
-          <view class="order-actions">
-            <u-button v-if="order.status === 0" text="去支付" size="small" type="primary"></u-button>
-            <u-button text="再来一单" size="small" plain @click="reorder(order)"></u-button>
+          <view class="order-items">
+            <view
+              v-for="item in order.items"
+              :key="item.goods.id"
+              class="order-item"
+            >
+              <image :src="item.goods.image" class="item-img" />
+              <view class="item-info">
+                <text class="item-name">{{ item.goods.name }}</text>
+                <text class="item-price">
+                  ￥{{ item.goods.price }} x {{ item.count }}
+                </text>
+              </view>
+              <text class="item-total">
+                ￥{{ (item.goods.price * item.count).toFixed(2) }}
+              </text>
+            </view>
+          </view>
+
+          <view class="order-footer">
+            <text class="order-total">合计: ￥{{ order.total.toFixed(2) }}</text>
+            <view class="order-actions">
+              <u-button
+                v-if="order.status === 0"
+                text="去支付"
+                size="small"
+                type="primary"
+              />
+              <u-button
+                text="再来一单"
+                size="small"
+                plain
+                @click="reorder(order)"
+              />
+            </view>
           </view>
         </view>
       </view>
-    </view>
 
-    <view v-else class="empty">
-      <text>暂无订单</text>
+      <view v-else class="empty">
+        <text>暂无订单</text>
+      </view>
     </view>
-  </view>
+  </layout>
 </template>
 
 <script setup lang="ts">
+import { APP_ROUTES } from "@/common/navigation";
+import layout from "@/pages/layout/layout.vue";
 import { computed, ref } from "vue";
 
 interface OrderItem {
@@ -77,7 +105,7 @@ const orders = ref<FoodOrder[]>([
           id: 1,
           name: "宫保鸡丁",
           price: 38,
-          image: "https://via.placeholder.com/160x160/FF6B6B/ffffff?text=宫保鸡丁",
+          image: "https://via.placeholder.com/160x160/FF6B6B/ffffff?text=%E5%AE%AB%E4%BF%9D%E9%B8%A1%E4%B8%81",
         },
         count: 2,
       },
@@ -86,7 +114,7 @@ const orders = ref<FoodOrder[]>([
           id: 3,
           name: "麻婆豆腐",
           price: 12,
-          image: "https://via.placeholder.com/160x160/FFA62B/ffffff?text=麻婆豆腐",
+          image: "https://via.placeholder.com/160x160/FFA62B/ffffff?text=%E9%BA%BB%E5%A9%86%E8%B1%86%E8%85%90",
         },
         count: 1,
       },
@@ -111,13 +139,13 @@ const handleChange = (index: number) => {
 };
 
 const reorder = (_order: FoodOrder) => {
-  uni.switchTab({ url: "/pages/food/index/index" });
+  uni.switchTab({ url: APP_ROUTES.food.home });
 };
 </script>
 
 <style scoped lang="scss">
 .order-list-page {
-  min-height: 100vh;
+  min-height: 100%;
   background-color: #f5f5f5;
 }
 

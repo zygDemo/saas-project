@@ -30,14 +30,14 @@
         </view>
       </view>
 
-      <AppForm v-model="form" :items="readonlyBasicFormItems" />
+      <AppForm :modelValue="form" :items="readonlyBasicFormItems" />
 
       <!-- 车辆状况 -->
       <view class="section-title">
         <u-text text="车辆状况" size="32rpx" bold />
       </view>
 
-      <AppForm v-model="form" :items="readonlyStatusFormItems" />
+      <AppForm :modelValue="form" :items="readonlyStatusFormItems" />
 
       <!-- 车辆评估金额 -->
       <view class="section-title-row">
@@ -56,7 +56,7 @@
         </view>
       </view>
 
-      <AppForm v-model="form" :items="readonlyEvaluationFormItems" />
+      <AppForm :modelValue="form" :items="readonlyEvaluationFormItems" />
 
       <!-- 底部按钮 -->
       <view v-if="!readonly" class="footer-btn">
@@ -535,7 +535,7 @@ async function handleNext() {
     .filter(Boolean)
     .join("&");
   uni.navigateTo({
-    url: `/pages/business/orderInfoSupplement?${params}`,
+    url: `/pages/carloan/orderInfoSupplement?${params}`,
   });
 }
 </script>

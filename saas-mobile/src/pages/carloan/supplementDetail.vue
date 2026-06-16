@@ -221,7 +221,7 @@ async function handleSubmitAudit() {
     await businessApi.submitInitialAudit(creditOrderId.value);
     uni.showToast({ title: "提交成功", icon: "success" });
     setTimeout(() => {
-      uni.redirectTo({ url: "/pages/business/supplementList" });
+      uni.redirectTo({ url: "/pages/carloan/supplementList" });
     }, 1500);
   } catch (err) {
     console.error("提交审批失败:", err);
@@ -242,10 +242,10 @@ function goSupplement(item) {
     !canEditSupplement.value ? "readonly=1" : "",
   ].filter(Boolean).join("&");
   const urlMap = {
-    idInfo: `/pages/business/idInfoSupplement?${params}`,
-    carInfo: `/pages/business/carInfoSupplement?${params}`,
-    orderInfo: `/pages/business/orderInfoSupplement?${params}`,
-    fileInfo: `/pages/business/fileInfoSupplement?${params}`,
+    idInfo: `/pages/carloan/idInfoSupplement?${params}`,
+    carInfo: `/pages/carloan/carInfoSupplement?${params}`,
+    orderInfo: `/pages/carloan/orderInfoSupplement?${params}`,
+    fileInfo: `/pages/carloan/fileInfoSupplement?${params}`,
   };
   const url = urlMap[item.type];
   if (url) {

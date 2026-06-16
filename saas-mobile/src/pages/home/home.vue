@@ -1,5 +1,5 @@
 <template>
-  <layout :active-tab="0" show-tabbar>
+  <layout :active-tab="0" show-tabbar tabbar-scope="carloan">
     <view class="app-container">
       <!-- 欢迎区域 - 展示用户信息和业务概览 -->
       <view class="hero-section">
@@ -164,28 +164,28 @@ const businessCards = [
     title: "线索查询",
     desc: "查看分配线索，跟进客户",
     icon: "search",
-    url: "/pages/business/leadList",
+    url: "/pages/carloan/leadList",
     color: "primary" as ColorType,
   },
   {
     title: "进件申请",
     desc: "快速创建进件，上传资料",
     icon: "file-text",
-    url: "/pages/business/applySubmit",
+    url: "/pages/carloan/applySubmit",
     color: "success" as ColorType,
   },
   {
     title: "审批列表",
     desc: "处理待审批进件",
     icon: "list",
-    url: "/pages/business/approvalList",
+    url: "/pages/carloan/approvalList",
     color: "warning" as ColorType,
   },
   {
     title: "工作台",
     desc: "全部业务功能入口",
     icon: "grid",
-    url: "/pages/business/workbench",
+    url: "/pages/carloan/workbench",
     color: "error" as ColorType,
   },
 ];
@@ -196,35 +196,35 @@ const businessFeatures = [
     title: "线索管理",
     desc: "线索查询、线索列表",
     icon: "search",
-    url: "/pages/business/leadList",
+    url: "/pages/carloan/leadList",
     color: "primary" as ColorType,
   },
   {
     title: "进件管理",
     desc: "身份证、车辆信息、申请提交",
     icon: "file-text",
-    url: "/pages/business/applySubmit",
+    url: "/pages/carloan/applySubmit",
     color: "success" as ColorType,
   },
   {
     title: "资料补充",
     desc: "客户、车辆、订单信息补充",
     icon: "edit-pen",
-    url: "/pages/business/idInfoSupplement",
+    url: "/pages/carloan/idInfoSupplement",
     color: "warning" as ColorType,
   },
   {
     title: "审批流程",
     desc: "初审、终审、审批记录",
     icon: "list",
-    url: "/pages/business/approvalList",
+    url: "/pages/carloan/approvalList",
     color: "error" as ColorType,
   },
   {
     title: "面签管理",
     desc: "面签列表、视频面签、AI面签",
     icon: "camera",
-    url: "/pages/business/faceSignList",
+    url: "/pages/carloan/faceSignList",
     color: "success" as ColorType,
   },
 ];

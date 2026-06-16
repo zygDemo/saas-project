@@ -278,7 +278,7 @@ function buildSignCenterUrl(item) {
     `customerPhone=${encodeURIComponent(item.customerPhone || "")}`,
     `signStatus=${encodeURIComponent(item.signStatus || "CONFIRMING_AMOUNT")}`,
   ];
-  return `/pages/business/signCenter?${query.join("&")}`;
+  return `/pages/carloan/signCenter?${query.join("&")}`;
 }
 
 function goToDetail(item) {

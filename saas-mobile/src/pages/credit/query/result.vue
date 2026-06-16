@@ -38,6 +38,7 @@
 </template>
 
 <script setup lang="ts">
+import { APP_ROUTES } from "@/common/navigation";
 import { computed, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 
@@ -71,7 +72,7 @@ const viewReport = () => {
 };
 
 const goHome = () => {
-  uni.switchTab({ url: "/pages/index/index" });
+  uni.switchTab({ url: APP_ROUTES.portal.home });
 };
 </script>
 

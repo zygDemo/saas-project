@@ -198,7 +198,7 @@ const statsItems = computed(() => [
     count: overview.value.pendingSupplement || supplementList.value.length,
     icon: "folder-upload",
     color: "amber",
-    path: "/pages/business/supplementList",
+    path: "/pages/carloan/supplementList",
   },
   {
     key: "signing",
@@ -206,7 +206,7 @@ const statsItems = computed(() => [
     count: overview.value.pendingSigning || signingList.value.length,
     icon: "edit",
     color: "green",
-    path: "/pages/business/faceSignList",
+    path: "/pages/carloan/faceSignList",
   },
   {
     key: "approval",
@@ -214,7 +214,7 @@ const statsItems = computed(() => [
     count: overview.value.pendingApproval || approvalList.value.length,
     icon: "time",
     color: "blue",
-    path: "/pages/business/approvalList",
+    path: "/pages/carloan/approvalList",
   },
   {
     key: "orders",
@@ -222,7 +222,7 @@ const statsItems = computed(() => [
     count: orderList.value.length,
     icon: "order",
     color: "purple",
-    path: "/pages/business/orderList",
+    path: "/pages/carloan/orderList",
   },
 ]);
 
@@ -304,25 +304,25 @@ function goTo(path) {
 
 function goToSupplement(item) {
   uni.navigateTo({
-    url: `/pages/business/supplementDetail?id=${item.id}&creditOrderId=${item.creditOrderId || ""}`,
+    url: `/pages/carloan/supplementDetail?id=${item.id}&creditOrderId=${item.creditOrderId || ""}`,
   });
 }
 
 function goToSigning(item) {
   uni.navigateTo({
-    url: `/pages/business/signCenter?creditOrderId=${item.creditOrderId || item.orderNo || ""}&uuid=${item.uuid || ""}&customerName=${item.customerName || ""}`,
+    url: `/pages/carloan/signCenter?creditOrderId=${item.creditOrderId || item.orderNo || ""}&uuid=${item.uuid || ""}&customerName=${item.customerName || ""}`,
   });
 }
 
 function goToApproval(item) {
   uni.navigateTo({
-    url: `/pages/business/applyDetail?id=${item.id || item.applicationId}`,
+    url: `/pages/carloan/applyDetail?id=${item.id || item.applicationId}`,
   });
 }
 
 function goToOrder(item) {
   uni.navigateTo({
-    url: `/pages/business/applyDetail?id=${item.id || item.applicationId}`,
+    url: `/pages/carloan/applyDetail?id=${item.id || item.applicationId}`,
   });
 }
 

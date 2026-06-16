@@ -6,7 +6,7 @@
         <u-text text="订单信息" size="32rpx" bold />
       </view>
 
-      <AppForm v-model="form" :items="readonlyFormItems" @change="onFormChange" />
+      <AppForm :modelValue="form" :items="readonlyFormItems" @change="onFormChange" />
 
       <!-- 底部按钮 -->
       <view v-if="!readonly" class="footer-btn">
@@ -324,7 +324,7 @@ async function handleNext() {
     readonly.value ? "readonly=1" : "",
   ].filter(Boolean).join("&");
   uni.navigateTo({
-    url: `/pages/business/fileInfoSupplement?${params}`,
+    url: `/pages/carloan/fileInfoSupplement?${params}`,
   });
 }
 </script>

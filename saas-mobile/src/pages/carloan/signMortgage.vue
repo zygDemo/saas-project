@@ -50,7 +50,7 @@
         <view class="section-title">
           <text class="title-text">办理信息</text>
         </view>
-        <AppForm v-model="form" :items="formItems" />
+        <AppForm :modelValue="form" :items="formItems" />
       </view>
 
       <!-- 抵押回执上传 -->

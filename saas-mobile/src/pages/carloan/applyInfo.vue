@@ -17,7 +17,7 @@
         <text class="title-text">请填写申请信息</text>
       </view>
 
-      <AppForm v-model="form" :items="formItems" />
+      <AppForm :modelValue="form" :items="formItems" />
 
       <view class="footer-btn" :class="{ 'edit-mode': isEditMode }">
         <u-button
@@ -185,7 +185,7 @@ async function handleSubmit() {
 
       setTimeout(() => {
         uni.$u.route({
-          url: `/pages/business/videoFaceSign?${query.join("&")}`,
+          url: `/pages/carloan/videoFaceSign?${query.join("&")}`,
           type: "redirectTo",
         });
       }, 600);
@@ -221,7 +221,7 @@ async function handleNext() {
       const query = buildAuthQuery(result.uuid, result.creditOrderId);
       setTimeout(() => {
         uni.$u.route({
-          url: `/pages/business/videoFaceSign?${query.join("&")}`,
+          url: `/pages/carloan/videoFaceSign?${query.join("&")}`,
           type: "redirectTo",
         });
       }, 600);

@@ -30,6 +30,7 @@
 </template>
 
 <script setup lang="ts">
+import { navigateBackOrFallback } from "@/common/navigation";
 import type { PropType } from "vue";
 import { $u } from "uview-pro";
 import { reactive } from "vue";
@@ -69,12 +70,7 @@ const background = reactive({
 });
 
 const handleBack = () => {
-  const pages = getCurrentPages();
-  if (pages.length > 1) {
-    uni.navigateBack({ delta: 1 });
-  } else {
-    uni.reLaunch({ url: "/pages/business/workbench" });
-  }
+  navigateBackOrFallback();
 };
 </script>
 

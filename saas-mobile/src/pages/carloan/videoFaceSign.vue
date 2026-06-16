@@ -519,7 +519,7 @@ async function handleStartFaceSign() {
 
   // 构建回调地址（根据当前环境动态拼接）
   const redirectUrl = [
-    `${getBaseUrl()}#/pages/business/faceSignResult?navTitle=${encodeURIComponent(
+    `${getBaseUrl()}#/pages/carloan/faceSignResult?navTitle=${encodeURIComponent(
       "人脸识别",
     )}`,
     `uuid=${encodeURIComponent(customerInfo.uuid)}`,
@@ -568,7 +568,7 @@ async function handleStartContract() {
 
   // 构建回调地址（根据当前环境动态拼接）
   const redirectUrl = [
-    `${getBaseUrl()}#/pages/business/faceSignResult`,
+    `${getBaseUrl()}#/pages/carloan/faceSignResult`,
     `navTitle=${encodeURIComponent("合同签署结果")}`,
     `uuid=${encodeURIComponent(customerInfo.uuid)}`,
     `creditOrderId=${encodeURIComponent(customerInfo.creditOrderId)}`,
@@ -646,7 +646,7 @@ async function handleSignContract() {
   try {
     // 构建回调地址（根据当前环境动态拼接）
     const redirectUrl = [
-      `${getBaseUrl()}#/pages/business/faceSignResult?navTitle=${encodeURIComponent(
+      `${getBaseUrl()}#/pages/carloan/faceSignResult?navTitle=${encodeURIComponent(
         "授权书签署结果",
       )}`,
       `uuid=${encodeURIComponent(customerInfo.uuid)}`,
@@ -715,14 +715,14 @@ function goBack() {
 /** 授信完成：返回预审列表 */
 function goToApplyList() {
   uni.redirectTo({
-    url: "/pages/business/applyListPage",
+    url: "/pages/carloan/applyListPage",
   });
 }
 
 /** 授信完成：返回首页（Tab页） */
 function goToWorkbench() {
-  uni.switchTab({
-    url: "/pages/business/workbench",
+  uni.reLaunch({
+    url: "/pages/carloan/workbench",
   });
 }
 </script>

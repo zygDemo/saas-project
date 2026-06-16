@@ -43,7 +43,7 @@
           </text>
         </view>
         <view class="form-card">
-          <AppForm v-model="form" :items="formItems" />
+          <AppForm :modelValue="form" :items="formItems" />
         </view>
 
         <view class="footer-btn">

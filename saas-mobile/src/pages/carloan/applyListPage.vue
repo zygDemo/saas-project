@@ -260,7 +260,7 @@ function handleSearch() {
 // 跳转详情
 function handleDetail(item) {
   uni.navigateTo({
-    url: `/pages/business/applyDetail?id=${
+    url: `/pages/carloan/applyDetail?id=${
       item.id || item.creditOrderId || item.uuid
     }`,
   });
@@ -276,7 +276,7 @@ function handleGoCredit(item) {
     `creditOrderId=${encodeURIComponent(item.creditOrderId || "")}`,
   ].join("&");
   uni.navigateTo({
-    url: `/pages/business/videoFaceSign?${params}`,
+    url: `/pages/carloan/videoFaceSign?${params}`,
   });
 }
 

@@ -137,7 +137,7 @@ const stepList = computed(() => {
       name: "确认额度",
       desc: "确认资方批复的贷款额度和利率",
       btnText: "确认额度",
-      path: "/pages/business/signConfirmAmount",
+      path: "/pages/carloan/signConfirmAmount",
       status: getStepStatus("CONFIRM_AMOUNT", s),
     },
     {
@@ -145,7 +145,7 @@ const stepList = computed(() => {
       name: "绑卡",
       desc: "绑定收款银行卡",
       btnText: "去绑卡",
-      path: "/pages/business/signBindCard",
+      path: "/pages/carloan/signBindCard",
       status: getStepStatus("BIND_CARD", s),
     },
     {
@@ -153,7 +153,7 @@ const stepList = computed(() => {
       name: "合同签约",
       desc: "在线签署贷款合同",
       btnText: "去签约",
-      path: "/pages/business/videoFaceSign",
+      path: "/pages/carloan/videoFaceSign",
       status: getStepStatus("SIGN_CONTRACT", s),
     },
     {
@@ -161,7 +161,7 @@ const stepList = computed(() => {
       name: "GPS安装预约",
       desc: "预约GPS设备安装时间和地点",
       btnText: "预约安装",
-      path: "/pages/business/signGpsAppointment",
+      path: "/pages/carloan/signGpsAppointment",
       status: getStepStatus("GPS_APPOINTMENT", s),
     },
     {
@@ -169,7 +169,7 @@ const stepList = computed(() => {
       name: "抵押办理",
       desc: "预约或办理车辆抵押登记",
       btnText: "办理抵押",
-      path: "/pages/business/signMortgage",
+      path: "/pages/carloan/signMortgage",
       status: getStepStatus("MORTGAGE", s),
     },
   ];
@@ -328,7 +328,7 @@ function goStep(step) {
 }
 
 function finishSign() {
-  uni.switchTab({ url: "/pages/business/workbench" });
+  uni.reLaunch({ url: "/pages/carloan/workbench" });
 }
 </script>
 

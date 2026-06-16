@@ -213,7 +213,7 @@ function handleNext() {
   });
 
   uni.navigateTo({
-    url: "/pages/business/pawnLoanInfo",
+    url: "/pages/carloan/pawnLoanInfo",
   });
 }
 </script>

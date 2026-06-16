@@ -1,5 +1,5 @@
 <template>
-  <layout :active-tab="3" navTitle="我的" show-tabbar>
+  <layout :active-tab="2" navTitle="我的" show-tabbar tabbar-scope="portal">
     <scroll-view class="my-scroll" scroll-y>
       <view class="my-page">
         <view class="profile-panel" @click="handleProfileClick">

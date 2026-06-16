@@ -9,7 +9,7 @@
         <text class="calc-value">￥{{ monthlyPaymentText }}</text>
       </view>
 
-      <AppForm v-model="loanInfo" :items="formItems" />
+      <AppForm :modelValue="loanInfo" :items="formItems" />
 
       <view class="footer-btn">
         <u-button
@@ -219,7 +219,7 @@ async function handleSubmit() {
       $u.toast("典当进件已提交", "success");
       setTimeout(() => {
         uni.redirectTo({
-          url: `/pages/business/supplementList?creditOrderId=${creditOrderId}`,
+          url: `/pages/carloan/supplementList?creditOrderId=${creditOrderId}`,
         });
       }, 800);
     } else {

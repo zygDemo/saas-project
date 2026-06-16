@@ -388,7 +388,20 @@ async function main() {
   // 分配菜单权限给角色（按 PRD 角色菜单树）
   const filterIds = (...names: string[]) =>
     menus.filter((m) => names.includes(m.name)).map((m) => m.id)
-  const superMenuIds = menus.map((m) => m.id)
+  const businessMenu = menus.find((m) => m.name === 'Business')
+  const businessStageNames = new Set([
+    'Business',
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessRiskApproval',
+    'BusinessFunderFinal',
+    'BusinessSigning',
+    'BusinessDisbursement',
+    'BusinessOrderQuery'
+  ])
+  const superMenuIds = menus
+    .filter((m) => m.parentId !== businessMenu?.id || businessStageNames.has(m.name))
+    .map((m) => m.id)
 
   // 公共：所有角色都有仪表盘工作台
   const dashIds = filterIds('Dashboard', 'Console', 'Analysis')
@@ -402,11 +415,7 @@ async function main() {
     'PlatformSupervision',
     'ThirdPartyService',
     'WorkOrder',
-    'FlowConfig',
-    'Org',
-    'Dept',
-    'Product',
-    'Funder'
+    'FlowConfig'
   )
   // 数据中心
   const dataCenterIds = filterIds('DataCenter', 'DataStats', 'AuditLog')
@@ -426,104 +435,81 @@ async function main() {
     'UserCenter'
   )
   const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter')
-  const bizCoreIds = filterIds(
+  // 业务管理：只展示流程阶段菜单
+  const bizStageCommonIds = filterIds(
     'Business',
-    'Lead',
-    'PreReview',
-    'Supplement',
-    'Approval',
-    'FunderReview',
-    'Signing',
-    'Disbursement',
-    'PostLoan',
-    'Reports'
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessFunderFinal',
+    'BusinessSigning',
+    'BusinessOrderQuery'
   )
-  const bizApprovalIds = filterIds('Business', 'Lead', 'PreReview', 'Supplement', 'Approval', 'FunderReview')
-  const bizFinanceIds = filterIds(
-    'Business',
-    'Lead',
-    'PreReview',
-    'Supplement',
-    'Approval',
-    'FunderReview',
-    'Signing',
-    'Disbursement',
-    'PostLoan',
-    'Reports'
+  const bizStageApprovalIds = filterIds(
+    ...[
+      'Business',
+      'BusinessPrecheck',
+      'BusinessSupplement',
+      'BusinessRiskApproval',
+      'BusinessFunderFinal',
+      'BusinessSigning',
+      'BusinessOrderQuery'
+    ]
   )
-  const bizCsIds = filterIds('Business', 'Lead', 'PreReview', 'Supplement', 'Approval', 'FunderReview', 'Signing', 'Disbursement', 'PostLoan', 'Reports')
-  const bizManagerIds = filterIds(
-    'Platform',
-    'Business',
-    'FlowConfig',
-    'Lead',
-    'PreReview',
-    'Supplement',
-    'Approval',
-    'FunderReview',
-    'Signing',
-    'Disbursement',
-    'PostLoan',
-    'Reports'
+  const bizStageFinanceIds = filterIds(
+    ...[
+      'Business',
+      'BusinessPrecheck',
+      'BusinessSupplement',
+      'BusinessFunderFinal',
+      'BusinessSigning',
+      'BusinessDisbursement',
+      'BusinessOrderQuery'
+    ]
   )
-  const bizAdminIds = filterIds(
-    'Platform',
-    'Business',
-    'FlowConfig',
-    'Lead',
-    'PreReview',
-    'Supplement',
-    'Approval',
-    'FunderReview',
-    'Signing',
-    'Disbursement',
-    'PostLoan',
-    'Reports'
+  const bizStageFullIds = filterIds(
+    ...[
+      'Business',
+      'BusinessPrecheck',
+      'BusinessSupplement',
+      'BusinessRiskApproval',
+      'BusinessFunderFinal',
+      'BusinessSigning',
+      'BusinessDisbursement',
+      'BusinessOrderQuery'
+    ]
   )
 
   // R_SUPER: 全部
   await connectRoleMenus(roleByCode.R_SUPER.id, superMenuIds)
-  // R_OPERATION: 仪表盘 + 平台管理 + 数据中心 + 车贷业务 + 公告
+  // R_OPERATION: 仪表盘 + 平台管理（部分）+ 数据中心 + 公告
   await connectRoleMenus(roleByCode.R_OPERATION.id, [
     ...dashIds,
     ...platformIds,
     ...dataCenterIds,
     ...filterIds('Notice'),
-    ...filterIds(
-      'Business',
-      'Lead',
-      'PreReview',
-      'Supplement',
-      'Approval',
-      'FunderReview',
-      'Signing',
-      'Disbursement',
-      'PostLoan',
-      'Reports'
-    ),
     ...filterIds('WorkOrder')
   ])
-  // R_ADMIN: 仪表盘 + 系统基础 + 流程配置 + 全流程业务菜单
+  // R_ADMIN: 仪表盘 + 系统基础 + 流程配置 + 全流程阶段
   await connectRoleMenus(roleByCode.R_ADMIN.id, [
     ...dashIds,
     ...filterIds('Platform', 'FlowConfig'),
     ...systemBasicIds,
-    ...bizAdminIds
+    ...bizStageFullIds
   ])
-  // R_SALES_MANAGER: 仪表盘 + 业务菜单
+  // R_SALES_MANAGER: 仪表盘 + 业务阶段（含请款放款）
   await connectRoleMenus(roleByCode.R_SALES_MANAGER.id, [
     ...dashIds,
     ...filterIds('Platform', 'FlowConfig'),
-    ...bizManagerIds
+    ...bizStageFinanceIds
   ])
-  // R_SALES: 仪表盘 + 业务菜单
-  await connectRoleMenus(roleByCode.R_SALES.id, [...dashIds, ...bizCoreIds])
+  // R_SALES: 仪表盘 + 业务阶段
+  await connectRoleMenus(roleByCode.R_SALES.id, [...dashIds, ...bizStageCommonIds])
   // R_APPROVER: 仪表盘 + 审批相关阶段
-  await connectRoleMenus(roleByCode.R_APPROVER.id, [...dashIds, ...bizApprovalIds])
+  await connectRoleMenus(roleByCode.R_APPROVER.id, [...dashIds, ...bizStageApprovalIds])
   // R_FINANCE: 仪表盘 + 财务相关阶段
-  await connectRoleMenus(roleByCode.R_FINANCE.id, [...dashIds, ...bizFinanceIds])
-  // R_CS_COLLECTION: 仪表盘 + 贷后相关业务菜单
-  await connectRoleMenus(roleByCode.R_CS_COLLECTION.id, [...dashIds, ...bizCsIds])
+  await connectRoleMenus(roleByCode.R_FINANCE.id, [...dashIds, ...bizStageFinanceIds])
+  // R_CS_COLLECTION: 仅仪表盘
+  await connectRoleMenus(roleByCode.R_CS_COLLECTION.id, dashIds)
   // R_USER: 仅仪表盘（移动端操作权限，管理后台无业务菜单）
   await connectRoleMenus(roleByCode.R_USER.id, dashIds)
 

@@ -645,7 +645,7 @@ async function handleSubmit() {
     $u.toast("提交成功", "success");
     setTimeout(() => {
       uni.redirectTo({
-        url: `/pages/business/supplementDetail?creditOrderId=${creditOrderId.value}`,
+        url: `/pages/carloan/supplementDetail?creditOrderId=${creditOrderId.value}`,
       });
     }, 1500);
   } catch (e) {

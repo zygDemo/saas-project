@@ -36,7 +36,7 @@
         <u-text text="请确认行驶证信息" size="28rpx" bold />
       </view>
 
-      <AppForm v-model="carInfo" :items="formItems" />
+      <AppForm :modelValue="carInfo" :items="formItems" />
 
       <view class="footer-btn" :class="{ 'edit-mode': isEditMode }">
         <u-button
@@ -536,8 +536,8 @@ async function handleNext() {
         entryPhone.value ? `phone=${encodeURIComponent(entryPhone.value)}` : "",
       ].filter(Boolean).join("&");
       const nextUrl = isPawnMode.value
-        ? `/pages/business/pawnLoanInfo?uuid=${encodeURIComponent(String(uuid))}`
-        : `/pages/business/applyInfo${entryQuery ? `?${entryQuery}` : ""}`;
+        ? `/pages/carloan/pawnLoanInfo?uuid=${encodeURIComponent(String(uuid))}`
+        : `/pages/carloan/applyInfo${entryQuery ? `?${entryQuery}` : ""}`;
       setTimeout(() => {
         uni.$u.route({
           url: nextUrl,

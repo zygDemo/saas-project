@@ -28,7 +28,7 @@
         <view class="section-title">
           <text class="title-text">预约信息</text>
         </view>
-        <AppForm v-model="form" :items="formItems" />
+        <AppForm :modelValue="form" :items="formItems" />
       </view>
 
       <!-- 安装须知 -->

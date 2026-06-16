@@ -1,6 +1,5 @@
 <template>
   <view class="layout">
-    <!-- 顶部导航栏 - u-navbar 组件 -->
     <u-navbar
       :title="navTitle || currentNavTitle"
       :background="navBackground"
@@ -13,18 +12,17 @@
       :z-index="980"
     />
 
-    <!-- 内容区域 -->
-    <view class="layout-content">
+    <view class="layout-content" :class="{ 'layout-content--with-tabbar': showTabbar }">
       <view class="content-page"><slot /></view>
     </view>
 
-    <!-- 底部TabBar - uview-pro u-tabbar 组件 -->
     <u-tabbar
       v-if="showTabbar"
       v-model="currentTab"
-      :list="tabList"
+      :list="tabbarList"
       :active-color="themeColor"
       inactive-color="#999999"
+      :hide-tab-bar="shouldHideNativeTabbar"
       :before-switch="beforeSwitch"
       @change="onTabChange"
     />
@@ -32,110 +30,94 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import {
+  getCurrentPageRoute,
+  getLayoutTabbar,
+  isSystemTabbarRoute,
+  navigateFromTabbar,
+  TABBAR_SCOPES,
+  type LayoutTabbarItem,
+  type TabbarScope,
+} from "@/common/navigation";
 import { useTheme } from "uview-pro";
+import { computed, ref, watch } from "vue";
 
-/**
- * Props 定义
- * navTitle: 顶部导航栏标题
- * showTabbar: 是否显示底部 TabBar
- */
 const props = defineProps<{
   navTitle?: string;
   activeTab?: number;
   showTabbar?: boolean;
+  tabbarScope?: TabbarScope;
 }>();
 
-// 获取主题色
 const { currentTheme } = useTheme();
-
-// 当前选中的tab索引（用于导航栏标题显示）
 const currentTab = ref(props.activeTab ?? 0);
+const tabConfig = ref<LayoutTabbarItem[]>([]);
 
-// 获取主题色（用于选中状态）
-const themeColor = computed(() => {
-  return currentTheme.value?.color?.primary || "#409EFF";
-});
+const currentScope = computed<TabbarScope>(() => props.tabbarScope || TABBAR_SCOPES.portal);
 
-// 导航栏渐变背景
-const navBackground = computed(() => {
-  return {
-    backgroundImage: "linear-gradient(90deg, var(--u-type-primary-dark), var(--u-type-primary-disabled))",
-  };
-});
+const themeColor = computed(() => currentTheme.value?.color?.primary || "#409EFF");
 
-// Tab列表配置（u-tabbar list 格式）
-// customIcon: false 表示使用 uView 内置图标
-const tabList = ref([
-  {
-    iconPath: "home",
-    selectedIconPath: "home-fill",
-    text: "首页",
-    pagePath: "/pages/index/index",
-    customIcon: false,
-    count: 0,
-  },
-  {
-    iconPath: "shopping",
-    selectedIconPath: "shopping-fill",
-    text: "门店",
-    pagePath: "/pages/food/index/index",
-    customIcon: false,
-    count: 0,
-  },
-  {
-    iconPath: "list",
-    selectedIconPath: "list-fill",
-    text: "订单",
-    pagePath: "/pages/food/order/list",
-    customIcon: false,
-    count: 0,
-  },
-  {
-    iconPath: "account",
-    selectedIconPath: "account-fill",
-    text: "我的",
-    pagePath: "/pages/my/my",
-    customIcon: false,
-    count: 0,
-  },
-]);
+const navBackground = computed(() => ({
+  backgroundImage:
+    "linear-gradient(90deg, var(--u-type-primary-dark), var(--u-type-primary-disabled))",
+}));
 
-// 默认导航栏标题
+const shouldHideNativeTabbar = computed(() =>
+  isSystemTabbarRoute(getCurrentPageRoute()),
+);
+
+const tabbarList = computed(() =>
+  tabConfig.value.map(({ route: _route, navMode: _navMode, ...item }) => item),
+);
+
 const currentNavTitle = computed(() => {
-  const currentTabItem = tabList.value[currentTab.value];
-  return props.navTitle || currentTabItem?.text || "予艺助手";
+  const currentTabItem = tabConfig.value[currentTab.value];
+  return props.navTitle || currentTabItem?.text || "SaaS助手";
 });
 
-// 切换前的回调钩子（返回 false 阻止切换）
+const syncTabbar = () => {
+  const nextConfig = getLayoutTabbar(currentScope.value);
+  const currentRoute = getCurrentPageRoute();
+  const matchedIndex = nextConfig.findIndex((item) => item.route === currentRoute);
+
+  tabConfig.value = nextConfig;
+  currentTab.value = matchedIndex >= 0 ? matchedIndex : props.activeTab ?? 0;
+};
+
 function beforeSwitch(index: number): boolean {
-  console.warn("准备切换到Tab:", index);
-  return true;
+  return index !== currentTab.value;
 }
 
-// Tab切换后的回调（u-tabbar 已自动完成 uni.switchTab 跳转）
 function onTabChange(index: number) {
   currentTab.value = index;
+  navigateFromTabbar(tabConfig.value[index]);
 }
 
-// 更新Tab的徽标数量（供外部调用）
 function updateBadge(index: number, count: number) {
-  if (index >= 0 && index < tabList.value.length) {
-    tabList.value[index] = {
-      ...tabList.value[index],
-      count,
-    };
+  if (index < 0 || index >= tabConfig.value.length) {
+    return;
   }
+
+  tabConfig.value[index] = {
+    ...tabConfig.value[index],
+    count,
+  };
 }
 
-// 暴露方法供外部使用
 defineExpose({
   updateBadge,
 });
+
+watch(
+  () => [props.tabbarScope, props.activeTab] as const,
+  () => {
+    syncTabbar();
+  },
+  { immediate: true },
+);
 </script>
 
 <style lang="scss">
-/* 禁用 page 级别滚动，防止与 layout-content 产生双滚动条 */
 page {
   overflow: hidden;
 }
@@ -150,50 +132,23 @@ page {
   overflow: hidden;
 }
 
-.custom-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  color: #ffffff;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-
-  .status-bar {
-    height: var(--status-bar-height);
-    width: 100%;
-  }
-
-  .navbar-content {
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 32rpx;
-  }
-
-  .navbar-title {
-    font-size: 34rpx;
-    font-weight: 700;
-    color: #ffffff;
-  }
-}
-
-// 核心：用绝对定位精确计算滚动区域，避免 flex 嵌套滚动问题
 .layout-content {
   position: absolute;
   top: calc(var(--status-bar-height) + 44px);
-  bottom: calc(50px + env(safe-area-inset-bottom));
-  left: 0;
   right: 0;
+  bottom: 0;
+  left: 0;
   overflow: hidden;
+
+  &--with-tabbar {
+    bottom: calc(50px + env(safe-area-inset-bottom));
+  }
 
   .content-page {
     height: 100%;
   }
 }
 
-/* u-tabbar 组件样式覆盖 */
 :deep(.u-tabbar) {
   box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.04);
 }

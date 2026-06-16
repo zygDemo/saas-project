@@ -33,7 +33,7 @@
           <text class="title-sub">请核对以下信息并确认</text>
         </view>
 
-        <AppForm v-model="form" :items="formItems" />
+        <AppForm :modelValue="form" :items="formItems" />
       </view>
 
       <!-- 说明 -->

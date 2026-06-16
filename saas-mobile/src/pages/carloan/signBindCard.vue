@@ -36,7 +36,7 @@
           <text class="title-sub">请填写客户本人银行卡信息</text>
         </view>
 
-        <AppForm v-model="form" :items="formItems" />
+        <AppForm :modelValue="form" :items="formItems" />
       </view>
 
       <!-- 底部按钮 -->

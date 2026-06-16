@@ -1,5 +1,5 @@
 <template>
-  <layout :active-tab="0" navTitle="首页" show-tabbar>
+  <layout :active-tab="0" navTitle="首页" show-tabbar tabbar-scope="carloan">
     <scroll-view class="workbench-scroll" scroll-y>
       <view class="workbench">
         <view class="home-header">
@@ -9,7 +9,7 @@
             <text class="home-desc">线索、进件、补件和审批集中处理</text>
           </view>
           <view class="home-status">
-            <view class="msg-badge" @click.stop="goTo('/pages/business/messageCenter')">
+            <view class="msg-badge" @click.stop="goTo('/pages/carloan/messageCenter')">
               <u-icon name="bell" size="36" color="#1a1a1a" />
               <view v-if="unreadCount > 0" class="badge-dot">{{ unreadCount > 99 ? '99+' : unreadCount }}</view>
             </view>
@@ -26,7 +26,7 @@
         <view class="quick-actions">
           <view
             class="quick-card quick-card--lead"
-            @click="goTo('/pages/business/leadAdd')"
+            @click="goTo('/pages/carloan/leadAdd')"
           >
             <view class="quick-left">
               <view class="quick-title-row">
@@ -45,7 +45,7 @@
             </view>
           </view>
 
-          <view class="quick-card quick-card--credit" @click="goTo('/pages/business/idInfo')">
+          <view class="quick-card quick-card--credit" @click="goTo('/pages/carloan/idInfo')">
             <view class="quick-left">
               <view class="quick-title-row">
                 <u-icon name="file-text" size="44" color="#fff" />
@@ -155,6 +155,7 @@
 </template>
 
 <script setup>
+import { APP_ROUTES } from "@/common/navigation";
 import layout from "@/pages/layout/layout.vue";
 import { $u, useTheme } from "uview-pro";
 import { useBusinessApi } from "@/api/business";
@@ -274,7 +275,7 @@ const checkAuth = () => {
       content: "您尚未登录，是否前往登录？",
       success: (res) => {
         if (res.confirm) {
-          uni.reLaunch({ url: "/pages/auth/login" });
+          uni.reLaunch({ url: APP_ROUTES.auth.login });
         }
       },
     });
@@ -285,10 +286,6 @@ const checkAuth = () => {
 
 const goTo = (url) => {
   if (!checkAuth()) return;
-  if (url === "/pages/business/orderList") {
-    uni.switchTab({ url });
-    return;
-  }
   uni.navigateTo({ url });
 };
 
@@ -298,7 +295,7 @@ const goToOrderNode = (nodeCode) => {
     nodeCode: String(nodeCode || ""),
     updatedAt: Date.now(),
   });
-  uni.switchTab({ url: "/pages/business/orderList" });
+  uni.navigateTo({ url: "/pages/carloan/orderList" });
 };
 
 const handleItem = (item) => {
@@ -418,16 +415,16 @@ const showQr = (type) => {
 };
 
 const DEV_ONLY_PATHS = new Set([
-  "/pages/business/idInfo",
-  "/pages/business/carInfo",
-  "/pages/business/applyInfo",
-  "/pages/business/applyResult",
-  "/pages/business/idInfoSupplement",
-  "/pages/business/carInfoSupplement",
-  "/pages/business/orderInfoSupplement",
-  "/pages/business/fileInfoSupplement",
-  "/pages/business/entryList",
-  "/pages/business/applyListPage",
+  "/pages/carloan/idInfo",
+  "/pages/carloan/carInfo",
+  "/pages/carloan/applyInfo",
+  "/pages/carloan/applyResult",
+  "/pages/carloan/idInfoSupplement",
+  "/pages/carloan/carInfoSupplement",
+  "/pages/carloan/orderInfoSupplement",
+  "/pages/carloan/fileInfoSupplement",
+  "/pages/carloan/entryList",
+  "/pages/carloan/applyListPage",
 ]);
 
 const sectionsRaw = [

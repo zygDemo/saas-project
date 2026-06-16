@@ -103,7 +103,7 @@ function onTabClick(index) {
 
 function goDetail(item) {
   uni.navigateTo({
-    url: `/pages/business/pawnApprovalDetail?id=${item.id}`,
+    url: `/pages/carloan/pawnApprovalDetail?id=${item.id}`,
   });
 }
 

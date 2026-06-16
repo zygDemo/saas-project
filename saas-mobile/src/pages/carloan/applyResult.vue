@@ -53,14 +53,14 @@
 
 <script setup>
 function goToWorkbench() {
-  uni.switchTab({
-    url: "/pages/business/workbench",
+  uni.reLaunch({
+    url: "/pages/carloan/workbench",
   });
 }
 
 function goToApplyList() {
   uni.navigateTo({
-    url: "/pages/business/applyListPage",
+    url: "/pages/carloan/applyListPage",
   });
 }
 </script>

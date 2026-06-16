@@ -418,14 +418,14 @@ async function loadDetail() {
 function goToSign() {
   const d = info.value;
   uni.navigateTo({
-    url: `/pages/business/signCenter?creditOrderId=${d.creditOrderId || d.applicationNo}&uuid=${d.uuid || ""}&customerName=${d.customerName}`,
+    url: `/pages/carloan/signCenter?creditOrderId=${d.creditOrderId || d.applicationNo}&uuid=${d.uuid || ""}&customerName=${d.customerName}`,
   });
 }
 
 function goToSupplement() {
   const d = info.value;
   uni.navigateTo({
-    url: `/pages/business/supplementDetail?creditOrderId=${d.creditOrderId || d.applicationNo}`,
+    url: `/pages/carloan/supplementDetail?creditOrderId=${d.creditOrderId || d.applicationNo}`,
   });
 }
 

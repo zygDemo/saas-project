@@ -62,7 +62,7 @@
         <u-text text="请确认身份证信息" size="28rpx" bold />
       </view>
 
-      <AppForm v-model="idInfo" :items="formItems" />
+      <AppForm :modelValue="idInfo" :items="formItems" />
 
       <view class="footer-btn" :class="{ 'edit-mode': isEditMode }">
         <u-button
@@ -537,8 +537,8 @@ const handleNext = async () => {
         isPawnMode.value ? "businessType=pawn" : "",
       ].filter(Boolean);
       const nextUrl = isPawnMode.value
-        ? `/pages/business/carInfo?${query.join("&")}`
-        : `/pages/business/carInfo${query.length ? `?${query.join("&")}` : ""}`;
+        ? `/pages/carloan/carInfo?${query.join("&")}`
+        : `/pages/carloan/carInfo${query.length ? `?${query.join("&")}` : ""}`;
       setTimeout(() => {
         uni.redirectTo({
           url: nextUrl,

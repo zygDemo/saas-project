@@ -137,13 +137,13 @@ function onTabClick(index) {
 
 function goToDetail(item) {
   uni.navigateTo({
-    url: `/pages/business/approvalDetail?id=${item.id}`,
+    url: `/pages/carloan/applyDetail?id=${item.id}`,
   });
 }
 
 function handleAudit(item) {
   uni.navigateTo({
-    url: `/pages/business/approvalAudit?id=${item.id}`,
+    url: `/pages/carloan/applyDetail?id=${item.id}`,
   });
 }
 </script>

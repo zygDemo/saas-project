@@ -211,7 +211,7 @@ function handleMessageClick(msg) {
     uni.navigateTo({ url: msg.link });
   } else if (msg.orderNo || msg.creditOrderId) {
     uni.navigateTo({
-      url: `/pages/business/applyProgress?creditOrderId=${msg.creditOrderId || msg.orderNo}`,
+      url: `/pages/carloan/applyProgress?creditOrderId=${msg.creditOrderId || msg.orderNo}`,
     });
   }
 }
@@ -277,7 +277,7 @@ function initDemoMessages() {
       creditOrderId: "SO20260613001",
       time: new Date(now - 1800000).toISOString(),
       read: false,
-      link: "/pages/business/applyProgress?creditOrderId=SO20260613001",
+      link: "/pages/carloan/applyProgress?creditOrderId=SO20260613001",
     },
     {
       id: 2,
@@ -289,7 +289,7 @@ function initDemoMessages() {
       creditOrderId: "SO20260612003",
       time: new Date(now - 7200000).toISOString(),
       read: false,
-      link: "/pages/business/supplementDetail?creditOrderId=SO20260612003",
+      link: "/pages/carloan/supplementDetail?creditOrderId=SO20260612003",
     },
     {
       id: 3,
@@ -301,7 +301,7 @@ function initDemoMessages() {
       creditOrderId: "SO20260611002",
       time: new Date(now - 14400000).toISOString(),
       read: true,
-      link: "/pages/business/signCenter?creditOrderId=SO20260611002",
+      link: "/pages/carloan/signCenter?creditOrderId=SO20260611002",
     },
     {
       id: 4,

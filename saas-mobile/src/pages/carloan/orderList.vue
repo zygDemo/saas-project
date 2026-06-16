@@ -1,5 +1,5 @@
 <template>
-  <layout :active-tab="1" nav-title="订单" show-tabbar>
+  <layout :active-tab="1" nav-title="订单" show-tabbar tabbar-scope="carloan">
     <view class="order-list-page">
       <!-- 搜索栏 -->
       <view class="search-bar">
@@ -368,16 +368,16 @@ function getBusinessNodeLabel(node: unknown) {
 }
 
 const NODE_DETAIL_ROUTE_MAP: Record<string, string> = {
-  "1100": "/pages/business/applyDetail",
-  "1200": "/pages/business/applyDetail",
-  "1300": "/pages/business/applyDetail",
-  "1400": "/pages/business/supplementDetail",
-  "2100": "/pages/business/applyDetail",
-  "2200": "/pages/business/applyDetail",
-  "3100": "/pages/business/applyDetail",
-  "4100": "/pages/business/signCenter",
-  "5100": "/pages/business/supplementDetail",
-  "6100": "/pages/business/supplementDetail",
+  "1100": "/pages/carloan/applyDetail",
+  "1200": "/pages/carloan/applyDetail",
+  "1300": "/pages/carloan/applyDetail",
+  "1400": "/pages/carloan/supplementDetail",
+  "2100": "/pages/carloan/applyDetail",
+  "2200": "/pages/carloan/applyDetail",
+  "3100": "/pages/carloan/applyDetail",
+  "4100": "/pages/carloan/signCenter",
+  "5100": "/pages/carloan/supplementDetail",
+  "6100": "/pages/carloan/supplementDetail",
 };
 
 function normalizeNodeCode(node: unknown) {
@@ -481,7 +481,7 @@ function handleSignButton(order: OrderListViewItem) {
     `signStatus=${encodeURIComponent(resolveSignStatus(order))}`,
   ];
   uni.navigateTo({
-    url: `/pages/business/signCenter?${query.join("&")}`,
+    url: `/pages/carloan/signCenter?${query.join("&")}`,
   });
 }
 
@@ -490,10 +490,10 @@ function handleDetailButton(order: OrderListViewItem) {
     order?.nodeCode ?? order?.currentNode ?? order?.businessNode,
   );
   const route =
-    NODE_DETAIL_ROUTE_MAP[nodeCode] || "/pages/business/applyDetail";
+    NODE_DETAIL_ROUTE_MAP[nodeCode] || "/pages/carloan/applyDetail";
   const query = buildOrderQuery(order);
 
-  if (route === "/pages/business/signCenter") {
+  if (route === "/pages/carloan/signCenter") {
     handleSignButton(order);
     return;
   }
@@ -706,7 +706,7 @@ function handleNodeStatusChange(status: NodeStatusFilterValue) {
 function handleApprove(order: OrderListViewItem) {
   const query = buildOrderQuery(order);
   uni.navigateTo({
-    url: `/pages/business/applyDetail?${query}`,
+    url: `/pages/carloan/applyDetail?${query}`,
   });
 }
 

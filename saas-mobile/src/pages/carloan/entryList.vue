@@ -205,7 +205,7 @@ function goToDetail(item: Record<string, unknown>) {
   ].join("&");
 
   uni.navigateTo({
-    url: `/pages/business/entryDetail?${params}`,
+    url: `/pages/carloan/entryDetail?${params}`,
   });
 }
 

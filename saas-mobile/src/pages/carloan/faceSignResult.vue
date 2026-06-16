@@ -811,7 +811,7 @@ async function handleContractSign() {
 
   try {
     const redirectUrl = [
-      `${getBaseUrl()}#/pages/business/faceSignResult?navTitle=${encodeURIComponent(
+      `${getBaseUrl()}#/pages/carloan/faceSignResult?navTitle=${encodeURIComponent(
         "合同签署结果",
       )}`,
       `uuid=${encodeURIComponent(callbackUuid.value)}`,
@@ -878,7 +878,7 @@ async function handleSignContract() {
 
   try {
     const redirectUrl = [
-      `${getBaseUrl()}#/pages/business/faceSignResult?navTitle=${encodeURIComponent(
+      `${getBaseUrl()}#/pages/carloan/faceSignResult?navTitle=${encodeURIComponent(
         "授权书签署结果",
       )}`,
       `uuid=${encodeURIComponent(callbackUuid.value)}`,
@@ -923,11 +923,11 @@ function goBack() {
 }
 
 function goToWorkbench() {
-  uni.switchTab({ url: "/pages/business/workbench" });
+  uni.reLaunch({ url: "/pages/carloan/workbench" });
 }
 
 function retryCredit() {
-  const baseUrl = `/pages/business/videoFaceSign?uuid=${callbackUuid.value}`;
+  const baseUrl = `/pages/carloan/videoFaceSign?uuid=${callbackUuid.value}`;
   const url =
     pageMode.value === "faceSign"
       ? `${baseUrl}&orderId=${customerInfo.creditOrderId}&type=contract`
