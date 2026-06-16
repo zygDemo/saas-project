@@ -79,9 +79,10 @@ BEGIN
         {"parentKey":"Platform","path":"supervision","name":"PlatformSupervision","title":"平台业务监管","icon":"ri:eye-line","sort":24,"keepAlive":true},
         {"parentKey":"Platform","path":"third-party","name":"ThirdPartyService","title":"第三方服务管理","icon":"ri:plug-line","sort":25,"keepAlive":true},
         {"parentKey":"Platform","path":"work-order","name":"WorkOrder","title":"运营工单中心","icon":"ri:customer-service-2-line","sort":26,"keepAlive":true},
+        {"parentKey":"Platform","path":"flow-config","name":"FlowConfig","component":"/business/flow-config","title":"流程与规则","icon":"ri:git-branch-line","sort":71,"keepAlive":true},
         {"path":"/datacenter","name":"DataCenter","title":"数据中心","icon":"ri:bar-chart-box-line","sort":30},
-        {"parentKey":"DataCenter","path":"stats","name":"DataStats","title":"数据统计","icon":"ri:bar-chart-line","sort":31,"keepAlive":true},
-        {"parentKey":"DataCenter","path":"audit-log","name":"AuditLog","title":"日志审计","icon":"ri:file-list-3-line","sort":32,"keepAlive":true},
+        {"parentKey":"DataCenter","path":"stats","name":"DataStats","component":"/data-center/stats","title":"数据统计","icon":"ri:bar-chart-line","sort":31,"keepAlive":true},
+        {"parentKey":"DataCenter","path":"audit-log","name":"AuditLog","component":"/data-center/audit-log","title":"日志审计","icon":"ri:file-list-3-line","sort":32,"keepAlive":true},
         {"path":"/system","name":"System","title":"系统管理","icon":"ri:settings-3-line","sort":40},
         {"parentKey":"System","path":"user","name":"User","component":"/system/user","title":"用户管理","icon":"ri:user-line","sort":41,"keepAlive":true},
         {"parentKey":"System","path":"role","name":"Role","component":"/system/role","title":"角色管理","icon":"ri:user-settings-line","sort":42,"keepAlive":true},
@@ -100,7 +101,8 @@ BEGIN
         {"parentKey":"Business","path":"risk-approval","name":"BusinessRiskApproval","title":"风控审批","icon":"ri:shield-check-line","sort":63,"keepAlive":true},
         {"parentKey":"Business","path":"funder-final","name":"BusinessFunderFinal","title":"资方终审","icon":"ri:bank-line","sort":64,"keepAlive":true},
         {"parentKey":"Business","path":"signing","name":"BusinessSigning","title":"客户签约","icon":"ri:contract-line","sort":65,"keepAlive":true},
-        {"parentKey":"Business","path":"disbursement","name":"BusinessDisbursement","title":"请款放款","icon":"ri:money-cny-circle-line","sort":66,"keepAlive":true}
+        {"parentKey":"Business","path":"disbursement","name":"BusinessDisbursement","title":"请款放款","icon":"ri:money-cny-circle-line","sort":66,"keepAlive":true},
+        {"parentKey":"Business","path":"order-query","name":"BusinessOrderQuery","title":"综合查询","icon":"ri:search-eye-line","sort":67,"keepAlive":true}
       ]
     $json$::jsonb)
   LOOP
@@ -162,12 +164,12 @@ BEGIN
     SELECT key, value FROM jsonb_each($json$
       {
         "R_SUPER": ["*"],
-        "R_OPERATION": ["Dashboard","Console","Analysis","Platform","TenantMgmt","PackageBilling","ProductTemplate","PlatformSupervision","ThirdPartyService","WorkOrder","DataCenter","DataStats","AuditLog","Notice","WorkOrder"],
-        "R_ADMIN": ["Dashboard","Console","Analysis","System","User","Role","Menus","FileManage","UserCenter","Business","BusinessPrecheck","BusinessSupplement","BusinessRiskApproval","BusinessFunderFinal","BusinessSigning","BusinessDisbursement"],
-        "R_SALES_MANAGER": ["Dashboard","Console","Analysis","Business","BusinessPrecheck","BusinessSupplement","BusinessFunderFinal","BusinessSigning","BusinessDisbursement"],
-        "R_SALES": ["Dashboard","Console","Analysis","Business","BusinessPrecheck","BusinessSupplement","BusinessFunderFinal","BusinessSigning"],
-        "R_APPROVER": ["Dashboard","Console","Analysis","Business","BusinessPrecheck","BusinessSupplement","BusinessRiskApproval","BusinessFunderFinal","BusinessSigning"],
-        "R_FINANCE": ["Dashboard","Console","Analysis","Business","BusinessPrecheck","BusinessSupplement","BusinessFunderFinal","BusinessSigning","BusinessDisbursement"],
+        "R_OPERATION": ["Dashboard","Console","Analysis","Platform","TenantMgmt","PackageBilling","ProductTemplate","PlatformSupervision","ThirdPartyService","WorkOrder","FlowConfig","DataCenter","DataStats","AuditLog","Notice","WorkOrder"],
+        "R_ADMIN": ["Dashboard","Console","Analysis","Platform","FlowConfig","System","User","Role","Menus","FileManage","UserCenter","Business","BusinessPrecheck","BusinessSupplement","BusinessRiskApproval","BusinessFunderFinal","BusinessSigning","BusinessDisbursement","BusinessOrderQuery"],
+        "R_SALES_MANAGER": ["Dashboard","Console","Analysis","Platform","FlowConfig","Business","BusinessPrecheck","BusinessSupplement","BusinessFunderFinal","BusinessSigning","BusinessDisbursement","BusinessOrderQuery"],
+        "R_SALES": ["Dashboard","Console","Analysis","Business","BusinessPrecheck","BusinessSupplement","BusinessFunderFinal","BusinessSigning","BusinessOrderQuery"],
+        "R_APPROVER": ["Dashboard","Console","Analysis","Business","BusinessPrecheck","BusinessSupplement","BusinessRiskApproval","BusinessFunderFinal","BusinessSigning","BusinessOrderQuery"],
+        "R_FINANCE": ["Dashboard","Console","Analysis","Business","BusinessPrecheck","BusinessSupplement","BusinessFunderFinal","BusinessSigning","BusinessDisbursement","BusinessOrderQuery"],
         "R_CS_COLLECTION": ["Dashboard","Console","Analysis"],
         "R_USER": ["Dashboard","Console","Analysis"]
       }
@@ -197,9 +199,9 @@ BEGIN
   END LOOP;
 
   FOREACH v_menu_name IN ARRAY ARRAY[
-    'TenantMgmt','PackageBilling','ProductTemplate','PlatformSupervision','ThirdPartyService','WorkOrder',
+    'TenantMgmt','PackageBilling','ProductTemplate','PlatformSupervision','ThirdPartyService','WorkOrder','FlowConfig',
     'DataStats','AuditLog','BusinessPrecheck','BusinessSupplement','BusinessRiskApproval',
-    'BusinessFunderFinal','BusinessSigning','BusinessDisbursement',
+    'BusinessFunderFinal','BusinessSigning','BusinessDisbursement','BusinessOrderQuery',
     'Menus','DictMgmt','RegionMgmt','FileManage','MsgTemplate','Notice'
   ]
   LOOP
@@ -242,7 +244,8 @@ BEGIN
         'BusinessRiskApproval',
         'BusinessFunderFinal',
         'BusinessSigning',
-        'BusinessDisbursement'
+        'BusinessDisbursement',
+        'BusinessOrderQuery'
       );
 
     UPDATE "Menu"
@@ -255,6 +258,7 @@ BEGIN
           WHEN 'BusinessFunderFinal' THEN 64
           WHEN 'BusinessSigning' THEN 65
           WHEN 'BusinessDisbursement' THEN 66
+          WHEN 'BusinessOrderQuery' THEN 67
           ELSE sort
         END,
         "updatedAt" = CURRENT_TIMESTAMP
@@ -266,7 +270,8 @@ BEGIN
         'BusinessRiskApproval',
         'BusinessFunderFinal',
         'BusinessSigning',
-        'BusinessDisbursement'
+        'BusinessDisbursement',
+        'BusinessOrderQuery'
       );
 
     DELETE FROM "RoleMenu" rm
@@ -282,7 +287,8 @@ BEGIN
         'BusinessRiskApproval',
         'BusinessFunderFinal',
         'BusinessSigning',
-        'BusinessDisbursement'
+        'BusinessDisbursement',
+        'BusinessOrderQuery'
       );
   END IF;
 END

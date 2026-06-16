@@ -60,7 +60,7 @@ const themeColor = computed(() => {
 // 导航栏渐变背景
 const navBackground = computed(() => {
   return {
-    backgroundImage: "linear-gradient(90deg, var(--u-type-primary-dark), var(--u-type-primary-disabled))",
+    backgroundImage: `linear-gradient(90deg, var(--u-type-primary-dark), var(--u-type-primary-disabled))`,
   };
 });
 
@@ -71,21 +71,13 @@ const tabList = ref([
     iconPath: "home",
     selectedIconPath: "home-fill",
     text: "首页",
-    pagePath: "/pages/index/index",
+    pagePath: "/pages/carloan/workbench",
     customIcon: false,
     count: 0,
   },
   {
-    iconPath: "shopping",
-    selectedIconPath: "shopping-fill",
-    text: "门店",
-    pagePath: "/pages/food/index/index",
-    customIcon: false,
-    count: 0,
-  },
-  {
-    iconPath: "list",
-    selectedIconPath: "list-fill",
+    iconPath: "file-text",
+    selectedIconPath: "file-text-fill",
     text: "订单",
     pagePath: "/pages/food/order/list",
     customIcon: false,
@@ -104,7 +96,7 @@ const tabList = ref([
 // 默认导航栏标题
 const currentNavTitle = computed(() => {
   const currentTabItem = tabList.value[currentTab.value];
-  return props.navTitle || currentTabItem?.text || "予艺助手";
+  return props.navTitle || currentTabItem?.text || "嗨车无忧";
 });
 
 // 切换前的回调钩子（返回 false 阻止切换）

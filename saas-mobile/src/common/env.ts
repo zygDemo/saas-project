@@ -101,7 +101,7 @@ export const TENANT_ID = getEnv("VITE_TENANT_ID", "1");
 /**
  * 应用名称
  */
-export const APP_NAME = getEnv("VITE_APP_NAME", "嗨车无忧");
+export const APP_NAME = getEnv("VITE_APP_NAME", "予艺助手");
 
 /**
  * 是否开启调试

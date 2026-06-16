@@ -396,7 +396,8 @@ async function main() {
     'BusinessRiskApproval',
     'BusinessFunderFinal',
     'BusinessSigning',
-    'BusinessDisbursement'
+    'BusinessDisbursement',
+    'BusinessOrderQuery'
   ])
   const superMenuIds = menus
     .filter((m) => m.parentId !== businessMenu?.id || businessStageNames.has(m.name))
@@ -413,7 +414,8 @@ async function main() {
     'ProductTemplate',
     'PlatformSupervision',
     'ThirdPartyService',
-    'WorkOrder'
+    'WorkOrder',
+    'FlowConfig'
   )
   // 数据中心
   const dataCenterIds = filterIds('DataCenter', 'DataStats', 'AuditLog')
@@ -439,7 +441,8 @@ async function main() {
     'BusinessPrecheck',
     'BusinessSupplement',
     'BusinessFunderFinal',
-    'BusinessSigning'
+    'BusinessSigning',
+    'BusinessOrderQuery'
   )
   const bizStageApprovalIds = filterIds(
     ...[
@@ -448,7 +451,8 @@ async function main() {
       'BusinessSupplement',
       'BusinessRiskApproval',
       'BusinessFunderFinal',
-      'BusinessSigning'
+      'BusinessSigning',
+      'BusinessOrderQuery'
     ]
   )
   const bizStageFinanceIds = filterIds(
@@ -458,7 +462,8 @@ async function main() {
       'BusinessSupplement',
       'BusinessFunderFinal',
       'BusinessSigning',
-      'BusinessDisbursement'
+      'BusinessDisbursement',
+      'BusinessOrderQuery'
     ]
   )
   const bizStageFullIds = filterIds(
@@ -469,7 +474,8 @@ async function main() {
       'BusinessRiskApproval',
       'BusinessFunderFinal',
       'BusinessSigning',
-      'BusinessDisbursement'
+      'BusinessDisbursement',
+      'BusinessOrderQuery'
     ]
   )
 
@@ -483,10 +489,19 @@ async function main() {
     ...filterIds('Notice'),
     ...filterIds('WorkOrder')
   ])
-  // R_ADMIN: 仪表盘 + 系统基础 + 全流程阶段
-  await connectRoleMenus(roleByCode.R_ADMIN.id, [...dashIds, ...systemBasicIds, ...bizStageFullIds])
+  // R_ADMIN: 仪表盘 + 系统基础 + 流程配置 + 全流程阶段
+  await connectRoleMenus(roleByCode.R_ADMIN.id, [
+    ...dashIds,
+    ...filterIds('Platform', 'FlowConfig'),
+    ...systemBasicIds,
+    ...bizStageFullIds
+  ])
   // R_SALES_MANAGER: 仪表盘 + 业务阶段（含请款放款）
-  await connectRoleMenus(roleByCode.R_SALES_MANAGER.id, [...dashIds, ...bizStageFinanceIds])
+  await connectRoleMenus(roleByCode.R_SALES_MANAGER.id, [
+    ...dashIds,
+    ...filterIds('Platform', 'FlowConfig'),
+    ...bizStageFinanceIds
+  ])
   // R_SALES: 仪表盘 + 业务阶段
   await connectRoleMenus(roleByCode.R_SALES.id, [...dashIds, ...bizStageCommonIds])
   // R_APPROVER: 仪表盘 + 审批相关阶段
@@ -605,6 +620,16 @@ async function seedAllMenus(tenantId: number) {
     sort: 26,
     keepAlive: true
   })
+  const flowConfig = await upsertMenu(tenantId, {
+    parentId: platform.id,
+    path: 'flow-config',
+    name: 'FlowConfig',
+    component: '/business/flow-config',
+    title: '流程与规则',
+    icon: 'ri:git-branch-line',
+    sort: 71,
+    keepAlive: true
+  })
 
   // ============== 数据中心（超级管理员） ==============
   const dataCenter = await upsertMenu(tenantId, {
@@ -619,7 +644,7 @@ async function seedAllMenus(tenantId: number) {
     parentId: dataCenter.id,
     path: 'stats',
     name: 'DataStats',
-    component: bp,
+    component: '/data-center/stats',
     title: '数据统计',
     icon: 'ri:bar-chart-line',
     sort: 31,
@@ -629,7 +654,7 @@ async function seedAllMenus(tenantId: number) {
     parentId: dataCenter.id,
     path: 'audit-log',
     name: 'AuditLog',
-    component: bp,
+    component: '/data-center/audit-log',
     title: '日志审计',
     icon: 'ri:file-list-3-line',
     sort: 32,
@@ -867,16 +892,6 @@ async function seedAllMenus(tenantId: number) {
     sort: 64,
     keepAlive: true
   })
-  const flowConfig = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'flow-config',
-    name: 'FlowConfig',
-    component: '/business/flow-config',
-    title: '流程与规则',
-    icon: 'ri:git-branch-line',
-    sort: 65,
-    keepAlive: true
-  })
   const lead = await upsertMenu(tenantId, {
     parentId: business.id,
     path: 'lead',
@@ -1004,7 +1019,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '综合查询',
     icon: 'ri:search-eye-line',
-    sort: 78,
+    sort: 67,
     keepAlive: true
   })
   const approval = await upsertMenu(tenantId, {
@@ -1089,7 +1104,8 @@ async function seedAllMenus(tenantId: number) {
           'BusinessRiskApproval',
           'BusinessFunderFinal',
           'BusinessSigning',
-          'BusinessDisbursement'
+          'BusinessDisbursement',
+          'BusinessOrderQuery'
         ]
       }
     },
@@ -1107,7 +1123,8 @@ async function seedAllMenus(tenantId: number) {
           'BusinessRiskApproval',
           'BusinessFunderFinal',
           'BusinessSigning',
-          'BusinessDisbursement'
+          'BusinessDisbursement',
+          'BusinessOrderQuery'
         ]
       }
     },
@@ -1130,6 +1147,7 @@ async function seedAllMenus(tenantId: number) {
     businessFunderFinal,
     businessSigning,
     businessDisbursement,
+    orderQuery,
     org,
     dept,
     product,

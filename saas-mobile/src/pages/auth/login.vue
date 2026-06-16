@@ -111,7 +111,7 @@ const handleLogin = async () => {
       // 4. 延迟跳转到首页（工作台）
       setTimeout(() => {
         uni.reLaunch({
-          url: "/pages/business/workbench",
+          url: "/pages/index/index",
         });
       }, 500);
     } else {

@@ -1,140 +1,215 @@
 <template>
-  <layout :active-tab="2" navTitle="我的" show-tabbar>
-    <view class="my-page">
-      <view class="profile-hero" @click="handleUserCardClick">
-        <view class="profile-hero__orb profile-hero__orb--primary" />
-        <view class="profile-hero__orb profile-hero__orb--accent" />
-        <view class="profile-hero__header">
-          <view class="avatar-wrap">
+  <layout :active-tab="3" navTitle="我的" show-tabbar>
+    <scroll-view class="my-scroll" scroll-y>
+      <view class="my-page">
+        <view class="profile-panel" @click="handleProfileClick">
+          <view class="profile-panel__header">
             <u-avatar
               :text="avatarText"
-              size="136"
+              size="128"
               bg-color="#ffffff"
-              color="#5240FE"
+              color="#2563eb"
             />
-          </view>
 
-          <view class="profile-info">
-            <view class="profile-name-row">
-              <text class="profile-name">{{ userName }}</text>
-              <view class="role-pill">{{ userRole }}</view>
+            <view class="profile-panel__info">
+              <view class="profile-panel__name-row">
+                <text class="profile-panel__name">{{ displayName }}</text>
+                <text class="profile-panel__role">{{ roleLabel }}</text>
+              </view>
+
+              <text class="profile-panel__phone">{{ phoneText }}</text>
+              <text class="profile-panel__org">{{ orgLabel }}</text>
             </view>
-            <view class="profile-phone">
-              <u-icon name="phone" size="24" color="rgba(255,255,255,.82)" />
-              <text>{{ userPhone || "点击登录后查看账号信息" }}</text>
-            </view>
-            <view class="profile-subtitle">嗨车无忧 · 车抵贷移动工作台</view>
           </view>
-        </view>
 
-        <view class="profile-meta">
-          <view v-for="item in profileMeta" :key="item.label" class="profile-meta__item">
-            <text class="profile-meta__value">{{ item.value }}</text>
-            <text class="profile-meta__label">{{ item.label }}</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="overview-card">
-        <view class="section-head">
-          <view>
-            <text class="section-title">业务概览</text>
-            <text class="section-subtitle">实时同步进件与放款数据</text>
-          </view>
-          <view class="refresh-chip" @click="loadBusinessStats">
-            <u-icon name="reload" size="24" color="var(--u-type-primary)" />
-            <text>刷新</text>
-          </view>
-        </view>
-
-        <view class="stats-grid">
-          <view v-for="item in statCards" :key="item.label" class="stat-card">
-            <view class="stat-card__icon" :class="item.iconClass">
-              <u-icon :name="item.icon" size="34" color="#ffffff" />
-            </view>
-            <view class="stat-card__content">
-              <text class="stat-card__value">{{ item.value }}</text>
-              <text class="stat-card__label">{{ item.label }}</text>
+          <view class="profile-panel__meta">
+            <view
+              v-for="item in profileMeta"
+              :key="item.label"
+              class="profile-panel__meta-item"
+            >
+              <text class="profile-panel__meta-value">{{ item.value }}</text>
+              <text class="profile-panel__meta-label">{{ item.label }}</text>
             </view>
           </view>
         </view>
-      </view>
 
-      <view class="quick-card">
-        <view class="section-head section-head--compact">
-          <view>
-            <text class="section-title">常用服务</text>
-            <text class="section-subtitle">账号、安全与帮助入口</text>
+        <view class="section-card">
+          <view class="section-head">
+            <view>
+              <text class="section-title">业务概览</text>
+              <text class="section-subtitle">同步查看线索、进件和放款数据</text>
+            </view>
+            <view class="refresh-chip" @click="loadBusinessStats">
+              <u-icon name="reload" size="24" color="#2563eb" />
+              <text>刷新</text>
+            </view>
+          </view>
+
+          <view class="stats-grid">
+            <view v-for="item in statCards" :key="item.label" class="stat-item">
+              <view class="stat-item__icon" :class="item.iconClass">
+                <u-icon :name="item.icon" size="30" color="#ffffff" />
+              </view>
+              <view class="stat-item__content">
+                <text class="stat-item__value">{{ item.value }}</text>
+                <text class="stat-item__label">{{ item.label }}</text>
+              </view>
+            </view>
           </view>
         </view>
 
-        <view class="menu-list">
+        <view class="section-card">
+          <view class="section-head section-head--compact">
+            <view>
+              <text class="section-title">常用服务</text>
+              <text class="section-subtitle">设置、帮助和协议入口</text>
+            </view>
+          </view>
+
+          <view class="menu-list">
+            <view
+              v-for="item in menuList"
+              :key="item.path"
+              class="menu-item"
+              @click="navigateTo(item.path)"
+            >
+              <view class="menu-item__icon" :class="item.iconClass">
+                <u-icon :name="item.icon" size="32" color="#ffffff" />
+              </view>
+
+              <view class="menu-item__content">
+                <text class="menu-item__title">{{ item.title }}</text>
+                <text class="menu-item__desc">{{ item.desc }}</text>
+              </view>
+
+              <u-icon name="arrow-right" size="26" color="#c0c7d5" />
+            </view>
+          </view>
+        </view>
+
+        <view class="action-list">
+          <view class="action-btn action-btn--cache" @click="handleClearCache">
+            <u-icon name="trash" size="30" color="#f59e0b" />
+            <text>清除缓存</text>
+          </view>
+
           <view
-            v-for="item in menuList"
-            :key="item.path"
-            class="menu-item"
-            @click="navigateTo(item.path)"
+            v-if="isLoggedIn"
+            class="action-btn action-btn--logout"
+            @click="handleLogout"
           >
-            <view class="menu-item__icon" :class="item.iconClass">
-              <u-icon :name="item.icon" size="36" color="#ffffff" />
-            </view>
-            <view class="menu-item__content">
-              <text class="menu-item__title">{{ item.title }}</text>
-              <text class="menu-item__desc">{{ item.desc }}</text>
-            </view>
-            <u-icon name="arrow-right" size="28" color="#c7c9d9" />
+            <u-icon name="close-circle" size="30" color="#ef4444" />
+            <text>退出登录</text>
           </view>
         </view>
       </view>
-
-      <view class="action-panel">
-        <view class="action-btn action-btn--cache" @click="handleClearCache">
-          <u-icon name="trash" size="32" color="var(--u-type-warning)" />
-          <text>清除缓存</text>
-        </view>
-        <view v-if="userInfo" class="action-btn action-btn--logout" @click="handleLogout">
-          <u-icon name="close-circle" size="32" color="var(--u-type-error)" />
-          <text>退出登录</text>
-        </view>
-      </view>
-    </view>
+    </scroll-view>
   </layout>
 </template>
 
 <script setup lang="ts">
-import layout from "@/pages/layout/layout.vue";
+import type { StatisticsOverview } from "@/api/business";
+import type { UserInfo } from "@/stores/local";
 import { useBusinessApi } from "@/api/business";
+import layout from "@/pages/layout/layout.vue";
 import { useLocalStore, useSessionStore } from "@/stores";
 import { onShow } from "@dcloudio/uni-app";
 import { storeToRefs } from "pinia";
-import { $u, useTheme } from "uview-pro";
 import { computed, ref } from "vue";
 
-const sessionStore = useSessionStore();
-const localStore = useLocalStore();
+interface StatState {
+  totalLeads: number;
+  totalEntries: number;
+  pendingApproval: number;
+  totalLoanAmount: unknown;
+}
+
+interface MenuItem {
+  icon: string;
+  title: string;
+  desc: string;
+  path: string;
+  iconClass: string;
+}
+
 const businessApi = useBusinessApi();
+const localStore = useLocalStore();
+const sessionStore = useSessionStore();
 const { userInfo } = storeToRefs(localStore);
-const { initTheme, setDarkMode } = useTheme();
 
-const userName = computed(() => {
-  const info = userInfo.value || {};
-  return (
-    String(info.nickName || info.realName || info.userName || info.username || "") ||
-    "未登录"
-  );
+const menuList: MenuItem[] = [
+  {
+    icon: "setting",
+    title: "个人设置",
+    desc: "主题、语言和基础偏好",
+    path: "/pages/my/settings",
+    iconClass: "menu-item__icon--setting",
+  },
+  {
+    icon: "question-circle",
+    title: "帮助中心",
+    desc: "查看常见问题和使用说明",
+    path: "/pages/my/faq",
+    iconClass: "menu-item__icon--help",
+  },
+  {
+    icon: "file-text",
+    title: "隐私政策",
+    desc: "了解数据安全和隐私说明",
+    path: "/pages/my/privacy",
+    iconClass: "menu-item__icon--privacy",
+  },
+  {
+    icon: "file-text",
+    title: "用户协议",
+    desc: "查看平台服务条款",
+    path: "/pages/my/agreement",
+    iconClass: "menu-item__icon--agreement",
+  },
+];
+
+const stats = ref<StatState>({
+  totalLeads: 0,
+  totalEntries: 0,
+  pendingApproval: 0,
+  totalLoanAmount: 0,
 });
 
-const avatarText = computed(() => userName.value.slice(0, 1) || "我");
+const currentUser = computed<UserInfo | null>(() => userInfo.value);
 
-const userPhone = computed(() => {
-  const info = userInfo.value || {};
-  const phone = String(info.phonenumber || info.phone || info.mobile || "");
-  return phone ? `${phone.slice(0, 3)}****${phone.slice(-4)}` : "";
+const isLoggedIn = computed(() => Boolean(localStore.token && currentUser.value));
+
+const displayName = computed(() => {
+  const info = currentUser.value;
+  return info?.nickName || info?.realName || info?.userName || info?.username || "未登录";
 });
 
-const userRole = computed(() => {
-  const info = userInfo.value || {};
-  const role = String(info.role || info.roleKey || info.roleCode || "");
+const avatarText = computed(() => displayName.value.slice(0, 1) || "我");
+
+const phoneText = computed(() => {
+  const phone = String(currentUser.value?.phonenumber || currentUser.value?.phone || "");
+
+  if (!phone) {
+    return isLoggedIn.value ? "暂未绑定手机号" : "点击登录后查看手机号";
+  }
+
+  if (phone.length < 7) {
+    return phone;
+  }
+
+  return `${phone.slice(0, 3)}****${phone.slice(-4)}`;
+});
+
+const roleLabel = computed(() => {
+  const info = currentUser.value;
+  const roleKey =
+    info?.role ||
+    info?.roleKeys?.[0] ||
+    info?.roles?.[0]?.roleKey ||
+    info?.roles?.[0]?.roleName ||
+    "";
+
   const roleMap: Record<string, string> = {
     sales: "业务员",
     salesman: "业务员",
@@ -142,128 +217,147 @@ const userRole = computed(() => {
     admin: "管理员",
     customer: "客户",
   };
-  return roleMap[role] || "业务员";
+
+  return roleMap[String(roleKey)] || String(roleKey) || "业务伙伴";
 });
 
-const orgName = computed(() => {
-  const info = userInfo.value || {};
-  return String(info.orgName || info.dept?.orgName || info.deptName || "默认机构");
-});
-
-const businessStats = ref({
-  totalLeads: 0,
-  totalDeals: 0,
-  pendingApproval: 0,
-  monthlyAmount: "0",
+const orgLabel = computed(() => {
+  const info = currentUser.value;
+  return info?.orgName || info?.dept?.deptName || "默认机构";
 });
 
 const profileMeta = computed(() => [
-  { label: "当前机构", value: orgName.value },
-  { label: "账号角色", value: userRole.value },
-  { label: "登录状态", value: userInfo.value ? "已认证" : "未登录" },
+  {
+    label: "当前机构",
+    value: orgLabel.value,
+  },
+  {
+    label: "账号角色",
+    value: roleLabel.value,
+  },
+  {
+    label: "登录状态",
+    value: isLoggedIn.value ? "已登录" : "未登录",
+  },
 ]);
 
 const statCards = computed(() => [
   {
     label: "累计线索",
-    value: businessStats.value.totalLeads,
+    value: stats.value.totalLeads,
     icon: "account",
-    iconClass: "stat-card__icon--lead",
+    iconClass: "stat-item__icon--lead",
   },
   {
     label: "进件订单",
-    value: businessStats.value.totalDeals,
+    value: stats.value.totalEntries,
     icon: "file-text",
-    iconClass: "stat-card__icon--order",
+    iconClass: "stat-item__icon--entry",
   },
   {
-    label: "放款笔数",
-    value: businessStats.value.pendingApproval,
+    label: "待审批",
+    value: stats.value.pendingApproval,
     icon: "checkmark-circle",
-    iconClass: "stat-card__icon--loan",
+    iconClass: "stat-item__icon--approval",
   },
   {
     label: "放款金额",
-    value: businessStats.value.monthlyAmount,
+    value: formatAmount(stats.value.totalLoanAmount),
     icon: "rmb-circle",
-    iconClass: "stat-card__icon--amount",
+    iconClass: "stat-item__icon--amount",
   },
 ]);
 
-const menuList = ref([
-  {
-    icon: "setting",
-    title: "个人设置",
-    desc: "资料、主题与消息偏好",
-    path: "/pages/my/settings",
-    iconClass: "menu-item__icon--setting",
-  },
-  {
-    icon: "question-circle",
-    title: "帮助中心",
-    desc: "查看常见问题与操作说明",
-    path: "/pages/my/faq",
-    iconClass: "menu-item__icon--help",
-  },
-  {
-    icon: "file-text",
-    title: "隐私政策",
-    desc: "了解数据安全与隐私保护",
-    path: "/pages/my/privacy",
-    iconClass: "menu-item__icon--privacy",
-  },
-  {
-    icon: "file-text-fill",
-    title: "用户协议",
-    desc: "查看平台服务条款",
-    path: "/pages/my/agreement",
-    iconClass: "menu-item__icon--agreement",
-  },
-]);
+function formatAmount(amount: unknown): string {
+  if (amount == null || amount === "") {
+    return "0";
+  }
+
+  const value = Number(amount);
+  if (Number.isNaN(value)) {
+    return String(amount);
+  }
+
+  if (value >= 10000) {
+    return `${(value / 10000).toFixed(1)}万`;
+  }
+
+  return String(value);
+}
 
 async function loadBusinessStats() {
+  if (!localStore.token) {
+    stats.value = {
+      totalLeads: 0,
+      totalEntries: 0,
+      pendingApproval: 0,
+      totalLoanAmount: 0,
+    };
+    return;
+  }
+
   try {
-    const res: any = await businessApi.getStatisticsOverview();
-    const payload = res?.data || res || {};
-    if (res?.code === 200 || payload) {
-      businessStats.value = {
-        totalLeads: payload.leadCount ?? payload.totalLeads ?? 0,
-        totalDeals: payload.entryCount ?? payload.totalDeals ?? 0,
-        pendingApproval: payload.loanCount ?? payload.pendingApproval ?? 0,
-        monthlyAmount: formatLoanAmount(payload.loanAmount ?? payload.monthlyAmount),
-      };
-    }
-  } catch (e) {
-    console.error("获取业务统计失败:", e);
+    const res = await businessApi.getStatisticsOverview();
+    const payload = ((res?.data ?? res ?? {}) as StatisticsOverview & Record<string, unknown>);
+
+    stats.value = {
+      totalLeads: Number(payload.leadCount ?? payload.todayLeads ?? 0),
+      totalEntries: Number(payload.entryCount ?? payload.todayApplications ?? 0),
+      pendingApproval: Number(payload.pendingApproval ?? payload.loanCount ?? 0),
+      totalLoanAmount: payload.loanAmount ?? payload.monthLoanAmount ?? 0,
+    };
+  } catch (error) {
+    console.error("loadBusinessStats failed", error);
+    uni.showToast({
+      title: "获取业务概览失败",
+      icon: "none",
+    });
   }
 }
 
-function formatLoanAmount(amount: unknown) {
-  if (amount == null || amount === "") return "0";
-  const num = Number(amount);
-  if (Number.isNaN(num)) return String(amount);
-  if (num >= 10000) return `${(num / 10000).toFixed(1)}万`;
-  return String(num);
+function handleProfileClick() {
+  if (!isLoggedIn.value) {
+    uni.navigateTo({
+      url: "/pages/auth/login",
+    });
+  }
+}
+
+function navigateTo(path: string) {
+  uni.navigateTo({
+    url: path,
+  });
 }
 
 function handleClearCache() {
   uni.showModal({
     title: "清除缓存",
-    content: "将清除所有本地数据和会话，需要重新登录",
+    content: "将清除本地缓存并返回登录页，是否继续？",
     success: (res) => {
-      if (!res.confirm) return;
+      if (!res.confirm) {
+        return;
+      }
+
       try {
         uni.clearStorageSync();
+        localStore.logout();
         sessionStore.clearSession();
-        initTheme(undefined, undefined, true);
-        setDarkMode("light");
-        $u.toast("缓存已清除");
+        uni.showToast({
+          title: "缓存已清除",
+          icon: "success",
+        });
+
         setTimeout(() => {
-          uni.reLaunch({ url: "/pages/auth/login" });
-        }, 800);
-      } catch (err) {
-        console.error("清除缓存失败:", err);
-        $u.toast("清除缓存失败", "error");
+          uni.reLaunch({
+            url: "/pages/auth/login",
+          });
+        }, 500);
+      } catch (error) {
+        console.error("handleClearCache failed", error);
+        uni.showToast({
+          title: "清除缓存失败",
+          icon: "none",
+        });
       }
     },
   });
@@ -271,174 +365,121 @@ function handleClearCache() {
 
 function handleLogout() {
   uni.showModal({
-    title: "确认退出",
-    content: "退出后需要重新登录",
+    title: "退出登录",
+    content: "退出后需要重新登录，是否确认退出？",
     success: (res) => {
-      if (!res.confirm) return;
+      if (!res.confirm) {
+        return;
+      }
+
       localStore.logout();
       sessionStore.clearSession();
-      $u.toast("已退出登录");
+      uni.removeStorageSync("local-store");
+      uni.removeStorageSync("session-store");
+
+      uni.showToast({
+        title: "已退出登录",
+        icon: "success",
+      });
+
       setTimeout(() => {
-        uni.reLaunch({ url: "/pages/auth/login" });
+        uni.reLaunch({
+          url: "/pages/auth/login",
+        });
       }, 500);
     },
   });
 }
 
-function handleUserCardClick() {
-  if (!userInfo.value) {
-    uni.navigateTo({ url: "/pages/auth/login" });
-  }
-}
-
-function navigateTo(path: string) {
-  uni.navigateTo({ url: path });
-}
-
 onShow(() => {
-  loadBusinessStats();
+  void loadBusinessStats();
 });
 </script>
 
 <style lang="scss" scoped>
+.my-scroll {
+  height: 100%;
+}
+
 .my-page {
   min-height: 100%;
   padding: 24rpx 24rpx 48rpx;
-  background:
-    radial-gradient(circle at 12% 0%, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.16), transparent 34%),
-    linear-gradient(180deg, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08) 0%, #f6f8ff 46%, #f7f8fa 100%);
+  background: linear-gradient(180deg, #f3f7ff 0%, #f7f8fa 45%, #f7f8fa 100%);
 }
 
-.profile-hero,
-.overview-card,
-.quick-card,
-.action-panel {
-  border: 1rpx solid rgba(255, 255, 255, 0.72);
-  box-shadow: 0 18rpx 44rpx rgba(31, 45, 88, 0.08);
+.profile-panel,
+.section-card,
+.action-list {
+  background: #ffffff;
+  border: 1rpx solid #e8edf5;
+  border-radius: 24rpx;
+  box-shadow: 0 12rpx 28rpx rgba(15, 23, 42, 0.06);
 }
 
-.profile-hero {
-  position: relative;
-  overflow: hidden;
-  padding: 34rpx 30rpx 28rpx;
-  border-radius: 34rpx;
+.profile-panel {
+  padding: 30rpx;
   color: #ffffff;
-  background:
-    linear-gradient(135deg, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.98) 0%, rgba(72, 120, 255, 0.96) 48%, rgba(25, 190, 107, 0.9) 100%);
-
-  &:active {
-    transform: scale(0.99);
-  }
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 48%, #14b8a6 100%);
 }
 
-.profile-hero__orb {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(2rpx);
-}
-
-.profile-hero__orb--primary {
-  width: 240rpx;
-  height: 240rpx;
-  right: -84rpx;
-  top: -86rpx;
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.profile-hero__orb--accent {
-  width: 180rpx;
-  height: 180rpx;
-  left: -70rpx;
-  bottom: -80rpx;
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.profile-hero__header {
-  position: relative;
-  z-index: 1;
+.profile-panel__header {
   display: flex;
   align-items: center;
-  gap: 24rpx;
+  gap: 22rpx;
 }
 
-.avatar-wrap {
-  width: 152rpx;
-  height: 152rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 44rpx;
-  background: rgba(255, 255, 255, 0.2);
-  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.35), 0 18rpx 36rpx rgba(0, 0, 0, 0.14);
-  backdrop-filter: blur(12rpx);
-}
-
-.profile-info {
-  position: relative;
-  z-index: 1;
+.profile-panel__info {
   flex: 1;
   min-width: 0;
 }
 
-.profile-name-row {
+.profile-panel__name-row {
   display: flex;
   align-items: center;
   gap: 12rpx;
 }
 
-.profile-name {
-  max-width: 260rpx;
+.profile-panel__name {
+  max-width: 280rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 42rpx;
+  font-size: 40rpx;
   font-weight: 800;
-  letter-spacing: 1rpx;
 }
 
-.role-pill {
+.profile-panel__role {
   flex-shrink: 0;
   padding: 6rpx 14rpx;
-  border-radius: 999rpx;
   font-size: 22rpx;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.22);
-  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.28);
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.18);
 }
 
-.profile-phone,
-.profile-subtitle {
+.profile-panel__phone,
+.profile-panel__org {
+  display: block;
   margin-top: 10rpx;
-  color: rgba(255, 255, 255, 0.84);
   font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.88);
 }
 
-.profile-phone {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.profile-meta {
-  position: relative;
-  z-index: 1;
+.profile-panel__meta {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12rpx;
-  margin-top: 30rpx;
+  margin-top: 28rpx;
 }
 
-.profile-meta__item {
+.profile-panel__meta-item {
   min-width: 0;
-  padding: 18rpx 12rpx;
-  border-radius: 20rpx;
-  background: rgba(255, 255, 255, 0.16);
-  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.22);
+  padding: 16rpx 12rpx;
+  border-radius: 18rpx;
+  background: rgba(255, 255, 255, 0.14);
 }
 
-.profile-meta__value,
-.profile-meta__label {
+.profile-panel__meta-value,
+.profile-panel__meta-label {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -446,30 +487,28 @@ onShow(() => {
   text-align: center;
 }
 
-.profile-meta__value {
+.profile-panel__meta-value {
   font-size: 24rpx;
   font-weight: 700;
 }
 
-.profile-meta__label {
+.profile-panel__meta-label {
   margin-top: 6rpx;
   font-size: 20rpx;
   color: rgba(255, 255, 255, 0.72);
 }
 
-.overview-card,
-.quick-card,
-.action-panel {
+.section-card,
+.action-list {
   margin-top: 24rpx;
   padding: 28rpx;
-  border-radius: 30rpx;
-  background: rgba(255, 255, 255, 0.94);
 }
 
 .section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 20rpx;
   margin-bottom: 24rpx;
 }
 
@@ -483,29 +522,15 @@ onShow(() => {
 }
 
 .section-title {
-  position: relative;
-  padding-left: 18rpx;
-  color: $u-main-color;
   font-size: 32rpx;
   font-weight: 800;
-
-  &::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 50%;
-    width: 6rpx;
-    height: 28rpx;
-    border-radius: 999rpx;
-    background: linear-gradient(180deg, var(--u-type-primary), var(--u-type-success));
-    transform: translateY(-50%);
-  }
+  color: $u-main-color;
 }
 
 .section-subtitle {
   margin-top: 8rpx;
-  color: $u-tips-color;
   font-size: 22rpx;
+  color: $u-tips-color;
 }
 
 .refresh-chip {
@@ -513,15 +538,11 @@ onShow(() => {
   align-items: center;
   gap: 6rpx;
   padding: 10rpx 18rpx;
-  border-radius: 999rpx;
-  color: var(--u-type-primary);
   font-size: 22rpx;
   font-weight: 700;
-  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
-
-  &:active {
-    opacity: 0.72;
-  }
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+  border-radius: 999rpx;
 }
 
 .stats-grid {
@@ -530,65 +551,64 @@ onShow(() => {
   gap: 16rpx;
 }
 
-.stat-card {
+.stat-item {
   display: flex;
   align-items: center;
   gap: 16rpx;
-  padding: 22rpx 18rpx;
-  border-radius: 24rpx;
-  background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
-  box-shadow: inset 0 0 0 1rpx rgba(225, 230, 245, 0.82);
+  padding: 20rpx 18rpx;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1rpx solid #edf2f7;
+  border-radius: 18rpx;
 }
 
-.stat-card__icon,
+.stat-item__icon,
 .menu-item__icon {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 10rpx 20rpx rgba(31, 45, 88, 0.12);
 }
 
-.stat-card__icon {
-  width: 66rpx;
-  height: 66rpx;
-  border-radius: 20rpx;
+.stat-item__icon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 18rpx;
 }
 
-.stat-card__icon--lead,
+.stat-item__icon--lead,
 .menu-item__icon--setting {
-  background: linear-gradient(135deg, var(--u-type-primary), #7c3aed);
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
 }
 
-.stat-card__icon--order,
+.stat-item__icon--entry,
 .menu-item__icon--help {
-  background: linear-gradient(135deg, #2f80ed, #56ccf2);
+  background: linear-gradient(135deg, #0ea5e9, #38bdf8);
 }
 
-.stat-card__icon--loan,
+.stat-item__icon--approval,
 .menu-item__icon--privacy {
-  background: linear-gradient(135deg, var(--u-type-success), #38f9d7);
+  background: linear-gradient(135deg, #10b981, #34d399);
 }
 
-.stat-card__icon--amount,
+.stat-item__icon--amount,
 .menu-item__icon--agreement {
-  background: linear-gradient(135deg, var(--u-type-warning), #ff6b6b);
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
 }
 
-.stat-card__content {
+.stat-item__content {
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4rpx;
 }
 
-.stat-card__value {
+.stat-item__value {
   color: $u-main-color;
-  font-size: 34rpx;
+  font-size: 32rpx;
   font-weight: 800;
 }
 
-.stat-card__label {
+.stat-item__label {
   color: $u-tips-color;
   font-size: 22rpx;
 }
@@ -603,22 +623,17 @@ onShow(() => {
   align-items: center;
   gap: 18rpx;
   padding: 22rpx 0;
-  border-bottom: 1rpx solid rgba(230, 233, 242, 0.9);
+  border-bottom: 1rpx solid #edf2f7;
+}
 
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:active {
-    opacity: 0.72;
-    transform: translateX(4rpx);
-  }
+.menu-item:last-child {
+  border-bottom: none;
 }
 
 .menu-item__icon {
-  width: 76rpx;
-  height: 76rpx;
-  border-radius: 22rpx;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 20rpx;
 }
 
 .menu-item__content {
@@ -630,17 +645,17 @@ onShow(() => {
 }
 
 .menu-item__title {
-  color: $u-main-color;
   font-size: 30rpx;
   font-weight: 700;
+  color: $u-main-color;
 }
 
 .menu-item__desc {
-  color: $u-tips-color;
   font-size: 23rpx;
+  color: $u-tips-color;
 }
 
-.action-panel {
+.action-list {
   display: flex;
   flex-direction: column;
   gap: 16rpx;
@@ -651,24 +666,20 @@ onShow(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12rpx;
+  gap: 10rpx;
   height: 88rpx;
-  border-radius: 999rpx;
   font-size: 28rpx;
   font-weight: 700;
-
-  &:active {
-    transform: scale(0.98);
-  }
+  border-radius: 999rpx;
 }
 
 .action-btn--cache {
-  color: var(--u-type-warning);
-  background: rgba(var(--u-type-warning-rgb, 255, 153, 0), 0.1);
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
 }
 
 .action-btn--logout {
-  color: var(--u-type-error);
-  background: rgba(var(--u-type-error-rgb, 245, 108, 108), 0.1);
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
 }
 </style>

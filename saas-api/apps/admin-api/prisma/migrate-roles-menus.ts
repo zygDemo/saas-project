@@ -168,6 +168,16 @@ async function main() {
       sort: 26,
       keepAlive: true
     },
+    {
+      parentKey: 'Platform',
+      path: 'flow-config',
+      name: 'FlowConfig',
+      component: '/business/flow-config',
+      title: '流程与规则',
+      icon: 'ri:git-branch-line',
+      sort: 71,
+      keepAlive: true
+    },
 
     // 数据中心
     {
@@ -181,6 +191,7 @@ async function main() {
       parentKey: 'DataCenter',
       path: 'stats',
       name: 'DataStats',
+      component: '/data-center/stats',
       title: '数据统计',
       icon: 'ri:bar-chart-line',
       sort: 31,
@@ -190,6 +201,7 @@ async function main() {
       parentKey: 'DataCenter',
       path: 'audit-log',
       name: 'AuditLog',
+      component: '/data-center/audit-log',
       title: '日志审计',
       icon: 'ri:file-list-3-line',
       sort: 32,
@@ -346,16 +358,6 @@ async function main() {
     },
     {
       parentKey: 'Business',
-      path: 'flow-config',
-      name: 'FlowConfig',
-      component: '/business/flow-config',
-      title: '流程与规则',
-      icon: 'ri:git-branch-line',
-      sort: 65,
-      keepAlive: true
-    },
-    {
-      parentKey: 'Business',
       path: 'lead',
       name: 'Lead',
       title: '线索管理',
@@ -387,7 +389,7 @@ async function main() {
       name: 'BusinessOrderQuery',
       title: '综合查询',
       icon: 'ri:search-eye-line',
-      sort: 69,
+      sort: 67,
       keepAlive: true
     },
     {
@@ -516,15 +518,31 @@ async function main() {
     'ProductTemplate',
     'PlatformSupervision',
     'ThirdPartyService',
-    'WorkOrder'
+    'WorkOrder',
+    'FlowConfig'
   )
   const dataCenterIds = filterIds('DataCenter', 'DataStats', 'AuditLog')
   const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter')
-  const bizCoreIds = filterIds('Business', 'Lead', 'Customer', 'Application', 'Signing')
-  const bizApprovalIds = filterIds('Business', 'Application', 'Approval')
-  const bizFinanceIds = filterIds('Business', 'Disbursement', 'OrderMgmt', 'Repayment', 'Reports')
+  const bizCoreIds = filterIds(
+    'Business',
+    'Lead',
+    'Customer',
+    'Application',
+    'BusinessOrderQuery',
+    'Signing'
+  )
+  const bizApprovalIds = filterIds('Business', 'Application', 'BusinessOrderQuery', 'Approval')
+  const bizFinanceIds = filterIds(
+    'Business',
+    'BusinessOrderQuery',
+    'Disbursement',
+    'OrderMgmt',
+    'Repayment',
+    'Reports'
+  )
   const bizCsIds = filterIds('Business', 'Customer', 'Repayment', 'Reports')
   const bizManagerIds = filterIds(
+    'Platform',
     'Business',
     'Org',
     'Dept',
@@ -532,6 +550,7 @@ async function main() {
     'Lead',
     'Customer',
     'Application',
+    'BusinessOrderQuery',
     'Approval',
     'Signing',
     'Disbursement',
@@ -540,6 +559,7 @@ async function main() {
     'Reports'
   )
   const bizAdminIds = filterIds(
+    'Platform',
     'Business',
     'Org',
     'Dept',
@@ -549,6 +569,7 @@ async function main() {
     'Lead',
     'Customer',
     'Application',
+    'BusinessOrderQuery',
     'Approval',
     'Signing',
     'Disbursement',
@@ -573,6 +594,7 @@ async function main() {
         'Lead',
         'Customer',
         'Application',
+        'BusinessOrderQuery',
         'Approval',
         'Disbursement',
         'Repayment'
@@ -627,6 +649,7 @@ async function main() {
     'Lead',
     'Customer',
     'Application',
+    'BusinessOrderQuery',
     'Approval',
     'Signing',
     'Disbursement',

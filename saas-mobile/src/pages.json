@@ -1,7 +1,13 @@
 {
   "pages": [
     {
-      "path": "pages/business/workbench"
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "予艺助手"
+      }
+    },
+    {
+      "path": "pages/carloan/workbench"
     },
     {
       "path": "pages/home/uview-intro"
@@ -25,112 +31,148 @@
       "path": "pages/auth/transfer"
     },
     {
-      "path": "pages/business/idInfo"
+      "path": "pages/carloan/idInfo"
     },
     {
-      "path": "pages/business/carInfo"
+      "path": "pages/carloan/carInfo"
     },
     {
-      "path": "pages/business/applyInfo"
+      "path": "pages/carloan/applyInfo"
     },
     {
-      "path": "pages/business/applyResult"
+      "path": "pages/carloan/applyResult"
     },
     {
-      "path": "pages/business/idInfoSupplement"
+      "path": "pages/carloan/idInfoSupplement"
     },
     {
-      "path": "pages/business/carInfoSupplement"
+      "path": "pages/carloan/carInfoSupplement"
     },
     {
-      "path": "pages/business/leadAdd"
+      "path": "pages/carloan/leadAdd"
     },
     {
-      "path": "pages/business/leadList"
+      "path": "pages/carloan/leadList"
     },
     {
-      "path": "pages/business/entryList"
+      "path": "pages/carloan/entryList"
     },
     {
-      "path": "pages/business/entryDetail"
+      "path": "pages/carloan/entryDetail"
     },
     {
-      "path": "pages/business/applySubmit"
+      "path": "pages/carloan/applySubmit"
     },
     {
-      "path": "pages/business/approvalList"
+      "path": "pages/carloan/approvalList"
     },
     {
-      "path": "pages/business/faceSignList"
+      "path": "pages/carloan/faceSignList"
     },
     {
-      "path": "pages/business/videoFaceSign"
+      "path": "pages/carloan/videoFaceSign"
     },
     {
-      "path": "pages/business/faceSignResult"
+      "path": "pages/carloan/faceSignResult"
     },
     {
-      "path": "pages/business/authSign"
+      "path": "pages/carloan/authSign"
     },
     {
-      "path": "pages/business/orderInfoSupplement"
+      "path": "pages/carloan/orderInfoSupplement"
     },
     {
-      "path": "pages/business/fileInfoSupplement"
+      "path": "pages/carloan/fileInfoSupplement"
     },
     {
-      "path": "pages/business/orderList"
+      "path": "pages/carloan/orderList"
     },
     {
-      "path": "pages/business/fileManage"
+      "path": "pages/carloan/fileManage"
     },
     {
-      "path": "pages/business/applyListPage"
+      "path": "pages/carloan/applyListPage"
     },
     {
-      "path": "pages/business/supplementList"
+      "path": "pages/carloan/supplementList"
     },
     {
-      "path": "pages/business/supplementDetail"
+      "path": "pages/carloan/supplementDetail"
     },
     {
-      "path": "pages/business/applyDetail"
+      "path": "pages/carloan/applyDetail"
     },
     {
-      "path": "pages/business/signCenter"
+      "path": "pages/carloan/signCenter"
     },
     {
-      "path": "pages/business/signConfirmAmount"
+      "path": "pages/carloan/signConfirmAmount"
     },
     {
-      "path": "pages/business/signBindCard"
+      "path": "pages/carloan/signBindCard"
     },
     {
-      "path": "pages/business/signGpsAppointment"
+      "path": "pages/carloan/signGpsAppointment"
     },
     {
-      "path": "pages/business/signMortgage"
+      "path": "pages/carloan/signMortgage"
     },
     {
-      "path": "pages/business/pawnMaterials"
+      "path": "pages/carloan/pawnMaterials"
     },
     {
-      "path": "pages/business/pawnLoanInfo"
+      "path": "pages/carloan/pawnLoanInfo"
     },
     {
-      "path": "pages/business/pawnApprovalList"
+      "path": "pages/carloan/pawnApprovalList"
     },
     {
-      "path": "pages/business/pawnApprovalDetail"
+      "path": "pages/carloan/pawnApprovalDetail"
     },
     {
-      "path": "pages/business/todoCenter"
+      "path": "pages/carloan/todoCenter"
     },
     {
-      "path": "pages/business/applyProgress"
+      "path": "pages/carloan/applyProgress"
     },
     {
-      "path": "pages/business/messageCenter"
+      "path": "pages/carloan/messageCenter"
+    },
+    {
+      "path": "pages/food/index/index",
+      "style": {
+        "navigationBarTitleText": "门店"
+      }
+    },
+    {
+      "path": "pages/food/goods/list",
+      "style": {
+        "navigationBarTitleText": "商品列表"
+      }
+    },
+    {
+      "path": "pages/food/order/cart",
+      "style": {
+        "navigationBarTitleText": "购物车"
+      }
+    },
+    {
+      "path": "pages/food/order/list",
+      "style": {
+        "navigationBarTitleText": "我的订单"
+      }
+    },
+    {
+      "path": "pages/credit/index/index",
+      "style": {
+        "navigationBarTitleText": "征信查询"
+      }
+    },
+    {
+      "path": "pages/credit/query/result",
+      "style": {
+        "navigationBarTitleText": "查询结果"
+      }
     },
     {
       "path": "pages/my/my"
@@ -158,25 +200,28 @@
     "backgroundTextStyle": "@bgTxtStyle",
     "navigationBarBackgroundColor": "#000000",
     "navigationBarTextStyle": "@navTxtStyle",
-    "navigationBarTitleText": "嗨车无忧",
+    "navigationBarTitleText": "予艺助手",
     "navigationStyle": "custom"
   },
   "easycom": {
     "autoscan": true
   },
   "tabBar": {
-    "custom": true,
-    "color": "#999999",
-    "selectedColor": "#5da7ff",
+    "color": "#7A7E83",
+    "selectedColor": "#3cc51f",
+    "borderStyle": "black",
     "backgroundColor": "#ffffff",
-    "borderStyle": "white",
     "list": [
       {
-        "pagePath": "pages/business/workbench",
+        "pagePath": "pages/index/index",
         "text": "首页"
       },
       {
-        "pagePath": "pages/business/orderList",
+        "pagePath": "pages/food/index/index",
+        "text": "点餐"
+      },
+      {
+        "pagePath": "pages/food/order/list",
         "text": "订单"
       },
       {

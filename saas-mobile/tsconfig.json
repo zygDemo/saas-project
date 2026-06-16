@@ -35,6 +35,10 @@
     "src/**/*.jsx",
     "src/**/*.vue"
   ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
   "vueCompilerOptions": {
     "plugins": ["@uni-helper/uni-types/volar-plugin"]
   }
