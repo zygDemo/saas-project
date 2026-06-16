@@ -1,0 +1,73 @@
+name: Deploy New API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'saas-api/apps/new-api/**'
+      - '.github/workflows/deploy-new-api.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare deploy files
+        run: |
+          mkdir -p .deploy-new-api
+          cp saas-api/apps/new-api/docker-compose.yml .deploy-new-api/docker-compose.yml
+          cp saas-api/apps/new-api/.env.example .deploy-new-api/.env.example
+          cp saas-api/apps/new-api/README.md .deploy-new-api/README.md
+
+      - name: Sync compose files to server
+        uses: easingthemes/ssh-deploy@v5.1.0
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.SERVER_HOST }}
+          REMOTE_USER: ${{ secrets.SERVER_USER }}
+          REMOTE_PORT: ${{ secrets.SERVER_PORT }}
+          SOURCE: ".deploy-new-api/"
+          TARGET: "/opt/saas/new-api/"
+          ARGS: "-rltgoDzvO"
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        env:
+          NEW_API_PORT: ${{ vars.NEW_API_PORT }}
+          NEW_API_POSTGRES_PASSWORD: ${{ secrets.NEW_API_POSTGRES_PASSWORD }}
+          NEW_API_REDIS_PASSWORD: ${{ secrets.NEW_API_REDIS_PASSWORD }}
+          NEW_API_SESSION_SECRET: ${{ secrets.NEW_API_SESSION_SECRET }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          port: ${{ secrets.SERVER_PORT }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          command_timeout: 10m
+          envs: NEW_API_PORT,NEW_API_POSTGRES_PASSWORD,NEW_API_REDIS_PASSWORD,NEW_API_SESSION_SECRET
+          script: |
+            set -e
+
+            if [ -z "$NEW_API_POSTGRES_PASSWORD" ] || [ -z "$NEW_API_REDIS_PASSWORD" ] || [ -z "$NEW_API_SESSION_SECRET" ]; then
+              echo "Missing one or more required secrets: NEW_API_POSTGRES_PASSWORD, NEW_API_REDIS_PASSWORD, NEW_API_SESSION_SECRET" >&2
+              exit 1
+            fi
+
+            cd /opt/saas/new-api
+            mkdir -p data logs
+
+            printf '%s\n' \
+              "NEW_API_PORT=${NEW_API_PORT:-3008}" \
+              "POSTGRES_PASSWORD=$NEW_API_POSTGRES_PASSWORD" \
+              "REDIS_PASSWORD=$NEW_API_REDIS_PASSWORD" \
+              "SESSION_SECRET=$NEW_API_SESSION_SECRET" \
+              > .env
+            chmod 600 .env
+
+            docker compose pull
+            docker compose up -d
+            echo "===== New API 容器状态 ====="
+            docker compose ps
+            docker image prune -f
