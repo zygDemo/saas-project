@@ -79,6 +79,29 @@
         <template #header>
           <div class="flow-card-title">
             <span>业务流程</span>
+            <div class="flow-legend">
+              <span class="flow-legend__item">
+                <span class="flow-legend__dot" style="background: var(--el-color-primary)"></span>
+                编号
+              </span>
+              <span class="flow-legend__item">
+                <span
+                  class="flow-legend__dot"
+                  style="border-color: var(--el-border-color); background: var(--el-bg-color)"
+                ></span>
+                普通
+              </span>
+              <span class="flow-legend__item">
+                <span
+                  class="flow-legend__dot"
+                  style="
+                    border-color: var(--el-color-warning-light-3);
+                    background: var(--el-color-warning-light-9);
+                  "
+                ></span>
+                条件
+              </span>
+            </div>
             <ElTag type="info" effect="plain">{{ filteredRecords.length }} 个节点</ElTag>
           </div>
         </template>
@@ -101,11 +124,13 @@
                   :class="[
                     'node-pill',
                     nodeRule(node).parallel && 'is-parallel',
-                    node.status !== 'ACTIVE' && 'is-inactive'
+                    node.status !== 'ACTIVE' && 'is-inactive',
+                    hasConditional(node) && 'is-conditional'
                   ]"
                   @click="focusNode(node)"
                 >
-                  <span>{{ node.nodeCode }}</span>{{ node.nodeName }}
+                  <span>{{ node.nodeCode }}</span
+                  >{{ node.nodeName }}
                 </button>
               </div>
             </div>
@@ -233,6 +258,16 @@
             style="width: 100%"
           />
         </ElFormItem>
+        <ElFormItem label="金额阈值">
+          <ElInputNumber
+            v-model="formModel.amountLimit"
+            :min="0"
+            :precision="2"
+            controls-position="right"
+            style="width: 100%"
+            placeholder="触发条件分支的金额阈值"
+          />
+        </ElFormItem>
         <ElFormItem label="状态">
           <ElSelect v-model="formModel.status" style="width: 100%">
             <ElOption label="启用" value="ACTIVE" />
@@ -330,6 +365,7 @@
     requireMaterials?: boolean
     requireApproval?: boolean
     autoPass?: boolean
+    amountLimit?: number
     ruleConfig?: Record<string, unknown>
     status?: string
     remark?: string
@@ -361,6 +397,7 @@
     requireApproval: boolean
     autoPass: boolean
     approveLevel: number
+    amountLimit?: number
     status: string
     transitions: TransitionForm[]
     remark?: string
@@ -401,6 +438,7 @@
     requireApproval: true,
     autoPass: false,
     approveLevel: 1,
+    amountLimit: undefined,
     status: 'ACTIVE',
     transitions: []
   })
@@ -414,8 +452,7 @@
       minWidth: 150,
       formatter: (row: FlowRecord) =>
         h('div', { class: 'node-name-cell' }, [
-          h('strong', {}, row.nodeName),
-          h('span', {}, row.name)
+          h('div', { class: 'node-name-cell__main' }, [h('strong', {}, row.nodeName)])
         ])
     },
     {
@@ -440,12 +477,14 @@
       label: '要求',
       minWidth: 160,
       formatter: (row: FlowRecord) =>
-        h(ElSpace, { wrap: true }, () => [
-          row.requireMaterials && h(ElTag, { type: 'warning', effect: 'light' }, () => '资料'),
-          row.requireApproval && h(ElTag, { type: 'primary', effect: 'light' }, () => '审批'),
-          row.autoPass && h(ElTag, { type: 'success', effect: 'light' }, () => '自动通过'),
-          nodeRule(row).required && h(ElTag, { type: 'danger', effect: 'plain' }, () => '必填')
-        ].filter(Boolean))
+        h(ElSpace, { wrap: true }, () =>
+          [
+            row.requireMaterials && h(ElTag, { type: 'warning', effect: 'light' }, () => '资料'),
+            row.requireApproval && h(ElTag, { type: 'primary', effect: 'light' }, () => '审批'),
+            row.autoPass && h(ElTag, { type: 'success', effect: 'light' }, () => '自动通过'),
+            nodeRule(row).required && h(ElTag, { type: 'danger', effect: 'plain' }, () => '必填')
+          ].filter(Boolean)
+        )
     },
     {
       label: '流转',
@@ -455,7 +494,11 @@
         if (!transitions.length) return h('span', {}, '-')
         return h('div', { class: 'transition-cell' }, [
           transitions.map((item: any) =>
-            h('span', { key: `${item.action}-${item.toNode}` }, `${actionLabel(item.action)} -> ${item.toNode}`)
+            h(
+              'span',
+              { key: `${item.action}-${item.toNode}` },
+              `${actionLabel(item.action)} -> ${item.toNode}`
+            )
           )
         ])
       }
@@ -468,7 +511,11 @@
         if (!steps.length) return h('span', {}, '-')
         return h(ElSpace, { wrap: true }, () =>
           steps.map((step) =>
-            h(ElTag, { key: step.code, type: step.required ? 'danger' : 'info', effect: 'plain' }, () => step.name)
+            h(
+              ElTag,
+              { key: step.code, type: step.required ? 'danger' : 'info', effect: 'plain' },
+              () => step.name
+            )
           )
         )
       }
@@ -489,7 +536,11 @@
       formatter: (row: FlowRecord) =>
         h('div', [
           h(ElButton, { link: true, type: 'primary', onClick: () => openEdit(row) }, () => '编辑'),
-          h(ElButton, { link: true, type: 'danger', onClick: () => handleDelete(row) }, () => '删除')
+          h(
+            ElButton,
+            { link: true, type: 'danger', onClick: () => handleDelete(row) },
+            () => '删除'
+          )
         ])
     }
   ])
@@ -628,6 +679,7 @@
     formModel.requireApproval = row.requireApproval !== false
     formModel.autoPass = Boolean(row.autoPass)
     formModel.approveLevel = Number(row.approveLevel || 1)
+    formModel.amountLimit = row.amountLimit != null ? Number(row.amountLimit) : undefined
     formModel.status = row.status || 'ACTIVE'
     formModel.transitions = normalizeTransitions(rule.transitions)
     formModel.remark = row.remark
@@ -657,6 +709,7 @@
     formModel.requireApproval = true
     formModel.autoPass = false
     formModel.approveLevel = 1
+    formModel.amountLimit = undefined
     formModel.status = 'ACTIVE'
     formModel.transitions = []
     formModel.remark = undefined
@@ -758,6 +811,7 @@
       nodeName: formModel.nodeName,
       name: formModel.name,
       approveLevel: formModel.approveLevel,
+      amountLimit: formModel.amountLimit,
       requireMaterials: formModel.requireMaterials,
       requireApproval: formModel.requireApproval,
       autoPass: formModel.autoPass,
@@ -781,6 +835,11 @@
       transitions: fallback?.transitions || [],
       ...config
     }
+  }
+
+  function hasConditional(row: FlowRecord) {
+    const transitions = nodeRule(row).transitions || []
+    return transitions.some((t: any) => t.condition)
   }
 
   function nodeSteps(row: FlowRecord) {
@@ -962,10 +1021,46 @@
     opacity: 0.56;
   }
 
+  .node-pill.is-conditional {
+    border-color: var(--el-color-warning-light-3);
+    background: var(--el-color-warning-light-9);
+  }
+
+  .node-pill.is-conditional span {
+    color: var(--el-color-warning-dark-2);
+  }
+
   .node-name-cell {
     display: flex;
     flex-direction: column;
     gap: 3px;
+  }
+
+  .node-name-cell__main {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .node-name-cell__code {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 4px;
+    background: var(--el-color-primary-light-9);
+    color: var(--el-color-primary);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: monospace;
+    flex-shrink: 0;
+  }
+
+  .node-name-cell__phase {
+    color: var(--el-text-color-secondary);
+    font-size: 11px;
   }
 
   .node-name-cell span,
@@ -997,5 +1092,30 @@
     max-height: 70vh;
     padding-right: 10px;
     overflow: auto;
+  }
+  .flow-legend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+    margin-right: 8px;
+    font-size: 11px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .flow-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  .flow-legend__dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    flex-shrink: 0;
   }
 </style>

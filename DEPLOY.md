@@ -56,7 +56,7 @@ docker compose -f docker-compose.prod.yml exec admin-api pnpm exec tsx prisma/se
 docker compose -f docker-compose.prod.yml exec admin-api pnpm run db:sync-roles:prod
 ```
 
-### Manual post-deploy menu sync
+### Manual post-deploy menu sync / 发版后手动菜单同步
 
 If the API image is already deployed and you only need to manually sync the latest menu / role-menu / button-permission definitions to production, run:
 

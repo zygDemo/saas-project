@@ -14,7 +14,7 @@ const statusMap: Record<string, UserStatus> = {
 const defaultFlowNodes = [
   {
     code: 1100,
-    name: '预审进件',
+    name: '身份证信息（订单创建）',
     phaseCode: 1000,
     phaseName: '预审阶段',
     sort: 1100,
@@ -22,40 +22,54 @@ const defaultFlowNodes = [
     executor: '客户/业务员',
     requireMaterials: true,
     requireApproval: false,
-    steps: [
-      {
-        code: 'ID_CARD',
-        name: '身份证信息',
-        operationSide: '移动端',
-        executor: '客户/业务员',
-        sort: 1110,
-        required: true
-      },
-      {
-        code: 'VEHICLE',
-        name: '车辆信息',
-        operationSide: '移动端',
-        executor: '客户/业务员',
-        sort: 1120,
-        required: true
-      },
-      {
-        code: 'APPLICATION',
-        name: '申请信息',
-        operationSide: '移动端',
-        executor: '客户/业务员',
-        sort: 1130,
-        required: true
-      },
-      {
-        code: 'AUTH_SIGN',
-        name: '签署授权书',
-        operationSide: '移动端',
-        executor: '客户/业务员',
-        sort: 1140,
-        required: true
-      }
-    ],
+    transitions: [{ action: 10, toNode: 1110 }]
+  },
+  {
+    code: 1110,
+    name: '车辆信息',
+    phaseCode: 1000,
+    phaseName: '预审阶段',
+    sort: 1110,
+    operationSide: '移动端',
+    executor: '客户/业务员',
+    requireMaterials: true,
+    requireApproval: false,
+    transitions: [{ action: 10, toNode: 1120 }]
+  },
+  {
+    code: 1120,
+    name: '申请信息',
+    phaseCode: 1000,
+    phaseName: '预审阶段',
+    sort: 1120,
+    operationSide: '移动端',
+    executor: '客户/业务员',
+    requireMaterials: true,
+    requireApproval: false,
+    transitions: [{ action: 10, toNode: 1130 }]
+  },
+  {
+    code: 1130,
+    name: '签署授权书',
+    phaseCode: 1000,
+    phaseName: '预审阶段',
+    sort: 1130,
+    operationSide: '移动端',
+    executor: '客户/业务员',
+    requireMaterials: true,
+    requireApproval: false,
+    transitions: [{ action: 10, toNode: 1140 }]
+  },
+  {
+    code: 1140,
+    name: '待预审',
+    phaseCode: 1000,
+    phaseName: '预审阶段',
+    sort: 1140,
+    operationSide: '系统',
+    executor: '系统',
+    requireMaterials: false,
+    requireApproval: false,
     transitions: [{ action: 10, toNode: 1200 }]
   },
   {
@@ -69,163 +83,297 @@ const defaultFlowNodes = [
     requireMaterials: false,
     requireApproval: false,
     autoPass: true,
-    transitions: [{ action: 20, toNode: 1300 }]
+    transitions: [{ action: 20, toNode: 1250 }]
   },
   {
-    code: 1300,
+    code: 1250,
     name: '资方预审',
     phaseCode: 1000,
     phaseName: '预审阶段',
-    sort: 1300,
+    sort: 1250,
     operationSide: '三方接口',
     executor: '资方接口',
+    requireMaterials: false,
     requireApproval: true,
     transitions: [
-      { action: 20, toNode: 1400 },
-      { action: 50, toNode: 1400 }
+      { action: 20, toNode: 1300 },
+      { action: 50, toNode: 1300 }
     ]
+  },
+  {
+    code: 1300,
+    name: '资料补充',
+    phaseCode: 1300,
+    phaseName: '补件阶段',
+    sort: 1300,
+    operationSide: '移动端',
+    executor: '客户/业务员',
+    requireMaterials: false,
+    requireApproval: false,
+    transitions: [{ action: 10, toNode: 1350, condition: 'ALL_PARALLEL_REQUIRED_COMPLETED' }]
+  },
+  {
+    code: 1310,
+    name: '客户资料',
+    phaseCode: 1300,
+    phaseName: '补件阶段',
+    sort: 1310,
+    parentNode: 1300,
+    parallel: true,
+    required: true,
+    operationSide: '移动端',
+    executor: '客户',
+    requireMaterials: true,
+    requireApproval: false
+  },
+  {
+    code: 1320,
+    name: '车辆资料',
+    phaseCode: 1300,
+    phaseName: '补件阶段',
+    sort: 1320,
+    parentNode: 1300,
+    parallel: true,
+    required: true,
+    operationSide: '移动端',
+    executor: '客户',
+    requireMaterials: true,
+    requireApproval: false
+  },
+  {
+    code: 1330,
+    name: '订单资料',
+    phaseCode: 1300,
+    phaseName: '补件阶段',
+    sort: 1330,
+    parentNode: 1300,
+    parallel: true,
+    required: true,
+    operationSide: '移动端',
+    executor: '客户',
+    requireMaterials: true,
+    requireApproval: false
+  },
+  {
+    code: 1340,
+    name: '文件资料',
+    phaseCode: 1300,
+    phaseName: '补件阶段',
+    sort: 1340,
+    parentNode: 1300,
+    parallel: true,
+    required: true,
+    operationSide: '移动端',
+    executor: '客户',
+    requireMaterials: true,
+    requireApproval: false
+  },
+  {
+    code: 1350,
+    name: '待提交',
+    phaseCode: 1300,
+    phaseName: '补件阶段',
+    sort: 1350,
+    operationSide: '移动端',
+    executor: '客户/业务员',
+    requireMaterials: false,
+    requireApproval: false,
+    transitions: [{ action: 10, toNode: 1400 }]
   },
   {
     code: 1400,
-    name: '资料补充',
-    phaseCode: 1400,
-    phaseName: '补件阶段',
-    sort: 1400,
-    operationSide: '移动端',
-    executor: '客户',
-    requireMaterials: true,
-    requireApproval: false,
-    steps: [
-      {
-        code: 'CUSTOMER_INFO',
-        name: '客户资料',
-        operationSide: '移动端',
-        executor: '客户',
-        sort: 1410,
-        required: true
-      },
-      {
-        code: 'VEHICLE_INFO',
-        name: '车辆资料',
-        operationSide: '移动端',
-        executor: '客户',
-        sort: 1420,
-        required: true
-      },
-      {
-        code: 'ORDER_INFO',
-        name: '订单信息',
-        operationSide: '移动端',
-        executor: '客户',
-        sort: 1430,
-        required: true
-      },
-      {
-        code: 'FILE_INFO',
-        name: '文件信息',
-        operationSide: '移动端',
-        executor: '客户',
-        sort: 1440,
-        required: true
-      }
-    ],
-    transitions: [{ action: 10, toNode: 2100, condition: 'REQUIRED_TASKS_COMPLETED' }]
-  },
-  {
-    code: 2100,
     name: '风控初审',
-    phaseCode: 2000,
+    phaseCode: 1400,
     phaseName: '风控审批',
-    sort: 2100,
+    sort: 1400,
     operationSide: 'Web',
     executor: '风控专员',
+    requireMaterials: false,
     requireApproval: true,
+    amountLimit: 200000,
     transitions: [
-      { action: 20, toNode: 2200 },
-      { action: 50, toNode: 1400 }
+      { action: 20, toNode: 1450, condition: 'LOAN_AMOUNT_GT_LIMIT' },
+      { action: 20, toNode: 1500, condition: 'LOAN_AMOUNT_LTE_LIMIT' },
+      { action: 50, toNode: 1300 }
     ]
   },
   {
-    code: 2200,
+    code: 1450,
     name: '风控终审',
-    phaseCode: 2000,
+    phaseCode: 1400,
     phaseName: '风控审批',
-    sort: 2200,
+    sort: 1450,
     operationSide: 'Web',
     executor: '风控主管',
+    requireMaterials: false,
     requireApproval: true,
     approveLevel: 2,
     transitions: [
-      { action: 20, toNode: 3100 },
-      { action: 50, toNode: 1400 }
+      { action: 20, toNode: 1500 },
+      { action: 50, toNode: 1300 }
     ]
   },
   {
-    code: 3100,
+    code: 1500,
     name: '资方终审',
-    phaseCode: 3000,
+    phaseCode: 1500,
     phaseName: '资方终审',
-    sort: 3100,
+    sort: 1500,
     operationSide: '三方接口',
     executor: '资方接口',
+    requireMaterials: false,
     requireApproval: true,
     transitions: [
-      { action: 20, toNode: 4100 },
-      { action: 50, toNode: 1400 }
+      { action: 20, toNode: 1600 },
+      { action: 50, toNode: 1300 }
     ]
   },
   {
-    code: 4100,
-    name: '客户签约',
-    phaseCode: 4000,
-    phaseName: '客户签约',
-    sort: 4100,
+    code: 1600,
+    name: '签约办理',
+    phaseCode: 1600,
+    phaseName: '签约阶段',
+    sort: 1600,
+    operationSide: '移动端',
+    executor: '客户/业务员',
+    requireMaterials: false,
+    requireApproval: false,
+    transitions: [{ action: 10, toNode: 1660, condition: 'ALL_PARALLEL_REQUIRED_COMPLETED' }]
+  },
+  {
+    code: 1610,
+    name: '额度确认',
+    phaseCode: 1600,
+    phaseName: '签约阶段',
+    sort: 1610,
+    parentNode: 1600,
+    parallel: true,
+    required: true,
+    operationSide: '移动端',
+    executor: '客户',
+    requireMaterials: false,
+    requireApproval: false
+  },
+  {
+    code: 1620,
+    name: '绑银行卡',
+    phaseCode: 1600,
+    phaseName: '签约阶段',
+    sort: 1620,
+    parentNode: 1600,
+    parallel: true,
+    required: true,
     operationSide: '移动端',
     executor: '客户',
     requireMaterials: true,
-    requireApproval: false,
-    steps: [
-      { code: 'CONFIRM_AMOUNT', name: '确认额度', operationSide: '移动端', executor: '客户', sort: 4110 },
-      { code: 'BIND_CARD', name: '绑卡', operationSide: '移动端', executor: '客户', sort: 4120 },
-      { code: 'SIGN_CONTRACT', name: '合同签约', operationSide: '移动端', executor: '客户', sort: 4130 },
-      { code: 'GPS_APPOINTMENT', name: 'GPS安装预约', operationSide: '移动端', executor: '客户', sort: 4140 },
-      { code: 'MORTGAGE', name: '抵押办理', operationSide: '移动端', executor: '客户', sort: 4150 }
-    ],
-    transitions: [{ action: 10, toNode: 5100 }]
+    requireApproval: false
   },
   {
-    code: 5100,
+    code: 1630,
+    name: '合同签署',
+    phaseCode: 1600,
+    phaseName: '签约阶段',
+    sort: 1630,
+    parentNode: 1600,
+    parallel: true,
+    required: true,
+    operationSide: '移动端',
+    executor: '客户',
+    requireMaterials: true,
+    requireApproval: false
+  },
+  {
+    code: 1640,
+    name: 'GPS安装',
+    phaseCode: 1600,
+    phaseName: '签约阶段',
+    sort: 1640,
+    parentNode: 1600,
+    parallel: true,
+    required: true,
+    operationSide: '移动端',
+    executor: '客户/业务员',
+    requireMaterials: true,
+    requireApproval: false
+  },
+  {
+    code: 1650,
+    name: '抵押办理',
+    phaseCode: 1600,
+    phaseName: '签约阶段',
+    sort: 1650,
+    parentNode: 1600,
+    parallel: true,
+    required: true,
+    operationSide: '移动端',
+    executor: '客户/业务员',
+    requireMaterials: true,
+    requireApproval: false
+  },
+  {
+    code: 1660,
+    name: '待请款',
+    phaseCode: 1600,
+    phaseName: '签约阶段',
+    sort: 1660,
+    operationSide: '系统',
+    executor: '系统',
+    requireMaterials: false,
+    requireApproval: false,
+    transitions: [{ action: 10, toNode: 1700 }]
+  },
+  {
+    code: 1700,
     name: '请款资料',
-    phaseCode: 5000,
+    phaseCode: 1700,
     phaseName: '请款放款',
-    sort: 5100,
+    sort: 1700,
     operationSide: 'Web',
     executor: '业务专员',
     requireMaterials: true,
     requireApproval: false,
-    transitions: [{ action: 20, toNode: 6100 }]
+    transitions: [{ action: 20, toNode: 1800 }]
   },
   {
-    code: 6100,
+    code: 1800,
     name: '资方放款',
-    phaseCode: 5000,
+    phaseCode: 1700,
     phaseName: '请款放款',
-    sort: 6100,
+    sort: 1800,
     operationSide: '三方接口',
     executor: '资方接口',
+    requireMaterials: false,
+    requireApproval: false,
+    transitions: [{ action: 20, toNode: 1900 }]
+  },
+  {
+    code: 1900,
+    name: '贷后还款',
+    phaseCode: 1900,
+    phaseName: '贷后阶段',
+    sort: 1900,
+    operationSide: 'Web',
+    executor: '贷后专员',
+    requireMaterials: false,
     requireApproval: false
   }
 ]
 
 const obsoleteDefaultFlowNodeCodes = [
   '2000',
+  '2100',
+  '2200',
   '3000',
+  '3100',
   '4000',
+  '4100',
   '4200',
   '4300',
   '4400',
   '5000',
+  '5100',
   '6000',
+  '6100',
   '7000',
   '8000',
   '9000'
@@ -1360,6 +1508,7 @@ async function seedDefaultFlowConfigs(tenantId: number, orgId: number, businessT
         name: `${node.phaseName}-${node.name}`,
         nodeName: node.name,
         approveLevel: 'approveLevel' in node && node.approveLevel ? node.approveLevel : 1,
+        amountLimit: ('amountLimit' in node ? (node as any).amountLimit : undefined),
         requireMaterials: Boolean('requireMaterials' in node && node.requireMaterials),
         requireApproval: 'requireApproval' in node ? node.requireApproval : true,
         autoPass: Boolean('autoPass' in node && node.autoPass),
