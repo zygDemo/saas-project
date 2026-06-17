@@ -71,7 +71,8 @@ import { useCarloanApi } from "@/api/carloan";
 import { recognizeVehicle } from "@/common/ocr";
 import { toFilePreviewUrl } from "@/common/file-url";
 import { compressVehicleLicenseForOcr } from "@/common/image-compress";
-import { APP_ROUTES, buildEntryRouteQuery, buildRoute } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildEntryRouteQuery } from "@/common/carloan-route-query";
 
 const sessionStore = useSessionStore();
 const businessApi = useCarloanApi();

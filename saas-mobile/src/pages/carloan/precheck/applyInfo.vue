@@ -50,7 +50,8 @@ import AppForm from "@/components/app-form/app-form.vue";
 import { useSessionStore } from "@/stores";
 import { useCarloanApi } from "@/api/carloan";
 import { storeToRefs } from "pinia";
-import { APP_ROUTES, buildRoute, buildSignRouteQuery } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildSignRouteQuery } from "@/common/carloan-route-query";
 
 const sessionStore = useSessionStore();
 const { orderInfo } = storeToRefs(sessionStore);

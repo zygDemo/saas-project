@@ -262,7 +262,8 @@ import { onLoad } from "@dcloudio/uni-app";
 import { $u } from "uview-pro";
 import { useCarloanApi } from "@/api/carloan";
 import { useLocalStore } from "@/stores";
-import { APP_ROUTES, buildEntryRouteQuery, buildRoute } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildEntryRouteQuery } from "@/common/carloan-route-query";
 
 const businessApi = useCarloanApi();
 const localStore = useLocalStore();

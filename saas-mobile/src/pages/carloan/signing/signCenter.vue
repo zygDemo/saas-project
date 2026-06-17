@@ -119,7 +119,8 @@ import { ref, computed, onMounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { $u } from "uview-pro";
-import { APP_ROUTES, buildRoute, buildSignRouteQuery } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildSignRouteQuery } from "@/common/carloan-route-query";
 
 const businessApi = useCarloanApi();
 

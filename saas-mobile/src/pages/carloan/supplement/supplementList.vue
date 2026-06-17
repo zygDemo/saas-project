@@ -134,7 +134,8 @@
 import { reactive, ref } from "vue";
 import { useCarloanApi } from "@/api/carloan";
 import { useSessionStore } from "@/stores";
-import { APP_ROUTES, buildRoute, buildSupplementRouteQuery } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildSupplementRouteQuery } from "@/common/carloan-route-query";
 
 const sessionStore = useSessionStore();
 

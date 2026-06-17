@@ -38,7 +38,8 @@ import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { isValidMoney, validateRequiredFields } from "@/common/validators";
 import AppForm from "@/components/app-form/app-form.vue";
-import { APP_ROUTES, buildRoute, buildSupplementRouteQuery } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildSupplementRouteQuery } from "@/common/carloan-route-query";
 
 const businessApi = useCarloanApi();
 

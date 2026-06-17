@@ -33,7 +33,8 @@ import AppForm from "@/components/app-form/app-form.vue";
 import { useSessionStore } from "@/stores";
 import { useCarloanApi } from "@/api/carloan";
 import { formatMoney } from "@/common/pawnMock";
-import { APP_ROUTES, buildRoute, buildSupplementRouteQuery } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildSupplementRouteQuery } from "@/common/carloan-route-query";
 
 const sessionStore = useSessionStore();
 const businessApi = useCarloanApi();

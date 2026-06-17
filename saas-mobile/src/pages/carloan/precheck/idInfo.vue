@@ -100,7 +100,8 @@ import NationConst, { nationLabelToValue } from "@/enums/nation";
 import { recognizeIdCard } from "@/common/ocr";
 import { toFilePreviewUrl } from "@/common/file-url";
 import { compressImageForOcr } from "@/common/image-compress";
-import { APP_ROUTES, buildEntryRouteQuery, buildRoute } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildEntryRouteQuery } from "@/common/carloan-route-query";
 
 const businessApi = useCarloanApi();
 

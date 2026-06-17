@@ -159,7 +159,8 @@ import {
   getPawnApplication,
   upsertPawnApplication,
 } from "@/common/pawnMock";
-import { APP_ROUTES, buildEntryRouteQuery, buildRoute } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildEntryRouteQuery } from "@/common/carloan-route-query";
 
 const application = ref(null);
 const approvalPopupVisible = ref(false);

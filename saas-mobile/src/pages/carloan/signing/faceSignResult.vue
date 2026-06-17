@@ -290,7 +290,8 @@ import { useConfirm } from "@/composables/useConfirm";
 import { useSessionStore } from "@/stores";
 import { closeBrowser } from "@/composables/useCloseBrowser";
 import { toFilePreviewUrl } from "@/common/file-url";
-import { APP_ROUTES, buildHashRoute, buildRoute, buildRouteQuery, buildSignRouteQuery } from "@/common/navigation";
+import { APP_ROUTES, buildHashRoute, buildRoute, buildRouteQuery } from "@/common/navigation";
+import { buildSignRouteQuery } from "@/common/carloan-route-query";
 
 // ========== 常量 ==========
 

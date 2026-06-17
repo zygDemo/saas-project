@@ -154,7 +154,8 @@
 <script setup>
 import { reactive, ref } from "vue";
 import { useCarloanApi } from "@/api/carloan";
-import { APP_ROUTES, buildDetailRouteQuery, buildRoute, buildSignRouteQuery } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildSignRouteQuery, buildDetailRouteQuery } from "@/common/carloan-route-query";
 
 const businessApi = useCarloanApi();
 

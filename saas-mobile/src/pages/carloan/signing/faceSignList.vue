@@ -97,7 +97,8 @@
 import { ref } from "vue";
 import { onLoad, onPullDownRefresh } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
-import { APP_ROUTES, buildRoute, buildSignRouteQuery } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildSignRouteQuery } from "@/common/carloan-route-query";
 
 const businessApi = useCarloanApi();
 const currentTab = ref(0);

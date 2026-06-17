@@ -87,7 +87,8 @@ import { useCarloanApi } from "@/api/carloan";
 import { useLocalStore } from "@/stores/local";
 import { useSessionStore } from "@/stores/session";
 import FileCard from "../components/FileCard.vue";
-import { APP_ROUTES, buildRoute, buildSupplementRouteQuery } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildSupplementRouteQuery } from "@/common/carloan-route-query";
 
 const businessApi = useCarloanApi();
 const localStore = useLocalStore();

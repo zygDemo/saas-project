@@ -93,7 +93,8 @@ import { ref, computed } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { $u } from "uview-pro";
-import { APP_ROUTES, buildRoute, buildSupplementRouteQuery } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildSupplementRouteQuery } from "@/common/carloan-route-query";
 
 // 页面参数
 const businessApi = useCarloanApi();

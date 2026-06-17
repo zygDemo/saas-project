@@ -149,7 +149,8 @@ import { useLocalStore } from "@/stores";
 import { useCarloanApi } from "@/api/carloan";
 import AppForm from "@/components/app-form/app-form.vue";
 import { isMobilePhone, isSimpleIdCard, validateRequiredFields } from "@/common/validators";
-import { APP_ROUTES, buildRoute, buildSupplementRouteQuery } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildSupplementRouteQuery } from "@/common/carloan-route-query";
 
 const localStore = useLocalStore();
 const businessApi = useCarloanApi();

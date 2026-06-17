@@ -107,7 +107,8 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useLocalStore } from "@/stores/local";
-import { APP_ROUTES, buildDetailRouteQuery, buildRoute, buildSignRouteQuery, buildSupplementRouteQuery } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildSignRouteQuery, buildSupplementRouteQuery, buildDetailRouteQuery } from "@/common/carloan-route-query";
 
 const localStore = useLocalStore();
 

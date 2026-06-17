@@ -88,7 +88,8 @@
 
 <script setup>
 import { ref } from "vue";
-import { APP_ROUTES, buildDetailRouteQuery, buildRoute } from "@/common/navigation";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { buildDetailRouteQuery } from "@/common/carloan-route-query";
 
 const currentTab = ref(0);
 const loading = ref(false);
