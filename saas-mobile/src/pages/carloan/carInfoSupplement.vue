@@ -86,13 +86,13 @@ import { $u } from "uview-pro";
 import { computed, reactive, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useLocalStore } from "@/stores";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { isValidMoney, validateRequiredFields } from "@/common/validators";
 // @ts-expect-error - AppForm 缺少类型声明
 import AppForm from "@/components/app-form/app-form.vue";
 
 const localStore = useLocalStore();
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 // ========== 状态定义 ==========
 const submitLoading = ref(false);

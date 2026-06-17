@@ -31,11 +31,11 @@ import { $u } from "uview-pro";
 import { onLoad } from "@dcloudio/uni-app";
 import AppForm from "@/components/app-form/app-form.vue";
 import { useSessionStore } from "@/stores";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { formatMoney } from "@/common/pawnMock";
 
 const sessionStore = useSessionStore();
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 const submitLoading = ref(false);
 const pageUuid = ref("");

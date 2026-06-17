@@ -83,12 +83,12 @@ import { $u } from "uview-pro";
 import { API_BASE_URL, TENANT_ID, UPLOAD_MAX_SIZE } from "@/common/env";
 import { normalizeFileRecord, normalizeUploadItem, toFilePreviewUrl } from "@/common/file-url";
 import { tokenUtil } from "@/common/token";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { useLocalStore } from "@/stores/local";
 import { useSessionStore } from "@/stores/session";
 import FileCard from "./components/FileCard.vue";
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 const localStore = useLocalStore();
 const sessionStore = useSessionStore();
 

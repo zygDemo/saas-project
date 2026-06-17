@@ -218,10 +218,10 @@
 import layout from "@/pages/layout/layout.vue";
 import { computed, ref } from "vue";
 import { onLoad, onReachBottom, onShow } from "@dcloudio/uni-app";
-import { useBusinessApi } from "@/api/business";
-import type { CreditListItem, PageResult } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
+import type { CreditListItem, PageResult } from "@/api/carloan";
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 const ORDER_FILTER_STORAGE_KEY = "WORKBENCH_ORDER_FILTER";
 const ORDER_FILTER_MAX_AGE = 60 * 1000;

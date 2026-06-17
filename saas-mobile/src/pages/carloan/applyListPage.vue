@@ -153,9 +153,9 @@
 
 <script setup>
 import { reactive, ref } from "vue";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 // 搜索条件
 const searchForm = reactive({

@@ -91,11 +91,11 @@
 <script setup>
 import { ref, computed } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { $u } from "uview-pro";
 
 // 页面参数
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 const customerName = ref("");
 const customerPhone = ref("");

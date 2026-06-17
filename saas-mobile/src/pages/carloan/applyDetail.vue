@@ -343,9 +343,9 @@
 <script setup>
 import { computed, ref, onMounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 const detail = ref(null);
 const loading = ref(true);

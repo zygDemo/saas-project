@@ -149,9 +149,9 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 const loading = ref(false);
 const creditOrderId = ref("");

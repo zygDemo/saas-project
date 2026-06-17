@@ -264,7 +264,7 @@
 <script setup>
 import { computed, ref, reactive, onUnmounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { useConfirm } from "@/composables/useConfirm";
 import { useSessionStore } from "@/stores";
 import { closeBrowser } from "@/composables/useCloseBrowser";
@@ -274,7 +274,7 @@ const sessionStore = useSessionStore();
 
 // ========== 响应式数据 ==========
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 const SIGN_PROGRESS_STORAGE_KEY = "SIGN_PROGRESS_MAP";
 
 function saveSignProgress(status) {

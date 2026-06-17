@@ -58,11 +58,11 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { $u } from "uview-pro";
 import AppForm from "@/components/app-form/app-form.vue";
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 const SIGN_PROGRESS_STORAGE_KEY = "SIGN_PROGRESS_MAP";
 
 function saveSignProgress(status) {

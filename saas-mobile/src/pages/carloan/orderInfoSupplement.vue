@@ -35,11 +35,11 @@
 import { $u } from "uview-pro";
 import { reactive, ref, computed } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { isValidMoney, validateRequiredFields } from "@/common/validators";
 import AppForm from "@/components/app-form/app-form.vue";
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 const submitLoading = ref(false);
 const productOptions = ref([]);

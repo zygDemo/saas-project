@@ -171,10 +171,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { useLocalStore } from "@/stores/local";
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 const localStore = useLocalStore();
 
 const loading = ref(false);

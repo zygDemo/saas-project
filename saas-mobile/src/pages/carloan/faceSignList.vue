@@ -96,9 +96,9 @@
 <script setup>
 import { ref } from "vue";
 import { onLoad, onPullDownRefresh } from "@dcloudio/uni-app";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 const currentTab = ref(0);
 const loading = ref(false);
 const allList = ref([]);

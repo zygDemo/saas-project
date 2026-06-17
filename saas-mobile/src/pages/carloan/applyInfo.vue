@@ -48,12 +48,12 @@ import { ref, reactive } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import AppForm from "@/components/app-form/app-form.vue";
 import { useSessionStore } from "@/stores";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { storeToRefs } from "pinia";
 
 const sessionStore = useSessionStore();
 const { orderInfo } = storeToRefs(sessionStore);
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 const submitLoading = ref(false);
 const isEditMode = ref(false);

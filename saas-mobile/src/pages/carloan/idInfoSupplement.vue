@@ -146,12 +146,12 @@ import { $u } from "uview-pro";
 import { computed, reactive, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useLocalStore } from "@/stores";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import AppForm from "@/components/app-form/app-form.vue";
 import { isMobilePhone, isSimpleIdCard, validateRequiredFields } from "@/common/validators";
 
 const localStore = useLocalStore();
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 /** 添加联系人按钮自定义样式 */
 const addBtnStyle = {

@@ -158,7 +158,7 @@
 import { APP_ROUTES } from "@/common/navigation";
 import layout from "@/pages/layout/layout.vue";
 import { $u, useTheme } from "uview-pro";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { useLocalStore } from "@/stores";
 import { computed, onMounted, ref } from "vue";
 import { isDev } from "@/common/env";
@@ -169,7 +169,7 @@ const themeColor = computed(() => {
 });
 
 const localStore = useLocalStore();
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 // 消息未读数
 const unreadCount = ref(0);
@@ -432,19 +432,24 @@ const sectionsRaw = [
     title: "预审阶段",
     items: [
       {
-        text: "预审进件",
+        text: "身份证信息",
         icon: "file-text",
         orderNode: "1100",
       },
       {
-        text: "风控预审",
-        icon: "chart",
-        orderNode: "1200",
+        text: "车辆信息",
+        icon: "car",
+        orderNode: "1110",
       },
       {
-        text: "资方预审",
-        icon: "handshake",
-        orderNode: "1300",
+        text: "申请信息",
+        icon: "form",
+        orderNode: "1120",
+      },
+      {
+        text: "签署授权书",
+        icon: "edit",
+        orderNode: "1130",
       },
     ],
   },
@@ -452,59 +457,64 @@ const sectionsRaw = [
     title: "补件阶段",
     items: [
       {
-        text: "资料补充",
-        icon: "folder",
-        orderNode: "1400",
-      },
-    ],
-  },
-  {
-    title: "风控审批",
-    items: [
-      {
-        text: "风控初审",
-        icon: "hourglass",
-        orderNode: "2100",
+        text: "客户资料",
+        icon: "user",
+        orderNode: "1310",
       },
       {
-        text: "风控终审",
-        icon: "hourglass-half-fill",
-        orderNode: "2200",
+        text: "车辆资料",
+        icon: "car",
+        orderNode: "1320",
       },
-    ],
-  },
-  {
-    title: "资方终审",
-    items: [
       {
-        text: "资方终审",
-        icon: "handshake",
-        orderNode: "3100",
-      },
-    ],
-  },
-  {
-    title: "客户签约",
-    items: [
-      {
-        text: "客户签约",
-        icon: "edit",
-        orderNode: "4100",
-      },
-    ],
-  },
-  {
-    title: "请款放款",
-    items: [
-      {
-        text: "请款资料",
+        text: "订单资料",
         icon: "file",
-        orderNode: "5100",
+        orderNode: "1330",
       },
       {
-        text: "资方放款",
+        text: "文件资料",
+        icon: "folder",
+        orderNode: "1340",
+      },
+    ],
+  },
+  {
+    title: "签约阶段",
+    items: [
+      {
+        text: "额度确认",
+        icon: "check-circle",
+        orderNode: "1610",
+      },
+      {
+        text: "绑银行卡",
+        icon: "credit-card",
+        orderNode: "1620",
+      },
+      {
+        text: "合同签署",
+        icon: "edit",
+        orderNode: "1630",
+      },
+      {
+        text: "GPS安装",
+        icon: "map",
+        orderNode: "1640",
+      },
+      {
+        text: "抵押办理",
+        icon: "lock",
+        orderNode: "1650",
+      },
+    ],
+  },
+  {
+    title: "贷后阶段",
+    items: [
+      {
+        text: "贷后还款",
         icon: "money-circle",
-        orderNode: "6100",
+        orderNode: "1900",
       },
     ],
   },

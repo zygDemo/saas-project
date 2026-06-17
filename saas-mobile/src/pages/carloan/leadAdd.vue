@@ -81,10 +81,10 @@
 import { computed, reactive, ref } from "vue";
 import { $u } from "uview-pro";
 import AppForm from "@/components/app-form/app-form.vue";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { useLocalStore, useSessionStore } from "@/stores";
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 const localStore = useLocalStore();
 const sessionStore = useSessionStore();
 

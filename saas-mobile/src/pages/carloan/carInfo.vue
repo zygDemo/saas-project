@@ -67,13 +67,13 @@ import { computed, reactive, ref, onMounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import AppForm from "@/components/app-form/app-form.vue";
 import { useSessionStore } from "@/stores";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { recognizeVehicle } from "@/common/ocr";
 import { toFilePreviewUrl } from "@/common/file-url";
 import { compressVehicleLicenseForOcr } from "@/common/image-compress";
 
 const sessionStore = useSessionStore();
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 const submitLoading = ref(false);
 const isPawnMode = ref(false);

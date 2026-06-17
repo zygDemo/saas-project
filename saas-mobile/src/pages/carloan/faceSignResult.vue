@@ -285,7 +285,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { useConfirm } from "@/composables/useConfirm";
 import { useSessionStore } from "@/stores";
 import { closeBrowser } from "@/composables/useCloseBrowser";
@@ -360,7 +360,7 @@ const faceResult = reactive<FaceResult>({
 
 const contractFiles = ref<ContractFile[]>([]);
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 const { confirmRef, confirm } = useConfirm();
 const sessionStore = useSessionStore();
 const isCustomerRole = computed(() => {

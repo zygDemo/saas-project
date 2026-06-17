@@ -117,10 +117,10 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { $u } from "uview-pro";
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 const creditOrderId = ref("");
 const uuidVal = ref("");

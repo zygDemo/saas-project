@@ -132,12 +132,12 @@
 
 <script setup>
 import { reactive, ref } from "vue";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { useSessionStore } from "@/stores";
 
 const sessionStore = useSessionStore();
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 // 搜索条件
 const searchForm = reactive({

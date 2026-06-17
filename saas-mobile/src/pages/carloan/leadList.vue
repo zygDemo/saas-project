@@ -260,10 +260,10 @@
 import { reactive, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { $u } from "uview-pro";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { useLocalStore } from "@/stores";
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 const localStore = useLocalStore();
 
 interface LeadItem {

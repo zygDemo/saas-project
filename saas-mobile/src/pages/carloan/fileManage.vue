@@ -78,11 +78,11 @@
 <script setup>
 import { $u, useTheme } from "uview-pro";
 import { computed, onMounted, ref } from "vue";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import { normalizeFileRecord, toFilePreviewUrl } from "@/common/file-url";
 import { useLocalStore } from "@/stores";
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 const localStore = useLocalStore();
 const loading = ref(false);
 const fileList = ref([]);

@@ -95,13 +95,13 @@ import AppForm from "@/components/app-form/app-form.vue";
 
 import { useSessionStore, useLocalStore } from "@/stores";
 import { storeToRefs } from "pinia";
-import { useBusinessApi } from "@/api/business";
+import { useCarloanApi } from "@/api/carloan";
 import NationConst, { nationLabelToValue } from "@/enums/nation";
 import { recognizeIdCard } from "@/common/ocr";
 import { toFilePreviewUrl } from "@/common/file-url";
 import { compressImageForOcr } from "@/common/image-compress";
 
-const businessApi = useBusinessApi();
+const businessApi = useCarloanApi();
 
 const sessionStore = useSessionStore();
 const localStore = useLocalStore();
