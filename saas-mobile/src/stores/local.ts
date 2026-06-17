@@ -123,6 +123,15 @@ const localStorageAdapter = {
   removeItem: (key: string) => uni.removeStorageSync(key),
 };
 
+export const CurrentSystem = {
+  PORTAL: "portal",
+  CARLOAN: "carloan",
+  FOOD: "food",
+  CREDIT: "credit",
+} as const;
+
+export type CurrentSystemValue = (typeof CurrentSystem)[keyof typeof CurrentSystem];
+
 export const useLocalStore = defineStore("local", {
   state: () => ({
     token: "",
@@ -133,6 +142,7 @@ export const useLocalStore = defineStore("local", {
     roles: [] as SysRole[],
     roleKeys: [] as string[],
     permissions: [] as string[],
+    currentSystem: CurrentSystem.PORTAL as CurrentSystemValue,
     loginTime: 0,
     expireTime: 0,
   }),
@@ -148,6 +158,9 @@ export const useLocalStore = defineStore("local", {
     },
     currentOrgId(): number | string {
       return this.orgId || this.userInfo?.orgId || "";
+    },
+    isCarloanSystem(): boolean {
+      return this.currentSystem === CurrentSystem.CARLOAN;
     },
   },
   actions: {
@@ -185,6 +198,9 @@ export const useLocalStore = defineStore("local", {
       }
       this.loginTime = Date.now();
     },
+    setCurrentSystem(system: CurrentSystemValue) {
+      this.currentSystem = system;
+    },
     hasRole(roleKey: string) {
       return this.roleKeys.includes(roleKey) || this.roles.some((role) => role.roleKey === roleKey);
     },
@@ -201,6 +217,7 @@ export const useLocalStore = defineStore("local", {
       this.roles = [];
       this.roleKeys = [];
       this.permissions = [];
+      this.currentSystem = CurrentSystem.PORTAL;
       this.loginTime = 0;
       this.expireTime = 0;
     },
@@ -217,6 +234,7 @@ export const useLocalStore = defineStore("local", {
       "roles",
       "roleKeys",
       "permissions",
+      "currentSystem",
       "loginTime",
       "expireTime",
     ],

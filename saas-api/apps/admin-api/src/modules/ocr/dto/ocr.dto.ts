@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger'
+﻿import { ApiPropertyOptional } from '@nestjs/swagger'
 import { IsIn, IsOptional, IsString } from 'class-validator'
 
 export class OcrObjectKeyDto {

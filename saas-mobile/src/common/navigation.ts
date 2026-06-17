@@ -5,8 +5,53 @@ export const APP_ROUTES = {
     home: "/pages/index/index",
   },
   carloan: {
-    home: "/pages/carloan/workbench",
-    orders: "/pages/carloan/orderList",
+    home: "/pages/carloan/portal/workbench",
+    orders: "/pages/carloan/precheck/orderList",
+    legacyWorkbench: "/pages/carloan/workbench",
+    portal: {
+      workbench: "/pages/carloan/portal/workbench",
+      messageCenter: "/pages/carloan/portal/messageCenter",
+      todoCenter: "/pages/carloan/portal/todoCenter",
+    },
+    precheck: {
+      leadAdd: "/pages/carloan/precheck/leadAdd",
+      leadList: "/pages/carloan/precheck/leadList",
+      entryList: "/pages/carloan/precheck/entryList",
+      entryDetail: "/pages/carloan/precheck/entryDetail",
+      idInfo: "/pages/carloan/precheck/idInfo",
+      carInfo: "/pages/carloan/precheck/carInfo",
+      applyInfo: "/pages/carloan/precheck/applyInfo",
+      applyResult: "/pages/carloan/precheck/applyResult",
+      applyListPage: "/pages/carloan/precheck/applyListPage",
+      applyDetail: "/pages/carloan/precheck/applyDetail",
+      applyProgress: "/pages/carloan/precheck/applyProgress",
+      orderList: "/pages/carloan/precheck/orderList",
+    },
+    supplement: {
+      supplementList: "/pages/carloan/supplement/supplementList",
+      supplementDetail: "/pages/carloan/supplement/supplementDetail",
+      idInfoSupplement: "/pages/carloan/supplement/idInfoSupplement",
+      carInfoSupplement: "/pages/carloan/supplement/carInfoSupplement",
+      orderInfoSupplement: "/pages/carloan/supplement/orderInfoSupplement",
+      fileInfoSupplement: "/pages/carloan/supplement/fileInfoSupplement",
+    },
+    approval: {
+      approvalList: "/pages/carloan/approval/approvalList",
+      pawnApprovalList: "/pages/carloan/approval/pawnApprovalList",
+      pawnApprovalDetail: "/pages/carloan/approval/pawnApprovalDetail",
+      pawnMaterials: "/pages/carloan/approval/pawnMaterials",
+      pawnLoanInfo: "/pages/carloan/approval/pawnLoanInfo",
+    },
+    signing: {
+      signCenter: "/pages/carloan/signing/signCenter",
+      signConfirmAmount: "/pages/carloan/signing/signConfirmAmount",
+      signBindCard: "/pages/carloan/signing/signBindCard",
+      videoFaceSign: "/pages/carloan/signing/videoFaceSign",
+      faceSignList: "/pages/carloan/signing/faceSignList",
+      faceSignResult: "/pages/carloan/signing/faceSignResult",
+      signGpsAppointment: "/pages/carloan/signing/signGpsAppointment",
+      signMortgage: "/pages/carloan/signing/signMortgage",
+    },
   },
   food: {
     home: "/pages/food/index/index",
@@ -36,6 +81,89 @@ type NavigationMode = "switchTab" | "redirectTo" | "reLaunch";
 export interface LayoutTabbarItem extends TabbarItem {
   route: string;
   navMode: NavigationMode;
+}
+
+
+export type RouteQueryValue = string | number | boolean | null | undefined;
+export type RouteQueryRecord = Record<string, RouteQueryValue>;
+
+export interface CarloanSignRouteQueryInput {
+  creditOrderId?: RouteQueryValue;
+  uuid?: RouteQueryValue;
+  customerName?: RouteQueryValue;
+  customerPhone?: RouteQueryValue;
+  signStatus?: RouteQueryValue;
+  name?: RouteQueryValue;
+  phone?: RouteQueryValue;
+  amount?: RouteQueryValue;
+  idCard?: RouteQueryValue;
+  orderId?: RouteQueryValue;
+  type?: RouteQueryValue;
+}
+
+export interface CarloanEntryRouteQueryInput {
+  uuid?: RouteQueryValue;
+  creditOrderId?: RouteQueryValue;
+  name?: RouteQueryValue;
+  phone?: RouteQueryValue;
+  fromEntry?: RouteQueryValue;
+  businessType?: RouteQueryValue;
+}
+
+export interface CarloanSupplementRouteQueryInput {
+  uuid?: RouteQueryValue;
+  creditOrderId?: RouteQueryValue;
+  readonly?: RouteQueryValue;
+  id?: RouteQueryValue;
+  name?: RouteQueryValue;
+  phone?: RouteQueryValue;
+  remark?: RouteQueryValue;
+  isSupplementCustomer?: RouteQueryValue;
+  isSupplementVehicle?: RouteQueryValue;
+  isSupplementOrder?: RouteQueryValue;
+  isSupplementFile?: RouteQueryValue;
+}
+
+export interface CarloanDetailRouteQueryInput {
+  id?: RouteQueryValue;
+  creditOrderId?: RouteQueryValue;
+  orderNo?: RouteQueryValue;
+  uuid?: RouteQueryValue;
+  customerName?: RouteQueryValue;
+  customerPhone?: RouteQueryValue;
+  name?: RouteQueryValue;
+  phone?: RouteQueryValue;
+  nodeCode?: RouteQueryValue;
+}
+
+export function buildRouteQuery(query: RouteQueryRecord): RouteQueryRecord {
+  return query;
+}
+
+export function buildSignRouteQuery(query: CarloanSignRouteQueryInput): RouteQueryRecord {
+  return buildRouteQuery(query);
+}
+
+export function buildEntryRouteQuery(query: CarloanEntryRouteQueryInput): RouteQueryRecord {
+  return buildRouteQuery(query);
+}
+
+export function buildSupplementRouteQuery(query: CarloanSupplementRouteQueryInput): RouteQueryRecord {
+  return buildRouteQuery(query);
+}
+
+export function buildDetailRouteQuery(query: CarloanDetailRouteQueryInput): RouteQueryRecord {
+  return buildRouteQuery(query);
+}
+
+export function buildRoute(route: string, query?: string | RouteQueryRecord): string {
+  const normalizedRoute = normalizeRoute(route);
+  const queryString = toRouteQueryString(query);
+  return queryString ? `${normalizedRoute}?${queryString}` : normalizedRoute;
+}
+
+export function buildHashRoute(route: string, query?: string | RouteQueryRecord): string {
+  return `#${buildRoute(route, query)}`;
 }
 
 const SYSTEM_TABBAR_ROUTES = new Set([
@@ -223,4 +351,16 @@ export function navigateBackOrFallback() {
 function normalizeRoute(route: string): string {
   if (!route) return "";
   return route.startsWith("/") ? route : `/${route}`;
+}
+
+function toRouteQueryString(query?: string | RouteQueryRecord): string {
+  if (!query) return "";
+  if (typeof query === "string") {
+    return query.startsWith("?") ? query.slice(1) : query;
+  }
+
+  return Object.entries(query)
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+    .join("&");
 }

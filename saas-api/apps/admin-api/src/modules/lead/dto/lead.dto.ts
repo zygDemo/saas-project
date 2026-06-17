@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+﻿import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { IsInt, IsOptional, IsString, Min } from 'class-validator'
 import { CreateLeadDto, UpdateLeadDto, LeadQueryDto, CreateLeadFollowUpDto, IdParamDto, ToNumber } from '../../business-common.dto'
 

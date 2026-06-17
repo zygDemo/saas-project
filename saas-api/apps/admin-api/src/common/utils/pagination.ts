@@ -1,4 +1,4 @@
-import { PaginatedResponse } from '../types/pagination'
+﻿import { PaginatedResponse } from '../types/pagination'
 
 export interface PaginationQuery {
   current?: string | number

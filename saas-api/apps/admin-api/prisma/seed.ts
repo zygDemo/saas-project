@@ -389,7 +389,7 @@ async function main() {
 
   const passwordHash = await bcrypt.hash('123456', 10)
 
-  // 创建角色（含车贷 SaaS 业务角色）
+  // 创建角色（包含车贷 SaaS 业务角色）
   const roleDefs = [
     {
       name: 'Super Admin',
@@ -533,15 +533,15 @@ async function main() {
   const menus = await seedAllMenus(tenant.id)
   await resetBusinessMenuGrants(tenant.id)
 
-  // 分配菜单权限给角色（按 PRD 角色菜单树）
+  // 按 PRD 角色菜单树分配菜单权限
   const filterIds = (...names: string[]) =>
     menus.filter((m) => names.includes(m.name)).map((m) => m.id)
   const superMenuIds = menus.map((m) => m.id)
 
-  // 公共：所有角色都有仪表盘工作台
+  // 公共菜单：所有角色都有仪表盘工作台
   const dashIds = filterIds('Dashboard', 'Console', 'Analysis')
 
-  // 平台管理菜单
+  // 平台管理相关菜单
   const platformIds = filterIds(
     'Platform',
     'TenantMgmt',
@@ -556,9 +556,9 @@ async function main() {
     'Product',
     'Funder'
   )
-  // 数据中心
+  // 数据中心相关菜单
   const dataCenterIds = filterIds('DataCenter', 'DataStats', 'AuditLog')
-  // 系统管理
+  // 系统管理相关菜单
   const systemFullIds = filterIds(
     'System',
     'User',
@@ -574,105 +574,112 @@ async function main() {
     'UserCenter'
   )
   const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter')
+  const bizStageIds = filterIds(
+    'Business',
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessRiskApproval',
+    'BusinessFunderFinal',
+    'BusinessSigning',
+    'BusinessDisbursement',
+    'BusinessOrderQuery'
+  )
   const bizCoreIds = filterIds(
     'Business',
-    'Lead',
-    'PreReview',
-    'Supplement',
-    'Approval',
-    'FunderReview',
-    'Signing',
-    'Disbursement',
-    'PostLoan',
-    'Reports'
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessRiskApproval',
+    'BusinessFunderFinal',
+    'BusinessSigning',
+    'BusinessDisbursement',
+    'BusinessOrderQuery'
   )
-  const bizApprovalIds = filterIds('Business', 'Lead', 'PreReview', 'Supplement', 'Approval', 'FunderReview')
+  const bizApprovalIds = filterIds(
+    'Business',
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessRiskApproval',
+    'BusinessFunderFinal',
+    'BusinessOrderQuery'
+  )
   const bizFinanceIds = filterIds(
     'Business',
-    'Lead',
-    'PreReview',
-    'Supplement',
-    'Approval',
-    'FunderReview',
-    'Signing',
-    'Disbursement',
-    'PostLoan',
-    'Reports'
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessRiskApproval',
+    'BusinessFunderFinal',
+    'BusinessSigning',
+    'BusinessDisbursement',
+    'BusinessOrderQuery'
   )
-  const bizCsIds = filterIds('Business', 'Lead', 'PreReview', 'Supplement', 'Approval', 'FunderReview', 'Signing', 'Disbursement', 'PostLoan', 'Reports')
+  const bizCsIds = filterIds(
+    'Business',
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessRiskApproval',
+    'BusinessFunderFinal',
+    'BusinessSigning',
+    'BusinessDisbursement',
+    'BusinessOrderQuery'
+  )
   const bizManagerIds = filterIds(
     'Platform',
-    'Business',
     'FlowConfig',
-    'Lead',
-    'PreReview',
-    'Supplement',
-    'Approval',
-    'FunderReview',
-    'Signing',
-    'Disbursement',
-    'PostLoan',
-    'Reports'
+    'Business',
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessRiskApproval',
+    'BusinessFunderFinal',
+    'BusinessSigning',
+    'BusinessDisbursement',
+    'BusinessOrderQuery'
   )
   const bizAdminIds = filterIds(
     'Platform',
-    'Business',
     'FlowConfig',
-    'Lead',
-    'PreReview',
-    'Supplement',
-    'Approval',
-    'FunderReview',
-    'Signing',
-    'Disbursement',
-    'PostLoan',
-    'Reports'
+    'Business',
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessRiskApproval',
+    'BusinessFunderFinal',
+    'BusinessSigning',
+    'BusinessDisbursement',
+    'BusinessOrderQuery'
   )
 
-  // R_SUPER: 全部
+  // R_SUPER：全部菜单
   await connectRoleMenus(roleByCode.R_SUPER.id, superMenuIds)
-  // R_OPERATION: 仪表盘 + 平台管理 + 数据中心 + 车贷业务 + 公告
+  // R_OPERATION：仪表盘 + 平台管理 + 数据中心 + 车贷业务 + 公告
   await connectRoleMenus(roleByCode.R_OPERATION.id, [
     ...dashIds,
     ...platformIds,
     ...dataCenterIds,
     ...filterIds('Notice'),
-    ...filterIds(
-      'Business',
-      'Lead',
-      'PreReview',
-      'Supplement',
-      'Approval',
-      'FunderReview',
-      'Signing',
-      'Disbursement',
-      'PostLoan',
-      'Reports'
-    ),
+    ...bizStageIds,
     ...filterIds('WorkOrder')
   ])
-  // R_ADMIN: 仪表盘 + 系统基础 + 流程配置 + 全流程业务菜单
+  // R_ADMIN：仪表盘 + 系统基础 + 流程配置 + 全流程业务菜单
   await connectRoleMenus(roleByCode.R_ADMIN.id, [
     ...dashIds,
     ...filterIds('Platform', 'FlowConfig'),
     ...systemBasicIds,
     ...bizAdminIds
   ])
-  // R_SALES_MANAGER: 仪表盘 + 业务菜单
+  // R_SALES_MANAGER：仪表盘 + 业务菜单
   await connectRoleMenus(roleByCode.R_SALES_MANAGER.id, [
     ...dashIds,
     ...filterIds('Platform', 'FlowConfig'),
     ...bizManagerIds
   ])
-  // R_SALES: 仪表盘 + 业务菜单
+  // R_SALES：仪表盘 + 业务菜单
   await connectRoleMenus(roleByCode.R_SALES.id, [...dashIds, ...bizCoreIds])
-  // R_APPROVER: 仪表盘 + 审批相关阶段
+  // R_APPROVER：仪表盘 + 审批相关阶段
   await connectRoleMenus(roleByCode.R_APPROVER.id, [...dashIds, ...bizApprovalIds])
-  // R_FINANCE: 仪表盘 + 财务相关阶段
+  // R_FINANCE：仪表盘 + 财务相关阶段
   await connectRoleMenus(roleByCode.R_FINANCE.id, [...dashIds, ...bizFinanceIds])
-  // R_CS_COLLECTION: 仪表盘 + 贷后相关业务菜单
+  // R_CS_COLLECTION：仪表盘 + 贷后相关业务菜单
   await connectRoleMenus(roleByCode.R_CS_COLLECTION.id, [...dashIds, ...bizCsIds])
-  // R_USER: 仅仪表盘（移动端操作权限，管理后台无业务菜单）
+  // R_USER：仅仪表盘（移动端操作权限，管理后台无业务菜单）
   await connectRoleMenus(roleByCode.R_USER.id, dashIds)
 
   await seedBusinessData(tenant.id)
@@ -1293,7 +1300,7 @@ async function seedAllMenus(tenantId: number) {
     data: { hidden: false, hiddenTab: false }
   })
 
-  // 按钮权限
+  // 初始化按钮权限
   const bizMenus = [
     tenantMgmt,
     packageBilling,
@@ -1548,22 +1555,22 @@ async function seedBusinessData(tenantId: number) {
     where: { code: 'DEMO_ORG' },
     update: {
       tenantId,
-      name: '示例车贷机构',
+      name: '示例汽车金融机构',
       contactName: '张经理',
       contactPhone: '13810000000',
-      address: '北京市朝阳区示例路 100 号',
+      address: '北京市朝阳区示范路 100 号',
       status: 'ACTIVE',
       packageType: 'STANDARD',
       apiEnabled: true
     },
     create: {
       tenantId,
-      name: '示例车贷机构',
+      name: '示例汽车金融机构',
       code: 'DEMO_ORG',
       creditCode: '91110000DEMO000001',
       contactName: '张经理',
       contactPhone: '13810000000',
-      address: '北京市朝阳区示例路 100 号',
+      address: '北京市朝阳区示范路 100 号',
       status: 'ACTIVE',
       packageType: 'STANDARD',
       apiEnabled: true
@@ -1573,7 +1580,7 @@ async function seedBusinessData(tenantId: number) {
   await seedDefaultFlowConfigs(tenantId, org.id)
 
   const dept = await prisma.department.upsert({
-    where: { orgId_name: { orgId: org.id, name: '车贷业务一部' } },
+    where: { orgId_name: { orgId: org.id, name: '汽车金融业务一部' } },
     update: {
       tenantId,
       managerId: sales.id,
@@ -1582,7 +1589,7 @@ async function seedBusinessData(tenantId: number) {
     create: {
       tenantId,
       orgId: org.id,
-      name: '车贷业务一部',
+      name: '汽车金融业务一部',
       managerId: sales.id,
       sort: 1
     }
@@ -1596,7 +1603,7 @@ async function seedBusinessData(tenantId: number) {
   const productData = {
     tenantId,
     orgId: org.id,
-    name: '标准车抵贷',
+    name: '标准车辆抵押贷',
     productType: 'CAR_LOAN',
     minRate: 0.036,
     maxRate: 0.108,
@@ -1626,7 +1633,7 @@ async function seedBusinessData(tenantId: number) {
     where: { orgId_code: { orgId: org.id, code: 'DEMO_BANK' } },
     update: {
       tenantId,
-      name: '示例银行资金方',
+      name: '示例银行资方',
       funderType: 'BANK',
       contactName: '李经理',
       contactPhone: '13810000001',
@@ -1636,7 +1643,7 @@ async function seedBusinessData(tenantId: number) {
     create: {
       tenantId,
       orgId: org.id,
-      name: '示例银行资金方',
+      name: '示例银行资方',
       code: 'DEMO_BANK',
       funderType: 'BANK',
       contactName: '李经理',
@@ -1656,7 +1663,7 @@ async function seedBusinessData(tenantId: number) {
     carBrand: '大众',
     carModel: '迈腾',
     loanAmount: 120000,
-    remark: '客户计划置换经营周转资金',
+    remark: '客户计划申请经营周转贷款',
     status: LeadStatus.FOLLOWING,
     assigneeId: sales.id,
     createdBy: sales.id,
@@ -1677,9 +1684,9 @@ async function seedBusinessData(tenantId: number) {
       name: '王小明',
       idCard: '110101199001010011',
       gender: 'MALE',
-      companyName: '北京示例商贸有限公司',
+      companyName: '北京示范商贸有限公司',
       monthlyIncome: 28000,
-      address: '北京市海淀区示例小区 8 号',
+      address: '北京市海淀区示范小区 8 号',
       emergencyName: '王女士',
       emergencyPhone: '13910000002',
       status: 'ACTIVE'
@@ -1691,9 +1698,9 @@ async function seedBusinessData(tenantId: number) {
       phone: '13910000001',
       idCard: '110101199001010011',
       gender: 'MALE',
-      companyName: '北京示例商贸有限公司',
+      companyName: '北京示范商贸有限公司',
       monthlyIncome: 28000,
-      address: '北京市海淀区示例小区 8 号',
+      address: '北京市海淀区示范小区 8 号',
       emergencyName: '王女士',
       emergencyPhone: '13910000002',
       status: 'ACTIVE'
@@ -1732,7 +1739,7 @@ async function seedBusinessData(tenantId: number) {
   })
   const bankCardData = {
     customerId: customer.id,
-    bankName: '示例银行',
+    bankName: '示范银行',
     cardNo: '6222000000000000000',
     cardType: '借记卡',
     isDefault: true
@@ -1756,7 +1763,7 @@ async function seedBusinessData(tenantId: number) {
     name: '王女士',
     relation: '配偶',
     phone: '13910000002',
-    address: '北京市海淀区示例小区 8 号',
+    address: '北京市海淀区示范小区 8 号',
     isEmergency: true
   }
   if (contact) {
@@ -1771,12 +1778,17 @@ async function seedBusinessData(tenantId: number) {
   }
 
   const followUp = await prisma.leadFollowUp.findFirst({
-    where: { leadId: lead.id, content: '客户已提交车辆资料，准备转进件。' }
+    where: {
+      leadId: lead.id,
+      content: {
+        in: ['客户已提交车辆资料，准备转进件。', '客户已提交车辆资料，准备转入进件流程。']
+      }
+    }
   })
   const followUpData = {
     leadId: lead.id,
     followType: 'PHONE',
-    content: '客户已提交车辆资料，准备转进件。',
+    content: '客户已提交车辆资料，准备转入进件流程。',
     nextFollowAt: new Date('2026-06-01T10:00:00+08:00'),
     createdBy: sales.id
   }
@@ -1812,7 +1824,7 @@ async function seedBusinessData(tenantId: number) {
       approvedAmount: 115000,
       approvedTerm: 24,
       approvedRate: 0.066,
-      remark: '示例进件数据'
+      remark: '示例订单数据'
     },
     create: {
       tenantId,
@@ -1834,7 +1846,7 @@ async function seedBusinessData(tenantId: number) {
       approvedAmount: 115000,
       approvedTerm: 24,
       approvedRate: 0.066,
-      remark: '示例进件数据'
+      remark: '示例订单数据'
     }
   })
 
@@ -1873,7 +1885,7 @@ async function seedBusinessData(tenantId: number) {
       approverId: approver.id,
       stage: 'FIRST_REVIEW',
       action: 'PASS',
-      opinion: '资料完整，初审通过',
+      opinion: '资料完整，初审通过。',
       amount: 115000,
       term: 24,
       rate: 0.066
@@ -1884,7 +1896,7 @@ async function seedBusinessData(tenantId: number) {
       approverId: approver.id,
       stage: 'FINAL_REVIEW',
       action: 'PASS',
-      opinion: '终审通过，可进入签约放款',
+      opinion: '终审通过，可进入签约与放款阶段。',
       amount: 115000,
       term: 24,
       rate: 0.066
@@ -1943,7 +1955,7 @@ async function seedBusinessData(tenantId: number) {
       disburseAmount: 115000,
       disburseAccount: '6222000000000000000',
       transactionNo: 'TX-DEMO-0001',
-      remark: '待财务确认放款'
+      remark: '待财务确认放款。'
     },
     create: {
       tenantId,
@@ -1958,7 +1970,7 @@ async function seedBusinessData(tenantId: number) {
       disburseAmount: 115000,
       disburseAccount: '6222000000000000000',
       transactionNo: 'TX-DEMO-0001',
-      remark: '待财务确认放款'
+      remark: '待财务确认放款。'
     }
   })
 

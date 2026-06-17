@@ -9,14 +9,14 @@ export const useTabbarStore = defineStore('tabbar', () => {
       text: '首页',
       iconPath: 'home',
       selectedIconPath: 'home-fill',
-      pagePath: '/pages/carloan/workbench',
+      pagePath: '/pages/carloan/portal/workbench',
       isDot: true,
     },
     {
       text: '订单',
       iconPath: 'order',
       selectedIconPath: 'order-fill',
-      pagePath: '/pages/carloan/orderList',
+      pagePath: '/pages/carloan/precheck/orderList',
       isDot: true,
     },
     {

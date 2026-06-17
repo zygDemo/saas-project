@@ -1,4 +1,4 @@
-import { BullModule } from '@nestjs/bullmq'
+﻿import { BullModule } from '@nestjs/bullmq'
 import { Module } from '@nestjs/common'
 import { MaintenanceConsumer } from './maintenance.consumer'
 import { QueueController } from './queue.controller'

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+﻿import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma, UserStatus } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
@@ -43,7 +43,7 @@ export class UsersService {
       }
     })
 
-    if (!user) throw new NotFoundException('User not found')
+    if (!user) throw new NotFoundException('用户不存在')
 
     const roles = user.roles.map(({ role }: any) => role.code)
     const buttons = user.roles.flatMap(({ role }: any) =>
@@ -111,11 +111,11 @@ export class UsersService {
     })
 
     if (existedUser?.userName.toLowerCase() === dto.userName.toLowerCase()) {
-      throw new ConflictException('Username already exists')
+      throw new ConflictException('用户名已存在')
     }
 
     if (existedUser?.email.toLowerCase() === dto.email.toLowerCase()) {
-      throw new ConflictException('Email already exists')
+      throw new ConflictException('邮箱已存在')
     }
 
     const roles = await this.getRolesByCodes(dto.roleCodes)
@@ -146,7 +146,7 @@ export class UsersService {
 
   async updateUser(id: number, dto: UpdateUserDto, operator = 'system') {
     const user = await this.prisma.user.findUnique({ where: { id } })
-    if (!user) throw new NotFoundException('User not found')
+    if (!user) throw new NotFoundException('用户不存在')
     await this.ensureDeptExists(dto.deptId)
 
     if (dto.userName || dto.email) {
@@ -161,11 +161,11 @@ export class UsersService {
       })
 
       if (dto.userName && existedUser?.userName.toLowerCase() === dto.userName.toLowerCase()) {
-        throw new ConflictException('Username already exists')
+        throw new ConflictException('用户名已存在')
       }
 
       if (dto.email && existedUser?.email.toLowerCase() === dto.email.toLowerCase()) {
-        throw new ConflictException('Email already exists')
+        throw new ConflictException('邮箱已存在')
       }
     }
 
@@ -201,7 +201,7 @@ export class UsersService {
 
   async deleteUser(id: number) {
     const user = await this.prisma.user.findUnique({ where: { id } })
-    if (!user) throw new NotFoundException('User not found')
+    if (!user) throw new NotFoundException('用户不存在')
 
     await this.prisma.user.delete({ where: { id } })
     return { id }
@@ -217,7 +217,7 @@ export class UsersService {
     const missingRoleCodes = uniqueRoleCodes.filter((roleCode) => !roleCodeSet.has(roleCode))
 
     if (missingRoleCodes.length > 0) {
-      throw new BadRequestException(`Role not found: ${missingRoleCodes.join(', ')}`)
+      throw new BadRequestException(`角色不存在: ${missingRoleCodes.join(', ')}`)
     }
 
     return roles

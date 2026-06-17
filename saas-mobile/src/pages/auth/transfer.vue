@@ -42,7 +42,7 @@ const TRANSFER_FIELD_KEYS = [
   "businessType",
 ] as const;
 
-const HOME_PAGE = "/pages/carloan/workbench";
+const HOME_PAGE = "/pages/carloan/portal/workbench";
 const LOGIN_PAGE = "/pages/auth/login";
 
 const localStore = useLocalStore();
@@ -150,20 +150,20 @@ function normalizeTargetPath(path?: QueryValue) {
     userPage: HOME_PAGE,
     layout: HOME_PAGE,
     workbench: HOME_PAGE,
-    leadAdd: "/pages/carloan/leadAdd",
-    orderList: "/pages/carloan/orderList",
+    leadAdd: "/pages/carloan/precheck/leadAdd",
+    orderList: "/pages/carloan/precheck/orderList",
     my: "/pages/my/my",
-    idInfo: "/pages/carloan/idInfo",
-    carInfo: "/pages/carloan/carInfo",
-    applyInfo: "/pages/carloan/applyInfo",
-    supplementInfo: "/pages/carloan/supplementDetail",
-    carInfoPage: "/pages/carloan/carInfoSupplement",
-    idInfoPage: "/pages/carloan/idInfoSupplement",
-    orderInfoPage: "/pages/carloan/orderInfoSupplement",
-    fileInfoPage: "/pages/carloan/fileInfoSupplement",
-    creditConfirmDetails: "/pages/carloan/applyDetail",
-    customerContract: "/pages/carloan/videoFaceSign",
-    filePreview: "/pages/carloan/faceSignResult",
+    idInfo: "/pages/carloan/precheck/idInfo",
+    carInfo: "/pages/carloan/precheck/carInfo",
+    applyInfo: "/pages/carloan/precheck/applyInfo",
+    supplementInfo: "/pages/carloan/supplement/supplementDetail",
+    carInfoPage: "/pages/carloan/supplement/carInfoSupplement",
+    idInfoPage: "/pages/carloan/supplement/idInfoSupplement",
+    orderInfoPage: "/pages/carloan/supplement/orderInfoSupplement",
+    fileInfoPage: "/pages/carloan/supplement/fileInfoSupplement",
+    creditConfirmDetails: "/pages/carloan/precheck/applyDetail",
+    customerContract: "/pages/carloan/signing/videoFaceSign",
+    filePreview: "/pages/carloan/signing/faceSignResult",
   };
 
   if (pathMap[path]) return pathMap[path];

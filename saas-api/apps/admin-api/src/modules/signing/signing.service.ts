@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+﻿import { Injectable } from '@nestjs/common'
 import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateSigningDto, UpdateSigningDto, SigningQueryDto } from './dto/signing.dto'

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common'
+﻿import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcryptjs'
@@ -17,7 +17,7 @@ export class AuthService {
   async login(dto: LoginDto) {
     const tenantId = getCurrentTenantId()
     if (!tenantId) {
-      throw new BadRequestException('X-Tenant-ID header is required')
+      throw new BadRequestException('请求头 X-Tenant-ID 不能为空')
     }
 
     const user = await this.prisma.user.findFirst({
@@ -25,10 +25,10 @@ export class AuthService {
       include: { roles: { include: { role: true } } }
     })
 
-    if (!user) throw new UnauthorizedException('Invalid username or password')
+    if (!user) throw new UnauthorizedException('用户名或密码错误')
 
     const matched = await bcrypt.compare(dto.password, user.passwordHash)
-    if (!matched) throw new UnauthorizedException('Invalid username or password')
+    if (!matched) throw new UnauthorizedException('用户名或密码错误')
 
     const roles = user.roles.map(({ role }: any) => role.code)
     const payload = { sub: user.id, userName: user.userName, tenantId, roles }

@@ -1,4 +1,4 @@
-import { applyDecorators } from '@nestjs/common'
+﻿import { applyDecorators } from '@nestjs/common'
 import { ApiBadRequestResponse, ApiHeader } from '@nestjs/swagger'
 
 export function ApiTenantHeader() {

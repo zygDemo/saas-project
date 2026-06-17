@@ -1,4 +1,4 @@
--- Keep a single organization entry. "Org" is the canonical management menu.
+﻿-- Keep a single organization entry. "Org" is the canonical management menu.
 UPDATE "Menu"
 SET
   "hidden" = TRUE,

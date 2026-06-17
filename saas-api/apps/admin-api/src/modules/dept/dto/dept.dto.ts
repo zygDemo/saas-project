@@ -1,1 +1,1 @@
-export { CreateDeptDto, UpdateDeptDto, DeptQueryDto, IdParamDto } from '../../business-common.dto'
+﻿export { CreateDeptDto, UpdateDeptDto, DeptQueryDto, IdParamDto } from '../../business-common.dto'

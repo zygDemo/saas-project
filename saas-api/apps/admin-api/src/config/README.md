@@ -1,4 +1,4 @@
-# Config
+﻿# Config
 
 当前服务使用 `@nestjs/config` 直接读取环境变量。配置项见 `apps/admin-api/.env.example`。
 

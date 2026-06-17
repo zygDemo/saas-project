@@ -1,4 +1,4 @@
-INSERT INTO "Menu" (
+﻿INSERT INTO "Menu" (
   "tenantId",
   "parentId",
   "path",

@@ -1,4 +1,4 @@
-generator client {
+﻿generator client {
   provider = "prisma-client-js"
 }
 
@@ -174,7 +174,7 @@ model Role {
   code        String
   description String           @default("")
   enabled     Boolean          @default(true)
-  dataScope   String           @default("ALL") // ALL, DEPT, SELF, CUSTOM
+  dataScope   String           @default("ALL") // 数据范围：ALL、DEPT、SELF、CUSTOM
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   tenant      Tenant           @relation(fields: [tenantId], references: [id])
@@ -361,7 +361,7 @@ model Department {
   orgId       Int
   parentId    Int?
   name        String
-  managerId   Int?         // 部门负责人用户ID
+  managerId   Int?         // 部门负责人用户 ID
   sort        Int          @default(0)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -384,7 +384,7 @@ model Product {
   tenantId        Int
   orgId           Int
   name            String
-  productType     String       // 抵押贷、信用贷、融资租赁等
+  productType     String       // 产品类型：抵押贷、信用贷、融资租赁等
   minRate         Decimal      @db.Decimal(5, 4) // 最低年利率
   maxRate         Decimal      @db.Decimal(5, 4) // 最高年利率
   minAmount       Decimal      @db.Decimal(15, 2)
@@ -398,11 +398,11 @@ model Product {
   maxMileage      Int?         // 最大里程
   ltvLimit        Decimal?     @db.Decimal(5, 4) // 最高贷款价值比
   minDownPayment  Decimal?     @db.Decimal(5, 4) // 最低首付比例
-  regions         String?      // 适用区域，JSON或逗号分隔
-  applicableFunders Json?       // 适用资方ID/规则清单
-  accessConditions Json?        // 准入条件配置
-  valuationDiscountRate Decimal? @db.Decimal(5, 4) // 估值折扣率
-  status          String       @default("DRAFT") // DRAFT, ACTIVE, INACTIVE, ARCHIVED
+  regions         String?      // 适用区域，支持 JSON 或逗号分隔
+  applicableFunders Json?      // 适用资方 ID 列表或规则清单
+  accessConditions Json?       // 准入条件配置
+  valuationDiscountRate Decimal? @db.Decimal(5, 4) // 车辆估值折扣率
+  status          String       @default("DRAFT") // 状态：DRAFT、ACTIVE、INACTIVE、ARCHIVED
   fileChecklist   Json?        // 所需文件清单
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
@@ -422,10 +422,10 @@ model Funder {
   orgId         Int
   name          String
   code          String
-  funderType    String       // BANK, CONSUMER_FINANCE, LEASING, MICRO_LOAN
+  funderType    String       // 资方类型：BANK、CONSUMER_FINANCE、LEASING、MICRO_LOAN
   contactName   String?
   contactPhone  String?
-  integrationMode String       @default("MANUAL") // API, FILE, MANUAL
+  integrationMode String       @default("MANUAL") // 对接方式：API、FILE、MANUAL
   creditLimit   Decimal?      @db.Decimal(15, 2)
   apiConfig     Json?        // 对接配置
   approvalRules Json?        // 审批/准入规则
@@ -448,8 +448,8 @@ model FlowConfig {
   tenantId         Int
   orgId            Int
   name             String
-  businessType     String       // LOAN, LEASE, PAWN
-  nodeCode         String       // LEAD, APPLICATION, APPROVAL, SIGNING, DISBURSEMENT
+  businessType     String       // 业务类型：LOAN、LEASE、PAWN 等
+  nodeCode         String       // 流程节点编码：LEAD、APPLICATION、APPROVAL、SIGNING、DISBURSEMENT
   nodeName         String
   approveLevel     Int          @default(1)
   amountLimit      Decimal?     @db.Decimal(15, 2)
@@ -480,7 +480,7 @@ model Lead {
   id            Int          @id @default(autoincrement())
   tenantId      Int
   orgId         Int
-  source        String       // 来源: SELF, IMPORT, EXTERNAL, SCAN, REFERRAL
+  source        String       // 来源：SELF、IMPORT、EXTERNAL、SCAN、REFERRAL
   name          String
   phone         String
   idCard        String?      // 身份证号（脱敏存储）
@@ -489,7 +489,7 @@ model Lead {
   loanAmount    Decimal?     @db.Decimal(15, 2)
   remark        String?
   status        LeadStatus   @default(PENDING_ASSIGN)
-  assigneeId    Int?         // 分配给的业务员
+  assigneeId    Int?         // 分配给业务员
   nextFollowAt  DateTime?    // 下次跟进时间
   createdBy     Int?         // 创建人
   createdAt     DateTime     @default(now())
@@ -510,7 +510,7 @@ model Lead {
 model LeadFollowUp {
   id          Int      @id @default(autoincrement())
   leadId      Int
-  followType  String   // PHONE, WECHAT, VISIT, OTHER
+  followType  String   // 跟进方式：PHONE、WECHAT、VISIT、OTHER
   content     String
   nextFollowAt DateTime?
   createdBy   Int?
@@ -623,7 +623,7 @@ model BankCard {
   @@index([customerId])
 }
 
-// ==================== 进件模型 ====================
+// ==================== 订单/进件模型 ====================
 
 model Application {
   id              Int               @id @default(autoincrement())
@@ -632,7 +632,7 @@ model Application {
   customerId      Int
   productId       Int?
   funderId        Int?
-  applicationNo   String            @unique // 申请编号
+  applicationNo   String            @unique // 订单号/申请编号
   amount          Decimal           @db.Decimal(15, 2)
   term            Int               // 期限（月）
   rate            Decimal           @db.Decimal(5, 4) // 年利率
@@ -679,10 +679,10 @@ model Application {
 model ApplicationFile {
   id            Int      @id @default(autoincrement())
   applicationId Int
-  fileType      String   // 身份证正面、身份证反面、行驶证、银行卡等
+  fileType      String   // 文件类型：身份证人像面、身份证国徽面、行驶证、银行卡等
   fileUrl       String
   fileName      String?
-  ocrResult     Json?    // OCR识别结果
+  ocrResult     Json?    // OCR 识别结果
   isValid       Boolean  @default(true)
   createdAt     DateTime @default(now())
 
@@ -699,7 +699,7 @@ model ApprovalRecord {
   tenantId      Int
   applicationId Int
   approverId    Int
-  stage         String         // FIRST_REVIEW, FINAL_REVIEW, FUNDER_REVIEW
+  stage         String         // 审批阶段：FIRST_REVIEW、FINAL_REVIEW、FUNDER_REVIEW 等
   action        ApprovalAction
   opinion       String?        // 审批意见
   amount        Decimal?       @db.Decimal(15, 2) // 核定金额
@@ -724,7 +724,7 @@ model SignRecord {
   tenantId        Int
   applicationId   Int        @unique
   status          SignStatus @default(PENDING)
-  contractUrl     String?    // 合同文件URL
+  contractUrl     String?    // 合同文件 URL
   signedAt        DateTime?
   videoUrl        String?    // 面签视频/录屏
   expiredAt       DateTime?  // 签约过期时间
@@ -754,8 +754,8 @@ model Disbursement {
   disburseAmount  Decimal?           @db.Decimal(15, 2) // 实际放款金额
   disburseAccount String?            // 放款账户
   disburseAt      DateTime?
-  transactionNo   String?            // 流水号
-  voucherUrl      String?            // 放款凭证
+  transactionNo   String?            // 放款流水号
+  voucherUrl      String?            // 放款凭证文件
   remark          String?
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
@@ -807,8 +807,8 @@ model RepaymentRecord {
   interest        Decimal  @db.Decimal(15, 2)
   penalty         Decimal  @default(0) @db.Decimal(15, 2)
   paymentMethod   String   // 支付方式
-  transactionNo   String?  // 交易流水号
-  voucherUrl      String?  // 凭证
+  transactionNo   String?  // 还款交易流水号
+  voucherUrl      String?  // 还款凭证文件
   remark          String?
   createdBy       Int?     // 登记人
   createdAt       DateTime @default(now())

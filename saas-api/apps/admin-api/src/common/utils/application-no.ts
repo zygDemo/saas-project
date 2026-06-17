@@ -1,4 +1,4 @@
-import { randomInt } from 'crypto'
+﻿import { randomInt } from 'crypto'
 import { Prisma } from '@prisma/client'
 
 const APPLICATION_NO_PREFIX = 'APP'

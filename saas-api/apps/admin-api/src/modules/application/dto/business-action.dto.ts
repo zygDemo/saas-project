@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
+﻿import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
 import { IsDateString, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator'
 import { ToDate, ToNumber } from '../../business-common.dto'
 

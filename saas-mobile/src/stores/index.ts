@@ -18,3 +18,5 @@ export * from './counter'
 export * from './local'
 export * from './session'
 export * from './tabbar'
+
+export * from './carloan'

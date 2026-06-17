@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
+﻿import { BadRequestException, Injectable } from '@nestjs/common'
 import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateFunderDto, UpdateFunderDto, FunderQueryDto } from './dto/funder.dto'

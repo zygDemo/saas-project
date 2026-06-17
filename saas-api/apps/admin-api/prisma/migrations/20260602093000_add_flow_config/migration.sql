@@ -1,4 +1,4 @@
-CREATE TABLE "FlowConfig" (
+﻿CREATE TABLE "FlowConfig" (
   "id" SERIAL NOT NULL,
   "tenantId" INTEGER NOT NULL,
   "orgId" INTEGER NOT NULL,

@@ -1,4 +1,4 @@
-export interface RequestUser {
+﻿export interface RequestUser {
   sub: number
   userName: string
   tenantId: number

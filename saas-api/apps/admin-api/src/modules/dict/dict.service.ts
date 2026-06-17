@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+﻿import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { PaginatedResponse } from '../../common/types/pagination'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
@@ -223,7 +223,7 @@ export class DictService {
 
 function getRequiredTenantId() {
   const tenantId = getCurrentTenantId()
-  if (!tenantId) throw new BadRequestException('X-Tenant-ID header is required')
+  if (!tenantId) throw new BadRequestException('请求头 X-Tenant-ID 不能为空')
   return tenantId
 }
 

@@ -1,4 +1,4 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common'
+﻿import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { Response } from 'express'
 import { ApiStatus } from '../constants/api-status'
@@ -12,7 +12,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     response.status(status).json({
       code: statusToApiCode(status),
-      msg: extractMessage(body) ?? extractPrismaMessage(exception) ?? 'Internal server error',
+      msg: extractMessage(body) ?? extractPrismaMessage(exception) ?? '服务器内部错误',
       data: null
     })
   }
@@ -30,16 +30,16 @@ function getStatus(exception: unknown) {
 
 function extractPrismaMessage(exception: unknown) {
   if (!(exception instanceof Prisma.PrismaClientKnownRequestError)) return undefined
-  if (exception.code === 'P2002') return `Unique constraint failed: ${formatPrismaMeta(exception.meta?.target)}`
-  if (exception.code === 'P2003') return 'Foreign key constraint failed'
-  if (exception.code === 'P2025') return 'Record not found'
+  if (exception.code === 'P2002') return `唯一约束冲突：${formatPrismaMeta(exception.meta?.target)}`
+  if (exception.code === 'P2003') return '关联数据约束校验失败'
+  if (exception.code === 'P2025') return '记录不存在'
   return undefined
 }
 
 function formatPrismaMeta(value: unknown) {
   if (Array.isArray(value)) return value.join(', ')
   if (typeof value === 'string') return value
-  return 'unknown field'
+  return '未知字段'
 }
 
 function extractMessage(body: unknown) {

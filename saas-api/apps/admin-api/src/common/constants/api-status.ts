@@ -1,4 +1,4 @@
-export enum ApiStatus {
+﻿export enum ApiStatus {
   success = 200,
   error = 400,
   unauthorized = 401,

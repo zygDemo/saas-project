@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+﻿import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { PaginatedResponse } from '../../common/types/pagination'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
@@ -58,7 +58,7 @@ export class RolesService {
 
   async updateRole(id: number, dto: UpdateRoleDto) {
     const role = await this.prisma.role.findUnique({ where: { id } })
-    if (!role) throw new NotFoundException('Role not found')
+    if (!role) throw new NotFoundException('角色不存在')
 
     if (dto.roleCode && dto.roleCode !== role.code) {
       await this.assertRoleCodeAvailable(dto.roleCode, id)
@@ -79,7 +79,7 @@ export class RolesService {
 
   async deleteRole(id: number) {
     const role = await this.prisma.role.findUnique({ where: { id } })
-    if (!role) throw new NotFoundException('Role not found')
+    if (!role) throw new NotFoundException('角色不存在')
 
     await this.prisma.role.delete({ where: { id } })
     return { id }
@@ -93,7 +93,7 @@ export class RolesService {
         permissions: { select: { permissionId: true } }
       }
     })
-    if (!role) throw new NotFoundException('Role not found')
+    if (!role) throw new NotFoundException('角色不存在')
 
     return {
       roleId: role.id,
@@ -104,7 +104,7 @@ export class RolesService {
 
   async saveRolePermission(id: number, dto: SaveRolePermissionDto) {
     const role = await this.prisma.role.findUnique({ where: { id } })
-    if (!role) throw new NotFoundException('Role not found')
+    if (!role) throw new NotFoundException('角色不存在')
 
     const menuIds = [...new Set(dto.menuIds ?? [])]
     const permissionIds = [...new Set(dto.permissionIds ?? [])]
@@ -141,7 +141,7 @@ export class RolesService {
       where: { code: { equals: roleCode, mode: 'insensitive' } }
     })
     if (existedRole && existedRole.id !== excludeId) {
-      throw new ConflictException('Role code already exists')
+      throw new ConflictException('角色编码已存在')
     }
   }
 
@@ -156,7 +156,7 @@ export class RolesService {
     const missingMenuIds = menuIds.filter((menuId) => !menuIdSet.has(menuId))
 
     if (missingMenuIds.length > 0) {
-      throw new BadRequestException(`Menu not found: ${missingMenuIds.join(', ')}`)
+      throw new BadRequestException(`菜单不存在: ${missingMenuIds.join(', ')}`)
     }
   }
 
@@ -171,7 +171,7 @@ export class RolesService {
     const missingPermissionIds = permissionIds.filter((permissionId) => !permissionIdSet.has(permissionId))
 
     if (missingPermissionIds.length > 0) {
-      throw new BadRequestException(`Permission not found: ${missingPermissionIds.join(', ')}`)
+      throw new BadRequestException(`权限不存在: ${missingPermissionIds.join(', ')}`)
     }
   }
 }

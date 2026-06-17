@@ -1,4 +1,4 @@
-# saas-api
+﻿# saas-api
 
 `saas-api` 是为 `saas-web` 配套的 NestJS 后端 Monorepo。当前版本先覆盖前端已经调用的接口，并预置 PostgreSQL、Redis、BullMQ 和 Prisma 的工程基础。
 

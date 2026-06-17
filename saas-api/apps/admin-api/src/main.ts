@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common'
+﻿import { ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import { NestExpressApplication } from '@nestjs/platform-express'
@@ -17,20 +17,33 @@ function parseCorsOrigins(value?: string) {
     .filter(Boolean)
 }
 
+function isLocalEnvironment(value?: string) {
+  const env = String(value || '')
+    .trim()
+    .toLowerCase()
+
+  return env === 'development' || env === 'dev' || env === 'local' || env === 'localhost'
+}
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
   const config = app.get(ConfigService)
   const apiPrefix = config.get<string>('API_PREFIX', 'saas/api')
   const normalizedApiPrefix = apiPrefix.replace(/^\/+|\/+$/g, '')
   const allowedOrigins = parseCorsOrigins(config.get<string>('FRONTEND_ORIGIN'))
+  const nodeEnv = config.get<string>('NODE_ENV')
+  const appEnv = config.get<string>('APP_ENV')
+  const allowAllCors = isLocalEnvironment(nodeEnv) || isLocalEnvironment(appEnv)
 
   app.setGlobalPrefix(normalizedApiPrefix)
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: `/${normalizedApiPrefix}/uploads/`
   })
   app.enableCors({
-    origin: allowedOrigins,
-    credentials: true
+    origin: allowAllCors ? true : allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID']
   })
   app.useGlobalPipes(
     new ValidationPipe({

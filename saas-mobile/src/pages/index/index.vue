@@ -75,7 +75,7 @@ import { APP_ROUTES } from "@/common/navigation";
 import { computed, ref } from "vue";
 import { onLoad, onShow } from "@dcloudio/uni-app";
 import layout from "@/pages/layout/layout.vue";
-import { useLocalStore } from "@/stores/local";
+import { CurrentSystem, useLocalStore } from "@/stores/local";
 
 const localStore = useLocalStore();
 
@@ -105,11 +105,13 @@ const syncUserInfo = () => {
 };
 
 onLoad(() => {
+  localStore.setCurrentSystem(CurrentSystem.PORTAL);
   currentDate.value = formatCurrentDate(new Date());
   syncUserInfo();
 });
 
 onShow(() => {
+  localStore.setCurrentSystem(CurrentSystem.PORTAL);
   syncUserInfo();
 });
 
@@ -134,7 +136,7 @@ const goProfile = () => {
 };
 
 const goMyCarLoanApply = () => {
-  uni.navigateTo({ url: "/pages/carloan/leadList" });
+  uni.navigateTo({ url: "/pages/carloan/precheck/leadList" });
 };
 
 const goMyFoodOrders = () => {

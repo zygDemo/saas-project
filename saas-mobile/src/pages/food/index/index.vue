@@ -69,6 +69,8 @@ import { APP_ROUTES } from "@/common/navigation";
 import layout from "@/pages/layout/layout.vue";
 import { useFoodStore } from "@/stores/food";
 import { computed, ref } from "vue";
+import { onLoad, onShow } from "@dcloudio/uni-app";
+import { CurrentSystem, useLocalStore } from "@/stores/local";
 
 interface CategoryItem {
   id: number;
@@ -89,6 +91,7 @@ const keyword = ref("");
 const currentCategory = ref(0);
 const selectedCategoryId = ref(0);
 const foodStore = useFoodStore();
+const localStore = useLocalStore();
 
 const bannerList = ref([
   { image: "https://img.uviewui.com/swiper/swiper1.jpg" },
@@ -136,6 +139,14 @@ const storeList = ref<StoreItem[]>([
 ]);
 
 const cartCount = computed(() => foodStore.cartTotalCount);
+
+onLoad(() => {
+  localStore.setCurrentSystem(CurrentSystem.FOOD);
+});
+
+onShow(() => {
+  localStore.setCurrentSystem(CurrentSystem.FOOD);
+});
 
 const filteredStoreList = computed(() => {
   const kw = keyword.value.trim().toLowerCase();

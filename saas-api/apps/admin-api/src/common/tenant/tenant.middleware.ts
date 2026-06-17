@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   ForbiddenException,
   HttpException,
@@ -31,7 +31,7 @@ function parseTenantId(value: unknown, source: string): number | null {
   const tenantId = Number(raw)
 
   if (!Number.isInteger(tenantId) || tenantId <= 0) {
-    throw new BadRequestException(`${source} must be a positive integer`)
+    throw new BadRequestException(`${source} 必须是正整数`)
   }
 
   return tenantId
@@ -51,11 +51,11 @@ export class TenantMiddleware implements NestMiddleware {
       }
 
       if (tokenTenantId && headerTenantId && tokenTenantId !== headerTenantId) {
-        throw new ForbiddenException('X-Tenant-ID does not match token tenantId')
+        throw new ForbiddenException('X-Tenant-ID 与 token 中的 tenantId 不一致')
       }
 
       if (auth && !tokenTenantId) {
-        throw new UnauthorizedException('Invalid token tenantId')
+        throw new UnauthorizedException('token 中的 tenantId 无效')
       }
 
       tenantStorage.run({ tenantId: tokenTenantId ?? headerTenantId }, () => next())
@@ -65,7 +65,7 @@ export class TenantMiddleware implements NestMiddleware {
 
       res.status(status).json({
         code: statusToApiCode(status),
-        msg: extractMessage(body) ?? 'Internal server error',
+        msg: extractMessage(body) ?? '服务器内部错误',
         data: null
       })
     }

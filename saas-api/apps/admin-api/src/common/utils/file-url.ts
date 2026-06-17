@@ -1,4 +1,4 @@
-const FRONTEND_BASE_PREFIX = '/saas/mobile'
+﻿const FRONTEND_BASE_PREFIX = '/saas/mobile'
 const FILE_OBJECT_KEY_PREFIX_RE = /^(?:images|files|documents|videos|audio)\//i
 
 export function normalizeApiPrefix(apiPrefix?: string | null) {

@@ -431,6 +431,15 @@ async function main() {
     },
     {
       parentKey: 'Business',
+      path: 'order-query',
+      name: 'BusinessOrderQuery',
+      title: '综合查询',
+      icon: 'ri:search-eye-line',
+      sort: 75,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
       path: 'reports',
       name: 'Reports',
       title: '报表统计',
@@ -490,7 +499,6 @@ async function main() {
     'BusinessDisbursement',
     'Customer',
     'PreEntry',
-    'BusinessOrderQuery',
     'Application',
     'RiskPre',
     'FunderPre',

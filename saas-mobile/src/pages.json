@@ -7,6 +7,9 @@
       }
     },
     {
+      "path": "pages/carloan/portal/workbench"
+    },
+    {
       "path": "pages/carloan/workbench"
     },
     {
@@ -31,112 +34,112 @@
       "path": "pages/auth/transfer"
     },
     {
-      "path": "pages/carloan/idInfo"
+      "path": "pages/carloan/precheck/idInfo"
     },
     {
-      "path": "pages/carloan/carInfo"
+      "path": "pages/carloan/precheck/carInfo"
     },
     {
-      "path": "pages/carloan/applyInfo"
+      "path": "pages/carloan/precheck/applyInfo"
     },
     {
-      "path": "pages/carloan/applyResult"
+      "path": "pages/carloan/precheck/applyResult"
     },
     {
-      "path": "pages/carloan/idInfoSupplement"
+      "path": "pages/carloan/supplement/idInfoSupplement"
     },
     {
-      "path": "pages/carloan/carInfoSupplement"
+      "path": "pages/carloan/supplement/carInfoSupplement"
     },
     {
-      "path": "pages/carloan/leadAdd"
+      "path": "pages/carloan/precheck/leadAdd"
     },
     {
-      "path": "pages/carloan/leadList"
+      "path": "pages/carloan/precheck/leadList"
     },
     {
-      "path": "pages/carloan/entryList"
+      "path": "pages/carloan/precheck/entryList"
     },
     {
-      "path": "pages/carloan/entryDetail"
+      "path": "pages/carloan/precheck/entryDetail"
     },
     {
-      "path": "pages/carloan/applySubmit"
+      "path": "pages/carloan/precheck/applySubmit"
     },
     {
-      "path": "pages/carloan/approvalList"
+      "path": "pages/carloan/approval/approvalList"
     },
     {
-      "path": "pages/carloan/faceSignList"
+      "path": "pages/carloan/signing/faceSignList"
     },
     {
-      "path": "pages/carloan/videoFaceSign"
+      "path": "pages/carloan/signing/videoFaceSign"
     },
     {
-      "path": "pages/carloan/faceSignResult"
+      "path": "pages/carloan/signing/faceSignResult"
     },
     {
-      "path": "pages/carloan/authSign"
+      "path": "pages/carloan/signing/authSign"
     },
     {
-      "path": "pages/carloan/orderInfoSupplement"
+      "path": "pages/carloan/supplement/orderInfoSupplement"
     },
     {
-      "path": "pages/carloan/fileInfoSupplement"
+      "path": "pages/carloan/supplement/fileInfoSupplement"
     },
     {
-      "path": "pages/carloan/orderList"
+      "path": "pages/carloan/precheck/orderList"
     },
     {
-      "path": "pages/carloan/fileManage"
+      "path": "pages/carloan/supplement/fileManage"
     },
     {
-      "path": "pages/carloan/applyListPage"
+      "path": "pages/carloan/precheck/applyListPage"
     },
     {
-      "path": "pages/carloan/supplementList"
+      "path": "pages/carloan/supplement/supplementList"
     },
     {
-      "path": "pages/carloan/supplementDetail"
+      "path": "pages/carloan/supplement/supplementDetail"
     },
     {
-      "path": "pages/carloan/applyDetail"
+      "path": "pages/carloan/precheck/applyDetail"
     },
     {
-      "path": "pages/carloan/signCenter"
+      "path": "pages/carloan/signing/signCenter"
     },
     {
-      "path": "pages/carloan/signConfirmAmount"
+      "path": "pages/carloan/signing/signConfirmAmount"
     },
     {
-      "path": "pages/carloan/signBindCard"
+      "path": "pages/carloan/signing/signBindCard"
     },
     {
-      "path": "pages/carloan/signGpsAppointment"
+      "path": "pages/carloan/signing/signGpsAppointment"
     },
     {
-      "path": "pages/carloan/signMortgage"
+      "path": "pages/carloan/signing/signMortgage"
     },
     {
-      "path": "pages/carloan/pawnMaterials"
+      "path": "pages/carloan/approval/pawnMaterials"
     },
     {
-      "path": "pages/carloan/pawnLoanInfo"
+      "path": "pages/carloan/approval/pawnLoanInfo"
     },
     {
-      "path": "pages/carloan/pawnApprovalList"
+      "path": "pages/carloan/approval/pawnApprovalList"
     },
     {
-      "path": "pages/carloan/pawnApprovalDetail"
+      "path": "pages/carloan/approval/pawnApprovalDetail"
     },
     {
-      "path": "pages/carloan/todoCenter"
+      "path": "pages/carloan/portal/todoCenter"
     },
     {
-      "path": "pages/carloan/applyProgress"
+      "path": "pages/carloan/precheck/applyProgress"
     },
     {
-      "path": "pages/carloan/messageCenter"
+      "path": "pages/carloan/portal/messageCenter"
     },
     {
       "path": "pages/food/index/index",

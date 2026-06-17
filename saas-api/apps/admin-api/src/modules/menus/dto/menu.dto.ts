@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
+﻿import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
 import { IsArray, IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator'
 
 export class CreateMenuDto {

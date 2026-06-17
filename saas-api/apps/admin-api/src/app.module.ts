@@ -1,4 +1,4 @@
-import { BullModule } from '@nestjs/bullmq'
+﻿import { BullModule } from '@nestjs/bullmq'
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { resolve } from 'path'

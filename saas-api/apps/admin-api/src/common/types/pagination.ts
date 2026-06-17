@@ -1,4 +1,4 @@
-export interface PaginatedResponse<T> {
+﻿export interface PaginatedResponse<T> {
   records: T[]
   current: number
   size: number

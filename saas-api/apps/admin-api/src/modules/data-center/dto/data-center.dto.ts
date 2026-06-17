@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger'
+﻿import { ApiPropertyOptional } from '@nestjs/swagger'
 import { IsDateString, IsInt, IsOptional, IsString, Min } from 'class-validator'
 import { ToNumber } from '../../business-common.dto'
 

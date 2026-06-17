@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+﻿import { Module } from '@nestjs/common'
 import { OcrModule } from '../ocr/ocr.module'
 import { ProductModule } from '../product/product.module'
 import { DictModule } from '../dict/dict.module'

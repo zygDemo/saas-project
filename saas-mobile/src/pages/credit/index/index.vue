@@ -44,6 +44,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { onLoad, onShow } from "@dcloudio/uni-app";
+import { CurrentSystem, useLocalStore } from "@/stores/local";
 
 const form = ref({
   name: "",
@@ -54,6 +56,15 @@ const form = ref({
 
 const countdown = ref(0);
 let timer: ReturnType<typeof setInterval> | null = null;
+const localStore = useLocalStore();
+
+onLoad(() => {
+  localStore.setCurrentSystem(CurrentSystem.CREDIT);
+});
+
+onShow(() => {
+  localStore.setCurrentSystem(CurrentSystem.CREDIT);
+});
 
 const canQuery = computed(() => {
   return (

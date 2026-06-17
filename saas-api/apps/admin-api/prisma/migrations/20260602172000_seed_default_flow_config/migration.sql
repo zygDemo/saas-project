@@ -1,4 +1,4 @@
-WITH default_nodes AS (
+﻿WITH default_nodes AS (
   SELECT *
   FROM (
     VALUES

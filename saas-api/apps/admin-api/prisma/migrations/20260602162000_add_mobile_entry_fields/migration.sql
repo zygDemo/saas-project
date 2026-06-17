@@ -1,4 +1,4 @@
-ALTER TABLE "Customer"
+﻿ALTER TABLE "Customer"
 ADD COLUMN IF NOT EXISTS "nation" TEXT,
 ADD COLUMN IF NOT EXISTS "householdAddress" TEXT,
 ADD COLUMN IF NOT EXISTS "issuingAuthority" TEXT,
