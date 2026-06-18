@@ -464,7 +464,35 @@ const isPreAuditDetail = computed(() =>
   ),
 );
 
-const pageTitle = computed(() => (isPreAuditDetail.value ? "资料补充" : "预审信息"));
+/** 根据节点状态获取页面标题 */
+const pageTitle = computed(() => {
+  const code = currentNodeCode.value;
+  if (!code) return "订单详情";
+
+  const numericCode = Number(code);
+  if (Number.isFinite(numericCode)) {
+    // 预审阶段：1100-1250
+    if (numericCode >= 1100 && numericCode <= 1250) return "预审阶段";
+    // 补件阶段：1300-1350
+    if (numericCode >= 1300 && numericCode <= 1350) return "补件阶段";
+    // 风控审批：1400-1450
+    if (numericCode >= 1400 && numericCode <= 1450) return "风控审批";
+    // 资方终审：1500
+    if (numericCode === 1500) return "资方终审";
+    // 签约阶段：1600-1660
+    if (numericCode >= 1600 && numericCode <= 1660) return "签约阶段";
+    // 请款放款：1700-1800
+    if (numericCode >= 1700 && numericCode <= 1800) return "请款放款";
+    // 贷后阶段：1900
+    if (numericCode === 1900) return "贷后阶段";
+  }
+
+  // 兼容旧的英文节点编码
+  if (["PRE_AUDIT", "INITIAL_AUDIT"].includes(code)) return "预审阶段";
+  if (code === "SUPPLEMENT_MATERIALS") return "补件阶段";
+
+  return isPreAuditDetail.value ? "预审阶段" : "订单详情";
+});
 
 const preAuditEntryItems = computed(() => [
   {
