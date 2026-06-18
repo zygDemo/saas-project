@@ -29,6 +29,8 @@ interface TableHeightOptions {
   tableHeaderHeight: Ref<number>
   /** 分页器间距 */
   paginationSpacing: Ref<number>
+  /** 额外高度偏移（用于外部元素占位补偿） */
+  extraOffset?: Ref<number>
 }
 
 /**
@@ -56,13 +58,18 @@ class TableHeightCalculator {
    */
   private calculateOffset(): number {
     if (!this.options.showTableHeader.value) {
-      return this.calculatePaginationOffset()
+      return this.calculatePaginationOffset() + (this.options.extraOffset?.value || 0)
     }
 
     const headerHeight = this.getHeaderHeight()
     const paginationOffset = this.calculatePaginationOffset()
 
-    return headerHeight + paginationOffset + TableHeightCalculator.TABLE_HEADER_SPACING
+    return (
+      headerHeight +
+      paginationOffset +
+      TableHeightCalculator.TABLE_HEADER_SPACING +
+      (this.options.extraOffset?.value || 0)
+    )
   }
 
   /**

@@ -1,5 +1,5 @@
 <template>
-  <div class="business-list-page art-full-height" style="overflow: auto">
+  <div class="business-list-page art-full-height">
     <!-- 搜索栏 -->
     <ArtSearchBar
       v-model="searchFormModel"
@@ -61,11 +61,13 @@
         :data="records"
         :columns="tableColumns"
         :pagination="pagination"
-        :show-table-header="false"
+        :extra-height-offset="0"
         :empty-text="isOrgModule ? '暂无机构数据' : '暂无数据'"
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handleCurrentChange"
       />
+
+      <!-- 新增/编辑弹窗 -->
     </ElCard>
 
     <ElDialog
@@ -2418,6 +2420,19 @@
 </script>
 
 <style scoped>
+  .business-list-page {
+    :deep(.art-table-card .el-card__body) {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    :deep(.art-table-card .art-table) {
+      flex: 1;
+      min-height: 0;
+    }
+  }
+
   .detail-json {
     padding: 16px;
     overflow: auto;

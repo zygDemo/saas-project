@@ -568,6 +568,10 @@ export function useCarloanApi() {
     getContractDetail: (creditOrderId: string) =>
       http.get(`/m/signing/loan/detail/${creditOrderId}`),
 
+    /** 授权签署（一键签署） */
+    authorizeSign: (signRecordId: number) =>
+      http.post<ApiResponse<any>>(`/signing/${signRecordId}/authorize-sign`),
+
     // ========== 统计 ==========
 
     /** 业务统计概览 */

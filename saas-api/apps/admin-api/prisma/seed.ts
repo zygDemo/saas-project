@@ -571,7 +571,8 @@ async function main() {
     'MsgTemplate',
     'SysParam',
     'Notice',
-    'UserCenter'
+    'UserCenter',
+    'WorkOrder'
   )
   const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter')
   const bizStageIds = filterIds(
@@ -950,6 +951,16 @@ async function seedAllMenus(tenantId: number) {
     keepAlive: true,
     hidden: true,
     hiddenTab: true
+  })
+  const workOrder = await upsertMenu(tenantId, {
+    parentId: system.id,
+    path: 'work-order',
+    name: 'WorkOrder',
+    component: '/system/work-order',
+    title: '执行工单',
+    icon: 'ri:customer-service-2-line',
+    sort: 52,
+    keepAlive: true
   })
 
   // ============== 业务管理 ==============

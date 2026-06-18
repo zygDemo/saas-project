@@ -500,7 +500,7 @@ function handleDetailButton(order: OrderListViewItem) {
   }
 
   uni.navigateTo({
-    url: `${route}?${query}`,
+    url: buildRoute(route, detailRouteQuery),
   });
 }
 

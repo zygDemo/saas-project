@@ -155,6 +155,14 @@ const doSubmit = async () => {
       applyInfo: { ...form },
       creditOrderId: creditOrderId || info.creditOrderId || carloanStore.pageContext.creditOrderId,
     });
+    // 更新进件进度：标记申请信息已完成
+    const progressKey = creditOrderId || info.creditOrderId || carloanStore.pageContext.creditOrderId || carloanStore.pageContext.uuid || "";
+    if (progressKey) {
+      const progressMap = uni.getStorageSync("ENTRY_PROGRESS_MAP") || {};
+      progressMap[progressKey] = progressMap[progressKey] || {};
+      progressMap[progressKey].APPLICATION = 1;
+      uni.setStorageSync("ENTRY_PROGRESS_MAP", progressMap);
+    }
     $u.toast("申请已提交！", "success");
     return { uuid, creditOrderId: creditOrderId || info.creditOrderId || carloanStore.pageContext.creditOrderId };
   }

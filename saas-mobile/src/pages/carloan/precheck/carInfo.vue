@@ -499,6 +499,14 @@ const doSubmit = async () => {
     if (isPawnMode.value) {
       sessionStore.setOrderInfo({ businessType: "pawn" });
     }
+    // 更新进件进度：标记车辆信息已完成
+    const progressKey = carloanStore.pageContext.creditOrderId || carloanStore.pageContext.uuid || "";
+    if (progressKey) {
+      const progressMap = uni.getStorageSync("ENTRY_PROGRESS_MAP") || {};
+      progressMap[progressKey] = progressMap[progressKey] || {};
+      progressMap[progressKey].VEHICLE = 1;
+      uni.setStorageSync("ENTRY_PROGRESS_MAP", progressMap);
+    }
     $u.toast("已保存车辆信息", "success");
     return true;
   }

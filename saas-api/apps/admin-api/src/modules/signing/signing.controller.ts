@@ -40,4 +40,10 @@ export class SigningController {
   remove(@Param('id') id: string) {
     return this.service.remove(Number(id))
   }
+
+  @Post(':id/authorize-sign')
+  @ApiOperation({ summary: '授权签署（一键签署）' })
+  authorizeSign(@Param('id') id: string) {
+    return this.service.authorizeSign(Number(id))
+  }
 }

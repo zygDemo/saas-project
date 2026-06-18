@@ -80,6 +80,23 @@ export const systemRoutes: AppRouteRecord = {
         keepAlive: true,
         roles: ['R_SUPER', 'R_ADMIN']
       }
+    },
+    {
+      path: 'work-order',
+      name: 'WorkOrder',
+      component: '/system/work-order',
+      meta: {
+        title: '执行工单',
+        icon: 'ri:customer-service-2-line',
+        keepAlive: true,
+        roles: ['R_SUPER'],
+        authList: [
+          { title: '新增', authMark: 'add' },
+          { title: '指派', authMark: 'assign' },
+          { title: '处理', authMark: 'process' },
+          { title: '删除', authMark: 'delete' }
+        ]
+      }
     }
   ]
 }

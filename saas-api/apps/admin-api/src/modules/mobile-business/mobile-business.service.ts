@@ -368,8 +368,9 @@ export class MobileBusinessService {
         })
       }
 
+      // 车辆信息属于"预审进件"(1100)阶段，仅在节点低于1100时推进，不向后重置
       const application = await this.findLatestDraftApplication(customer.id)
-      if (application && application.currentNode !== 1100) {
+      if (application && application.currentNode < 1100) {
         await this.prisma.application.update({
           where: { id: application.id },
           data: { currentNode: 1100, currentStatus: 10 }
@@ -409,9 +410,14 @@ export class MobileBusinessService {
       dto.remark
     ].filter(Boolean)
 
-    const draftApplication = dto.creditOrderId
+    let draftApplication = dto.creditOrderId
       ? await this.findDraftApplicationByNo(customer.id, dto.creditOrderId)
       : await this.findLatestDraftApplication(customer.id)
+
+    // 如果通过 creditOrderId 未找到草稿，回退到最新草稿
+    if (!draftApplication && dto.creditOrderId) {
+      draftApplication = await this.findLatestDraftApplication(customer.id)
+    }
 
     const applicationData = {
       orgId: customer.orgId,
@@ -686,7 +692,8 @@ export class MobileBusinessService {
   ) {
     const current = await this.findLatestDraftApplication(customer.id)
     if (current) {
-      if (current.currentNode !== 1100 || current.currentStatus !== 10) {
+      // 身份证信息属于"预审进件"(1100)阶段，仅在节点低于1100时推进，不向后重置
+      if (current.currentNode < 1100 || current.currentStatus !== 10) {
         return this.prisma.application.update({
           where: { id: current.id },
           data: { currentNode: 1100, currentStatus: 10 }

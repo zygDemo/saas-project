@@ -44,7 +44,11 @@
         </ElTableColumn>
       </template>
 
-      <template v-if="$slots.default" #default><slot /></template>
+      <!-- 修复点：移除 template #default 包装，直接使用 slot 或根据需求处理 -->
+      <!-- 如果外部传入的 slot 是为了作为 el-table 的默认内容（如展开行），直接放置 slot 即可 -->
+      <!-- 注意：el-table 的默认插槽通常用于 <el-table-column type="expand">，这里已由 columns 处理 -->
+      <!-- 如果仍需透传其他默认内容，请使用以下写法，避免命名冲突 -->
+      <slot v-if="$slots.default" />
 
       <template #empty>
         <div v-if="loading"></div>
@@ -134,6 +138,8 @@
     emptyText?: string
     /** 是否开启 ArtTableHeader，解决表格高度自适应问题 */
     showTableHeader?: boolean
+    /** 额外高度偏移（px），用于补偿外部元素占位 */
+    extraHeightOffset?: number
   }
 
   const props = withDefaults(defineProps<ArtTableProps>(), {
@@ -145,7 +151,8 @@
     size: undefined,
     emptyHeight: '100%',
     emptyText: '暂无数据',
-    showTableHeader: true
+    showTableHeader: true,
+    extraHeightOffset: 0
   })
   const instance = getCurrentInstance()
   const attrs = useAttrs()
@@ -225,7 +232,8 @@
     showTableHeader: computed(() => props.showTableHeader),
     paginationHeight,
     tableHeaderHeight,
-    paginationSpacing: PAGINATION_SPACING
+    paginationSpacing: PAGINATION_SPACING,
+    extraOffset: computed(() => props.extraHeightOffset || 0)
   })
 
   // 表格高度逻辑

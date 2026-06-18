@@ -158,17 +158,29 @@
 
       <!-- 底部操作区 -->
       <view class="action-area">
-        <!-- 初始状态 -->
-        <u-button
-          v-if="currentStep === 0"
-          type="primary"
-          size="large"
-          shape="circle"
-          :loading="loading"
-          @click="handleStartFaceSign"
-        >
-          {{ isCreditMode ? "开始授信" : "开始人脸识别" }}
-        </u-button>
+        <!-- 初始状态（授信模式直接显示授权签署按钮） -->
+        <template v-if="currentStep === 0">
+          <u-button
+            v-if="isCreditMode && signRecordId"
+            type="success"
+            size="large"
+            shape="circle"
+            :loading="authorizeSignLoading"
+            @click="handleAuthorizeSign"
+          >
+            授权签署
+          </u-button>
+          <u-button
+            v-else
+            type="primary"
+            size="large"
+            shape="circle"
+            :loading="loading"
+            @click="handleStartFaceSign"
+          >
+            {{ isCreditMode ? "开始授信" : "开始人脸识别" }}
+          </u-button>
+        </template>
 
         <!-- 人脸识别中 -->
         <u-button
@@ -212,8 +224,18 @@
           <text class="finish-text">{{
             isCreditMode ? "授信完成" : "面签完成"
           }}</text>
-          <!-- 授信模式：签署授权书 + 返回按钮 -->
+          <!-- 授信模式：授权签署 + 签署授权书 + 返回按钮 -->
           <template v-if="isCreditMode">
+            <u-button
+              v-if="signRecordId"
+              type="success"
+              size="large"
+              shape="circle"
+              :loading="authorizeSignLoading"
+              @click="handleAuthorizeSign"
+            >
+              授权签署
+            </u-button>
             <u-button
               type="primary"
               size="large"
@@ -361,6 +383,8 @@ const isCreditMode = ref(false);
 const currentStep = ref(0);
 const loading = ref(false);
 const signingLoading = ref(false);
+const authorizeSignLoading = ref(false);
+const signRecordId = ref(null);
 
 const stepList = reactive([]);
 
@@ -429,6 +453,10 @@ onLoad(async () => {
     try {
       const detail = await fetchCreditDetail(orderId);
       detailInfo = detail || {};
+      // 获取签署记录ID
+      if (detailInfo.signRecordId) {
+        signRecordId.value = detailInfo.signRecordId;
+      }
     } catch (e) {
       console.error("获取授信详情失败:", e);
     }
@@ -501,7 +529,7 @@ function getStepClass(status) {
   return `step-${status}`;
 }
 
-/** 开始人脸识别 */
+/** 开始人脸识别（授信模式下跳过人脸识别，直接完成） */
 async function handleStartFaceSign() {
   if (loading.value) return;
 
@@ -519,7 +547,24 @@ async function handleStartFaceSign() {
 
   contractFiles.length = 0;
 
-  // 构建回调地址（根据当前环境动态拼接）
+  // 授信模式：跳过人脸识别，直接完成
+  if (isCreditMode.value) {
+    // 模拟人脸识别成功
+    faceResult.status = "success";
+    faceResult.statusText = "核验通过";
+    faceResult.score = 98;
+
+    updateStepStatus(1, "finish");
+    updateStepStatus(2, "finish");
+
+    currentStep.value = 4;
+    loading.value = false;
+
+    uni.showToast({ title: "授信认证完成", icon: "success" });
+    return;
+  }
+
+  // 面签模式：调用三方人脸识别
   const redirectUrl = [
     `${getBaseUrl()}${buildHashRoute(
       APP_ROUTES.carloan.signing.faceSignResult,
@@ -640,6 +685,7 @@ async function fetchCreditDetail(id) {
     uuid: data?.uuid || data?.userUuid,
     creditOrderId: data?.creditOrderId,
     orderId: data?.orderId || data?.creditOrderId || data?.id,
+    signRecordId: data?.sign?.id || null,
   };
 }
 
@@ -730,6 +776,31 @@ function goToWorkbench() {
   uni.reLaunch({
     url: APP_ROUTES.carloan.portal.workbench,
   });
+}
+
+/** 授权签署（一键签署） */
+async function handleAuthorizeSign() {
+  if (authorizeSignLoading.value || !signRecordId.value) return;
+
+  authorizeSignLoading.value = true;
+
+  try {
+    const res = await businessApi.authorizeSign(signRecordId.value);
+    uni.showToast({ title: "授权签署成功", icon: "success" });
+
+    // 更新签署进度
+    saveSignProgress("SIGNED");
+
+    // 可选：跳转到结果页面或刷新状态
+    setTimeout(() => {
+      uni.navigateBack();
+    }, 1500);
+  } catch (err) {
+    console.error("授权签署失败:", err);
+    uni.showToast({ title: err.message || "授权签署失败", icon: "none" });
+  } finally {
+    authorizeSignLoading.value = false;
+  }
 }
 </script>
 
