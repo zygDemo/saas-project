@@ -40,7 +40,9 @@ import { isValidMoney, validateRequiredFields } from "@/common/validators";
 import AppForm from "@/components/app-form/app-form.vue";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildSupplementRouteQuery } from "@/common/carloan-route-query";
+import { useCarloanStore } from "@/stores/carloan";
 
+const carloanStore = useCarloanStore();
 const businessApi = useCarloanApi();
 
 const submitLoading = ref(false);
@@ -52,9 +54,7 @@ const dictLoading = ref(false);
 const pageLoading = ref(false);
 
 // 页面参数
-const pageUuid = ref("");
 const creditId = ref("");
-const creditOrderId = ref("");
 const readonly = ref(false);
 
 // 表单数据
@@ -125,10 +125,11 @@ function handleProductChange(productId) {
 }
 
 onLoad((options) => {
-  pageUuid.value = options?.uuid || "";
+    carloanStore.syncFromRouteQuery(options || {});
+  carloanStore.pageContext.uuid = options?.uuid || "";
   readonly.value = options?.readonly === "1" || options?.readonly === "true";
   if (options?.creditOrderId) {
-    creditOrderId.value = String(options.creditOrderId);
+    carloanStore.pageContext.creditOrderId = String(options.creditOrderId);
     loadCreditDetail();
   }
   loadProductList();
@@ -137,13 +138,13 @@ onLoad((options) => {
 
 /** 加载授信申请详情 */
 async function loadCreditDetail() {
-  if (!creditOrderId.value) return;
+  if (!carloanStore.pageContext.creditOrderId) return;
   pageLoading.value = true;
   try {
-    const res = await businessApi.getCreditDetailByOrderId(creditOrderId.value);
+    const res = await businessApi.getCreditDetailByOrderId(carloanStore.pageContext.creditOrderId);
     if (res && res.code === 200 && res.data) {
       const data = res.data;
-      pageUuid.value = data.uuid || pageUuid.value;
+      carloanStore.pageContext.uuid = data.uuid || carloanStore.pageContext.uuid;
       creditId.value = String(data.id || "");
       // 回填表单数据
       form.amount = data.pushQuota ? String(data.pushQuota) : "";
@@ -281,7 +282,7 @@ async function saveOrderInfo() {
   try {
     // 组装提交数据
     const submitData = {
-      creditOrderId: creditOrderId.value || undefined,
+      creditOrderId: carloanStore.pageContext.creditOrderId || undefined,
       amount: Number(form.amount),
       loanPurpose: form.loanPurpose,
       productId: Number(form.productId),
@@ -321,8 +322,8 @@ async function handleNext() {
   if (!success) return;
 
   const supplementRouteQuery = buildSupplementRouteQuery({
-    uuid: pageUuid.value,
-    creditOrderId: creditOrderId.value,
+    uuid: carloanStore.pageContext.uuid,
+    creditOrderId: carloanStore.pageContext.creditOrderId,
     readonly: readonly.value ? 1 : undefined,
   });
   uni.navigateTo({

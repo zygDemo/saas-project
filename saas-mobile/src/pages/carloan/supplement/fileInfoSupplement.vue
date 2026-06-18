@@ -89,13 +89,12 @@ import { useSessionStore } from "@/stores/session";
 import FileCard from "../components/FileCard.vue";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildSupplementRouteQuery } from "@/common/carloan-route-query";
+import { useCarloanStore } from "@/stores/carloan";
 
 const businessApi = useCarloanApi();
 const localStore = useLocalStore();
-const sessionStore = useSessionStore();
-
-const pageUuid = ref("");
-const creditOrderId = ref("");
+const sessionStore = useSessionStore()
+const carloanStore = useCarloanStore();
 const readonly = ref(false);
 const showUploadPopup = ref(false);
 const currentFileType = ref("");
@@ -130,8 +129,8 @@ const uploadHeader = computed(() => {
 });
 
 const uploadFormData = computed(() => ({
-  uuid: pageUuid.value,
-  creditOrderId: creditOrderId.value,
+  uuid: carloanStore.pageContext.uuid,
+  creditOrderId: carloanStore.pageContext.creditOrderId,
   fileType: currentFileType.value,
   fileCode: currentFileCode.value,
 }));
@@ -384,8 +383,8 @@ function getCardFiles(key) {
 async function loadProductFileList() {
   try {
     const res = await businessApi.getProductFileList({
-      uuid: pageUuid.value,
-      creditOrderId: creditOrderId.value,
+      uuid: carloanStore.pageContext.uuid,
+      creditOrderId: carloanStore.pageContext.creditOrderId,
     });
     const groups = normalizeProductGroups(getListFromResponse(res));
     setProductGroups(
@@ -407,22 +406,21 @@ function initFiles() {
 }
 
 onLoad(async (options) => {
-  pageUuid.value = options?.uuid || "";
-  creditOrderId.value = options?.creditOrderId || "";
+  carloanStore.syncFromRouteQuery(options || {});
   readonly.value = options?.readonly === "1" || options?.readonly === "true";
-  if (creditOrderId.value) {
+  if (carloanStore.pageContext.creditOrderId) {
     await loadCreditReadonlyStatus();
   }
   await loadProductFileList();
   initFiles();
-  if (pageUuid.value && creditOrderId.value) {
+  if (carloanStore.pageContext.uuid && carloanStore.pageContext.creditOrderId) {
     await loadFileList();
   }
 });
 
 async function loadCreditReadonlyStatus() {
   try {
-    const res = await businessApi.getCreditDetailByOrderId(creditOrderId.value);
+    const res = await businessApi.getCreditDetailByOrderId(carloanStore.pageContext.creditOrderId);
     const businessNode = res?.data?.businessNode || "";
     if (businessNode && businessNode !== "SUPPLEMENT_MATERIALS") {
       readonly.value = true;
@@ -433,7 +431,7 @@ async function loadCreditReadonlyStatus() {
 }
 
 async function loadFileList() {
-  if (!pageUuid.value || !creditOrderId.value) return;
+  if (!carloanStore.pageContext.uuid || !carloanStore.pageContext.creditOrderId) return;
   loading.value = true;
 
   fileList.value.forEach((item) => {
@@ -443,8 +441,8 @@ async function loadFileList() {
 
   try {
     const res = await businessApi.getFileList({
-      uuid: pageUuid.value,
-      creditOrderId: creditOrderId.value,
+      uuid: carloanStore.pageContext.uuid,
+      creditOrderId: carloanStore.pageContext.creditOrderId,
     });
     if (res?.code === 200 && Array.isArray(res.data)) {
       res.data.forEach((file) => {
@@ -626,7 +624,7 @@ async function handleSubmit() {
 
   // ========== 提交前置校验 ==========
   // 1. 文件信息提交前需确保授信申请编号存在
-  if (!creditOrderId.value) {
+  if (!carloanStore.pageContext.creditOrderId) {
     $u.toast("缺少授信申请编号", "error");
     return;
   }
@@ -647,7 +645,7 @@ async function handleSubmit() {
     $u.toast("提交成功", "success");
     setTimeout(() => {
       uni.redirectTo({
-        url: buildRoute(APP_ROUTES.carloan.supplement.supplementDetail, buildSupplementRouteQuery({ creditOrderId: creditOrderId.value })),
+        url: buildRoute(APP_ROUTES.carloan.supplement.supplementDetail, buildSupplementRouteQuery({ creditOrderId: carloanStore.pageContext.creditOrderId })),
       });
     }, 1500);
   } catch (e) {

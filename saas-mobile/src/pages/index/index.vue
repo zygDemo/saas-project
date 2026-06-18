@@ -1,71 +1,80 @@
 <template>
   <layout :active-tab="0" nav-title="首页" show-tabbar tabbar-scope="portal">
     <view class="index-page">
-      <view class="header">
-        <view class="welcome">
-          <text class="welcome-text">你好，{{ userName }}</text>
-          <text class="date">{{ currentDate }}</text>
-        </view>
-        <view class="avatar" @click="goProfile">
-          <image :src="avatar || defaultAvatar" mode="aspectFill"></image>
-        </view>
-      </view>
-
-      <view class="business-grid">
-        <view class="grid-item" @click="goCarLoan">
-          <view class="item-icon carloan-bg">
-            <u-icon name="car" color="#fff" size="48"></u-icon>
+      <!-- Hero 渐变头部 -->
+      <view class="hero">
+        <view class="hero-bg" />
+        <view class="hero-content">
+          <view class="hero-left">
+            <text class="hero-greeting">{{ greeting }}，</text>
+            <text class="hero-name">{{ userName }}</text>
+            <text class="hero-date">{{ currentDate }}</text>
           </view>
-          <text class="item-title">车贷</text>
-          <text class="item-desc">业务进件 · 进度查询</text>
-        </view>
-
-        <view class="grid-item" @click="goFoodOrder">
-          <view class="item-icon food-bg">
-            <u-icon name="food" color="#fff" size="48"></u-icon>
-          </view>
-          <text class="item-title">点餐</text>
-          <text class="item-desc">门店点餐 · 外卖配送</text>
-        </view>
-
-        <view class="grid-item" @click="goCreditQuery">
-          <view class="item-icon credit-bg">
-            <u-icon name="file-text" color="#fff" size="48"></u-icon>
-          </view>
-          <text class="item-title">征信查询</text>
-          <text class="item-desc">在线查询 · 信用报告</text>
-        </view>
-
-        <view class="grid-item" @click="goMore">
-          <view class="item-icon more-bg">
-            <u-icon name="more" color="#fff" size="48"></u-icon>
-          </view>
-          <text class="item-title">更多服务</text>
-          <text class="item-desc">即将上线 · 敬请期待</text>
-        </view>
-      </view>
-
-      <view v-if="hasLogin" class="quick-actions">
-        <view class="section-title">快捷功能</view>
-        <view class="actions-list">
-          <view class="action-item" @click="goMyCarLoanApply">
-            <u-icon name="form" color="#e93323" size="28"></u-icon>
-            <text>我的进件</text>
-          </view>
-          <view class="action-item" @click="goMyFoodOrders">
-            <u-icon name="orders" color="#2979ff" size="28"></u-icon>
-            <text>我的订单</text>
-          </view>
-          <view class="action-item" @click="goNotice">
-            <u-icon name="bell" color="#f9ae2d" size="28"></u-icon>
-            <text>公告通知</text>
-          </view>
-          <view class="action-item" @click="goCustomer">
-            <u-icon name="customer-service" color="#52c41a" size="28"></u-icon>
-            <text>联系客服</text>
+          <view class="hero-avatar" @click="goProfile">
+            <image :src="avatar || defaultAvatar" mode="aspectFill" />
           </view>
         </view>
       </view>
+
+      <!-- 公告横幅 -->
+      <view class="notice-bar" @click="goNotice">
+        <u-icon name="bell-fill" color="var(--u-type-warning)" size="28" />
+        <text class="notice-text">欢迎使用予艺助手，聚合多种服务一站式体验</text>
+        <u-icon name="arrow-right" color="#c0c4cc" size="24" />
+      </view>
+
+      <!-- 业务服务 2×2 网格 -->
+      <view class="service-section">
+        <view class="section-label">
+          <text class="section-label-bar" />
+          <text class="section-label-text">业务服务</text>
+        </view>
+        <view class="service-grid">
+          <view
+            v-for="item in serviceCards"
+            :key="item.key"
+            class="service-card"
+            @click="item.handler"
+          >
+            <view class="service-card-icon" :class="item.iconClass">
+              <u-icon :name="item.icon" color="#fff" size="44" />
+            </view>
+            <text class="service-card-title">{{ item.title }}</text>
+            <text class="service-card-desc">{{ item.desc }}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 快捷功能 -->
+      <view class="shortcut-section">
+        <view class="section-label">
+          <text class="section-label-bar" />
+          <text class="section-label-text">快捷功能</text>
+        </view>
+        <view class="shortcut-grid">
+          <view
+            v-for="item in shortcutItems"
+            :key="item.key"
+            class="shortcut-item"
+            @click="item.handler"
+          >
+            <view class="shortcut-icon-wrap" :style="{ background: item.bgColor }">
+              <u-icon :name="item.icon" color="#fff" size="30" />
+            </view>
+            <text class="shortcut-label">{{ item.label }}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 未登录提示 -->
+      <view v-if="!hasLogin" class="login-hint" @click="goLogin">
+        <u-icon name="account-fill" color="var(--u-type-primary)" size="32" />
+        <text class="login-hint-text">登录后查看进件、订单、征信等</text>
+        <u-icon name="arrow-right" color="#c0c4cc" size="24" />
+      </view>
+
+      <!-- 底部安全区 -->
+      <view class="safe-bottom" />
     </view>
   </layout>
 </template>
@@ -86,6 +95,16 @@ const defaultAvatar = "https://img.uviewui.com/avatar/default.png";
 
 const hasLogin = computed(() => Boolean(localStore.token));
 
+const greeting = computed(() => {
+  const h = new Date().getHours();
+  if (h < 6) return "凌晨好";
+  if (h < 9) return "早上好";
+  if (h < 12) return "上午好";
+  if (h < 14) return "中午好";
+  if (h < 18) return "下午好";
+  return "晚上好";
+});
+
 const formatCurrentDate = (date: Date) => {
   const weekMap = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
   return `${date.getMonth() + 1}月${date.getDate()}日 ${weekMap[date.getDay()]}`;
@@ -93,14 +112,12 @@ const formatCurrentDate = (date: Date) => {
 
 const syncUserInfo = () => {
   const info = localStore.userInfo;
-
   if (info?.nickName || info?.realName || info?.userName || info?.username) {
     userName.value = String(info.nickName || info.realName || info.userName || info.username);
     avatar.value = info.avatar || "";
     return;
   }
-
-  userName.value = "欢迎使用云贵助手";
+  userName.value = "用户";
   avatar.value = "";
 };
 
@@ -115,82 +132,162 @@ onShow(() => {
   syncUserInfo();
 });
 
-const goCarLoan = () => {
-  uni.navigateTo({ url: APP_ROUTES.carloan.home });
-};
+const serviceCards = [
+  {
+    key: "carloan",
+    title: "车抵贷",
+    desc: "业务进件 · 进度查询",
+    icon: "car",
+    iconClass: "icon-carloan",
+    handler: () => {
+      localStore.setCurrentSystem(CurrentSystem.CARLOAN);
+      uni.reLaunch({ url: APP_ROUTES.carloan.home });
+    },
+  },
+  {
+    key: "food",
+    title: "点餐",
+    desc: "门店点餐 · 外卖配送",
+    icon: "bag",
+    iconClass: "icon-food",
+    handler: () => {
+      localStore.setCurrentSystem(CurrentSystem.FOOD);
+      uni.navigateTo({ url: APP_ROUTES.food.home });
+    },
+  },
+  {
+    key: "credit",
+    title: "征信查询",
+    desc: "在线查询 · 信用报告",
+    icon: "file-text",
+    iconClass: "icon-credit",
+    handler: () => {
+      localStore.setCurrentSystem(CurrentSystem.CREDIT);
+      uni.navigateTo({ url: APP_ROUTES.credit.home });
+    },
+  },
+  {
+    key: "more",
+    title: "更多服务",
+    desc: "即将上线 · 敬请期待",
+    icon: "grid",
+    iconClass: "icon-more",
+    handler: () => uni.showToast({ title: "更多功能敬请期待", icon: "none" }),
+  },
+];
 
-const goFoodOrder = () => {
-  uni.switchTab({ url: APP_ROUTES.food.home });
-};
+const shortcutItems = [
+  {
+    key: "apply",
+    label: "我的进件",
+    icon: "file-text",
+    bgColor: "rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.85)",
+    handler: () => {
+      if (!hasLogin.value) return goLogin();
+      localStore.setCurrentSystem(CurrentSystem.CARLOAN);
+      uni.reLaunch({ url: APP_ROUTES.carloan.home });
+    },
+  },
+  {
+    key: "order",
+    label: "我的订单",
+    icon: "order",
+    bgColor: "rgba(var(--u-type-success-rgb, 25, 190, 107), 0.85)",
+    handler: () => uni.switchTab({ url: APP_ROUTES.food.orders }),
+  },
+  {
+    key: "notice",
+    label: "公告通知",
+    icon: "bell",
+    bgColor: "rgba(var(--u-type-warning-rgb, 255, 153, 0), 0.85)",
+    handler: () => uni.showToast({ title: "公告功能建设中", icon: "none" }),
+  },
+  {
+    key: "service",
+    label: "联系客服",
+    icon: "customer-service",
+    bgColor: "rgba(var(--u-type-info-rgb, 144, 147, 153), 0.85)",
+    handler: () => uni.makePhoneCall({ phoneNumber: "13818821494" }),
+  },
+];
 
-const goCreditQuery = () => {
-  uni.navigateTo({ url: APP_ROUTES.credit.home });
-};
-
-const goMore = () => {
-  uni.showToast({ title: "更多功能敬请期待", icon: "none" });
-};
-
-const goProfile = () => {
-  uni.switchTab({ url: APP_ROUTES.my.home });
-};
-
-const goMyCarLoanApply = () => {
-  uni.navigateTo({ url: "/pages/carloan/precheck/leadList" });
-};
-
-const goMyFoodOrders = () => {
-  uni.switchTab({ url: APP_ROUTES.food.orders });
-};
-
-const goNotice = () => {
-  uni.showToast({ title: "公告功能建设中", icon: "none" });
-};
-
-const goCustomer = () => {
-  uni.makePhoneCall({ phoneNumber: "13818821494" });
-};
+const goProfile = () => uni.switchTab({ url: APP_ROUTES.my.home });
+const goLogin = () => uni.navigateTo({ url: APP_ROUTES.auth.login });
+const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "none" });
 </script>
 
 <style scoped lang="scss">
 .index-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  padding: 20rpx;
+  background: linear-gradient(
+    180deg,
+    rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.06) 0%,
+    #f5f6fa 30%
+  );
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
-.header {
+/* ===== Hero ===== */
+.hero {
+  position: relative;
+  padding: 40rpx 32rpx 48rpx;
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 320rpx;
+  background: linear-gradient(
+    135deg,
+    var(--u-type-primary-dark) 0%,
+    var(--u-type-primary) 60%,
+    var(--u-type-primary-disabled) 100%
+  );
+  border-radius: 0 0 40rpx 40rpx;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 30rpx 10rpx 40rpx;
-  margin-bottom: 20rpx;
 }
 
-.welcome {
+.hero-left {
   display: flex;
   flex-direction: column;
 }
 
-.welcome-text {
-  font-size: 44rpx;
-  font-weight: bold;
-  color: #303133;
-  margin-bottom: 10rpx;
-}
-
-.date {
+.hero-greeting {
   font-size: 28rpx;
-  color: #909399;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 6rpx;
 }
 
-.avatar {
-  width: 88rpx;
-  height: 88rpx;
+.hero-name {
+  font-size: 42rpx;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8rpx;
+}
+
+.hero-date {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.hero-avatar {
+  width: 100rpx;
+  height: 100rpx;
   border-radius: 50%;
   overflow: hidden;
-  border: 4rpx solid #fff;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  border: 4rpx solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
 
   image {
     width: 100%;
@@ -198,96 +295,184 @@ const goCustomer = () => {
   }
 }
 
-.business-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24rpx;
-  margin-bottom: 40rpx;
+/* ===== Notice bar ===== */
+.notice-bar {
+  position: relative;
+  z-index: 2;
+  margin: -16rpx 28rpx 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: #fff;
+  border-radius: 14rpx;
+  padding: 18rpx 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
 }
 
-.grid-item {
+.notice-text {
+  flex: 1;
+  font-size: 24rpx;
+  color: #606266;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===== Section label ===== */
+.section-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.section-label-bar {
+  width: 6rpx;
+  height: 26rpx;
+  border-radius: 3rpx;
+  background: linear-gradient(180deg, var(--u-type-primary), var(--u-type-primary-disabled));
+  margin-right: 12rpx;
+}
+
+.section-label-text {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #303133;
+}
+
+/* ===== Service 2×2 grid ===== */
+.service-section {
+  padding: 0 28rpx;
+}
+
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+}
+
+.service-card {
   background: #fff;
-  border-radius: 16rpx;
-  padding: 40rpx 20rpx;
+  border-radius: 20rpx;
+  padding: 32rpx 24rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
-  transition: all 0.3s;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s;
 
   &:active {
-    transform: scale(0.97);
+    transform: scale(0.96);
   }
 }
 
-.item-icon {
-  width: 112rpx;
-  height: 112rpx;
-  border-radius: 50%;
+.service-card-icon {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 22rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24rpx;
+  margin-bottom: 18rpx;
 }
 
-.carloan-bg {
+.icon-carloan {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 8rpx 20rpx rgba(102, 126, 234, 0.3);
 }
 
-.food-bg {
+.icon-food {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  box-shadow: 0 8rpx 20rpx rgba(245, 87, 108, 0.3);
 }
 
-.credit-bg {
+.icon-credit {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  box-shadow: 0 8rpx 20rpx rgba(79, 172, 254, 0.3);
 }
 
-.more-bg {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+.icon-more {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  box-shadow: 0 8rpx 20rpx rgba(168, 237, 234, 0.3);
 }
 
-.item-title {
-  font-size: 34rpx;
+.service-card-title {
+  font-size: 30rpx;
   font-weight: 600;
   color: #303133;
-  margin-bottom: 8rpx;
+  margin-bottom: 6rpx;
 }
 
-.item-desc {
-  font-size: 24rpx;
+.service-card-desc {
+  font-size: 22rpx;
   color: #909399;
   text-align: center;
 }
 
-.quick-actions {
+/* ===== Shortcut section ===== */
+.shortcut-section {
+  margin: 28rpx 28rpx 0;
   background: #fff;
-  border-radius: 16rpx;
-  padding: 30rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
 }
 
-.section-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #303133;
-  margin-bottom: 24rpx;
-}
-
-.actions-list {
+.shortcut-grid {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
 }
 
-.action-item {
+.shortcut-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 25%;
+  transition: transform 0.2s;
 
-  text {
-    margin-top: 12rpx;
-    font-size: 26rpx;
-    color: #606266;
+  &:active {
+    transform: scale(0.92);
   }
+}
+
+.shortcut-icon-wrap {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12rpx;
+}
+
+.shortcut-label {
+  font-size: 22rpx;
+  color: #606266;
+}
+
+/* ===== Login hint ===== */
+.login-hint {
+  margin: 24rpx 28rpx 0;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.04);
+  border: 2rpx solid rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.1);
+  border-radius: 14rpx;
+  padding: 20rpx 24rpx;
+  transition: opacity 0.2s;
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+.login-hint-text {
+  flex: 1;
+  font-size: 24rpx;
+  color: var(--u-type-primary);
+}
+
+.safe-bottom {
+  height: 40rpx;
 }
 </style>

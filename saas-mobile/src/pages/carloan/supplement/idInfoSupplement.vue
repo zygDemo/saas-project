@@ -151,8 +151,10 @@ import AppForm from "@/components/app-form/app-form.vue";
 import { isMobilePhone, isSimpleIdCard, validateRequiredFields } from "@/common/validators";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildSupplementRouteQuery } from "@/common/carloan-route-query";
+import { useCarloanStore } from "@/stores/carloan";
 
-const localStore = useLocalStore();
+const localStore = useLocalStore()
+const carloanStore = useCarloanStore();
 const businessApi = useCarloanApi();
 
 /** 添加联系人按钮自定义样式 */
@@ -163,8 +165,6 @@ const addBtnStyle = {
 };
 
 const submitLoading = ref(false);
-const pageUuid = ref("");
-const creditOrderId = ref("");
 const readonly = ref(false);
 const loading = ref(false);
 
@@ -225,16 +225,16 @@ const relationshipMap = {
 
 /** 加载客户信息和联系人列表 */
 async function loadData() {
-  if (!pageUuid.value) return;
+  if (!carloanStore.pageContext.uuid) return;
 
   loading.value = true;
   try {
-    if (creditOrderId.value) {
+    if (carloanStore.pageContext.creditOrderId) {
       await loadCreditReadonlyStatus();
     }
 
     // 加载客户信息
-    const res = await businessApi.getUserBasic(pageUuid.value);
+    const res = await businessApi.getUserBasic(carloanStore.pageContext.uuid);
     if (res && res.code === 200 && res.data) {
       const data = res.data;
       Object.keys(form).forEach((key) => {
@@ -256,7 +256,7 @@ async function loadData() {
 /** 加载联系人列表 */
 async function loadCreditReadonlyStatus() {
   try {
-    const res = await businessApi.getCreditDetailByOrderId(creditOrderId.value);
+    const res = await businessApi.getCreditDetailByOrderId(carloanStore.pageContext.creditOrderId);
     const businessNode = res?.data?.businessNode || "";
     if (businessNode && businessNode !== "SUPPLEMENT_MATERIALS") {
       readonly.value = true;
@@ -267,9 +267,9 @@ async function loadCreditReadonlyStatus() {
 }
 
 async function loadContacts() {
-  if (!pageUuid.value) return;
+  if (!carloanStore.pageContext.uuid) return;
   try {
-    const res = await businessApi.getContacts(pageUuid.value);
+    const res = await businessApi.getContacts(carloanStore.pageContext.uuid);
     if (res && res.code === 200 && res.data) {
       contactList.value = Array.isArray(res.data) ? res.data : [];
     }
@@ -375,7 +375,7 @@ async function handleSubmitContact() {
   contactSaveLoading.value = true;
   try {
     const data = {
-      userUuid: pageUuid.value,
+      userUuid: carloanStore.pageContext.uuid,
       contactType: Number(contactForm.contactType),
       contactName: contactForm.contactName,
       contactTelephone: contactForm.contactTelephone,
@@ -409,8 +409,9 @@ async function handleSubmitContact() {
 // ========== 页面初始化 ==========
 
 onLoad((options) => {
-  pageUuid.value = (options && options.uuid) || localStore.userInfo?.uuid || "";
-  creditOrderId.value = (options && options.creditOrderId) || "";
+    carloanStore.syncFromRouteQuery(options || {});
+  carloanStore.pageContext.uuid = (options && options.uuid) || localStore.userInfo?.uuid || "";
+  carloanStore.pageContext.creditOrderId = (options && options.creditOrderId) || "";
   readonly.value = options?.readonly === "1" || options?.readonly === "true";
   loadData();
 });
@@ -610,7 +611,7 @@ const contactFormItems = [
 async function saveCustomerInfo() {
   if (readonly.value) return false;
 
-  if (!pageUuid.value) {
+  if (!carloanStore.pageContext.uuid) {
     $u.toast("缺少客户标识");
     return false;
   }
@@ -634,9 +635,9 @@ async function saveCustomerInfo() {
   submitLoading.value = true;
   try {
     // 1. 保存客户信息
-    const customerData = { uuid: pageUuid.value };
-    if (creditOrderId.value) {
-      customerData.creditOrderId = creditOrderId.value;
+    const customerData = { uuid: carloanStore.pageContext.uuid };
+    if (carloanStore.pageContext.creditOrderId) {
+      customerData.creditOrderId = carloanStore.pageContext.creditOrderId;
     }
     const numberKeys = ["personIncome", "childrenNum", "degree"];
 
@@ -677,8 +678,8 @@ async function handleNext() {
   if (!success) return;
 
   const supplementRouteQuery = buildSupplementRouteQuery({
-    uuid: pageUuid.value,
-    creditOrderId: creditOrderId.value,
+    uuid: carloanStore.pageContext.uuid,
+    creditOrderId: carloanStore.pageContext.creditOrderId,
     readonly: readonly.value ? 1 : undefined,
   });
   uni.navigateTo({

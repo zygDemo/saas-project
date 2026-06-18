@@ -1,5 +1,5 @@
 <template>
-  <layout :active-tab="2" navTitle="我的" show-tabbar tabbar-scope="portal">
+  <layout :active-tab="activeTabIndex" navTitle="我的" show-tabbar :tabbar-scope="currentTabbarScope">
     <scroll-view class="my-scroll" scroll-y>
       <view class="my-page">
         <view class="profile-panel" @click="handleProfileClick">
@@ -114,6 +114,8 @@ import type { UserInfo } from "@/stores/local";
 import { useBusinessApi } from "@/api/business";
 import layout from "@/pages/layout/layout.vue";
 import { useLocalStore, useSessionStore } from "@/stores";
+import { APP_ROUTES, TABBAR_SCOPES } from "@/common/navigation";
+import { CurrentSystem } from "@/stores/local";
 import { onShow } from "@dcloudio/uni-app";
 import { storeToRefs } from "pinia";
 import { computed, ref } from "vue";
@@ -138,14 +140,22 @@ const localStore = useLocalStore();
 const sessionStore = useSessionStore();
 const { userInfo } = storeToRefs(localStore);
 
-const menuList: MenuItem[] = [
-  {
-    icon: "setting",
-    title: "个人设置",
-    desc: "主题、语言和基础偏好",
-    path: "/pages/my/settings",
-    iconClass: "menu-item__icon--setting",
-  },
+const menuList = computed<MenuItem[]>(() => {
+  const items: MenuItem[] = [
+    {
+      icon: "grid",
+      title: "切换项目",
+      desc: currentProjectLabel.value,
+      path: "__switch_project__",
+      iconClass: "menu-item__icon--setting",
+    },
+    {
+      icon: "setting",
+      title: "个人设置",
+      desc: "主题、语言和基础偏好",
+      path: "/pages/my/settings",
+      iconClass: "menu-item__icon--setting",
+    },
   {
     icon: "question-circle",
     title: "帮助中心",
@@ -160,14 +170,16 @@ const menuList: MenuItem[] = [
     path: "/pages/my/privacy",
     iconClass: "menu-item__icon--privacy",
   },
-  {
-    icon: "file-text",
-    title: "用户协议",
-    desc: "查看平台服务条款",
-    path: "/pages/my/agreement",
-    iconClass: "menu-item__icon--agreement",
-  },
-];
+    {
+      icon: "file-text",
+      title: "用户协议",
+      desc: "查看平台服务条款",
+      path: "/pages/my/agreement",
+      iconClass: "menu-item__icon--agreement",
+    },
+  ];
+  return items;
+});
 
 const stats = ref<StatState>({
   totalLeads: 0,
@@ -179,6 +191,24 @@ const stats = ref<StatState>({
 const currentUser = computed<UserInfo | null>(() => userInfo.value);
 
 const isLoggedIn = computed(() => Boolean(localStore.token && currentUser.value));
+
+const currentTabbarScope = computed(() => {
+  if (localStore.currentSystem === CurrentSystem.CARLOAN) return TABBAR_SCOPES.carloan;
+  if (localStore.currentSystem === CurrentSystem.FOOD) return TABBAR_SCOPES.food;
+  return TABBAR_SCOPES.portal;
+});
+
+const activeTabIndex = computed(() => {
+  if (currentTabbarScope.value === TABBAR_SCOPES.portal) return 1;
+  return 2;
+});
+
+const currentProjectLabel = computed(() => {
+  if (localStore.currentSystem === CurrentSystem.CARLOAN) return '当前：车贷业务，点击返回项目选择';
+  if (localStore.currentSystem === CurrentSystem.FOOD) return '当前：点餐业务，点击返回项目选择';
+  if (localStore.currentSystem === CurrentSystem.CREDIT) return '当前：征信查询，点击返回项目选择';
+  return '当前：项目选择首页';
+});
 
 const displayName = computed(() => {
   const info = currentUser.value;
@@ -324,6 +354,11 @@ function handleProfileClick() {
 }
 
 function navigateTo(path: string) {
+  if (path === "__switch_project__") {
+    localStore.setCurrentSystem(CurrentSystem.PORTAL);
+    uni.reLaunch({ url: APP_ROUTES.portal.home });
+    return;
+  }
   uni.navigateTo({
     url: path,
   });

@@ -71,3 +71,12 @@ export function buildSupplementRouteQuery(query: CarloanSupplementRouteQueryInpu
 export function buildDetailRouteQuery(query: CarloanDetailRouteQueryInput): RouteQueryRecord {
   return buildRouteQuery(query);
 }
+
+export interface NavTitleRouteQueryInput {
+  navTitle?: RouteQueryValue;
+}
+
+/** 通用页面标题 hash query，用于 H5 hash 回跳等场景。 */
+export function buildNavTitleQuery(title: string): RouteQueryRecord {
+  return buildRouteQuery({ navTitle: title });
+}

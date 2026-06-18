@@ -52,6 +52,7 @@ const props = defineProps<{
 const { currentTheme } = useTheme();
 const currentTab = ref(props.activeTab ?? 0);
 const tabConfig = ref<LayoutTabbarItem[]>([]);
+const switchingTab = ref(false);
 
 const currentScope = computed<TabbarScope>(() => props.tabbarScope || TABBAR_SCOPES.portal);
 
@@ -85,12 +86,28 @@ const syncTabbar = () => {
 };
 
 function beforeSwitch(index: number): boolean {
-  return index !== currentTab.value;
+  return !switchingTab.value && index >= 0 && index < tabConfig.value.length;
 }
 
 function onTabChange(index: number) {
+  const targetItem = tabConfig.value[index];
+  if (!targetItem || switchingTab.value) {
+    return;
+  }
+
+  const previousTab = currentTab.value;
   currentTab.value = index;
-  navigateFromTabbar(tabConfig.value[index]);
+  switchingTab.value = true;
+
+  navigateFromTabbar(targetItem)
+    .catch(() => {
+      currentTab.value = previousTab;
+    })
+    .finally(() => {
+      setTimeout(() => {
+        switchingTab.value = false;
+      }, 180);
+    });
 }
 
 function updateBadge(index: number, count: number) {

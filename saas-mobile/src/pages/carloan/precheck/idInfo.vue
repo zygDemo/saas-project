@@ -102,11 +102,13 @@ import { toFilePreviewUrl } from "@/common/file-url";
 import { compressImageForOcr } from "@/common/image-compress";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildEntryRouteQuery } from "@/common/carloan-route-query";
+import { useCarloanStore } from "@/stores/carloan";
 
 const businessApi = useCarloanApi();
 
 const sessionStore = useSessionStore();
-const localStore = useLocalStore();
+const localStore = useLocalStore()
+const carloanStore = useCarloanStore();
 const { userInfo } = storeToRefs(localStore);
 
 const submitLoading = ref(false);
@@ -140,17 +142,11 @@ const idInfo = reactive({
   personValidDateStart: "",
   personValidDateEnd: "",
 });
-
-const editUuid = ref("");
 const isEditMode = ref(false);
 const fromEntry = ref(false);
-const entryCreditOrderId = ref("");
-const entryName = ref("");
-const entryPhone = ref("");
-
 const fetchUserBasic = async () => {
   try {
-    const res = await businessApi.getUserBasic(editUuid.value);
+    const res = await businessApi.getUserBasic(carloanStore.pageContext.uuid);
     if (res?.code === 200 && res.data) {
       const data = res.data;
       Object.assign(idInfo, {
@@ -173,17 +169,18 @@ const fetchUserBasic = async () => {
 };
 
 onLoad((query) => {
-  editUuid.value = query.uuid || "";
+    carloanStore.syncFromRouteQuery(query);
+  carloanStore.pageContext.uuid = query.uuid || "";
   isPawnMode.value = query.businessType === "pawn";
   isEditMode.value = !!query.uuid;
   fromEntry.value = query.fromEntry === "1";
-  entryCreditOrderId.value = query.creditOrderId || "";
-  entryName.value = query.name || "";
-  entryPhone.value = query.phone || "";
+  carloanStore.pageContext.creditOrderId = query.creditOrderId || "";
+  carloanStore.pageContext.customerName = query.name || "";
+  carloanStore.pageContext.customerPhone = query.phone || "";
 });
 
 onMounted(() => {
-  if (editUuid.value) {
+  if (carloanStore.pageContext.uuid) {
     fetchUserBasic();
   }
 });
@@ -473,7 +470,7 @@ const doSubmit = async () => {
 
   const submitData = {
     ...idInfo,
-    uuid: editUuid.value || undefined,
+    uuid: carloanStore.pageContext.uuid || undefined,
     age: calcAge(idInfo.personIdcard),
     idcardFront: frontImageObjectKey.value || undefined,
     idcardBack: backImageObjectKey.value || undefined,
@@ -529,13 +526,13 @@ const handleNext = async () => {
     const success = await doSubmit();
     if (success) {
       const orderInfo = sessionStore.orderInfo || {};
-      const uuid = editUuid.value || orderInfo.uuid || "";
+      const uuid = carloanStore.pageContext.uuid || orderInfo.uuid || "";
       const entryRouteQuery = buildEntryRouteQuery({
         uuid: uuid ? String(uuid) : "",
         fromEntry: fromEntry.value ? 1 : undefined,
-        creditOrderId: entryCreditOrderId.value || "",
-        name: entryName.value || "",
-        phone: entryPhone.value || "",
+        creditOrderId: carloanStore.pageContext.creditOrderId || "",
+        name: carloanStore.pageContext.customerName || "",
+        phone: carloanStore.pageContext.customerPhone || "",
         businessType: isPawnMode.value ? "pawn" : undefined,
       });
       const nextUrl = buildRoute(

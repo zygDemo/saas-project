@@ -290,8 +290,8 @@ import { useConfirm } from "@/composables/useConfirm";
 import { useSessionStore } from "@/stores";
 import { closeBrowser } from "@/composables/useCloseBrowser";
 import { toFilePreviewUrl } from "@/common/file-url";
-import { APP_ROUTES, buildHashRoute, buildRoute, buildRouteQuery } from "@/common/navigation";
-import { buildSignRouteQuery } from "@/common/carloan-route-query";
+import { APP_ROUTES, buildHashRoute, buildRoute } from "@/common/navigation";
+import { buildNavTitleQuery, buildSignRouteQuery } from "@/common/carloan-route-query";
 
 // ========== 常量 ==========
 
@@ -815,7 +815,7 @@ async function handleContractSign() {
     const redirectUrl = [
       `${getBaseUrl()}${buildHashRoute(
         APP_ROUTES.carloan.signing.faceSignResult,
-        buildRouteQuery({ navTitle: "合同签署结果" }),
+        buildNavTitleQuery("合同签署结果"),
       )}`,
       `uuid=${encodeURIComponent(callbackUuid.value)}`,
       `creditOrderId=${encodeURIComponent(customerInfo.creditOrderId)}`,
@@ -883,7 +883,7 @@ async function handleSignContract() {
     const redirectUrl = [
       `${getBaseUrl()}${buildHashRoute(
         APP_ROUTES.carloan.signing.faceSignResult,
-        buildRouteQuery({ navTitle: "授权书签署结果" }),
+        buildNavTitleQuery("授权书签署结果"),
       )}`,
       `uuid=${encodeURIComponent(callbackUuid.value)}`,
       `creditOrderId=${encodeURIComponent(customerInfo.creditOrderId)}`,

@@ -35,13 +35,13 @@ import { useCarloanApi } from "@/api/carloan";
 import { formatMoney } from "@/common/pawnMock";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildSupplementRouteQuery } from "@/common/carloan-route-query";
+import { useCarloanStore } from "@/stores/carloan";
 
-const sessionStore = useSessionStore();
+const sessionStore = useSessionStore()
+const carloanStore = useCarloanStore();
 const businessApi = useCarloanApi();
 
 const submitLoading = ref(false);
-const pageUuid = ref("");
-
 const loanInfo = reactive({
   amount: "",
   periods: "",
@@ -182,13 +182,13 @@ function validateLoanInfo() {
 }
 
 onLoad((options) => {
-  pageUuid.value = options?.uuid || "";
+  carloanStore.syncFromRouteQuery(options || {});
 });
 
 async function handleSubmit() {
   if (!validateLoanInfo()) return;
 
-  const uuid = pageUuid.value;
+  const uuid = carloanStore.pageContext.uuid;
   if (!uuid) {
     $u.toast("缺少客户标识，请重新进入页面", "error");
     return;

@@ -92,8 +92,10 @@ import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildSupplementRouteQuery } from "@/common/carloan-route-query";
 // @ts-expect-error - AppForm 缺少类型声明
 import AppForm from "@/components/app-form/app-form.vue";
+import { useCarloanStore } from "@/stores/carloan";
 
-const localStore = useLocalStore();
+const localStore = useLocalStore()
+const carloanStore = useCarloanStore();
 const businessApi = useCarloanApi();
 
 // ========== 状态定义 ==========
@@ -101,7 +103,6 @@ const submitLoading = ref(false);
 const pageLoading = ref(false);
 const priceLoading = ref(false);
 const modelLoading = ref(false);
-const pageUuid = ref("");
 const creditOrderId = ref("");
 const readonly = ref(false);
 
@@ -193,11 +194,11 @@ const FIELD_MAP: Record<
 
 /** 加载车辆信息 */
 async function loadData() {
-  if (!pageUuid.value) return;
+  if (!carloanStore.pageContext.uuid) return;
 
   pageLoading.value = true;
   try {
-    const res = await businessApi.getVehicleInfo(pageUuid.value);
+    const res = await businessApi.getVehicleInfo(carloanStore.pageContext.uuid);
     if (res?.code === 200 && res.data) {
       const data = res.data as Record<string, unknown>;
 
@@ -219,7 +220,10 @@ async function loadData() {
 // ========== 页面初始化 ==========
 
 onLoad((options) => {
-  pageUuid.value = options?.uuid || localStore.userInfo?.uuid || "";
+    carloanStore.syncFromRouteQuery(options || {});
+    if (!carloanStore.pageContext.uuid && localStore.userInfo?.uuid) {
+      carloanStore.pageContext.uuid = localStore.userInfo.uuid;
+    }
   creditOrderId.value = options?.creditOrderId || "";
   readonly.value = options?.readonly === "1" || options?.readonly === "true";
   loadData();
@@ -456,7 +460,7 @@ async function queryVehicleModel() {
 async function saveVehicleInfo() {
   if (readonly.value) return false;
 
-  if (!pageUuid.value) {
+  if (!carloanStore.pageContext.uuid) {
     $u.toast("缺少客户标识");
     return false;
   }
@@ -487,7 +491,7 @@ async function saveVehicleInfo() {
   submitLoading.value = true;
   try {
     const data: Record<string, unknown> = {
-      uuid: pageUuid.value,
+      uuid: carloanStore.pageContext.uuid,
       creditOrderId: creditOrderId.value || undefined,
       vehicleBrand: form.vehicleBrand || undefined,
       vehicleModel: form.vehicleModel || undefined,
@@ -530,7 +534,7 @@ async function handleNext() {
   if (!success) return;
 
   const supplementRouteQuery = buildSupplementRouteQuery({
-    uuid: pageUuid.value,
+    uuid: carloanStore.pageContext.uuid,
     creditOrderId: creditOrderId.value,
     readonly: readonly.value ? 1 : undefined,
   });

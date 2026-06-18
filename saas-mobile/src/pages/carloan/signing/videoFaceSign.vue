@@ -268,7 +268,8 @@ import { useCarloanApi } from "@/api/carloan";
 import { useConfirm } from "@/composables/useConfirm";
 import { useSessionStore } from "@/stores";
 import { closeBrowser } from "@/composables/useCloseBrowser";
-import { APP_ROUTES, buildHashRoute, buildRouteQuery } from "@/common/navigation";
+import { APP_ROUTES, buildHashRoute } from "@/common/navigation";
+import { buildNavTitleQuery } from "@/common/carloan-route-query";
 
 const { confirmRef, confirm } = useConfirm();
 const sessionStore = useSessionStore();
@@ -522,7 +523,7 @@ async function handleStartFaceSign() {
   const redirectUrl = [
     `${getBaseUrl()}${buildHashRoute(
       APP_ROUTES.carloan.signing.faceSignResult,
-      buildRouteQuery({ navTitle: "人脸识别" }),
+      buildNavTitleQuery("人脸识别"),
     )}`,
     `uuid=${encodeURIComponent(customerInfo.uuid)}`,
     `creditOrderId=${encodeURIComponent(customerInfo.creditOrderId)}`,
@@ -572,7 +573,7 @@ async function handleStartContract() {
   const redirectUrl = [
     `${getBaseUrl()}${buildHashRoute(
       APP_ROUTES.carloan.signing.faceSignResult,
-      buildRouteQuery({ navTitle: "合同签署结果" }),
+      buildNavTitleQuery("合同签署结果"),
     )}`,
     `uuid=${encodeURIComponent(customerInfo.uuid)}`,
     `creditOrderId=${encodeURIComponent(customerInfo.creditOrderId)}`,
@@ -652,7 +653,7 @@ async function handleSignContract() {
     const redirectUrl = [
       `${getBaseUrl()}${buildHashRoute(
         APP_ROUTES.carloan.signing.faceSignResult,
-        buildRouteQuery({ navTitle: "授权书签署结果" }),
+        buildNavTitleQuery("授权书签署结果"),
       )}`,
       `uuid=${encodeURIComponent(customerInfo.uuid)}`,
       `creditOrderId=${encodeURIComponent(customerInfo.creditOrderId)}`,

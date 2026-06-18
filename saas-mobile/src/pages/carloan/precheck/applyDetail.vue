@@ -346,30 +346,27 @@ import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildEntryRouteQuery } from "@/common/carloan-route-query";
+import { useCarloanStore } from "@/stores/carloan";
 
+const carloanStore = useCarloanStore();
 const businessApi = useCarloanApi();
 
 const detail = ref(null);
 const loading = ref(true);
 const submitting = ref(false);
 let detailId = null;
-const detailCreditOrderId = ref("");
-const uuid = ref("");
-const routeNodeCode = ref("");
-const routeCustomerName = ref("");
-const routeCustomerPhone = ref("");
-
 onLoad((query) => {
+    carloanStore.syncFromRouteQuery(query);
   detailId = query.id;
-  detailCreditOrderId.value = query.creditOrderId || query.orderNo || "";
-  uuid.value = query.uuid || "";
-  routeNodeCode.value = query.nodeCode || "";
-  routeCustomerName.value = query.customerName || query.name || "";
-  routeCustomerPhone.value = query.customerPhone || query.phone || "";
+  carloanStore.pageContext.creditOrderId = query.creditOrderId || query.orderNo || "";
+  carloanStore.pageContext.uuid = query.uuid || "";
+  carloanStore.pageContext.nodeCode = query.nodeCode || "";
+  carloanStore.pageContext.customerName = query.customerName || query.name || "";
+  carloanStore.pageContext.customerPhone = query.customerPhone || query.phone || "";
 });
 
 onMounted(() => {
-  if (detailCreditOrderId.value || detailId) {
+  if (carloanStore.pageContext.creditOrderId || detailId) {
     fetchDetail();
   }
 });
@@ -377,13 +374,13 @@ onMounted(() => {
 async function fetchDetail() {
   loading.value = true;
   try {
-    const res = detailCreditOrderId.value
-      ? await businessApi.getCreditDetailByOrderId(detailCreditOrderId.value)
+    const res = carloanStore.pageContext.creditOrderId
+      ? await businessApi.getCreditDetailByOrderId(carloanStore.pageContext.creditOrderId)
       : await businessApi.getCreditDetail(detailId);
     if (res?.code === 200) {
       // 详情接口返回结构可能是 res.data 或 res 本身
       detail.value = res.data || {};
-      uuid.value = res.data?.uuid || uuid.value;
+      carloanStore.pageContext.uuid = res.data?.uuid || carloanStore.pageContext.uuid;
     }
   } catch (e) {
     console.error("获取详情失败", e);
@@ -431,7 +428,7 @@ const customerDisplayName = computed(() =>
   detail.value?.name ||
   detail.value?.customerName ||
   detail.value?.personName ||
-  routeCustomerName.value ||
+  carloanStore.pageContext.customerName ||
   "",
 );
 
@@ -439,7 +436,7 @@ const customerDisplayPhone = computed(() =>
   detail.value?.phone ||
   detail.value?.telephone ||
   detail.value?.mobile ||
-  routeCustomerPhone.value ||
+  carloanStore.pageContext.customerPhone ||
   "",
 );
 
@@ -447,13 +444,13 @@ const orderNo = computed(() =>
   detail.value?.creditOrderId ||
   detail.value?.orderNo ||
   detail.value?.applicationNo ||
-  detailCreditOrderId.value ||
+  carloanStore.pageContext.creditOrderId ||
   "",
 );
 
 const currentNodeCode = computed(() =>
   String(
-    routeNodeCode.value ||
+    carloanStore.pageContext.nodeCode ||
       detail.value?.nodeCode ||
       detail.value?.currentNode ||
       detail.value?.businessNode ||
@@ -514,7 +511,7 @@ const preAuditEntryItems = computed(() => [
 
 function getEntryStepDone(code) {
   if (code === "ID_CARD") {
-    return Boolean(uuid.value);
+    return Boolean(carloanStore.pageContext.uuid);
   }
   if (code === "VEHICLE") {
     return Boolean(
@@ -557,7 +554,7 @@ function goPreAuditStep(item) {
   }
 
   const detailRouteQuery = buildEntryRouteQuery({
-    uuid: uuid.value,
+    uuid: carloanStore.pageContext.uuid,
     creditOrderId: orderNo.value,
     name: customerDisplayName.value,
     phone: customerDisplayPhone.value,
@@ -628,7 +625,7 @@ const goEdit = (type) => {
   uni.$u.route({
     url: editPath[type],
     type: "navigateTo",
-    params: { uuid: uuid.value, id: detailId },
+    params: { uuid: carloanStore.pageContext.uuid, id: detailId },
   });
 };
 

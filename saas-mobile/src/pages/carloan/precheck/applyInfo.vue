@@ -52,18 +52,15 @@ import { useCarloanApi } from "@/api/carloan";
 import { storeToRefs } from "pinia";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildSignRouteQuery } from "@/common/carloan-route-query";
+import { useCarloanStore } from "@/stores/carloan";
 
-const sessionStore = useSessionStore();
+const sessionStore = useSessionStore()
+const carloanStore = useCarloanStore();
 const { orderInfo } = storeToRefs(sessionStore);
 const businessApi = useCarloanApi();
 
 const submitLoading = ref(false);
 const isEditMode = ref(false);
-const editUuid = ref("");
-const entryCreditOrderId = ref("");
-const entryName = ref("");
-const entryPhone = ref("");
-
 // 表单数据（对接接口：uuid、amount、periods）
 const form = reactive({
   amount: "", // 申请金额
@@ -98,17 +95,18 @@ const formItems = [
 ];
 
 onLoad((query) => {
+    carloanStore.syncFromRouteQuery(query);
   // 从详情页传入的 uuid 保存到 sessionStore，供提交使用
   if (query.uuid) {
-    editUuid.value = query.uuid;
+    carloanStore.pageContext.uuid = query.uuid;
     sessionStore.setOrderInfo({ uuid: query.uuid });
   }
   isEditMode.value = query.fromEntry === "1";
-  entryCreditOrderId.value = query.creditOrderId || "";
-  entryName.value = query.name || "";
-  entryPhone.value = query.phone || "";
-  if (entryCreditOrderId.value) {
-    sessionStore.setOrderInfo({ creditOrderId: entryCreditOrderId.value });
+  carloanStore.pageContext.creditOrderId = query.creditOrderId || "";
+  carloanStore.pageContext.customerName = query.name || "";
+  carloanStore.pageContext.customerPhone = query.phone || "";
+  if (carloanStore.pageContext.creditOrderId) {
+    sessionStore.setOrderInfo({ creditOrderId: carloanStore.pageContext.creditOrderId });
   }
 });
 
@@ -155,10 +153,10 @@ const doSubmit = async () => {
     const creditOrderId = res.data?.creditOrderId || "";
     sessionStore.setOrderInfo({
       applyInfo: { ...form },
-      creditOrderId: creditOrderId || info.creditOrderId || entryCreditOrderId.value,
+      creditOrderId: creditOrderId || info.creditOrderId || carloanStore.pageContext.creditOrderId,
     });
     $u.toast("申请已提交！", "success");
-    return { uuid, creditOrderId: creditOrderId || info.creditOrderId || entryCreditOrderId.value };
+    return { uuid, creditOrderId: creditOrderId || info.creditOrderId || carloanStore.pageContext.creditOrderId };
   }
   return null;
 };
@@ -169,8 +167,8 @@ function buildAuthQuery(uuid, creditOrderId) {
   const applyData = info.applyInfo || {};
   return buildSignRouteQuery({
     uuid,
-    name: String(entryName.value || idInfo.personName || ""),
-    phone: String(entryPhone.value || idInfo.telephone || ""),
+    name: String(carloanStore.pageContext.customerName || idInfo.personName || ""),
+    phone: String(carloanStore.pageContext.customerPhone || idInfo.telephone || ""),
     amount: String(applyData.amount || form.amount || ""),
     creditOrderId: creditOrderId || "",
   });

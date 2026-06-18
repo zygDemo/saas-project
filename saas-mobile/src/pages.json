@@ -220,12 +220,8 @@
         "text": "首页"
       },
       {
-        "pagePath": "pages/food/index/index",
-        "text": "点餐"
-      },
-      {
-        "pagePath": "pages/food/order/list",
-        "text": "订单"
+        "pagePath": "pages/carloan/portal/workbench",
+        "text": "车贷首页"
       },
       {
         "pagePath": "pages/my/my",

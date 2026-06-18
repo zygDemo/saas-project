@@ -73,8 +73,10 @@ import { toFilePreviewUrl } from "@/common/file-url";
 import { compressVehicleLicenseForOcr } from "@/common/image-compress";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildEntryRouteQuery } from "@/common/carloan-route-query";
+import { useCarloanStore } from "@/stores/carloan";
 
-const sessionStore = useSessionStore();
+const sessionStore = useSessionStore()
+const carloanStore = useCarloanStore();
 const businessApi = useCarloanApi();
 
 const submitLoading = ref(false);
@@ -84,13 +86,8 @@ const mainImage = ref("");
 const mainImageSrc = computed(() => toFilePreviewUrl(mainImage.value));
 const vehicleImgUrlObjectKey = ref("");
 const mainLoading = ref(false);
-const editUuid = ref("");
 const isEditMode = ref(false);
 const fromEntry = ref(false);
-const entryCreditOrderId = ref("");
-const entryName = ref("");
-const entryPhone = ref("");
-
 // 车辆信息字段与接口 VehicleInfo 对齐
 const carInfo = reactive({
   // 行驶证相关
@@ -122,7 +119,7 @@ const carInfo = reactive({
 
 const fetchVehicleInfo = async () => {
   try {
-    const res = await businessApi.getVehicleInfo(editUuid.value);
+    const res = await businessApi.getVehicleInfo(carloanStore.pageContext.uuid);
     if (res?.code === 200 && res.data) {
       const data = res.data;
       Object.assign(carInfo, {
@@ -164,17 +161,18 @@ const fetchVehicleInfo = async () => {
 };
 
 onLoad((query) => {
-  editUuid.value = query.uuid || "";
+    carloanStore.syncFromRouteQuery(query);
+  carloanStore.pageContext.uuid = query.uuid || "";
   isPawnMode.value = query.businessType === "pawn";
   isEditMode.value = !!query.uuid;
   fromEntry.value = query.fromEntry === "1";
-  entryCreditOrderId.value = query.creditOrderId || "";
-  entryName.value = query.name || "";
-  entryPhone.value = query.phone || "";
+  carloanStore.pageContext.creditOrderId = query.creditOrderId || "";
+  carloanStore.pageContext.customerName = query.name || "";
+  carloanStore.pageContext.customerPhone = query.phone || "";
 });
 
 onMounted(() => {
-  if (editUuid.value) {
+  if (carloanStore.pageContext.uuid) {
     fetchVehicleInfo();
   }
 });
@@ -465,7 +463,7 @@ async function doVehicleOcr(imagePath) {
 const doSubmit = async () => {
   const orderInfo = sessionStore.orderInfo || {};
   const uuid =
-    editUuid.value ||
+    carloanStore.pageContext.uuid ||
     (Object.hasOwn(orderInfo, "uuid") ? String(orderInfo.uuid) : "");
   if (!uuid) {
     $u.toast("客户订单信息缺失，请重新进件", "error");
@@ -529,13 +527,13 @@ async function handleNext() {
     const success = await doSubmit();
     if (success) {
       const orderInfo = sessionStore.orderInfo || {};
-      const uuid = editUuid.value || orderInfo.uuid || "";
+      const uuid = carloanStore.pageContext.uuid || orderInfo.uuid || "";
       const entryRouteQuery = buildEntryRouteQuery({
         uuid: uuid ? String(uuid) : "",
         fromEntry: fromEntry.value ? 1 : undefined,
-        creditOrderId: entryCreditOrderId.value || "",
-        name: entryName.value || "",
-        phone: entryPhone.value || "",
+        creditOrderId: carloanStore.pageContext.creditOrderId || "",
+        name: carloanStore.pageContext.customerName || "",
+        phone: carloanStore.pageContext.customerPhone || "",
       });
       const nextUrl = isPawnMode.value
         ? buildRoute(

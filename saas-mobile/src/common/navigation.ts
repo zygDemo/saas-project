@@ -112,14 +112,13 @@ export function buildHashRoute(route: string, query?: string | RouteQueryRecord)
 
 const SYSTEM_TABBAR_ROUTES = new Set([
   APP_ROUTES.portal.home,
-  APP_ROUTES.food.home,
-  APP_ROUTES.food.orders,
+  APP_ROUTES.carloan.home,
   APP_ROUTES.my.home,
 ]);
 
 const PORTAL_TABBAR_ITEMS: LayoutTabbarItem[] = [
   {
-    text: "\u9996\u9875",
+    text: "首页",
     iconPath: "home",
     selectedIconPath: "home-fill",
     route: APP_ROUTES.portal.home,
@@ -128,16 +127,7 @@ const PORTAL_TABBAR_ITEMS: LayoutTabbarItem[] = [
     count: 0,
   },
   {
-    text: "\u70b9\u9910",
-    iconPath: "shopping",
-    selectedIconPath: "shopping-fill",
-    route: APP_ROUTES.food.home,
-    navMode: "switchTab",
-    customIcon: false,
-    count: 0,
-  },
-  {
-    text: "\u6211\u7684",
+    text: "我的",
     iconPath: "account",
     selectedIconPath: "account-fill",
     route: APP_ROUTES.my.home,
@@ -149,16 +139,16 @@ const PORTAL_TABBAR_ITEMS: LayoutTabbarItem[] = [
 
 const CARLOAN_TABBAR_ITEMS: LayoutTabbarItem[] = [
   {
-    text: "\u5de5\u4f5c\u53f0",
+    text: "首页",
     iconPath: "home",
     selectedIconPath: "home-fill",
     route: APP_ROUTES.carloan.home,
-    navMode: "redirectTo",
+    navMode: "switchTab",
     customIcon: false,
     count: 0,
   },
   {
-    text: "\u8ba2\u5355",
+    text: "订单",
     iconPath: "list",
     selectedIconPath: "list-fill",
     route: APP_ROUTES.carloan.orders,
@@ -167,10 +157,10 @@ const CARLOAN_TABBAR_ITEMS: LayoutTabbarItem[] = [
     count: 0,
   },
   {
-    text: "\u95e8\u6237",
-    iconPath: "grid",
-    selectedIconPath: "grid",
-    route: APP_ROUTES.portal.home,
+    text: "我的",
+    iconPath: "account",
+    selectedIconPath: "account-fill",
+    route: APP_ROUTES.my.home,
     navMode: "switchTab",
     customIcon: false,
     count: 0,
@@ -179,28 +169,28 @@ const CARLOAN_TABBAR_ITEMS: LayoutTabbarItem[] = [
 
 const FOOD_TABBAR_ITEMS: LayoutTabbarItem[] = [
   {
-    text: "\u95e8\u5e97",
+    text: "首页",
     iconPath: "shopping",
     selectedIconPath: "shopping-fill",
     route: APP_ROUTES.food.home,
-    navMode: "switchTab",
+    navMode: "reLaunch",
     customIcon: false,
     count: 0,
   },
   {
-    text: "\u8ba2\u5355",
+    text: "订单",
     iconPath: "list",
     selectedIconPath: "list-fill",
     route: APP_ROUTES.food.orders,
-    navMode: "switchTab",
+    navMode: "redirectTo",
     customIcon: false,
     count: 0,
   },
   {
-    text: "\u95e8\u6237",
-    iconPath: "grid",
-    selectedIconPath: "grid",
-    route: APP_ROUTES.portal.home,
+    text: "我的",
+    iconPath: "account",
+    selectedIconPath: "account-fill",
+    route: APP_ROUTES.my.home,
     navMode: "switchTab",
     customIcon: false,
     count: 0,
@@ -228,30 +218,40 @@ export function isSystemTabbarRoute(route: string): boolean {
   return SYSTEM_TABBAR_ROUTES.has(normalizeRoute(route));
 }
 
-export function navigateFromTabbar(item?: Pick<LayoutTabbarItem, "route" | "navMode"> | null) {
-  if (!item?.route) return;
+export function navigateFromTabbar(
+  item?: Pick<LayoutTabbarItem, "route" | "navMode"> | null,
+): Promise<void> {
+  if (!item?.route) return Promise.resolve();
 
   const route = normalizeRoute(item.route);
   if (!route || route === getCurrentPageRoute()) {
-    return;
+    return Promise.resolve();
   }
 
-  if (item.navMode === "switchTab") {
-    uni.switchTab({ url: route });
-    return;
-  }
+  return new Promise((resolve, reject) => {
+    const options = {
+      url: route,
+      success: () => resolve(),
+      fail: reject,
+    };
 
-  if (item.navMode === "reLaunch") {
-    uni.reLaunch({ url: route });
-    return;
-  }
+    if (item.navMode === "switchTab") {
+      uni.switchTab(options);
+      return;
+    }
 
-  if (getCurrentPages().length > 1) {
-    uni.redirectTo({ url: route });
-    return;
-  }
+    if (item.navMode === "reLaunch") {
+      uni.reLaunch(options);
+      return;
+    }
 
-  uni.reLaunch({ url: route });
+    if (getCurrentPages().length > 1) {
+      uni.redirectTo(options);
+      return;
+    }
+
+    uni.reLaunch(options);
+  });
 }
 
 export function getFallbackRouteByPage(route = getCurrentPageRoute()): string {

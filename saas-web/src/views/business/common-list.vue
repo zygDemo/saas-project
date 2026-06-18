@@ -1,97 +1,22 @@
 <template>
-  <div class="business-list-page art-full-height">
-    <ElCard class="art-card-xs mb-4">
-      <template #header>
-        <div class="flex-cb">
-          <div>
-            <h3 class="m-0">{{ displayTitle }}</h3>
-            <p class="m-0 mt-1 text-sm text-g-600">{{ config.description }}</p>
-          </div>
-          <ElTag type="primary" effect="light">/{{ config.api }}</ElTag>
-        </div>
-      </template>
-      <ElSpace wrap>
-        <ElInput
-          v-if="config.keywordField"
-          v-model="keyword"
-          clearable
-          :placeholder="config.keywordPlaceholder || '关键词/编号'"
-          style="width: 220px"
-          @keyup.enter="handleSearch"
-        />
-        <ElSelect
-          v-if="statusFilterOptions.length"
-          v-model="status"
-          clearable
-          filterable
-          placeholder="状态"
-          style="width: 190px"
-        >
-          <ElOption
-            v-for="option in statusFilterOptions"
-            :key="String(option.value)"
-            :label="option.label"
-            :value="option.value"
-          />
-        </ElSelect>
-        <template v-for="filter in extraFilters" :key="filter.prop">
-          <ElInputNumber
-            v-if="filter.type === 'number'"
-            v-model="extraFilterModel[filter.prop] as number | undefined"
-            :placeholder="filter.label"
-            :min="1"
-            controls-position="right"
-            style="width: 160px"
-            @keyup.enter="handleSearch"
-          />
-          <ElInput
-            v-else-if="filter.type === 'text'"
-            v-model="extraFilterModel[filter.prop] as string"
-            clearable
-            :placeholder="filter.label"
-            style="width: 180px"
-            @keyup.enter="handleSearch"
-          />
-          <ElSelect
-            v-else
-            v-model="extraFilterModel[filter.prop]"
-            clearable
-            filterable
-            :placeholder="filter.label"
-            :loading="Boolean(selectLoading[`filter:${filter.prop}`])"
-            style="width: 160px"
-          >
-            <ElOption
-              v-for="opt in filterOptions(filter)"
-              :key="String(opt.value)"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </ElSelect>
-        </template>
-        <ElButton type="primary" @click="handleSearch">
-          <ArtSvgIcon icon="ri:search-line" class="mr-1" />
-          查询
-        </ElButton>
-        <ElButton @click="resetSearch">
-          <ArtSvgIcon icon="ri:restart-line" class="mr-1" />
-          重置
-        </ElButton>
-      </ElSpace>
-    </ElCard>
+  <div class="business-list-page art-full-height" style="overflow: auto">
+    <!-- 搜索栏 -->
+    <ArtSearchBar
+      v-model="searchFormModel"
+      :items="searchFormItems"
+      :span="6"
+      @search="handleArtSearch"
+      @reset="handleArtReset"
+    />
 
-    <ElCard class="art-table-card" style="margin-top: 0">
-      <template #header>
-        <div class="flex-cb">
-          <h4 class="m-0">{{ displayTitle }}列表</h4>
-          <ElSpace>
-            <ElButton v-if="!config.readonly" type="primary" @click="openCreate">
+    <ElCard class="art-table-card">
+      <!-- 表格头部 -->
+      <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="loadData">
+        <template #left>
+          <ElSpace wrap>
+            <ElButton v-if="!config.readonly" type="primary" @click="openCreate" v-ripple>
               <ArtSvgIcon icon="ri:add-line" class="mr-1" />
               新增
-            </ElButton>
-            <ElButton :loading="loading" @click="loadData">
-              <ArtSvgIcon icon="ri:refresh-line" class="mr-1" />
-              刷新
             </ElButton>
             <ElButton
               v-if="showActionOverview"
@@ -102,8 +27,8 @@
               {{ showActions ? '隐藏动作接口' : '查看动作接口' }}
             </ElButton>
           </ElSpace>
-        </div>
-      </template>
+        </template>
+      </ArtTableHeader>
 
       <ElAlert
         v-if="showActions && showActionOverview"
@@ -345,6 +270,10 @@
   const keyword = ref('')
   const status = ref('')
   const showActions = ref(true)
+
+  // ArtSearchBar 搜索表单模型
+  const searchFormModel = ref<Record<string, any>>({})
+  const columnChecks = ref<any[]>([])
   const records = ref<Record<string, unknown>[]>([])
   const currentRow = ref<Record<string, unknown> | null>(null)
   const detailVisible = ref(false)
@@ -360,7 +289,55 @@
   const activeAction = ref<ActionConfig | null>(null)
   const actionRow = ref<Record<string, unknown> | null>(null)
   const pagination = ref({ current: 1, size: 20, total: 0 })
+  const activeNodeTab = ref('all')
   const routeMeta = computed(() => route.meta as BusinessRouteMeta)
+
+  // 节点状态 Tab 映射
+  const phaseNodeTabsMap: Record<number, { label: string; value: number }[]> = {
+    1000: [
+      { label: '身份证信息', value: 1100 },
+      { label: '车辆信息', value: 1110 },
+      { label: '申请信息', value: 1120 },
+      { label: '签署授权书', value: 1130 },
+      { label: '待预审', value: 1140 },
+      { label: '风控预审', value: 1200 },
+      { label: '资方预审', value: 1250 }
+    ],
+    1300: [
+      { label: '资料补充', value: 1300 },
+      { label: '客户资料', value: 1310 },
+      { label: '车辆资料', value: 1320 },
+      { label: '订单资料', value: 1330 },
+      { label: '文件资料', value: 1340 },
+      { label: '待提交', value: 1350 }
+    ],
+    1400: [
+      { label: '风控初审', value: 1400 },
+      { label: '风控终审', value: 1450 }
+    ],
+    1500: [{ label: '资方终审', value: 1500 }],
+    1600: [
+      { label: '签约办理', value: 1600 },
+      { label: '额度确认', value: 1610 },
+      { label: '绑银行卡', value: 1620 },
+      { label: '合同签署', value: 1630 },
+      { label: 'GPS安装', value: 1640 },
+      { label: '抵押办理', value: 1650 },
+      { label: '待请款', value: 1660 }
+    ],
+    1700: [
+      { label: '请款资料', value: 1700 },
+      { label: '资方放款', value: 1800 }
+    ],
+    1900: [{ label: '贷后还款', value: 1900 }]
+  }
+
+  const phaseNodeTabs = computed(() => {
+    const phaseCode = Number(
+      routeMeta.value.defaultQuery?.phaseCode || applicationPhaseByPath[getRoutePathModule()]
+    )
+    return phaseNodeTabsMap[phaseCode] || []
+  })
 
   // 分页处理
   const handleSizeChange = (size: number) => {
@@ -375,9 +352,7 @@
 
   // ArtTable columns 配置
   const tableColumns = computed(() => {
-    const cols: any[] = [
-      { type: 'index', width: 60, label: '序号' }
-    ]
+    const cols: any[] = [{ type: 'index', width: 60, label: '序号' }]
 
     // 动态列
     for (const column of config.value.columns) {
@@ -385,7 +360,9 @@
         prop: column.prop,
         label: column.label,
         minWidth: column.width || 140,
-        showOverflowTooltip: !isOrgModule.value || !['name', 'contactName', 'packageType', 'businessScale'].includes(column.prop),
+        showOverflowTooltip:
+          !isOrgModule.value ||
+          !['name', 'contactName', 'packageType', 'businessScale'].includes(column.prop),
         formatter: (row: Record<string, unknown>) => {
           // 机构模块特殊列
           if (isOrgModule.value && column.prop === 'name') {
@@ -408,11 +385,19 @@
           if (isOrgModule.value && column.prop === 'packageType') {
             return h('div', { class: 'org-service-cell' }, [
               h('span', { class: 'org-service-cell__package' }, packageLabel(row.packageType)),
-              h(ElTag, { type: orgExpiryMeta(row.expireAt).type, effect: 'plain', size: 'small' }, () => orgExpiryMeta(row.expireAt).label)
+              h(
+                ElTag,
+                { type: orgExpiryMeta(row.expireAt).type, effect: 'plain', size: 'small' },
+                () => orgExpiryMeta(row.expireAt).label
+              )
             ])
           }
           if (isOrgModule.value && column.prop === 'apiEnabled') {
-            return h(ElTag, { type: row.apiEnabled === false ? 'info' : 'success', effect: 'light' }, () => row.apiEnabled === false ? '已关闭' : '已开启')
+            return h(
+              ElTag,
+              { type: row.apiEnabled === false ? 'info' : 'success', effect: 'light' },
+              () => (row.apiEnabled === false ? '已关闭' : '已开启')
+            )
           }
           if (isOrgModule.value && column.prop === 'businessScale') {
             return h('div', { class: 'org-scale-cell' }, [
@@ -423,7 +408,9 @@
           }
           // 状态列
           if (column.prop === 'status') {
-            return h(ElTag, { type: statusTagType(row[column.prop]), effect: 'light' }, () => formatCell(row, column.prop))
+            return h(ElTag, { type: statusTagType(row[column.prop]), effect: 'light' }, () =>
+              formatCell(row, column.prop)
+            )
           }
           return h('span', {}, formatCell(row, column.prop))
         }
@@ -441,11 +428,29 @@
           h(ElButton, { link: true, type: 'primary', onClick: () => openDetail(row) }, () => '详情')
         ]
         if (!config.value.readonly) {
-          buttons.push(h(ElButton, { link: true, type: 'primary', onClick: () => openEdit(row) }, () => '编辑'))
-          buttons.push(h(ElButton, { link: true, type: 'danger', onClick: () => handleDelete(row) }, () => '删除'))
+          buttons.push(
+            h(ElButton, { link: true, type: 'primary', onClick: () => openEdit(row) }, () => '编辑')
+          )
+          buttons.push(
+            h(
+              ElButton,
+              { link: true, type: 'danger', onClick: () => handleDelete(row) },
+              () => '删除'
+            )
+          )
         }
         for (const action of rowActions(row)) {
-          buttons.push(h(ElButton, { link: true, type: action.type || 'success', onClick: () => openAction(row, action) }, () => action.label))
+          buttons.push(
+            h(
+              ElButton,
+              {
+                link: true,
+                type: action.type || 'success',
+                onClick: () => openAction(row, action)
+              },
+              () => action.label
+            )
+          )
         }
         return h(ElSpace, { wrap: true }, () => buttons)
       }
@@ -456,29 +461,36 @@
   const applicationNodeByPath: Record<string, number> = {
     'pre-entry': 1100,
     'risk-pre': 1200,
-    'funder-pre': 1300,
-    supplement: 1400,
-    'first-review': 2100,
-    'final-review': 2200,
-    'loan-request': 5100,
-    'funder-final': 3100,
-    'disbursement-node': 6100
+    'funder-pre': 1250,
+    supplement: 1300,
+    'first-review': 1400,
+    'final-review': 1450,
+    'funder-final': 1500,
+    signing: 1600,
+    'loan-request': 1700,
+    'disbursement-node': 1800
   }
   const applicationPhaseByPath: Record<string, number> = {
     precheck: 1000,
-    supplement: 1400,
-    'risk-approval': 2000,
-    'funder-final': 3000,
-    signing: 4000,
-    disbursement: 5000
+    'pre-review': 1000,
+    supplement: 1300,
+    'risk-approval': 1400,
+    approval: 1400,
+    'funder-final': 1500,
+    'funder-review': 1500,
+    signing: 1600,
+    disbursement: 1700,
+    'post-loan': 1900,
+    reports: 1900
   }
   const phaseTitleMap: Record<number, string> = {
     1000: '预审阶段',
-    1400: '补件阶段',
-    2000: '风控审批',
-    3000: '资方终审',
-    4000: '客户签约',
-    5000: '请款放款'
+    1300: '补件阶段',
+    1400: '风控审批',
+    1500: '资方终审',
+    1600: '签约阶段',
+    1700: '请款放款',
+    1900: '贷后阶段'
   }
 
   const commonStatusMap: Record<string, string> = {
@@ -619,16 +631,23 @@
     { label: '典当', value: 'PAWN' }
   ]
   const flowNodeOptions = [
-    { label: '1100 预审进件', value: '1100' },
+    { label: '1100 身份证信息', value: '1100' },
+    { label: '1110 车辆信息', value: '1110' },
+    { label: '1120 申请信息', value: '1120' },
+    { label: '1130 签署授权书', value: '1130' },
+    { label: '1140 待预审', value: '1140' },
     { label: '1200 风控预审', value: '1200' },
-    { label: '1300 资方预审', value: '1300' },
-    { label: '1400 资料补充', value: '1400' },
-    { label: '2100 风控初审', value: '2100' },
-    { label: '2200 风控终审', value: '2200' },
-    { label: '3100 资方终审', value: '3100' },
-    { label: '4100 客户签约', value: '4100' },
-    { label: '5100 请款资料', value: '5100' },
-    { label: '6100 资方放款', value: '6100' }
+    { label: '1250 资方预审', value: '1250' },
+    { label: '1300 资料补充', value: '1300' },
+    { label: '1350 待提交', value: '1350' },
+    { label: '1400 风控初审', value: '1400' },
+    { label: '1450 风控终审', value: '1450' },
+    { label: '1500 资方终审', value: '1500' },
+    { label: '1600 签约办理', value: '1600' },
+    { label: '1660 待请款', value: '1660' },
+    { label: '1700 请款资料', value: '1700' },
+    { label: '1800 资方放款', value: '1800' },
+    { label: '1900 贷后还款', value: '1900' }
   ]
   const applicationStatusOptions = [
     'DRAFT',
@@ -1563,7 +1582,9 @@
   const moduleName = computed(() => resolveBusinessModule())
   const config = computed(() => configs[moduleName.value] || configs.application)
   const displayTitle = computed(() => {
-    const phaseCode = Number(routeMeta.value.defaultQuery?.phaseCode || applicationPhaseByPath[getRoutePathModule()])
+    const phaseCode = Number(
+      routeMeta.value.defaultQuery?.phaseCode || applicationPhaseByPath[getRoutePathModule()]
+    )
     return phaseTitleMap[phaseCode] || config.value.title
   })
   const isOrgModule = computed(() => moduleName.value === 'org')
@@ -1597,9 +1618,16 @@
     const m = moduleName.value
     const filters: FilterConfig[] = []
     if (
-      ['dept', 'product', 'funder', 'flow-config', 'lead', 'customer', 'application', 'order-query'].includes(
-        m
-      )
+      [
+        'dept',
+        'product',
+        'funder',
+        'flow-config',
+        'lead',
+        'customer',
+        'application',
+        'order-query'
+      ].includes(m)
     ) {
       filters.push({
         prop: 'orgId',
@@ -1637,7 +1665,12 @@
       filters.push({ prop: 'customerName', label: '客户姓名', type: 'text' })
       filters.push({ prop: 'phone', label: '手机号', type: 'text' })
       filters.push({ prop: 'plateNumber', label: '车牌号', type: 'text' })
-      filters.push({ prop: 'nodeCode', label: '流程节点', type: 'select', options: flowNodeOptions })
+      filters.push({
+        prop: 'nodeCode',
+        label: '流程节点',
+        type: 'select',
+        options: flowNodeOptions
+      })
     }
     if (['approval', 'signing', 'disbursement', 'repayment'].includes(m)) {
       filters.push({ prop: 'applicationId', label: '进件ID', type: 'number' })
@@ -1695,6 +1728,139 @@
     return filters
   })
 
+  // ArtSearchBar 表单项配置
+  const searchFormItems = computed(() => {
+    const items: any[] = []
+    const cfg = config.value
+
+    // 关键词搜索
+    if (cfg.keywordField) {
+      items.push({
+        key: cfg.keywordField,
+        label: '关键词',
+        type: 'input',
+        placeholder: cfg.keywordPlaceholder || '请输入关键词',
+        clearable: true
+      })
+    }
+
+    // 流程节点筛选（当有节点 Tab 时显示）
+    if (phaseNodeTabs.value.length) {
+      items.push({
+        key: 'currentNode',
+        label: '流程节点',
+        type: 'select',
+        props: {
+          placeholder: '全部节点',
+          clearable: true,
+          filterable: true,
+          options: phaseNodeTabs.value.map((tab) => ({ label: tab.label, value: tab.value }))
+        }
+      })
+    }
+
+    // 状态筛选
+    if (statusFilterOptions.value.length) {
+      items.push({
+        key: 'status',
+        label: '状态',
+        type: 'select',
+        props: {
+          placeholder: '请选择状态',
+          clearable: true,
+          filterable: true,
+          options: statusFilterOptions.value
+        }
+      })
+    }
+
+    // 额外筛选条件
+    for (const filter of extraFilters.value) {
+      if (filter.type === 'number') {
+        items.push({
+          key: filter.prop,
+          label: filter.label,
+          type: 'number',
+          props: {
+            placeholder: filter.label,
+            min: 1,
+            controlsPosition: 'right'
+          }
+        })
+      } else if (filter.type === 'text') {
+        items.push({
+          key: filter.prop,
+          label: filter.label,
+          type: 'input',
+          props: {
+            placeholder: filter.label,
+            clearable: true
+          }
+        })
+      } else {
+        const options = filter.remoteOptions
+          ? selectOptions[`filter:${filter.prop}`] || []
+          : filter.options || []
+        items.push({
+          key: filter.prop,
+          label: filter.label,
+          type: 'select',
+          props: {
+            placeholder: filter.label,
+            clearable: true,
+            filterable: true,
+            options
+          }
+        })
+      }
+    }
+
+    return items
+  })
+
+  // ArtSearchBar 搜索处理
+  function handleArtSearch(params: Record<string, any>) {
+    // 同步关键词和状态到原有变量
+    const cfg = config.value
+    if (cfg.keywordField && params[cfg.keywordField]) {
+      keyword.value = String(params[cfg.keywordField])
+    } else {
+      keyword.value = ''
+    }
+    if (params.status) {
+      status.value = String(params.status)
+    } else {
+      status.value = ''
+    }
+    // 同步流程节点筛选
+    if (params.currentNode !== undefined) {
+      activeNodeTab.value = params.currentNode ? String(params.currentNode) : 'all'
+    } else {
+      activeNodeTab.value = 'all'
+    }
+    // 同步额外筛选条件
+    for (const filter of extraFilters.value) {
+      if (params[filter.prop] !== undefined) {
+        extraFilterModel[filter.prop] = params[filter.prop]
+      } else {
+        delete extraFilterModel[filter.prop]
+      }
+    }
+    pagination.value.current = 1
+    loadData()
+  }
+
+  // ArtSearchBar 重置处理
+  function handleArtReset() {
+    keyword.value = ''
+    status.value = ''
+    activeNodeTab.value = 'all'
+    searchFormModel.value = {}
+    for (const key of Object.keys(extraFilterModel)) delete extraFilterModel[key]
+    pagination.value.current = 1
+    loadData()
+  }
+
   const extraFilterModel = reactive<FormModel>({})
   const orgSummaryItems = computed(() => [
     {
@@ -1736,7 +1902,11 @@
     if (routeMeta.value.defaultQuery) return routeMeta.value.defaultQuery
     const pathModule = getRoutePathModule()
     const phaseCode = applicationPhaseByPath[pathModule]
-    if (phaseCode) return { phaseCode }
+    if (phaseCode) {
+      const result: Record<string, any> = { phaseCode }
+      if (activeNodeTab.value !== 'all') result.currentNode = Number(activeNodeTab.value)
+      return result
+    }
     const currentNode = applicationNodeByPath[pathModule]
     return currentNode ? { currentNode } : {}
   }
@@ -1759,6 +1929,7 @@
   function resetRuntimeState() {
     keyword.value = ''
     status.value = ''
+    activeNodeTab.value = 'all'
     records.value = []
     currentRow.value = null
     detailVisible.value = false
@@ -1794,19 +1965,6 @@
     } finally {
       loading.value = false
     }
-  }
-
-  function handleSearch() {
-    pagination.value.current = 1
-    loadData()
-  }
-
-  function resetSearch() {
-    keyword.value = ''
-    status.value = ''
-    for (const key of Object.keys(extraFilterModel)) delete extraFilterModel[key]
-    pagination.value.current = 1
-    loadData()
   }
 
   function openCreate() {
@@ -1925,11 +2083,6 @@
 
   function fieldOptions(field: FieldConfig) {
     return field.remoteOptions ? selectOptions[field.prop] || [] : field.options || []
-  }
-
-  function filterOptions(filter: FilterConfig) {
-    const key = `filter:${filter.prop}`
-    return filter.remoteOptions ? selectOptions[key] || [] : filter.options || []
   }
 
   function getRemoteOptionParams(source: FieldConfig | FilterConfig) {
@@ -2097,7 +2250,9 @@
     if (['requireMaterials', 'requireApproval', 'autoPass'].includes(prop))
       return value ? '是' : '否'
     if (prop === 'businessType')
-      return flowBusinessTypeOptions.find((option) => option.value === value)?.label || String(value)
+      return (
+        flowBusinessTypeOptions.find((option) => option.value === value)?.label || String(value)
+      )
     if (prop === 'nodeCode')
       return flowNodeOptions.find((option) => option.value === value)?.label || String(value)
     if (prop === 'packageType') return packageLabel(value)
