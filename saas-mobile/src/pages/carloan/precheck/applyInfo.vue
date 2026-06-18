@@ -51,7 +51,6 @@ import { useSessionStore } from "@/stores";
 import { useCarloanApi } from "@/api/carloan";
 import { storeToRefs } from "pinia";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
-import { buildSignRouteQuery } from "@/common/carloan-route-query";
 import { useCarloanStore } from "@/stores/carloan";
 
 const sessionStore = useSessionStore()
@@ -169,31 +168,18 @@ const doSubmit = async () => {
   return null;
 };
 
-function buildAuthQuery(uuid, creditOrderId) {
-  const info = orderInfo.value || {};
-  const idInfo = info.idInfo || {};
-  const applyData = info.applyInfo || {};
-  return buildSignRouteQuery({
-    uuid,
-    name: String(carloanStore.pageContext.customerName || idInfo.personName || ""),
-    phone: String(carloanStore.pageContext.customerPhone || idInfo.telephone || ""),
-    amount: String(applyData.amount || form.amount || ""),
-    creditOrderId: creditOrderId || "",
-  });
-}
-
 async function handleSubmit() {
   submitLoading.value = true;
   try {
     const result = await doSubmit();
     if (result) {
-      const { uuid, creditOrderId } = result;
-
-      const signRouteQuery = buildAuthQuery(uuid, creditOrderId);
+      const { creditOrderId } = result;
 
       setTimeout(() => {
         uni.$u.route({
-          url: buildRoute(APP_ROUTES.carloan.signing.videoFaceSign, signRouteQuery),
+          url: buildRoute(APP_ROUTES.carloan.precheck.applyProgress, {
+            creditOrderId,
+          }),
           type: "redirectTo",
         });
       }, 600);
@@ -226,10 +212,11 @@ async function handleNext() {
   try {
     const result = await doSubmit();
     if (result) {
-      const signRouteQuery = buildAuthQuery(result.uuid, result.creditOrderId);
       setTimeout(() => {
         uni.$u.route({
-          url: buildRoute(APP_ROUTES.carloan.signing.videoFaceSign, signRouteQuery),
+          url: buildRoute(APP_ROUTES.carloan.precheck.applyProgress, {
+            creditOrderId: result.creditOrderId,
+          }),
           type: "redirectTo",
         });
       }, 600);

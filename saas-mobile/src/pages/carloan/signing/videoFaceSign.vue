@@ -290,7 +290,7 @@ import { useCarloanApi } from "@/api/carloan";
 import { useConfirm } from "@/composables/useConfirm";
 import { useSessionStore } from "@/stores";
 import { closeBrowser } from "@/composables/useCloseBrowser";
-import { APP_ROUTES, buildHashRoute } from "@/common/navigation";
+import { APP_ROUTES, buildHashRoute, buildRoute } from "@/common/navigation";
 import { buildNavTitleQuery } from "@/common/carloan-route-query";
 
 const { confirmRef, confirm } = useConfirm();
@@ -547,20 +547,45 @@ async function handleStartFaceSign() {
 
   contractFiles.length = 0;
 
-  // 授信模式：跳过人脸识别，直接完成
+  // 授信模式：调用授信申请接口推进节点，然后跳转到进度页
   if (isCreditMode.value) {
-    // 模拟人脸识别成功
-    faceResult.status = "success";
-    faceResult.statusText = "核验通过";
-    faceResult.score = 98;
+    try {
+      const res = await businessApi.creditApply({
+        uuid: customerInfo.uuid,
+        creditOrderId: customerInfo.creditOrderId || undefined,
+      });
 
-    updateStepStatus(1, "finish");
-    updateStepStatus(2, "finish");
+      if (res?.code === 200) {
+        const orderId = res.data?.creditOrderId || customerInfo.creditOrderId;
 
-    currentStep.value = 4;
-    loading.value = false;
+        // 模拟人脸识别成功
+        faceResult.status = "success";
+        faceResult.statusText = "核验通过";
+        faceResult.score = 98;
 
-    uni.showToast({ title: "授信认证完成", icon: "success" });
+        updateStepStatus(1, "finish");
+        updateStepStatus(2, "finish");
+
+        currentStep.value = 4;
+        uni.showToast({ title: "授信认证完成", icon: "success" });
+
+        // 跳转到申请进度页
+        setTimeout(() => {
+          uni.redirectTo({
+            url: buildRoute(APP_ROUTES.carloan.precheck.applyProgress, {
+              creditOrderId: orderId,
+            }),
+          });
+        }, 800);
+      } else {
+        uni.showToast({ title: "授信申请失败", icon: "none" });
+      }
+    } catch (err) {
+      console.error("授信申请失败:", err);
+      uni.showToast({ title: "授信申请失败", icon: "none" });
+    } finally {
+      loading.value = false;
+    }
     return;
   }
 
@@ -785,7 +810,7 @@ async function handleAuthorizeSign() {
   authorizeSignLoading.value = true;
 
   try {
-    const res = await businessApi.authorizeSign(signRecordId.value);
+    await businessApi.authorizeSign(signRecordId.value);
     uni.showToast({ title: "授权签署成功", icon: "success" });
 
     // 更新签署进度

@@ -299,17 +299,19 @@ export class MobileCreditApplyDto {
   @IsString()
   uuid: string
 
-  @ApiProperty({ description: '申请金额，元' })
+  @ApiPropertyOptional({ description: '申请金额，元，传入 creditOrderId 时可省略' })
+  @IsOptional()
   @ToNumber()
   @IsNumber()
   @Min(0)
-  amount: number
+  amount?: number
 
-  @ApiProperty({ description: '贷款期数' })
+  @ApiPropertyOptional({ description: '贷款期数，传入 creditOrderId 时可省略' })
+  @IsOptional()
   @ToNumber()
   @IsInt()
   @Min(1)
-  periods: number
+  periods?: number
 
   @ApiPropertyOptional({ description: '业务类型，例如 pawn' })
   @IsOptional()

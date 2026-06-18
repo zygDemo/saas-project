@@ -368,12 +368,12 @@ export class MobileBusinessService {
         })
       }
 
-      // 车辆信息属于"预审进件"(1100)阶段，仅在节点低于1100时推进，不向后重置
+      // 车辆信息属于"车辆信息"(1110)阶段，仅在节点低于1110时推进，不向后重置
       const application = await this.findLatestDraftApplication(customer.id)
-      if (application && application.currentNode < 1100) {
+      if (application && application.currentNode < 1110) {
         await this.prisma.application.update({
           where: { id: application.id },
-          data: { currentNode: 1100, currentStatus: 10 }
+          data: { currentNode: 1110, currentStatus: 10 }
         })
       }
 
@@ -419,13 +419,25 @@ export class MobileBusinessService {
       draftApplication = await this.findLatestDraftApplication(customer.id)
     }
 
+    // amount/periods 可选：有值时使用传入值，否则保留草稿原值，都没有则用默认值
+    const resolvedAmount = hasValue(dto.amount)
+      ? dto.amount
+      : draftApplication
+        ? Number(draftApplication.amount)
+        : 0
+    const resolvedTerm = hasValue(dto.periods)
+      ? dto.periods
+      : draftApplication
+        ? draftApplication.term
+        : product?.minTerm || 12
+
     const applicationData = {
       orgId: customer.orgId,
       customerId: customer.id,
       productId: product?.id,
       funderId: funder?.id,
-      amount: dto.amount,
-      term: dto.periods,
+      amount: resolvedAmount,
+      term: resolvedTerm,
       rate,
       repaymentMethod: product?.repaymentMethod || '等额本息',
       status: ApplicationStatus.PENDING_RISK_PRE,
@@ -792,6 +804,8 @@ export class MobileBusinessService {
       validAmt: application.approvedAmount
         ? Number(application.approvedAmount).toFixed(2)
         : undefined,
+      currentNode: application.currentNode,
+      currentStatus: application.currentStatus,
       remark: application.remark,
       createTime: this.formatDateTime(application.createdAt),
       updateTime: this.formatDateTime(application.updatedAt),
