@@ -1,4 +1,4 @@
-# 嗨车无忧 — 车抵贷业务流程与数据模型设计文档
+# 予艺助手 — 车抵贷业务流程与数据模型设计文档
 
 > 项目：saas-project（admin-api + saas-web + saas-mobile）
 > 范围：业务流程图 + 状态机 + Prisma 数据模型增量设计

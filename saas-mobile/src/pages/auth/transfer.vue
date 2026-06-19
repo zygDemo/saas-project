@@ -1,5 +1,5 @@
 <template>
-  <app-page nav-title="嗨车无忧">
+  <app-page nav-title="予艺助手">
     <view class="transfer-page">
       <view class="status-panel">
         <u-loading mode="circle" size="52" color="#2979ff" />

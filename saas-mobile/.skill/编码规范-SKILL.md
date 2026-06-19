@@ -1,6 +1,6 @@
 ---
 name: carloan-uniapp-coding
-description: "CarLoanH5（嗨车无忧）uni-app 项目编码规范与开发约定。基于 uni-app 3 + Vue 3 + TypeScript + uview-pro 的汽车金融业务移动端项目。"
+description: "CarLoanH5（予艺助手）uni-app 项目编码规范与开发约定。基于 uni-app 3 + Vue 3 + TypeScript + uview-pro 的汽车金融业务移动端项目。"
 version: 1.0.0
 author: Hermes Agent
 license: MIT
@@ -10,7 +10,7 @@ metadata:
     related_skills: []
 ---
 
-# CarLoanH5（嗨车无忧）编码规范
+# CarLoanH5（予艺助手）编码规范
 
 ## 1. 项目概述
 

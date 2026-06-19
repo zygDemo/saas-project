@@ -96,7 +96,7 @@ const tabList = ref([
 // 默认导航栏标题
 const currentNavTitle = computed(() => {
   const currentTabItem = tabList.value[currentTab.value];
-  return props.navTitle || currentTabItem?.text || "嗨车无忧";
+  return props.navTitle || currentTabItem?.text || "予艺助手";
 });
 
 // 切换前的回调钩子（返回 false 阻止切换）

@@ -1,7 +1,7 @@
-# 嗨车无忧（CarLoanH5）产品需求文档
+# 予艺助手（CarLoanH5）产品需求文档
 
 > 文档版本：v1.2（移动端多端范围修正版）
-> 产品名称：嗨车无忧 / CarLoanH5
+> 产品名称：予艺助手 / CarLoanH5
 > 关联平台：车贷 SaaS 管理系统（saas-web + saas-api）
 > 文档类型：PRD（Product Requirements Document）
 > 项目范围：移动端 / 多端（H5、微信小程序、其他 uni-app 可适配小程序、App）
@@ -61,7 +61,7 @@
 <a id="11-项目背景"></a>
 ### 1.1 项目背景
 
-嗨车无忧是一款基于 uni-app 3 + Vue 3 + TypeScript 开发的多端移动应用，工程范围明确限定为 `D:\zygProject\GitHub\saas-project\saas-mobile`。本项目服务于车贷 SaaS 平台的一线移动场景，核心目标是让业务员/客户经理在手机端完成获客、扫码、资料采集、进件提交、补件跟进、签约跟进、订单查看和典当办理。
+予艺助手是一款基于 uni-app 3 + Vue 3 + TypeScript 开发的多端移动应用，工程范围明确限定为 `D:\zygProject\GitHub\saas-project\saas-mobile`。本项目服务于车贷 SaaS 平台的一线移动场景，核心目标是让业务员/客户经理在手机端完成获客、扫码、资料采集、进件提交、补件跟进、签约跟进、订单查看和典当办理。
 
 本 PRD 聚焦 `saas-mobile` 移动端项目，不替代 `saas-web` 管理后台 PRD，也不展开 `saas-api` 后端管理能力设计。涉及后台管理、审批配置、产品配置、资方配置、组织用户管理等能力，仅作为移动端使用前提或接口依赖描述。
 
@@ -70,7 +70,7 @@
 
 | 维度 | 范围定义 | 说明 |
 |------|----------|------|
-| 项目名称 | saas-mobile / 嗨车无忧移动端 | 车贷 SaaS 平台移动端子项目 |
+| 项目名称 | saas-mobile / 予艺助手移动端 | 车贷 SaaS 平台移动端子项目 |
 | 工程路径 | `D:\zygProject\GitHub\saas-project\saas-mobile` | 本文档所有页面、接口、状态和验收均以该工程为准 |
 | 技术栈 | uni-app 3 + Vue 3 + TypeScript | 使用一套代码适配 H5、小程序及 App 等多端 |
 | 核心用户 | 业务员/客户经理 | 以业务员移动办公为第一优先级 |
@@ -91,7 +91,7 @@
 | 鉴权 | HTTP 拦截器读取本地 Token，当前主要注入 `Authorization`；客户扫码场景支持 session token |
 | 存储 | `useLocalStore` 持久化 token、refreshToken、userInfo、登录时间、过期时间 |
 | 工作台 | 已有快捷入口、二维码入口、功能分组；需要补充 SaaS 待办和统计能力 |
-| 文档 | 已有 `PRD-嗨车无忧-需求文档.md`，本次升级为 SaaS 平台对齐版本 |
+| 文档 | 已有 `PRD-予艺助手-需求文档.md`，本次升级为 SaaS 平台对齐版本 |
 
 <a id="14-技术栈"></a>
 ### 1.4 技术栈
@@ -346,7 +346,7 @@ GPS 安装 / 抵押办理 / 出账申请
 ## 6. 功能架构
 
 ```text
-嗨车无忧 / CarLoanH5
+予艺助手 / CarLoanH5
 ├── 认证与上下文
 │   ├── 登录/登出
 │   ├── Token/RefreshToken

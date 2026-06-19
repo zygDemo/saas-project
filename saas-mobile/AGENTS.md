@@ -1,4 +1,4 @@
-# AGENTS.md — CarLoanH5 / 嗨车无忧
+# AGENTS.md — CarLoanH5 / 予艺助手
 
 > This file is intended for AI coding agents. It describes the project architecture, technology stack, conventions, and workflows.
 > 本文件供 AI 编码代理阅读，描述项目架构、技术栈、开发规范和工作流程。
@@ -7,7 +7,7 @@
 
 ## 项目概述（Project Overview）
 
-**CarLoanH5**（产品名"嗨车无忧"）是一款基于 **uni-app 3 + Vue 3 + TypeScript** 开发的跨平台移动端应用，面向汽车贷款/金融业务场景。
+**CarLoanH5**（产品名"予艺助手"）是一款基于 **uni-app 3 + Vue 3 + TypeScript** 开发的跨平台移动端应用，面向汽车贷款/金融业务场景。
 
 - **项目模板来源**：基于 [uView Pro Starter](https://starter.uviewpro.cn) 搭建
 - **UI 框架**：uview-pro（uni-app Vue3 多平台 UI 框架）
@@ -205,7 +205,7 @@ pnpm lint:fix               # ESLint 自动修复
 ### 页面组织
 
 - 页面按业务模块放在 `src/pages/{module}/` 下
-- `pages.json` 中注册所有页面路由，并配置 `globalStyle`（自定义导航栏、标题"嗨车无忧"）
+- `pages.json` 中注册所有页面路由，并配置 `globalStyle`（自定义导航栏、标题"予艺助手"）
 - `tabBar` 配置 4 个 Tab：首页、工作台、订单、我的
 
 ---
