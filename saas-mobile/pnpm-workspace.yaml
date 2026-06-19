@@ -1,0 +1,11 @@
+allowBuilds:
+  '@uni-helper/unocss-preset-uni': true
+  core-js: true
+  core-js-pure: true
+  esbuild: true
+  tesseract.js: true
+  vue-demi: true
+overrides:
+  unconfig: "7.3.2"
+  "@intlify/message-compiler": "9.14.5"
+  "@intlify/core-base": "9.14.5"

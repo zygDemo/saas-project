@@ -1,63 +1,114 @@
 <template>
-  <layout :active-tab="1" nav-title="订单" show-tabbar tabbar-scope="food">
-    <view class="order-list-page">
-      <u-tabs :list="tabs" :current="current" @change="handleChange" />
-
-      <view v-if="filteredOrders.length > 0" class="order-list">
+  <layout :active-tab="1" nav-title="我的订单" show-tabbar tabbar-scope="food">
+    <view class="order-page">
+      <!-- Tab 切换 -->
+      <view class="tabs-bar">
         <view
-          v-for="order in filteredOrders"
-          :key="order.id"
-          class="order-card"
+          v-for="(tab, idx) in tabs"
+          :key="idx"
+          class="tab-item"
+          :class="{ active: currentTab === idx }"
+          @click="switchTab(idx)"
         >
-          <view class="order-header">
-            <text class="order-no">订单号 {{ order.no }}</text>
-            <text class="order-status" :class="`status-${order.status}`">
-              {{ statusText[order.status] }}
-            </text>
-          </view>
+          <text class="tab-text">{{ tab.name }}</text>
+          <view v-if="tab.count > 0" class="tab-badge">{{ tab.count }}</view>
+        </view>
+      </view>
 
-          <view class="order-items">
-            <view
-              v-for="item in order.items"
-              :key="item.goods.id"
-              class="order-item"
-            >
-              <image :src="item.goods.image" class="item-img" />
-              <view class="item-info">
-                <text class="item-name">{{ item.goods.name }}</text>
-                <text class="item-price">
-                  ￥{{ item.goods.price }} x {{ item.count }}
-                </text>
+      <!-- 订单列表 -->
+      <scroll-view class="order-scroll" scroll-y>
+        <view v-if="filteredOrders.length > 0" class="order-list">
+          <view
+            v-for="order in filteredOrders"
+            :key="order.id"
+            class="order-card"
+            @click="goOrderDetail(order)"
+          >
+            <view class="order-header">
+              <view class="store-info">
+                <u-icon name="home" color="#ff6b6b" size="28" />
+                <text class="store-name">{{ order.storeName }}</text>
               </view>
-              <text class="item-total">
-                ￥{{ (item.goods.price * item.count).toFixed(2) }}
+              <text class="order-status" :class="`status-${order.status}`">
+                {{ statusText[order.status] }}
               </text>
             </view>
-          </view>
 
-          <view class="order-footer">
-            <text class="order-total">合计: ￥{{ order.total.toFixed(2) }}</text>
+            <view class="order-items">
+              <view
+                v-for="item in order.items.slice(0, 3)"
+                :key="item.goods.id"
+                class="order-item"
+              >
+                <image :src="item.goods.image" class="item-img" mode="aspectFill" />
+                <view class="item-info">
+                  <text class="item-name">{{ item.goods.name }}</text>
+                  <text class="item-spec">x{{ item.count }}</text>
+                </view>
+                <text class="item-total">¥{{ (item.goods.price * item.count).toFixed(2) }}</text>
+              </view>
+              <view v-if="order.items.length > 3" class="more-items">
+                <text class="more-text">等{{ order.items.length }}件商品</text>
+              </view>
+            </view>
+
+            <view class="order-footer">
+              <view class="order-time">
+                <text class="time-text">{{ order.createdAt }}</text>
+              </view>
+              <view class="order-right">
+                <text class="order-total-label">合计：</text>
+                <text class="order-total">¥{{ order.total.toFixed(2) }}</text>
+              </view>
+            </view>
+
             <view class="order-actions">
               <u-button
                 v-if="order.status === 0"
                 text="去支付"
-                size="small"
                 type="primary"
+                size="small"
+                shape="circle"
+                @click.stop="payOrder(order)"
               />
               <u-button
+                v-if="order.status === 2"
                 text="再来一单"
                 size="small"
+                shape="circle"
                 plain
-                @click="reorder(order)"
+                @click.stop="reorder(order)"
+              />
+              <u-button
+                v-if="order.status === 1"
+                text="催单"
+                size="small"
+                shape="circle"
+                plain
+                @click.stop="urgeOrder(order)"
               />
             </view>
           </view>
         </view>
-      </view>
 
-      <view v-else class="empty">
-        <text>暂无订单</text>
-      </view>
+        <!-- 空状态 -->
+        <view v-else class="empty-state">
+          <view class="empty-icon">📋</view>
+          <text class="empty-title">暂无{{ tabs[currentTab].name }}订单</text>
+          <text class="empty-desc">快去点些好吃的吧~</text>
+          <u-button
+            text="去点餐"
+            type="primary"
+            shape="circle"
+            size="small"
+            @click="goHome"
+          />
+        </view>
+
+        <view class="bottom-tip" v-if="filteredOrders.length > 0">
+          <text class="tip-text">— 没有更多了 —</text>
+        </view>
+      </scroll-view>
     </view>
   </layout>
 </template>
@@ -65,99 +116,166 @@
 <script setup lang="ts">
 import { APP_ROUTES } from "@/common/navigation";
 import layout from "@/pages/layout/layout.vue";
+import { useFoodStore, type FoodOrder } from "@/stores/food";
 import { computed, ref } from "vue";
+import { storeToRefs } from "pinia";
+import { onShow } from "@dcloudio/uni-app";
+import { CurrentSystem, useLocalStore } from "@/stores/local";
 
-interface OrderItem {
-  goods: {
-    id: number;
-    name: string;
-    price: number;
-    image: string;
-  };
-  count: number;
-}
+const foodStore = useFoodStore();
+const { orders } = storeToRefs(foodStore);
+const localStore = useLocalStore();
 
-interface FoodOrder {
-  id: number;
-  no: string;
-  status: 0 | 1;
-  total: number;
-  items: OrderItem[];
-}
-
-const tabs = [
+const tabs = computed(() => [
   { name: "全部", count: 0 },
-  { name: "待支付", count: 0 },
+  { name: "待支付", count: orders.value.filter((o) => o.status === 0).length },
+  { name: "制作中", count: orders.value.filter((o) => o.status === 1).length },
   { name: "已完成", count: 0 },
-];
-
-const current = ref(0);
-
-const orders = ref<FoodOrder[]>([
-  {
-    id: 1,
-    no: "2026061612345",
-    status: 1,
-    total: 88,
-    items: [
-      {
-        goods: {
-          id: 1,
-          name: "宫保鸡丁",
-          price: 38,
-          image: "https://via.placeholder.com/160x160/FF6B6B/ffffff?text=%E5%AE%AB%E4%BF%9D%E9%B8%A1%E4%B8%81",
-        },
-        count: 2,
-      },
-      {
-        goods: {
-          id: 3,
-          name: "麻婆豆腐",
-          price: 12,
-          image: "https://via.placeholder.com/160x160/FFA62B/ffffff?text=%E9%BA%BB%E5%A9%86%E8%B1%86%E8%85%90",
-        },
-        count: 1,
-      },
-    ],
-  },
 ]);
 
-const statusText: Record<FoodOrder["status"], string> = {
+const currentTab = ref(0);
+
+const statusText: Record<number, string> = {
   0: "待支付",
-  1: "已完成",
+  1: "制作中",
+  2: "已完成",
 };
 
-const filteredOrders = computed(() => {
-  if (current.value === 0) return orders.value;
-  if (current.value === 1) return orders.value.filter((order) => order.status === 0);
-  if (current.value === 2) return orders.value.filter((order) => order.status === 1);
-  return [];
+onShow(() => {
+  localStore.setCurrentSystem(CurrentSystem.FOOD);
 });
 
-const handleChange = (index: number) => {
-  current.value = index;
+const filteredOrders = computed(() => {
+  if (currentTab.value === 0) return orders.value;
+  return orders.value.filter((order) => order.status === currentTab.value - 1);
+});
+
+const switchTab = (idx: number) => {
+  currentTab.value = idx;
 };
 
-const reorder = (_order: FoodOrder) => {
-  uni.switchTab({ url: APP_ROUTES.food.home });
+const goOrderDetail = (order: FoodOrder) => {
+  // 暂时只显示提示
+  uni.showToast({ title: "订单详情开发中", icon: "none" });
+};
+
+const payOrder = (order: FoodOrder) => {
+  uni.showModal({
+    title: "确认支付",
+    content: `订单金额 ¥${order.total.toFixed(2)}`,
+    success: (res) => {
+      if (res.confirm) {
+        foodStore.updateOrderStatus(order.id, 1);
+        uni.showToast({ title: "支付成功", icon: "success" });
+      }
+    },
+  });
+};
+
+const urgeOrder = (order: FoodOrder) => {
+  uni.showToast({ title: "已催单，商家正在加急制作中", icon: "none" });
+};
+
+const reorder = (order: FoodOrder) => {
+  // 将订单商品重新加入购物车
+  order.items.forEach((item) => {
+    for (let i = 0; i < item.count; i++) {
+      foodStore.addToCart(item.goods);
+    }
+  });
+  uni.showToast({ title: "已加入购物车", icon: "success" });
+  setTimeout(() => {
+    uni.navigateTo({ url: APP_ROUTES.food.cart });
+  }, 1000);
+};
+
+const goHome = () => {
+  uni.reLaunch({ url: APP_ROUTES.food.home });
 };
 </script>
 
 <style scoped lang="scss">
-.order-list-page {
-  min-height: 100%;
-  background-color: #f5f5f5;
+.order-page {
+  height: 100%;
+  background: #f5f6f8;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tab 栏 */
+.tabs-bar {
+  display: flex;
+  background: #fff;
+  padding: 0 12rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx 0;
+  position: relative;
+  transition: all 0.3s;
+
+  &.active {
+    .tab-text {
+      color: #ff6b6b;
+      font-weight: 600;
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 48rpx;
+      height: 6rpx;
+      background: #ff6b6b;
+      border-radius: 3rpx;
+    }
+  }
+}
+
+.tab-text {
+  font-size: 28rpx;
+  color: #606266;
+}
+
+.tab-badge {
+  position: absolute;
+  top: 12rpx;
+  right: 20rpx;
+  min-width: 28rpx;
+  height: 28rpx;
+  padding: 0 6rpx;
+  border-radius: 14rpx;
+  background: #ff6b6b;
+  color: #fff;
+  font-size: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 订单列表 */
+.order-scroll {
+  flex: 1;
 }
 
 .order-list {
-  padding: 20rpx;
+  padding: 20rpx 24rpx;
 }
 
 .order-card {
   background: #fff;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
 }
 
 .order-header {
@@ -166,24 +284,36 @@ const reorder = (_order: FoodOrder) => {
   align-items: center;
   margin-bottom: 20rpx;
   padding-bottom: 20rpx;
-  border-bottom: 1rpx solid #eee;
+  border-bottom: 1rpx solid #f5f5f5;
 }
 
-.order-no {
-  font-size: 28rpx;
-  color: #606266;
+.store-info {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.store-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #303133;
 }
 
 .order-status {
   font-size: 26rpx;
+  font-weight: 500;
 }
 
 .status-0 {
-  color: #f9ae2d;
+  color: #ff9900;
 }
 
 .status-1 {
-  color: #52c41a;
+  color: #2979ff;
+}
+
+.status-2 {
+  color: #19be6b;
 }
 
 .order-items {
@@ -193,62 +323,123 @@ const reorder = (_order: FoodOrder) => {
 .order-item {
   display: flex;
   align-items: center;
-  margin-bottom: 16rpx;
+  padding: 10rpx 0;
 }
 
 .item-img {
   width: 100rpx;
   height: 100rpx;
-  border-radius: 8rpx;
+  border-radius: 10rpx;
   margin-right: 20rpx;
+  flex-shrink: 0;
 }
 
 .item-info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .item-name {
-  font-size: 30rpx;
+  font-size: 28rpx;
   color: #303133;
-  margin-bottom: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.item-price {
-  font-size: 26rpx;
-  color: #f5576c;
+.item-spec {
+  font-size: 24rpx;
+  color: #909399;
+  margin-top: 6rpx;
 }
 
 .item-total {
-  font-size: 30rpx;
-  font-weight: 600;
+  font-size: 28rpx;
+  font-weight: 500;
   color: #303133;
+  flex-shrink: 0;
+}
+
+.more-items {
+  padding: 10rpx 0;
+}
+
+.more-text {
+  font-size: 24rpx;
+  color: #909399;
 }
 
 .order-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 20rpx;
-  border-top: 1rpx solid #eee;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #f5f5f5;
+}
+
+.time-text {
+  font-size: 24rpx;
+  color: #c0c4cc;
+}
+
+.order-right {
+  display: flex;
+  align-items: flex-end;
+}
+
+.order-total-label {
+  font-size: 26rpx;
+  color: #606266;
 }
 
 .order-total {
   font-size: 32rpx;
-  font-weight: 600;
-  color: #303133;
+  font-weight: 700;
+  color: #ff6b6b;
 }
 
 .order-actions {
   display: flex;
-  gap: 12rpx;
+  justify-content: flex-end;
+  gap: 16rpx;
+  margin-top: 20rpx;
 }
 
-.empty {
+/* 空状态 */
+.empty-state {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  padding-top: 300rpx;
-  font-size: 28rpx;
+  padding-top: 200rpx;
+  gap: 16rpx;
+}
+
+.empty-icon {
+  font-size: 100rpx;
+  margin-bottom: 16rpx;
+}
+
+.empty-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #303133;
+}
+
+.empty-desc {
+  font-size: 26rpx;
   color: #909399;
+  margin-bottom: 32rpx;
+}
+
+.bottom-tip {
+  text-align: center;
+  padding: 32rpx 0 48rpx;
+}
+
+.tip-text {
+  font-size: 24rpx;
+  color: #c0c4cc;
 }
 </style>

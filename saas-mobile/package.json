@@ -121,15 +121,9 @@
     "vite": "5.2.8",
     "vue-tsc": "^3.2.1"
   },
-  "pnpm": {
-    "overrides": {
-      "unconfig": "7.3.2"
-    }
-  },
   "overrides": {
-    "unconfig": "7.3.2"
-  },
-  "resolutions": {
-    "unconfig": "7.3.2"
+    "unconfig": "7.3.2",
+    "@intlify/message-compiler": "9.14.5",
+    "@intlify/core-base": "9.14.5"
   }
 }
