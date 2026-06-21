@@ -10,16 +10,23 @@
       <view class="bookshelf-page">
         <!-- 顶部渐变头部 -->
         <view class="header-section">
-          <view class="header-bg" />
+          <view class="header-bg">
+            <view class="header-particles">
+              <view v-for="i in 6" :key="i" class="particle" :style="particleStyle(i)" />
+            </view>
+          </view>
           <view class="header-content">
             <view class="header-left">
               <text class="header-title">我的书架</text>
-              <text class="header-sub">{{ bookshelf.length }}本在读</text>
+              <text class="header-sub">{{ bookshelf.length }}本在读 · 已读{{ totalReadCount }}本</text>
             </view>
             <view class="header-right">
               <view class="sign-btn" :class="{ signed: hasSigned }" @click="handleSign">
-                <u-icon :name="hasSigned ? 'checkmark-circle' : 'gift'" color="#fff" size="32" />
+                <view class="sign-icon-wrap">
+                  <u-icon :name="hasSigned ? 'checkmark-circle' : 'gift'" color="#fff" size="32" />
+                </view>
                 <text>{{ hasSigned ? '已签到' : '签到' }}</text>
+                <view v-if="!hasSigned" class="sign-pulse" />
               </view>
             </view>
           </view>
@@ -33,7 +40,7 @@
                 <u-icon name="clock" color="#fff" size="28" />
               </view>
               <text class="stat-value">{{ todayReadMinutes }}</text>
-              <text class="stat-label">今日阅读(分钟)</text>
+              <text class="stat-label">今日(分钟)</text>
             </view>
             <view class="stat-item" @click="goReadingHistory">
               <view class="stat-icon-wrap" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
@@ -62,21 +69,43 @@
         <!-- 今日推荐 -->
         <view v-if="todayRecommend" class="recommend-section">
           <view class="section-header">
-            <text class="section-title">📖 今日推荐</text>
-            <text class="section-more" @click="refreshRecommend">换一批</text>
+            <view class="section-title-wrap">
+              <text class="section-icon">📖</text>
+              <text class="section-title">今日推荐</text>
+            </view>
+            <view class="refresh-btn" @click="refreshRecommend">
+              <u-icon name="reload" color="#667eea" size="28" />
+              <text>换一批</text>
+            </view>
           </view>
           <view class="recommend-card" @click="goDetail(todayRecommend)">
-            <image class="recommend-cover" :src="todayRecommend.cover" mode="aspectFill" />
+            <view class="recommend-cover-wrap">
+              <image class="recommend-cover" :src="todayRecommend.cover" mode="aspectFill" />
+              <view class="recommend-cover-shadow" />
+            </view>
             <view class="recommend-info">
               <text class="recommend-title">{{ todayRecommend.title }}</text>
-              <text class="recommend-author">{{ todayRecommend.author }}</text>
+              <view class="recommend-author-row">
+                <u-icon name="account" color="#909399" size="20" />
+                <text class="recommend-author">{{ todayRecommend.author }}</text>
+              </view>
               <view class="recommend-tags">
-                <text class="tag">{{ todayRecommend.category }}</text>
-                <text class="tag">{{ todayRecommend.wordCount }}</text>
+                <text class="tag category">{{ todayRecommend.category }}</text>
+                <text class="tag words">{{ todayRecommend.wordCount }}</text>
                 <text v-if="todayRecommend.isSerial" class="tag serial">连载中</text>
                 <text v-else class="tag finish">已完结</text>
               </view>
               <text class="recommend-desc">{{ todayRecommend.desc }}</text>
+              <view class="recommend-stats">
+                <view class="stat">
+                  <u-icon name="eye" color="#909399" size="18" />
+                  <text>{{ formatNumber(todayRecommend.views || 0) }}</text>
+                </view>
+                <view class="stat">
+                  <u-icon name="star" color="#ffa502" size="18" />
+                  <text>{{ todayRecommend.rating?.toFixed(1) || '4.5' }}</text>
+                </view>
+              </view>
             </view>
           </view>
         </view>
@@ -84,15 +113,21 @@
         <!-- 书架列表 -->
         <view class="bookshelf-section">
           <view class="section-header">
-            <text class="section-title">📚 我的书架</text>
+            <view class="section-title-wrap">
+              <text class="section-icon">📚</text>
+              <text class="section-title">我的书架</text>
+            </view>
             <view class="section-actions">
-              <view class="action-btn" @click="toggleSortMode">
-                <u-icon :name="sortMode === 'time' ? 'clock' : 'list'" color="#909399" size="24" />
-                <text>{{ sortMode === 'time' ? '按时间' : '按名称' }}</text>
+              <view class="action-btn" :class="{ active: sortMode === 'time' }" @click="sortMode = 'time'">
+                <u-icon name="clock" :color="sortMode === 'time' ? '#667eea' : '#909399'" size="24" />
+                <text :style="{ color: sortMode === 'time' ? '#667eea' : '#909399' }">时间</text>
               </view>
-              <view class="action-btn" @click="goBookStore">
-                <u-icon name="plus-circle" color="#667eea" size="24" />
-                <text>添加</text>
+              <view class="action-btn" :class="{ active: sortMode === 'name' }" @click="sortMode = 'name'">
+                <u-icon name="list" :color="sortMode === 'name' ? '#667eea' : '#909399'" size="24" />
+                <text :style="{ color: sortMode === 'name' ? '#667eea' : '#909399' }">名称</text>
+              </view>
+              <view class="action-btn add-btn" @click="goBookStore">
+                <u-icon name="plus-circle-fill" color="#667eea" size="28" />
               </view>
             </view>
           </view>
@@ -108,30 +143,29 @@
                 placeholder-class="search-placeholder"
                 confirm-type="search"
               />
-              <u-icon
-                v-if="keyword"
-                name="close-circle-fill"
-                color="#c0c4cc"
-                size="28"
-                @click="keyword = ''"
-              />
+              <view v-if="keyword" class="clear-btn" @click="keyword = ''">
+                <u-icon name="close-circle-fill" color="#c0c4cc" size="28" />
+              </view>
             </view>
           </view>
 
           <!-- 书籍列表 -->
           <view class="book-list">
             <view
-              v-for="book in filteredBooks"
+              v-for="(book, index) in filteredBooks"
               :key="book.id"
               class="book-card"
+              :style="{ animationDelay: index * 0.05 + 's' }"
               @click="openBook(book)"
               @longpress="showBookMenu(book)"
             >
               <view class="book-cover-wrap">
                 <image class="book-cover" :src="book.cover" mode="aspectFill" />
-                <view v-if="book.hasUpdate" class="update-badge">更新</view>
-                <view v-if="book.progress > 0" class="progress-indicator">
-                  <text class="progress-text">{{ book.progress }}%</text>
+                <view v-if="book.hasUpdate" class="update-badge">
+                  <text>更新</text>
+                </view>
+                <view v-if="book.progress > 0" class="progress-ring">
+                  <progress-ring :progress="book.progress" :size="48" />
                 </view>
               </view>
               <view class="book-info">
@@ -145,29 +179,30 @@
                   <text class="last-time">{{ formatTime(book.lastReadTime) }}</text>
                 </view>
                 <view class="book-progress-bar">
+                  <view class="progress-bg" />
                   <view class="progress-fill" :style="{ width: book.progress + '%' }" />
+                  <text class="progress-text">{{ book.progress }}%</text>
                 </view>
               </view>
               <view class="book-actions" @click.stop="showBookMenu(book)">
-                <u-icon name="more-dot-fill" color="#c0c4cc" size="36" />
+                <view class="more-btn">
+                  <view class="more-dot" />
+                  <view class="more-dot" />
+                  <view class="more-dot" />
+                </view>
               </view>
             </view>
 
             <!-- 空状态 -->
             <view v-if="filteredBooks.length === 0" class="empty-state">
-              <image
-                class="empty-img"
-                src="https://img.yzcdn.cn/vant/empty-image-default.png"
-                mode="aspectFit"
-              />
+              <view class="empty-icon-wrap">
+                <u-icon name="book" color="#ddd" size="120" />
+              </view>
               <text class="empty-title">{{ keyword ? '没有找到匹配的书籍' : '书架还是空的' }}</text>
               <text class="empty-desc">{{ keyword ? '换个关键词试试' : '去书城找找喜欢的书吧' }}</text>
-              <u-button
-                :text="keyword ? '清除搜索' : '去书城逛逛'"
-                type="primary"
-                size="small"
-                @click="keyword ? clearSearch() : goBookStore()"
-              />
+              <view class="empty-btn" @click="keyword ? clearSearch() : goBookStore()">
+                <text>{{ keyword ? '清除搜索' : '去书城逛逛' }}</text>
+              </view>
             </view>
           </view>
         </view>
@@ -175,8 +210,14 @@
         <!-- 最近阅读 -->
         <view v-if="recentlyRead.length > 0" class="recent-section">
           <view class="section-header">
-            <text class="section-title">🕐 最近阅读</text>
-            <text class="section-more" @click="goReadingHistory">全部</text>
+            <view class="section-title-wrap">
+              <text class="section-icon">🕐</text>
+              <text class="section-title">最近阅读</text>
+            </view>
+            <view class="more-link" @click="goReadingHistory">
+              <text>全部</text>
+              <u-icon name="arrow-right" color="#909399" size="20" />
+            </view>
           </view>
           <scroll-view class="recent-scroll" scroll-x :show-scrollbar="false">
             <view class="recent-list">
@@ -186,7 +227,10 @@
                 class="recent-item"
                 @click="openBook(book)"
               >
-                <image class="recent-cover" :src="book.cover" mode="aspectFill" />
+                <view class="recent-cover-wrap">
+                  <image class="recent-cover" :src="book.cover" mode="aspectFill" />
+                  <view class="recent-progress">{{ book.progress }}%</view>
+                </view>
                 <text class="recent-title">{{ book.title }}</text>
                 <text class="recent-chapter">{{ book.lastReadChapter }}</text>
               </view>
@@ -220,6 +264,8 @@ interface BookItem {
   isVip?: boolean;
   isSerial?: boolean;
   desc?: string;
+  views?: number;
+  rating?: number;
 }
 
 const keyword = ref("");
@@ -245,6 +291,8 @@ const todayRecommend = ref<BookItem | null>({
   desc: "武道极致，十方无敌。一个少年从微末崛起，踏上武道巅峰的故事。",
   progress: 0,
   totalChapters: 534,
+  views: 2150000,
+  rating: 4.2,
 });
 
 const recentlyRead = computed(() => {
@@ -277,6 +325,18 @@ onLoad(() => {
   localStore.setCurrentSystem(CurrentSystem.READING);
 });
 
+const particleStyle = (index: number) => ({
+  left: (index * 18) + '%',
+  animationDelay: (index * 0.5) + 's',
+  animationDuration: (3 + index * 0.5) + 's',
+});
+
+const formatNumber = (num: number) => {
+  if (num >= 10000000) return (num / 10000000).toFixed(1) + "千万";
+  if (num >= 10000) return (num / 10000).toFixed(1) + "万";
+  return num.toString();
+};
+
 const onRefresh = () => {
   refreshing.value = true;
   setTimeout(() => {
@@ -305,10 +365,6 @@ const formatTime = (timestamp?: number) => {
   if (hours < 24) return `${hours}小时前`;
   const days = Math.floor(hours / 24);
   return `${days}天前`;
-};
-
-const toggleSortMode = () => {
-  sortMode.value = sortMode.value === "time" ? "name" : "time";
 };
 
 const openBook = (book: BookItem) => {
@@ -393,7 +449,7 @@ const refreshRecommend = () => {
 /* 头部 */
 .header-section {
   position: relative;
-  padding: 0 0 30rpx;
+  padding: 0 0 40rpx;
 }
 
 .header-bg {
@@ -401,9 +457,38 @@ const refreshRecommend = () => {
   top: 0;
   left: 0;
   right: 0;
-  height: 260rpx;
+  height: 280rpx;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 0 0 40rpx 40rpx;
+  overflow: hidden;
+}
+
+.header-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.particle {
+  position: absolute;
+  width: 8rpx;
+  height: 8rpx;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(-30rpx) scale(1.5);
+    opacity: 0.8;
+  }
 }
 
 .header-content {
@@ -412,7 +497,7 @@ const refreshRecommend = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 40rpx 32rpx 0;
+  padding: 50rpx 32rpx 0;
 }
 
 .header-left {
@@ -421,9 +506,10 @@ const refreshRecommend = () => {
 }
 
 .header-title {
-  font-size: 40rpx;
+  font-size: 44rpx;
   font-weight: 700;
   color: #fff;
+  letter-spacing: 2rpx;
 }
 
 .header-sub {
@@ -433,13 +519,16 @@ const refreshRecommend = () => {
 }
 
 .sign-btn {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 8rpx;
   background: rgba(255, 255, 255, 0.2);
-  padding: 16rpx 28rpx;
-  border-radius: 32rpx;
+  padding: 20rpx 28rpx;
+  border-radius: 20rpx;
   backdrop-filter: blur(10px);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
 
   &.signed {
     background: rgba(255, 255, 255, 0.1);
@@ -447,16 +536,51 @@ const refreshRecommend = () => {
   }
 
   text {
-    font-size: 26rpx;
+    font-size: 22rpx;
     color: #fff;
+    font-weight: 500;
+  }
+}
+
+.sign-icon-wrap {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sign-pulse {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  width: 12rpx;
+  height: 12rpx;
+  background: #ff4757;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4);
+  }
+  70% {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 10rpx rgba(255, 71, 87, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 71, 87, 0);
   }
 }
 
 /* 统计卡片 */
 .stats-card {
-  margin: -40rpx 24rpx 24rpx;
+  margin: -50rpx 24rpx 24rpx;
   background: #fff;
-  border-radius: 20rpx;
+  border-radius: 24rpx;
   padding: 30rpx 20rpx;
   box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
   position: relative;
@@ -472,7 +596,7 @@ const refreshRecommend = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8rpx;
+  gap: 10rpx;
 }
 
 .stat-icon-wrap {
@@ -482,10 +606,11 @@ const refreshRecommend = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
 }
 
 .stat-value {
-  font-size: 36rpx;
+  font-size: 40rpx;
   font-weight: 700;
   color: #303133;
 }
@@ -493,6 +618,82 @@ const refreshRecommend = () => {
 .stat-label {
   font-size: 22rpx;
   color: #909399;
+}
+
+/* Section 通用 */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.section-icon {
+  font-size: 36rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #303133;
+}
+
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  background: #f5f6f8;
+  transition: all 0.2s;
+
+  &.active {
+    background: rgba(102, 126, 234, 0.1);
+  }
+
+  text {
+    font-size: 22rpx;
+    color: #909399;
+  }
+}
+
+.add-btn {
+  background: rgba(102, 126, 234, 0.1);
+  padding: 8rpx;
+}
+
+.more-link {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  font-size: 24rpx;
+  color: #909399;
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  background: rgba(102, 126, 234, 0.1);
+
+  text {
+    font-size: 24rpx;
+    color: #667eea;
+  }
 }
 
 /* 今日推荐 */
@@ -503,16 +704,33 @@ const refreshRecommend = () => {
 .recommend-card {
   display: flex;
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   padding: 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+}
+
+.recommend-cover-wrap {
+  position: relative;
+  width: 180rpx;
+  height: 240rpx;
+  flex-shrink: 0;
 }
 
 .recommend-cover {
-  width: 180rpx;
-  height: 240rpx;
+  width: 100%;
+  height: 100%;
   border-radius: 12rpx;
-  flex-shrink: 0;
+}
+
+.recommend-cover-shadow {
+  position: absolute;
+  bottom: -10rpx;
+  left: 10rpx;
+  right: 10rpx;
+  height: 30rpx;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  filter: blur(10rpx);
 }
 
 .recommend-info {
@@ -523,15 +741,21 @@ const refreshRecommend = () => {
 }
 
 .recommend-title {
-  font-size: 32rpx;
-  font-weight: 600;
+  font-size: 34rpx;
+  font-weight: 700;
   color: #303133;
+}
+
+.recommend-author-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 10rpx;
 }
 
 .recommend-author {
   font-size: 26rpx;
   color: #909399;
-  margin-top: 8rpx;
 }
 
 .recommend-tags {
@@ -542,20 +766,28 @@ const refreshRecommend = () => {
 }
 
 .tag {
-  font-size: 22rpx;
+  font-size: 20rpx;
   padding: 4rpx 12rpx;
-  border-radius: 4rpx;
-  background: #f5f6f8;
-  color: #606266;
+  border-radius: 6rpx;
 
-  &.serial {
+  &.category {
     color: #667eea;
     background: rgba(102, 126, 234, 0.1);
   }
 
-  &.finish {
+  &.words {
+    color: #ff8e53;
+    background: rgba(255, 142, 83, 0.1);
+  }
+
+  &.serial {
     color: #19be6b;
     background: rgba(25, 190, 107, 0.1);
+  }
+
+  &.finish {
+    color: #909399;
+    background: #f5f6f8;
   }
 }
 
@@ -563,51 +795,34 @@ const refreshRecommend = () => {
   font-size: 24rpx;
   color: #606266;
   line-height: 1.6;
-  margin-top: 16rpx;
+  margin-top: 12rpx;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
+.recommend-stats {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 16rpx;
+
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6rpx;
+    font-size: 22rpx;
+    color: #909399;
+  }
+}
+
 /* 书架区域 */
 .bookshelf-section {
   margin: 0 24rpx 24rpx;
   background: #fff;
-  border-radius: 20rpx;
+  border-radius: 24rpx;
   padding: 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20rpx;
-}
-
-.section-title {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #303133;
-}
-
-.section-more {
-  font-size: 24rpx;
-  color: #667eea;
-}
-
-.section-actions {
-  display: flex;
-  gap: 20rpx;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: 6rpx;
-  font-size: 24rpx;
-  color: #909399;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
 }
 
 /* 搜索栏 */
@@ -619,7 +834,7 @@ const refreshRecommend = () => {
   display: flex;
   align-items: center;
   background: #f5f6f8;
-  border-radius: 32rpx;
+  border-radius: 36rpx;
   padding: 16rpx 24rpx;
   gap: 12rpx;
 }
@@ -635,11 +850,27 @@ const refreshRecommend = () => {
   font-size: 28rpx;
 }
 
+.clear-btn {
+  padding: 4rpx;
+}
+
 /* 书籍列表 */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .book-card {
   display: flex;
-  padding: 20rpx 0;
+  padding: 24rpx 0;
   border-bottom: 1rpx solid #f5f5f5;
+  animation: slideUp 0.3s ease-out forwards;
 
   &:last-child {
     border-bottom: none;
@@ -647,6 +878,7 @@ const refreshRecommend = () => {
 
   &:active {
     background: #f9f9f9;
+    border-radius: 12rpx;
   }
 }
 
@@ -660,34 +892,25 @@ const refreshRecommend = () => {
 .book-cover {
   width: 100%;
   height: 100%;
-  border-radius: 10rpx;
+  border-radius: 12rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
 }
 
 .update-badge {
   position: absolute;
   top: 0;
   left: 0;
-  background: #ff4757;
+  background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
   color: #fff;
-  font-size: 20rpx;
+  font-size: 18rpx;
   padding: 4rpx 12rpx;
-  border-radius: 10rpx 0 10rpx 0;
+  border-radius: 12rpx 0 12rpx 0;
 }
 
-.progress-indicator {
+.progress-ring {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 4rpx 0;
-  text-align: center;
-  border-radius: 0 0 10rpx 10rpx;
-}
-
-.progress-text {
-  font-size: 20rpx;
-  color: #fff;
+  bottom: 8rpx;
+  right: 8rpx;
 }
 
 .book-info {
@@ -715,7 +938,7 @@ const refreshRecommend = () => {
 }
 
 .vip-badge {
-  font-size: 20rpx;
+  font-size: 18rpx;
   padding: 2rpx 8rpx;
   background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
   color: #fff;
@@ -726,7 +949,7 @@ const refreshRecommend = () => {
 .book-author {
   font-size: 24rpx;
   color: #909399;
-  margin-top: 8rpx;
+  margin-top: 6rpx;
 }
 
 .book-meta {
@@ -746,31 +969,67 @@ const refreshRecommend = () => {
 }
 
 .last-time {
-  font-size: 22rpx;
+  font-size: 20rpx;
   color: #c0c4cc;
   flex-shrink: 0;
   margin-left: 16rpx;
 }
 
 .book-progress-bar {
-  height: 6rpx;
-  background: #f0f0f0;
-  border-radius: 3rpx;
+  position: relative;
+  height: 8rpx;
   margin-top: 12rpx;
+  border-radius: 4rpx;
   overflow: hidden;
 }
 
+.progress-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #f0f0f0;
+  border-radius: 4rpx;
+}
+
 .progress-fill {
-  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
   background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-  border-radius: 3rpx;
-  transition: width 0.3s;
+  border-radius: 4rpx;
+  transition: width 0.5s ease;
+}
+
+.progress-text {
+  position: absolute;
+  right: 0;
+  top: -24rpx;
+  font-size: 18rpx;
+  color: #667eea;
+  font-weight: 500;
 }
 
 .book-actions {
   display: flex;
   align-items: center;
   padding-left: 16rpx;
+}
+
+.more-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  padding: 12rpx;
+}
+
+.more-dot {
+  width: 6rpx;
+  height: 6rpx;
+  background: #c0c4cc;
+  border-radius: 50%;
 }
 
 /* 最近阅读 */
@@ -784,7 +1043,7 @@ const refreshRecommend = () => {
 
 .recent-list {
   display: flex;
-  gap: 20rpx;
+  gap: 24rpx;
   padding: 4rpx 0;
 }
 
@@ -793,10 +1052,30 @@ const refreshRecommend = () => {
   flex-shrink: 0;
 }
 
-.recent-cover {
+.recent-cover-wrap {
+  position: relative;
   width: 180rpx;
   height: 240rpx;
+}
+
+.recent-cover {
+  width: 100%;
+  height: 100%;
   border-radius: 12rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.recent-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 20rpx;
+  padding: 6rpx 0;
+  text-align: center;
+  border-radius: 0 0 12rpx 12rpx;
 }
 
 .recent-title {
@@ -807,6 +1086,7 @@ const refreshRecommend = () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 500;
 }
 
 .recent-chapter {
@@ -828,22 +1108,40 @@ const refreshRecommend = () => {
   padding: 80rpx 0;
 }
 
-.empty-img {
-  width: 240rpx;
-  height: 240rpx;
+.empty-icon-wrap {
+  width: 200rpx;
+  height: 200rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f6f8;
+  border-radius: 50%;
   margin-bottom: 24rpx;
 }
 
 .empty-title {
-  font-size: 30rpx;
+  font-size: 32rpx;
   color: #303133;
   font-weight: 600;
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
 }
 
 .empty-desc {
   font-size: 26rpx;
   color: #909399;
-  margin-bottom: 30rpx;
+  margin-bottom: 32rpx;
+}
+
+.empty-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 28rpx;
+  padding: 20rpx 48rpx;
+  border-radius: 40rpx;
+  box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.3);
+
+  &:active {
+    transform: scale(0.98);
+  }
 }
 </style>
