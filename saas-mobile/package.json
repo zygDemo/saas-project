@@ -125,5 +125,18 @@
     "unconfig": "7.3.2",
     "@intlify/message-compiler": "9.14.5",
     "@intlify/core-base": "9.14.5"
-  }
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@uni-helper/unocss-preset-uni",
+      "core-js",
+      "core-js-pure",
+      "esbuild",
+      "tesseract.js",
+      "vue-demi"
+    ]
+  },
+  "workspaces": [
+    "."
+  ]
 }

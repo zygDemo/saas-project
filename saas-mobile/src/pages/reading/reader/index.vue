@@ -1,11 +1,16 @@
 <template>
   <view class="reader-page" :class="{ 'night-mode': isNightMode }">
     <!-- 顶部工具栏 -->
-    <view v-show="showToolbar" class="toolbar top-toolbar" :class="{ show: showToolbar }" @click.stop>
+    <view
+      v-show="showToolbar"
+      class="toolbar top-toolbar"
+      :class="{ show: showToolbar }"
+      @click.stop
+    >
       <view class="toolbar-left" @click="goBack">
         <u-icon name="arrow-left" color="#fff" size="40" />
       </view>
-      <text class="toolbar-title">{{ currentChapter?.title || '' }}</text>
+      <text class="toolbar-title">{{ currentChapter?.title || "" }}</text>
       <view class="toolbar-right">
         <u-icon name="share" color="#fff" size="40" @click="shareBook" />
       </view>
@@ -28,7 +33,9 @@
         <swiper-item v-for="(page, idx) in currentPages" :key="idx">
           <scroll-view class="page-scroll" scroll-y>
             <view class="page-content">
-              <text class="chapter-title-text">{{ currentChapter?.title || '' }}</text>
+              <text class="chapter-title-text">{{
+                currentChapter?.title || ""
+              }}</text>
               <text class="content-text" :style="textStyle">{{ page }}</text>
             </view>
           </scroll-view>
@@ -37,10 +44,19 @@
     </view>
 
     <!-- 底部工具栏 -->
-    <view v-show="showToolbar" class="toolbar bottom-toolbar" :class="{ show: showToolbar }" @click.stop>
+    <view
+      v-show="showToolbar"
+      class="toolbar bottom-toolbar"
+      :class="{ show: showToolbar }"
+      @click.stop
+    >
       <!-- 上一章/下一章 -->
       <view class="chapter-nav">
-        <view class="nav-btn" :class="{ disabled: !hasPrevChapter }" @click.stop="prevChapter">
+        <view
+          class="nav-btn"
+          :class="{ disabled: !hasPrevChapter }"
+          @click.stop="prevChapter"
+        >
           <u-icon name="arrow-left" color="#fff" size="32" />
           <text>上一章</text>
         </view>
@@ -49,14 +65,22 @@
           <text>目录</text>
         </view>
         <view class="nav-btn" @click.stop="toggleBookmark">
-          <u-icon :name="isBookmarked ? 'bookmark-fill' : 'bookmark'" :color="isBookmarked ? '#ffd43b' : '#fff'" size="32" />
+          <u-icon
+            :name="isBookmarked ? 'bookmark-fill' : 'bookmark'"
+            :color="isBookmarked ? '#ffd43b' : '#fff'"
+            size="32"
+          />
           <text>书签</text>
         </view>
         <view class="nav-btn" @click.stop="toggleListenMode">
           <u-icon name="headphones" color="#fff" size="32" />
           <text>听书</text>
         </view>
-        <view class="nav-btn" :class="{ disabled: !hasNextChapter }" @click.stop="nextChapter">
+        <view
+          class="nav-btn"
+          :class="{ disabled: !hasNextChapter }"
+          @click.stop="nextChapter"
+        >
           <text>下一章</text>
           <u-icon name="arrow-right" color="#fff" size="32" />
         </view>
@@ -64,7 +88,9 @@
 
       <!-- 进度条 -->
       <view class="progress-section">
-        <text class="progress-text">{{ currentPage + 1 }}/{{ currentPages.length }}</text>
+        <text class="progress-text"
+          >{{ currentPage + 1 }}/{{ currentPages.length }}</text
+        >
         <slider
           class="progress-slider"
           :value="currentPage"
@@ -82,7 +108,7 @@
       <view class="settings-section">
         <view class="setting-item" @click.stop="toggleNightMode">
           <u-icon :name="isNightMode ? 'sun' : 'moon'" color="#fff" size="40" />
-          <text>{{ isNightMode ? '日间' : '夜间' }}</text>
+          <text>{{ isNightMode ? "日间" : "夜间" }}</text>
         </view>
         <view class="setting-item" @click.stop="decreaseFontSize">
           <text class="font-btn">A-</text>
@@ -126,29 +152,59 @@
       <view class="settings-popup">
         <view class="settings-popup-header">
           <text class="settings-popup-title">阅读设置</text>
-          <u-icon name="close" color="#909399" size="40" @click="showSettingsPopup = false" />
+          <u-icon
+            name="close"
+            color="#909399"
+            size="40"
+            @click="showSettingsPopup = false"
+          />
         </view>
-        
+
         <!-- 字体大小 -->
         <view class="setting-row">
           <text class="setting-label">字体大小</text>
           <view class="font-size-control">
-            <u-button text="A-" size="small" :disabled="fontSize <= 14" @click="decreaseFontSize" />
+            <u-button
+              text="A-"
+              size="small"
+              :disabled="fontSize <= 14"
+              @click="decreaseFontSize"
+            />
             <text class="font-size-value">{{ fontSize }}px</text>
-            <u-button text="A+" size="small" :disabled="fontSize >= 28" @click="increaseFontSize" />
+            <u-button
+              text="A+"
+              size="small"
+              :disabled="fontSize >= 28"
+              @click="increaseFontSize"
+            />
           </view>
         </view>
-        
+
         <!-- 行间距 -->
         <view class="setting-row">
           <text class="setting-label">行间距</text>
           <view class="line-height-control">
-            <u-button text="紧凑" size="small" :type="lineHeight === 1.5 ? 'primary' : 'default'" @click="lineHeight = 1.5" />
-            <u-button text="标准" size="small" :type="lineHeight === 1.8 ? 'primary' : 'default'" @click="lineHeight = 1.8" />
-            <u-button text="宽松" size="small" :type="lineHeight === 2.0 ? 'primary' : 'default'" @click="lineHeight = 2.0" />
+            <u-button
+              text="紧凑"
+              size="small"
+              :type="lineHeight === 1.5 ? 'primary' : 'default'"
+              @click="lineHeight = 1.5"
+            />
+            <u-button
+              text="标准"
+              size="small"
+              :type="lineHeight === 1.8 ? 'primary' : 'default'"
+              @click="lineHeight = 1.8"
+            />
+            <u-button
+              text="宽松"
+              size="small"
+              :type="lineHeight === 2.0 ? 'primary' : 'default'"
+              @click="lineHeight = 2.0"
+            />
           </view>
         </view>
-        
+
         <!-- 背景颜色 -->
         <view class="setting-row">
           <text class="setting-label">背景颜色</text>
@@ -161,24 +217,50 @@
               :style="{ background: color.color }"
               @click="onBgColorChange(color.value)"
             >
-              <u-icon v-if="bgColor === color.value" name="checkmark" color="#667eea" size="28" />
+              <u-icon
+                v-if="bgColor === color.value"
+                name="checkmark"
+                color="#667eea"
+                size="28"
+              />
             </view>
           </view>
           <view class="bg-color-names">
-            <text v-for="color in bgColors" :key="color.value" class="bg-color-name" :class="{ active: bgColor === color.value }">{{ color.name }}</text>
+            <text
+              v-for="color in bgColors"
+              :key="color.value"
+              class="bg-color-name"
+              :class="{ active: bgColor === color.value }"
+              >{{ color.name }}</text
+            >
           </view>
         </view>
-        
+
         <!-- 翻页方式 -->
         <view class="setting-row">
           <text class="setting-label">翻页方式</text>
           <view class="page-mode-control">
-            <u-button text="覆盖" size="small" :type="pageMode === 'cover' ? 'primary' : 'default'" @click="pageMode = 'cover'" />
-            <u-button text="滑动" size="small" :type="pageMode === 'slide' ? 'primary' : 'default'" @click="pageMode = 'slide'" />
-            <u-button text="上下" size="small" :type="pageMode === 'vertical' ? 'primary' : 'default'" @click="pageMode = 'vertical'" />
+            <u-button
+              text="覆盖"
+              size="small"
+              :type="pageMode === 'cover' ? 'primary' : 'default'"
+              @click="pageMode = 'cover'"
+            />
+            <u-button
+              text="滑动"
+              size="small"
+              :type="pageMode === 'slide' ? 'primary' : 'default'"
+              @click="pageMode = 'slide'"
+            />
+            <u-button
+              text="上下"
+              size="small"
+              :type="pageMode === 'vertical' ? 'primary' : 'default'"
+              @click="pageMode = 'vertical'"
+            />
           </view>
         </view>
-        
+
         <!-- 亮度 -->
         <view class="setting-row">
           <text class="setting-label">亮度</text>
@@ -206,7 +288,9 @@
       <view class="bookmark-popup">
         <view class="popup-header">
           <text class="popup-title">书签</text>
-          <text class="popup-close" @click="showBookmarkPopup = false">关闭</text>
+          <text class="popup-close" @click="showBookmarkPopup = false"
+            >关闭</text
+          >
         </view>
         <scroll-view class="bookmark-scroll" scroll-y>
           <view v-if="bookmarks.length === 0" class="empty-bookmarks">
@@ -222,9 +306,16 @@
             <view class="bookmark-info">
               <text class="bookmark-chapter">{{ bookmark.chapterTitle }}</text>
               <text class="bookmark-content">{{ bookmark.content }}</text>
-              <text class="bookmark-time">{{ formatBookmarkTime(bookmark.time) }}</text>
+              <text class="bookmark-time">{{
+                formatBookmarkTime(bookmark.time)
+              }}</text>
             </view>
-            <u-icon name="trash" color="#ff4757" size="32" @click.stop="deleteBookmark(bookmark)" />
+            <u-icon
+              name="trash"
+              color="#ff4757"
+              size="32"
+              @click.stop="deleteBookmark(bookmark)"
+            />
           </view>
         </scroll-view>
       </view>
@@ -236,7 +327,12 @@
         <u-icon name="headphones" color="#667eea" size="48" />
         <text class="listen-text">听书模式已开启</text>
         <text class="listen-hint">正在朗读中...</text>
-        <u-button text="关闭听书" type="default" size="small" @click="toggleListenMode" />
+        <u-button
+          text="关闭听书"
+          type="default"
+          size="small"
+          @click="toggleListenMode"
+        />
       </view>
     </view>
   </view>
@@ -324,7 +420,10 @@ const bookmarks = ref<Bookmark[]>([
 ]);
 
 const currentChapter = computed(() => {
-  return chapterList.value.find((c) => c.id === chapterId.value) || chapterList.value[0];
+  return (
+    chapterList.value.find((c) => c.id === chapterId.value) ||
+    chapterList.value[0]
+  );
 });
 
 const currentChapterIndex = computed(() => {
@@ -332,7 +431,9 @@ const currentChapterIndex = computed(() => {
 });
 
 const hasPrevChapter = computed(() => currentChapterIndex.value > 0);
-const hasNextChapter = computed(() => currentChapterIndex.value < chapterList.value.length - 1);
+const hasNextChapter = computed(
+  () => currentChapterIndex.value < chapterList.value.length - 1,
+);
 
 // 模拟章节内容
 const chapterContent = ref(
@@ -402,7 +503,7 @@ const chapterContent = ref(
 
 "从今天开始，老夫会教你真正的修炼之法，让你重新成为天才。"
 
-萧炎的眼中闪过一丝光芒，他知道，自己的命运从这一刻开始改变了。`
+萧炎的眼中闪过一丝光芒，他知道，自己的命运从这一刻开始改变了。`,
 );
 
 const currentPages = computed(() => {
@@ -468,7 +569,11 @@ onLoad((options) => {
 onUnload(() => {
   // 保存阅读进度
   if (bookId.value && chapterId.value) {
-    readingStore.saveReadingProgress(bookId.value, chapterId.value, currentPage.value);
+    readingStore.saveReadingProgress(
+      bookId.value,
+      chapterId.value,
+      currentPage.value,
+    );
   }
 });
 
@@ -547,7 +652,7 @@ const showSettings = () => {
 
 const onBgColorChange = (color: string) => {
   bgColor.value = color;
-  if (color === 'dark') {
+  if (color === "dark") {
     isNightMode.value = true;
   } else {
     isNightMode.value = false;
@@ -563,7 +668,7 @@ const toggleBookmark = () => {
   if (isBookmarked.value) {
     // 删除当前页书签
     const idx = bookmarks.value.findIndex(
-      (b) => b.chapterId === chapterId.value && b.page === currentPage.value
+      (b) => b.chapterId === chapterId.value && b.page === currentPage.value,
     );
     if (idx > -1) {
       bookmarks.value.splice(idx, 1);
@@ -588,7 +693,7 @@ const toggleBookmark = () => {
 
 const checkBookmarkStatus = () => {
   isBookmarked.value = bookmarks.value.some(
-    (b) => b.chapterId === chapterId.value && b.page === currentPage.value
+    (b) => b.chapterId === chapterId.value && b.page === currentPage.value,
   );
 };
 
