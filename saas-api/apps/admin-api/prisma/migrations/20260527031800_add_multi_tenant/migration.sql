@@ -1,4 +1,4 @@
-﻿-- CreateTable
+-- CreateTable
 CREATE TABLE "Tenant" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,

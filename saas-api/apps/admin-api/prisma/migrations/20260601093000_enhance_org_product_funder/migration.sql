@@ -1,4 +1,4 @@
-﻿-- Enhance product and funder configuration fields for PRD v1.3 base platform modules.
+-- Enhance product and funder configuration fields for PRD v1.3 base platform modules.
 ALTER TABLE "Product"
   ADD COLUMN IF NOT EXISTS "applicableFunders" JSONB,
   ADD COLUMN IF NOT EXISTS "accessConditions" JSONB,

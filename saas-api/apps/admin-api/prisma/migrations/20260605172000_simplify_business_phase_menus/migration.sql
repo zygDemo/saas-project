@@ -1,4 +1,4 @@
-﻿-- Simplify business sidebar to the six major order phases.
+-- Simplify business sidebar to the six major order phases.
 UPDATE "Menu" AS m
 SET "hidden" = TRUE
 FROM "Menu" AS parent

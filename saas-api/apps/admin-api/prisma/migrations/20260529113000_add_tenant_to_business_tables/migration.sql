@@ -1,4 +1,4 @@
-﻿-- Add tenant isolation columns to business tables with existing data support.
+-- Add tenant isolation columns to business tables with existing data support.
 -- Historical local/demo data is assigned to the default tenant. Child records
 -- inherit tenantId from their parent business record where possible.
 

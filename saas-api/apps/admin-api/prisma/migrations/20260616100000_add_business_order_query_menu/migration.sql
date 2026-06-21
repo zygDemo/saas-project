@@ -1,4 +1,4 @@
-﻿-- Add 综合查询 and restore 流程与规则 menu grants.
+-- Add 综合查询 and restore 流程与规则 menu grants.
 WITH business AS (
   SELECT "tenantId", "id" AS "parentId"
   FROM "Menu"

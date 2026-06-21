@@ -1,4 +1,4 @@
-﻿CREATE TABLE "DictType" (
+CREATE TABLE "DictType" (
   "id" SERIAL NOT NULL,
   "tenantId" INTEGER NOT NULL,
   "name" TEXT NOT NULL,

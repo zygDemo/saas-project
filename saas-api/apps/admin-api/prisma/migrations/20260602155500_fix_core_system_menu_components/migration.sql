@@ -1,4 +1,4 @@
-﻿UPDATE "Menu"
+UPDATE "Menu"
 SET "component" = CASE "name"
     WHEN 'User' THEN '/system/user'
     WHEN 'Role' THEN '/system/role'

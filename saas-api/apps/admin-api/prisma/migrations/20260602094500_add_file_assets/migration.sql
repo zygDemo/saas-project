@@ -1,4 +1,4 @@
-﻿CREATE TABLE "FileAsset" (
+CREATE TABLE "FileAsset" (
   "id" SERIAL NOT NULL,
   "tenantId" INTEGER NOT NULL,
   "orgId" INTEGER,

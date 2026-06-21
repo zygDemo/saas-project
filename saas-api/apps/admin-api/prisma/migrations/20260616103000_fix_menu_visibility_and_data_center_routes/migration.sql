@@ -1,4 +1,4 @@
-﻿-- Make menu visibility and data-center routes match the current frontend.
+-- Make menu visibility and data-center routes match the current frontend.
 WITH business AS (
   SELECT "tenantId", "id" AS "parentId"
   FROM "Menu"

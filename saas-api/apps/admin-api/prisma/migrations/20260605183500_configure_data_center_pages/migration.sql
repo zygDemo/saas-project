@@ -1,4 +1,4 @@
-﻿UPDATE "Menu"
+UPDATE "Menu"
 SET
   "component" = '/data-center/stats',
   "hidden" = FALSE,

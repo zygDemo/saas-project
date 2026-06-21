@@ -1,4 +1,4 @@
-﻿-- Move configuration-oriented menus out of Business and into Platform.
+-- Move configuration-oriented menus out of Business and into Platform.
 WITH target_parent AS (
   SELECT "tenantId", "id" AS "parentId"
   FROM "Menu"

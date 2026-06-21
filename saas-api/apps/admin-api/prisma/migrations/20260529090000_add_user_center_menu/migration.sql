@@ -1,4 +1,4 @@
-﻿-- Add personal center as a hidden menu route for every tenant.
+-- Add personal center as a hidden menu route for every tenant.
 INSERT INTO "Menu" (
   "tenantId",
   "parentId",
