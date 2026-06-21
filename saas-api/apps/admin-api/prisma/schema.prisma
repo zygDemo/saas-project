@@ -843,3 +843,146 @@ model OperationLog {
   @@index([module])
   @@index([createdAt])
 }
+
+// ==================== 读书模块 ====================
+
+model BookCategory {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  name      String   // 分类名称
+  parentId  Int?     // 父分类ID
+  sort      Int      @default(0) // 排序
+  status    Int      @default(1) // 状态 1:启用 0:禁用
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  books     Book[]
+
+  @@index([tenantId])
+  @@index([parentId])
+}
+
+model Book {
+  id            Int           @id @default(autoincrement())
+  tenantId      Int
+  title         String        // 书名
+  author        String        // 作者
+  cover         String?       // 封面URL
+  desc          String?       // 简介
+  categoryId    Int?          // 分类ID
+  isbn          String?       // ISBN
+  publisher     String?       // 出版社
+  publishDate   DateTime?     // 出版日期
+  wordCount     Int           @default(0) // 字数
+  chapterCount  Int           @default(0) // 章节数
+  price         Decimal       @default(0) @db.Decimal(10, 2) // 价格
+  isFree        Boolean       @default(true) // 是否免费
+  isVip         Boolean       @default(false) // 是否VIP
+  isSerial      Boolean       @default(true) // 是否连载
+  isFinished    Boolean       @default(false) // 是否完结
+  isHot         Boolean       @default(false) // 是否热门
+  isRecommend   Boolean       @default(false) // 是否推荐
+  rating        Decimal       @default(0) @db.Decimal(3, 1) // 评分
+  ratingCount   Int           @default(0) // 评分人数
+  readCount     Int           @default(0) // 阅读人数
+  downloadCount Int           @default(0) // 下载人数
+  status        Int           @default(1) // 状态 1:上架 0:下架
+  sort          Int           @default(0) // 排序
+  tags          String?       // 标签，逗号分隔
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category      BookCategory? @relation(fields: [categoryId], references: [id])
+  chapters      BookChapter[]
+  bookshelves   UserBookshelf[]
+  progress      ReadingProgress[]
+  reviews       BookReview[]
+
+  @@index([tenantId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([isHot])
+  @@index([isRecommend])
+}
+
+model BookChapter {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  bookId    Int
+  title     String   // 章节标题
+  content   String?  @db.Text // 章节内容
+  wordCount Int      @default(0) // 字数
+  sort      Int      @default(0) // 排序
+  isVip     Boolean  @default(false) // 是否VIP章节
+  price     Decimal  @default(0) @db.Decimal(10, 2) // 章节价格
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([bookId, sort])
+  @@index([tenantId])
+  @@index([bookId])
+}
+
+model UserBookshelf {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int
+  userId      Int
+  bookId      Int
+  lastReadAt  DateTime? // 最后阅读时间
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  book        Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId])
+  @@index([tenantId])
+  @@index([userId])
+}
+
+model ReadingProgress {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int
+  userId      Int
+  bookId      Int
+  chapterId   Int
+  page        Int      @default(0) // 页码
+  progress    Decimal  @default(0) @db.Decimal(5, 2) // 进度百分比
+  readTime    Int      @default(0) // 阅读时长（秒）
+  lastReadAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  book        Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId])
+  @@index([tenantId])
+  @@index([userId])
+  @@index([bookId])
+}
+
+model BookReview {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  userId    Int
+  bookId    Int
+  rating    Int      // 评分 1-5
+  content   String?  @db.Text // 评价内容
+  likes     Int      @default(0) // 点赞数
+  status    Int      @default(1) // 状态 1:正常 0:隐藏
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId])
+  @@index([tenantId])
+  @@index([userId])
+  @@index([bookId])
+}

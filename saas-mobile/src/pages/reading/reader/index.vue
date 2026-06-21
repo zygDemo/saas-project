@@ -100,7 +100,7 @@
     </view>
 
     <!-- 章节目录弹窗 -->
-    <u-popup :show="showChapterPopup" mode="left" @close="showChapterPopup = false">
+    <u-popup v-model="showChapterPopup" mode="left">
       <view class="chapter-popup">
         <view class="popup-header">
           <text class="popup-title">目录</text>
@@ -122,7 +122,7 @@
     </u-popup>
 
     <!-- 设置弹窗 -->
-    <u-popup :show="showSettingsPopup" mode="bottom" :round="16" @close="showSettingsPopup = false">
+    <u-popup v-model="showSettingsPopup" mode="bottom" border-radius="16">
       <view class="settings-popup">
         <view class="settings-popup-header">
           <text class="settings-popup-title">阅读设置</text>
@@ -202,7 +202,7 @@
     </u-popup>
 
     <!-- 书签列表弹窗 -->
-    <u-popup :show="showBookmarkPopup" mode="bottom" @close="showBookmarkPopup = false">
+    <u-popup v-model="showBookmarkPopup" mode="bottom">
       <view class="bookmark-popup">
         <view class="popup-header">
           <text class="popup-title">书签</text>
