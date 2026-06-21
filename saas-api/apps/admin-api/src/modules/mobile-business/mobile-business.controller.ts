@@ -26,7 +26,11 @@ import {
   MobileIdCardInfoDto,
   MobileUserListQueryDto,
   MobileUuidQueryDto,
-  MobileVehicleInfoDto
+  MobileVehicleInfoDto,
+  MobileContactDto,
+  MobileSalesLeadDto,
+  MobileFollowUpDto,
+  MobileSigningStartDto
 } from './dto/mobile-business.dto'
 import { MobileBusinessService } from './mobile-business.service'
 
@@ -308,5 +312,109 @@ export class MobileStatisticsController {
   @ApiOperation({ summary: '业务统计概览' })
   overview() {
     return this.service.getStatisticsOverview()
+  }
+}
+
+@ApiTags('移动端联系人')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
+@Controller('m/user')
+export class MobileContactController {
+  constructor(private readonly service: MobileBusinessService) {}
+
+  @Post('addOrUpdateContact')
+  @ApiOperation({ summary: '新增/更新联系人' })
+  addOrUpdateContact(@Body() dto: MobileContactDto) {
+    return this.service.addOrUpdateContact(dto)
+  }
+
+  @Get('getContacts')
+  @ApiOperation({ summary: '获取联系人列表' })
+  getContacts(@Query('userUuid') userUuid: string) {
+    return this.service.getContacts(userUuid)
+  }
+
+  @Delete('deleteContact/:id')
+  @ApiOperation({ summary: '删除联系人' })
+  deleteContact(@Param('id') id: string) {
+    return this.service.deleteContact(Number(id))
+  }
+}
+
+@ApiTags('移动端线索')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
+@Controller('m/salesLead')
+export class MobileSalesLeadController {
+  constructor(private readonly service: MobileBusinessService) {}
+
+  @Post('add')
+  @ApiOperation({ summary: '新增销售线索' })
+  add(@Body() dto: MobileSalesLeadDto, @CurrentUser() user: RequestUser) {
+    return this.service.addSalesLead(dto, user)
+  }
+}
+
+@ApiTags('移动端跟进')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
+@Controller('m/clueFollowUp')
+export class MobileFollowUpController {
+  constructor(private readonly service: MobileBusinessService) {}
+
+  @Post('add')
+  @ApiOperation({ summary: '新增跟进记录' })
+  add(@Body() dto: MobileFollowUpDto, @CurrentUser() user: RequestUser) {
+    return this.service.addFollowUp(dto, user)
+  }
+
+  @Get('list/:uuid')
+  @ApiOperation({ summary: '获取跟进列表' })
+  list(@Param('uuid') uuid: string) {
+    return this.service.getFollowUpList(uuid)
+  }
+}
+
+@ApiTags('移动端签约')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
+@Controller('m/signing')
+export class MobileSigningController {
+  constructor(private readonly service: MobileBusinessService) {}
+
+  @Post('face/start')
+  @ApiOperation({ summary: '发起人脸识别' })
+  startFaceSign(@Body() dto: MobileSigningStartDto) {
+    return this.service.startFaceSign(dto)
+  }
+
+  @Post('contract/start')
+  @ApiOperation({ summary: '发起授权书签署' })
+  startAuthContractSign(@Body() dto: MobileSigningStartDto) {
+    return this.service.startAuthContractSign(dto)
+  }
+
+  @Post('loan/start')
+  @ApiOperation({ summary: '发起合同签署' })
+  startContractSign(@Body() dto: MobileSigningStartDto) {
+    return this.service.startContractSign(dto)
+  }
+
+  @Get('face/detail/:creditOrderId')
+  @ApiOperation({ summary: '获取人脸识别结果' })
+  getFaceSignDetail(@Param('creditOrderId') creditOrderId: string) {
+    return this.service.getFaceSignDetail(creditOrderId)
+  }
+
+  @Get('contract/detail/:creditOrderId')
+  @ApiOperation({ summary: '获取授权书签约详情' })
+  getAuthContractDetail(@Param('creditOrderId') creditOrderId: string) {
+    return this.service.getAuthContractDetail(creditOrderId)
+  }
+
+  @Get('loan/detail/:creditOrderId')
+  @ApiOperation({ summary: '获取合同签约详情' })
+  getContractDetail(@Param('creditOrderId') creditOrderId: string) {
+    return this.service.getContractDetail(creditOrderId)
   }
 }

@@ -194,6 +194,36 @@
     },
     {
       "path": "pages/my/agreement"
+    },
+    {
+      "path": "pages/reading/index/index",
+      "style": {
+        "navigationBarTitleText": "我的书架"
+      }
+    },
+    {
+      "path": "pages/reading/store/index",
+      "style": {
+        "navigationBarTitleText": "书城"
+      }
+    },
+    {
+      "path": "pages/reading/store/detail",
+      "style": {
+        "navigationBarTitleText": "书籍详情"
+      }
+    },
+    {
+      "path": "pages/reading/reader/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/reading/download/list",
+      "style": {
+        "navigationBarTitleText": "下载管理"
+      }
     }
   ],
   "globalStyle": {

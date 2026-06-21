@@ -315,6 +315,13 @@
       "title": "版本计划",
       "log": "更新日志"
     },
+    "reading": {
+      "title": "阅读管理",
+      "bookshelf": "书架管理",
+      "books": "图书管理",
+      "category": "分类管理",
+      "comment": "评论管理"
+    },
     "help": {
       "title": "帮助中心",
       "document": "官方文档",

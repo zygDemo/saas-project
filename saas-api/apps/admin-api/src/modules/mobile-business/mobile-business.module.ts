@@ -8,7 +8,11 @@ import {
   MobileFileController,
   MobileStatisticsController,
   MobileUserController,
-  MobileVehicleController
+  MobileVehicleController,
+  MobileContactController,
+  MobileSalesLeadController,
+  MobileFollowUpController,
+  MobileSigningController
 } from './mobile-business.controller'
 import { MobileBusinessService } from './mobile-business.service'
 
@@ -20,7 +24,11 @@ import { MobileBusinessService } from './mobile-business.service'
     MobileVehicleController,
     MobileCreditController,
     MobileEnumController,
-    MobileStatisticsController
+    MobileStatisticsController,
+    MobileContactController,
+    MobileSalesLeadController,
+    MobileFollowUpController,
+    MobileSigningController
   ],
   providers: [MobileBusinessService]
 })

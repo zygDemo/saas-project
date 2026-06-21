@@ -952,7 +952,7 @@ async function seedAllMenus(tenantId: number) {
     hidden: true,
     hiddenTab: true
   })
-  const workOrder = await upsertMenu(tenantId, {
+  const systemWorkOrder = await upsertMenu(tenantId, {
     parentId: system.id,
     path: 'work-order',
     name: 'WorkOrder',
@@ -960,6 +960,56 @@ async function seedAllMenus(tenantId: number) {
     title: '执行工单',
     icon: 'ri:customer-service-2-line',
     sort: 52,
+    keepAlive: true
+  })
+
+  // ============== 读书管理 ==============
+  const reading = await upsertMenu(tenantId, {
+    path: '/reading',
+    name: 'Reading',
+    component: '/index/index',
+    title: '读书管理',
+    icon: 'ri:book-3-line',
+    sort: 55
+  })
+  const readingBookshelf = await upsertMenu(tenantId, {
+    parentId: reading.id,
+    path: 'bookshelf',
+    name: 'ReadingBookshelf',
+    component: '/reading/bookshelf/index',
+    title: '书架管理',
+    icon: 'ri:bookshelf-line',
+    sort: 551,
+    keepAlive: true
+  })
+  const readingBooks = await upsertMenu(tenantId, {
+    parentId: reading.id,
+    path: 'books',
+    name: 'ReadingBooks',
+    component: '/reading/books/index',
+    title: '图书管理',
+    icon: 'ri:book-open-line',
+    sort: 552,
+    keepAlive: true
+  })
+  const readingCategory = await upsertMenu(tenantId, {
+    parentId: reading.id,
+    path: 'category',
+    name: 'ReadingCategory',
+    component: '/reading/category/index',
+    title: '分类管理',
+    icon: 'ri:folder-2-line',
+    sort: 553,
+    keepAlive: true
+  })
+  const readingComment = await upsertMenu(tenantId, {
+    parentId: reading.id,
+    path: 'comment',
+    name: 'ReadingComment',
+    component: '/reading/comment/index',
+    title: '评论管理',
+    icon: 'ri:chat-3-line',
+    sort: 554,
     keepAlive: true
   })
 
@@ -1313,6 +1363,11 @@ async function seedAllMenus(tenantId: number) {
 
   // 初始化按钮权限
   const bizMenus = [
+    reading,
+    readingBookshelf,
+    readingBooks,
+    readingCategory,
+    readingComment,
     tenantMgmt,
     packageBilling,
     productTemplate,
@@ -1395,6 +1450,11 @@ async function seedAllMenus(tenantId: number) {
     sysParam,
     notice,
     userCenter,
+    reading,
+    readingBookshelf,
+    readingBooks,
+    readingCategory,
+    readingComment,
     business,
     businessPrecheck,
     businessSupplement,

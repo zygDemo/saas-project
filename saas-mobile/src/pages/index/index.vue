@@ -167,12 +167,14 @@ const serviceCards = [
     },
   },
   {
-    key: "more",
-    title: "更多服务",
-    desc: "即将上线 · 敬请期待",
-    icon: "grid",
-    iconClass: "icon-more",
-    handler: () => uni.showToast({ title: "更多功能敬请期待", icon: "none" }),
+    key: "reading",
+    title: "读书",
+    desc: "小说阅读 · 离线下载",
+    icon: "book",
+    iconClass: "icon-reading",
+    handler: () => {
+      uni.navigateTo({ url: APP_ROUTES.reading.home });
+    },
   },
 ];
 
@@ -208,6 +210,13 @@ const shortcutItems = [
     icon: "customer-service",
     bgColor: "rgba(var(--u-type-info-rgb, 144, 147, 153), 0.85)",
     handler: () => uni.makePhoneCall({ phoneNumber: "13818821494" }),
+  },
+  {
+    key: "reading",
+    label: "读书",
+    icon: "book",
+    bgColor: "rgba(61, 193, 211, 0.85)",
+    handler: () => uni.navigateTo({ url: APP_ROUTES.reading.home }),
   },
 ];
 
@@ -388,6 +397,11 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 .icon-credit {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   box-shadow: 0 8rpx 20rpx rgba(79, 172, 254, 0.3);
+}
+
+.icon-reading {
+  background: linear-gradient(135deg, #a8e6cf 0%, #3dc1d3 100%);
+  box-shadow: 0 8rpx 20rpx rgba(61, 193, 211, 0.3);
 }
 
 .icon-more {

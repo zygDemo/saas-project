@@ -368,3 +368,128 @@ export class MobileCreditUpdateDto extends PartialType(MobileCreditApplyDto) {
   @IsString()
   creditOrderId: string
 }
+
+// ==================== 联系人 DTO ====================
+
+export class MobileContactDto {
+  @ApiPropertyOptional({ description: '联系人ID，编辑时传入' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  id?: number
+
+  @ApiProperty({ description: '客户UUID' })
+  @IsString()
+  userUuid: string
+
+  @ApiPropertyOptional({ description: '联系人类型 1：共借人；2：配偶；3：配偶且共借人；4：担保人' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  contactType?: number
+
+  @ApiPropertyOptional({ description: '联系人姓名' })
+  @IsOptional()
+  @IsString()
+  contactName?: string
+
+  @ApiPropertyOptional({ description: '联系方式' })
+  @IsOptional()
+  @IsString()
+  contactTelephone?: string
+
+  @ApiPropertyOptional({ description: '身份证号码' })
+  @IsOptional()
+  @IsString()
+  contactIdcard?: string
+
+  @ApiPropertyOptional({ description: '与客户关系 1配偶 2父母 3子女 4朋友 5兄弟姐妹 6亲戚 7同事 8其他' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  contactRelationship?: number
+}
+
+// ==================== 销售线索 DTO ====================
+
+export class MobileSalesLeadDto {
+  @ApiProperty({ description: '客户姓名' })
+  @IsString()
+  personName: string
+
+  @ApiProperty({ description: '手机号' })
+  @IsString()
+  telephone: string
+
+  @ApiPropertyOptional({ description: '身份证号' })
+  @IsOptional()
+  @IsString()
+  idCard?: string
+
+  @ApiPropertyOptional({ description: '车辆品牌' })
+  @IsOptional()
+  @IsString()
+  carBrand?: string
+
+  @ApiPropertyOptional({ description: '车辆型号' })
+  @IsOptional()
+  @IsString()
+  carModel?: string
+
+  @ApiPropertyOptional({ description: '意向金额' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  loanAmount?: number
+
+  @ApiPropertyOptional({ description: '来源' })
+  @IsOptional()
+  @IsString()
+  source?: string
+
+  @ApiPropertyOptional({ description: '备注' })
+  @IsOptional()
+  @IsString()
+  remark?: string
+}
+
+// ==================== 跟进记录 DTO ====================
+
+export class MobileFollowUpDto {
+  @ApiProperty({ description: '客户UUID' })
+  @IsString()
+  uuid: string
+
+  @ApiPropertyOptional({ description: '跟进方式 PHONE/VISIT/WECHAT/OTHER' })
+  @IsOptional()
+  @IsString()
+  followType?: string
+
+  @ApiProperty({ description: '跟进内容' })
+  @IsString()
+  content: string
+
+  @ApiPropertyOptional({ description: '下次跟进时间' })
+  @IsOptional()
+  @IsString()
+  nextFollowAt?: string
+}
+
+// ==================== 签约 DTO ====================
+
+export class MobileSigningStartDto {
+  @ApiProperty({ description: '客户UUID' })
+  @IsString()
+  uuid: string
+
+  @ApiPropertyOptional({ description: '回调URL' })
+  @IsOptional()
+  @IsString()
+  redirectUrl?: string
+
+  @ApiPropertyOptional({ description: '授信订单号' })
+  @IsOptional()
+  @IsString()
+  creditOrderId?: string
+}

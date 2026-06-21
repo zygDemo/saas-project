@@ -20,7 +20,11 @@ import {
   MobileCreditUpdateDto,
   MobileIdCardInfoDto,
   MobileUserListQueryDto,
-  MobileVehicleInfoDto
+  MobileVehicleInfoDto,
+  MobileContactDto,
+  MobileSalesLeadDto,
+  MobileFollowUpDto,
+  MobileSigningStartDto
 } from './dto/mobile-business.dto'
 
 const IMAGE_UPLOAD_LIMIT = 10 * 1024 * 1024
@@ -1197,5 +1201,285 @@ export class MobileBusinessService {
     }
     const message = error instanceof Error ? error.message : ''
     return message.includes('FileAsset') || message.includes('fileAsset')
+  }
+
+  // ==================== 联系人管理 ====================
+
+  async addOrUpdateContact(dto: MobileContactDto) {
+    const customer = await this.getCustomerByUuid(dto.userUuid)
+    if (!customer) throw new NotFoundException('客户不存在')
+
+    const data = {
+      customerId: customer.id,
+      contactType: dto.contactType,
+      contactName: dto.contactName,
+      contactTelephone: dto.contactTelephone,
+      contactIdcard: dto.contactIdcard,
+      contactRelationship: dto.contactRelationship
+    }
+
+    if (dto.id) {
+      return this.prisma.customerContact.update({
+        where: { id: dto.id },
+        data
+      })
+    }
+
+    return this.prisma.customerContact.create({ data })
+  }
+
+  async getContacts(userUuid: string) {
+    const customer = await this.getCustomerByUuid(userUuid)
+    if (!customer) return []
+
+    return this.prisma.customerContact.findMany({
+      where: { customerId: customer.id },
+      orderBy: { id: 'desc' }
+    })
+  }
+
+  async deleteContact(id: number) {
+    await this.prisma.customerContact.delete({ where: { id } })
+    return { code: 200, msg: 'success' }
+  }
+
+  // ==================== 销售线索 ====================
+
+  async addSalesLead(dto: MobileSalesLeadDto, user: RequestUser) {
+    const customer = await this.prisma.customer.findFirst({
+      where: { phone: dto.telephone }
+    })
+
+    if (customer) {
+      return {
+        code: 200,
+        msg: 'success',
+        data: {
+          uuid: String(customer.id),
+          personName: customer.name,
+          telephone: customer.phone
+        }
+      }
+    }
+
+    const newCustomer = await this.prisma.customer.create({
+      data: {
+        tenantId: user.tenantId || 1,
+        orgId: 1,
+        name: dto.personName,
+        phone: dto.telephone,
+        idCard: dto.idCard,
+        status: 'ACTIVE'
+      }
+    })
+
+    await this.prisma.lead.create({
+      data: {
+        tenantId: user.tenantId || 1,
+        orgId: 1,
+        source: dto.source || 'SELF',
+        name: dto.personName,
+        phone: dto.telephone,
+        idCard: dto.idCard,
+        carBrand: dto.carBrand,
+        carModel: dto.carModel,
+        loanAmount: dto.loanAmount,
+        remark: dto.remark,
+        status: 'PENDING_ASSIGN',
+        createdBy: user.sub
+      }
+    })
+
+    return {
+      code: 200,
+      msg: 'success',
+      data: {
+        uuid: String(newCustomer.id),
+        personName: newCustomer.name,
+        telephone: newCustomer.phone
+      }
+    }
+  }
+
+  // ==================== 跟进记录 ====================
+
+  async addFollowUp(dto: MobileFollowUpDto, user: RequestUser) {
+    const customer = await this.getCustomerByUuid(dto.uuid)
+    if (!customer) throw new NotFoundException('客户不存在')
+
+    const lead = await this.prisma.lead.findFirst({
+      where: { phone: customer.phone, orgId: customer.orgId }
+    })
+
+    if (!lead) throw new NotFoundException('线索不存在')
+
+    const followUp = await this.prisma.leadFollowUp.create({
+      data: {
+        leadId: lead.id,
+        followType: dto.followType || 'OTHER',
+        content: dto.content,
+        nextFollowAt: dto.nextFollowAt ? new Date(dto.nextFollowAt) : undefined,
+        createdBy: user.sub
+      }
+    })
+
+    if (dto.nextFollowAt) {
+      await this.prisma.lead.update({
+        where: { id: lead.id },
+        data: { nextFollowAt: new Date(dto.nextFollowAt), status: 'FOLLOWING' }
+      })
+    }
+
+    return { code: 200, msg: 'success', data: followUp }
+  }
+
+  async getFollowUpList(uuid: string) {
+    const customer = await this.getCustomerByUuid(uuid)
+    if (!customer) return []
+
+    const lead = await this.prisma.lead.findFirst({
+      where: { phone: customer.phone }
+    })
+
+    if (!lead) return []
+
+    const records = await this.prisma.leadFollowUp.findMany({
+      where: { leadId: lead.id },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    return { code: 200, msg: 'success', data: records }
+  }
+
+  // ==================== 签约管理 ====================
+
+  async startFaceSign(dto: MobileSigningStartDto) {
+    const application = await this.findApplicationByOrderId(dto.creditOrderId || '')
+    if (!application) throw new NotFoundException('订单不存在')
+
+    await this.prisma.application.update({
+      where: { id: application.id },
+      data: { status: 'SIGNING_PROGRESS' }
+    })
+
+    await this.prisma.signRecord.upsert({
+      where: { applicationId: application.id },
+      update: { status: 'SENT' },
+      create: {
+        tenantId: application.tenantId,
+        applicationId: application.id,
+        status: 'SENT'
+      }
+    })
+
+    return {
+      code: 200,
+      msg: 'success',
+      data: {
+        uuid: dto.uuid,
+        creditOrderId: dto.creditOrderId,
+        status: 'PROCESSING',
+        signUrl: dto.redirectUrl || ''
+      }
+    }
+  }
+
+  async startAuthContractSign(dto: MobileSigningStartDto) {
+    const application = await this.findApplicationByOrderId(dto.creditOrderId || '')
+    if (!application) throw new NotFoundException('订单不存在')
+
+    return {
+      code: 200,
+      msg: 'success',
+      data: {
+        uuid: dto.uuid,
+        creditOrderId: dto.creditOrderId,
+        status: 'PENDING',
+        signUrl: dto.redirectUrl || '',
+        callbackUrl: ''
+      }
+    }
+  }
+
+  async startContractSign(dto: MobileSigningStartDto) {
+    const application = await this.findApplicationByOrderId(dto.creditOrderId || '')
+    if (!application) throw new NotFoundException('订单不存在')
+
+    return {
+      code: 200,
+      msg: 'success',
+      data: {
+        uuid: dto.uuid,
+        creditOrderId: dto.creditOrderId,
+        status: 'PENDING',
+        signUrl: dto.redirectUrl || '',
+        callbackUrl: ''
+      }
+    }
+  }
+
+  async getFaceSignDetail(creditOrderId: string) {
+    const application = await this.findApplicationByOrderId(creditOrderId)
+    if (!application) throw new NotFoundException('订单不存在')
+
+    const signRecord = await this.prisma.signRecord.findUnique({
+      where: { applicationId: application.id }
+    })
+
+    return {
+      code: 200,
+      msg: 'success',
+      data: {
+        creditOrderId,
+        status: signRecord?.status || 'PENDING',
+        signedAt: signRecord?.signedAt
+      }
+    }
+  }
+
+  async getAuthContractDetail(creditOrderId: string) {
+    const application = await this.findApplicationByOrderId(creditOrderId)
+    if (!application) throw new NotFoundException('订单不存在')
+
+    const signRecord = await this.prisma.signRecord.findUnique({
+      where: { applicationId: application.id }
+    })
+
+    return {
+      code: 200,
+      msg: 'success',
+      data: {
+        creditOrderId,
+        status: signRecord?.status || 'PENDING',
+        contractUrl: signRecord?.contractUrl
+      }
+    }
+  }
+
+  async getContractDetail(creditOrderId: string) {
+    const application = await this.findApplicationByOrderId(creditOrderId)
+    if (!application) throw new NotFoundException('订单不存在')
+
+    const signRecord = await this.prisma.signRecord.findUnique({
+      where: { applicationId: application.id }
+    })
+
+    return {
+      code: 200,
+      msg: 'success',
+      data: {
+        creditOrderId,
+        status: signRecord?.status || 'PENDING',
+        contractUrl: signRecord?.contractUrl,
+        signedAt: signRecord?.signedAt
+      }
+    }
+  }
+
+  private async findApplicationByOrderId(creditOrderId: string) {
+    if (!creditOrderId) return null
+    return this.prisma.application.findFirst({
+      where: { applicationNo: creditOrderId }
+    })
   }
 }

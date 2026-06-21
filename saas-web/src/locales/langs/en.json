@@ -315,6 +315,13 @@
       "title": "Version Plan",
       "log": "Change Log"
     },
+    "reading": {
+      "title": "Reading",
+      "bookshelf": "Bookshelf",
+      "books": "Books",
+      "category": "Categories",
+      "comment": "Comments"
+    },
     "help": {
       "title": "Help Center",
       "document": "Document",

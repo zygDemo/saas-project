@@ -58,6 +58,13 @@ export const APP_ROUTES = {
     orders: "/pages/food/order/list",
     cart: "/pages/food/order/cart",
   },
+  reading: {
+    home: "/pages/reading/index/index",
+    store: "/pages/reading/store/index",
+    detail: "/pages/reading/store/detail",
+    reader: "/pages/reading/reader/index",
+    download: "/pages/reading/download/list",
+  },
   credit: {
     home: "/pages/credit/index/index",
   },
