@@ -27,8 +27,7 @@
                 class="filter-item"
                 :class="{
                   'filter-item--active': currentBusinessNode === node.value,
-                }"
-                @click="handleBusinessNodeChange(node.value)"
+                }" role="button" tabindex="0" @click="handleBusinessNodeChange(node.value)"
               >
                 {{ node.label }}
                 <view v-if="node.count > 0" class="filter-badge">
@@ -49,8 +48,7 @@
                 class="filter-item filter-item--status"
                 :class="{
                   'filter-item--active': currentNodeStatus === status.value,
-                }"
-                @click="handleNodeStatusChange(status.value)"
+                }" role="button" tabindex="0" @click="handleNodeStatusChange(status.value)"
               >
                 {{ status.label }}
               </view>
@@ -206,7 +204,7 @@
         </view>
 
         <!-- 返回顶部按钮 -->
-        <view v-if="showBackToTop" class="back-to-top" @click="handleBackToTop">
+        <view v-if="showBackToTop" class="back-to-top" role="button" tabindex="0" @click="handleBackToTop">
           <u-icon name="arrow-up" color="#fff" size="40" />
         </view>
       </scroll-view>
@@ -1133,11 +1131,11 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   width: 88rpx;
   height: 88rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2563eb, #14b8a6);
+  background: linear-gradient(135deg, var(--u-type-primary-dark), #14b8a6);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(37, 99, 235, 0.35);
+  box-shadow: 0 8rpx 24rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.35);
   z-index: 999;
   transition:
     opacity 0.3s ease,
@@ -1159,5 +1157,37 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .header { background-color: #1e1e1e; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .empty-text { color: #666; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .search-bar { background-color: #2a2a2a; }
+  .tab-bar { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .tab-item { color: #b0b3b8; }
+  .tab-item.active { color: var(--u-type-primary); }
+  .status-bar { background-color: #1e1e1e; }
+  .footer { background-color: #1e1e1e; }
+  .modal { background-color: #1e1e1e; }
+  .popup { background-color: #1e1e1e; }
+  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
 }
 </style>

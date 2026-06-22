@@ -464,7 +464,7 @@ onLoad((options) => {
   width: 72rpx;
   height: 72rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  background: linear-gradient(135deg, var(--u-type-primary), #60a5fa);
   color: #fff;
   display: flex;
   align-items: center;
@@ -575,8 +575,8 @@ onLoad((options) => {
 }
 
 .step-current .step-dot {
-  background: #3b82f6;
-  box-shadow: 0 0 0 8rpx rgba(59, 130, 246, 0.15);
+  background: var(--u-type-primary);
+  box-shadow: 0 0 0 8rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.15);
 }
 
 .step-pending .step-dot {
@@ -710,5 +710,30 @@ onLoad((options) => {
   display: flex;
   justify-content: center;
   padding: 80rpx 0;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .form-item { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .textarea { background-color: #2a2a2a; color: #e5e6eb; }
+  .picker { background-color: #2a2a2a; color: #e5e6eb; }
+  .footer { background-color: #1e1e1e; }
 }
 </style>

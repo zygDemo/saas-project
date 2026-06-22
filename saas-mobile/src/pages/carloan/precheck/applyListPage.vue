@@ -61,7 +61,7 @@
                 class="quota-row"
               >
                 <view class="quota-icon">
-                  <u-icon name="rmb-circle" size="22" color="#5da7ff" />
+                  <u-icon name="rmb-circle" size="22" color="var(--u-type-primary)" />
                 </view>
                 <text class="label">授信额度</text>
                 <text class="quota-value">{{
@@ -111,15 +111,14 @@
                 <!-- 待授信：去授信按钮 -->
                 <view
                   v-if="item.status === 4"
-                  class="credit-btn"
-                  @click.stop="handleGoCredit(item)"
+                  class="credit-btn" role="button" tabindex="0" @click.stop="handleGoCredit(item)"
                 >
                   <u-icon name="edit-pen" size="28" color="#fff" />
                   <text class="credit-btn-text">去授信</text>
                 </view>
                 <view class="footer-right">
                   <text class="detail-text">查看详情</text>
-                  <u-icon name="arrow-right" color="#5da7ff" size="24" />
+                  <u-icon name="arrow-right" color="var(--u-type-primary)" size="24" />
                 </view>
               </view>
             </view>
@@ -144,7 +143,7 @@
       </scroll-view>
 
       <!-- 回到顶部按钮 -->
-      <view v-show="showBackTop" class="back-top-btn" @click="backToTop">
+      <view v-show="showBackTop" class="back-top-btn" role="button" tabindex="0" @click="backToTop">
         <u-icon name="arrow-up" color="#fff" size="32" />
       </view>
     </view>
@@ -389,7 +388,7 @@ fetchList(true);
     background: linear-gradient(180deg, #f59e0b, #fbbf24);
   }
   &.status-info::before {
-    background: linear-gradient(180deg, #3b82f6, #60a5fa);
+    background: linear-gradient(180deg, var(--u-type-primary), #60a5fa);
   }
   &.status-success::before {
     background: linear-gradient(180deg, #10b981, #34d399);
@@ -398,7 +397,7 @@ fetchList(true);
     background: linear-gradient(180deg, #ef4444, #f87171);
   }
   &.status-primary::before {
-    background: linear-gradient(180deg, #2979ff, #5da7ff);
+    background: linear-gradient(180deg, var(--u-type-primary), var(--u-type-primary));
   }
 
   &:active {
@@ -500,8 +499,8 @@ fetchList(true);
     box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.35);
   }
   &--info {
-    background: linear-gradient(135deg, #3b82f6, #60a5fa);
-    box-shadow: 0 4rpx 16rpx rgba(59, 130, 246, 0.35);
+    background: linear-gradient(135deg, var(--u-type-primary), #60a5fa);
+    box-shadow: 0 4rpx 16rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.35);
   }
   &--success {
     background: linear-gradient(135deg, #10b981, #34d399);
@@ -512,8 +511,8 @@ fetchList(true);
     box-shadow: 0 4rpx 16rpx rgba(239, 68, 68, 0.35);
   }
   &--primary {
-    background: linear-gradient(135deg, #2979ff, #5da7ff);
-    box-shadow: 0 4rpx 16rpx rgba(41, 121, 255, 0.35);
+    background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary));
+    box-shadow: 0 4rpx 16rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.35);
   }
   &--default {
     background: linear-gradient(135deg, #94a3b8, #cbd5e1);
@@ -572,7 +571,7 @@ fetchList(true);
     flex: 1;
     font-size: 30rpx;
     font-weight: 800;
-    color: #5da7ff;
+    color: var(--u-type-primary);
     font-family: "DIN Alternate", "Helvetica Neue", sans-serif;
     letter-spacing: -0.5rpx;
   }
@@ -680,17 +679,17 @@ fetchList(true);
   gap: 6rpx;
   padding: 8rpx 16rpx;
   border-radius: 24rpx;
-  background: rgba(93, 167, 255, 0.08);
+  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
   transition: all 0.2s ease;
 
   &:active {
-    background: rgba(93, 167, 255, 0.15);
+    background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.15);
   }
 }
 
 .detail-text {
   font-size: 24rpx;
-  color: #5da7ff;
+  color: var(--u-type-primary);
   font-weight: 600;
 }
 
@@ -745,22 +744,22 @@ fetchList(true);
   border-radius: 50%;
   background: linear-gradient(
     135deg,
-    rgba(93, 167, 255, 0.95),
-    rgba(59, 130, 246, 0.95)
+    rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.95),
+    rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.95)
   );
   backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow:
-    0 6rpx 24rpx rgba(93, 167, 255, 0.4),
+    0 6rpx 24rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.4),
     0 0 0 2rpx rgba(255, 255, 255, 0.3) inset;
   z-index: 999;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:active {
     transform: scale(0.9);
-    box-shadow: 0 4rpx 16rpx rgba(93, 167, 255, 0.35);
+    box-shadow: 0 4rpx 16rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.35);
   }
 }
 
@@ -774,5 +773,37 @@ fetchList(true);
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .header { background-color: #1e1e1e; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .empty-text { color: #666; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .search-bar { background-color: #2a2a2a; }
+  .tab-bar { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .tab-item { color: #b0b3b8; }
+  .tab-item.active { color: var(--u-type-primary); }
+  .status-bar { background-color: #1e1e1e; }
+  .footer { background-color: #1e1e1e; }
+  .modal { background-color: #1e1e1e; }
+  .popup { background-color: #1e1e1e; }
+  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
 }
 </style>

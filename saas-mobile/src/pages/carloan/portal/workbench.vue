@@ -9,7 +9,7 @@
             <text class="home-desc">线索、进件、补件和审批集中处理</text>
           </view>
           <view class="home-status">
-            <view class="msg-badge" @click.stop="goTo(APP_ROUTES.carloan.portal.messageCenter)">
+            <view class="msg-badge" role="button" tabindex="0" @click.stop="goTo(APP_ROUTES.carloan.portal.messageCenter)">
               <u-icon name="bell" size="36" color="#1a1a1a" />
               <view v-if="unreadCount > 0" class="badge-dot">{{ unreadCount > 99 ? '99+' : unreadCount }}</view>
             </view>
@@ -25,8 +25,7 @@
 
         <view class="quick-actions">
           <view
-            class="quick-card quick-card--lead"
-            @click="goTo(APP_ROUTES.carloan.precheck.leadAdd)"
+            class="quick-card quick-card--lead" role="button" tabindex="0" @click="goTo(APP_ROUTES.carloan.precheck.leadAdd)"
           >
             <view class="quick-left">
               <view class="quick-title-row">
@@ -35,7 +34,7 @@
               </view>
               <text class="quick-sub">快速获客，扫码录入</text>
             </view>
-            <view class="qr-icon" @click.stop="showQr('lead')">
+            <view class="qr-icon" role="button" tabindex="0" @click.stop="showQr('lead')">
               <u-icon
                 name="erweima"
                 custom-prefix="custom-icon"
@@ -45,7 +44,7 @@
             </view>
           </view>
 
-          <view class="quick-card quick-card--credit" @click="goTo(APP_ROUTES.carloan.precheck.idInfo)">
+          <view class="quick-card quick-card--credit" role="button" tabindex="0" @click="goTo(APP_ROUTES.carloan.precheck.idInfo)">
             <view class="quick-left">
               <view class="quick-title-row">
                 <u-icon name="file-text" size="44" color="#fff" />
@@ -53,7 +52,7 @@
             </view>
             <text class="quick-sub">快速发起贷款申请</text>
           </view>
-          <view class="qr-icon" @click.stop="showQr('credit')">
+          <view class="qr-icon" role="button" tabindex="0" @click.stop="showQr('credit')">
             <u-icon
               name="erweima"
               custom-prefix="custom-icon"
@@ -104,7 +103,7 @@
           >
             <template #loading>
               <view class="qr-loading">
-                <u-loading mode="circle" size="48" color="#5da7ff" />
+                <u-loading mode="circle" size="48" color="var(--u-type-primary)" />
                 <text class="qr-loading-text">二维码生成中</text>
               </view>
             </template>
@@ -166,7 +165,7 @@ import { APP_ROUTES } from "@/common/navigation";
 
 const { currentTheme } = useTheme();
 const themeColor = computed(() => {
-  return currentTheme.value?.color?.primary || "#409EFF";
+  return currentTheme.value?.color?.primary || "var(--u-type-primary)";
 });
 
 const localStore = useLocalStore();
@@ -553,9 +552,9 @@ const sections = computed(() => {
   padding: 28rpx 28rpx 30rpx;
   margin-bottom: 24rpx;
   color: #fff;
-  background: linear-gradient(135deg, #1f5fbf 0%, #2563eb 52%, #0f9f8f 100%);
+  background: linear-gradient(135deg, #1f5fbf 0%, var(--u-type-primary-dark) 52%, #0f9f8f 100%);
   border-radius: 18rpx;
-  box-shadow: 0 14rpx 34rpx rgba(37, 99, 235, 0.18);
+  box-shadow: 0 14rpx 34rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.18);
 }
 
 .home-title-block {
@@ -695,7 +694,7 @@ const sections = computed(() => {
   font-size: 32rpx;
   font-weight: 800;
   line-height: 1.1;
-  color: #2563eb;
+  color: var(--u-type-primary-dark);
 }
 
 .overview-label {
@@ -728,9 +727,9 @@ const sections = computed(() => {
   color: #fff;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  background: linear-gradient(135deg, var(--u-type-primary-dark), #06b6d4);
   border-radius: 16rpx;
-  box-shadow: 0 10rpx 24rpx rgba(37, 99, 235, 0.16);
+  box-shadow: 0 10rpx 24rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.16);
 
   &:active {
     transform: translateY(2rpx);
@@ -742,8 +741,8 @@ const sections = computed(() => {
   }
 
   &--credit {
-    background: linear-gradient(135deg, #2563eb, #5b7cfa);
-    box-shadow: 0 10rpx 24rpx rgba(37, 99, 235, 0.18);
+    background: linear-gradient(135deg, var(--u-type-primary-dark), #5b7cfa);
+    box-shadow: 0 10rpx 24rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.18);
   }
 }
 
@@ -851,7 +850,7 @@ const sections = computed(() => {
     left: 0;
     width: 6rpx;
     height: 28rpx;
-    background: linear-gradient(180deg, #2563eb, #14b8a6);
+    background: linear-gradient(180deg, var(--u-type-primary-dark), #14b8a6);
     border-radius: 999rpx;
     transform: translateY(-50%);
   }
@@ -893,13 +892,13 @@ const sections = computed(() => {
     bottom: -34rpx;
     width: 104rpx;
     height: 104rpx;
-    background: radial-gradient(circle, rgba(37, 99, 235, 0.1), transparent 65%);
+    background: radial-gradient(circle, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.1), transparent 65%);
     pointer-events: none;
   }
 
   &:active {
     background: #eef6ff;
-    box-shadow: 0 4rpx 12rpx rgba(37, 99, 235, 0.08);
+    box-shadow: 0 4rpx 12rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
     transform: scale(0.985);
   }
 }
@@ -963,5 +962,37 @@ const sections = computed(() => {
   font-size: 22rpx;
   line-height: 1.3;
   color: #64748b;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .header { background-color: #1e1e1e; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .empty-text { color: #666; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .search-bar { background-color: #2a2a2a; }
+  .tab-bar { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .tab-item { color: #b0b3b8; }
+  .tab-item.active { color: var(--u-type-primary); }
+  .status-bar { background-color: #1e1e1e; }
+  .footer { background-color: #1e1e1e; }
+  .modal { background-color: #1e1e1e; }
+  .popup { background-color: #1e1e1e; }
+  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
 }
 </style>

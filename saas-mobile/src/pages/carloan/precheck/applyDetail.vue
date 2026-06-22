@@ -693,7 +693,7 @@ const copyText = (text) => {
   width: 88rpx;
   height: 88rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  background: linear-gradient(135deg, #60a5fa, var(--u-type-primary));
   color: #fff;
   font-size: 38rpx;
   font-weight: 700;
@@ -808,7 +808,7 @@ const copyText = (text) => {
 }
 
 .pre-card-icon-file {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  background: linear-gradient(135deg, var(--u-type-primary), #7c3aed);
 }
 
 .pre-card-body {
@@ -969,7 +969,7 @@ const copyText = (text) => {
   transition: all 0.2s ease;
 
   &:active {
-    background: rgba(var(--u-type-primary-rgb, 41, 121, 255), 0.08);
+    background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
   }
 }
 
@@ -1083,5 +1083,30 @@ const copyText = (text) => {
   display: flex;
   justify-content: center;
   padding: 160rpx 0;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .form-item { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .textarea { background-color: #2a2a2a; color: #e5e6eb; }
+  .picker { background-color: #2a2a2a; color: #e5e6eb; }
+  .footer { background-color: #1e1e1e; }
 }
 </style>

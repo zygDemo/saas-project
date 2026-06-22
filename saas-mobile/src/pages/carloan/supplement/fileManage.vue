@@ -8,7 +8,7 @@
           <u-text text="上传文件" size="28rpx" bold />
         </view>
         <u-gap height="12" />
-        <view class="upload-box" @click="showUploadOptions">
+        <view class="upload-box" role="button" tabindex="0" @click="showUploadOptions">
           <u-icon name="plus" size="48" color="var(--u-type-primary)" />
           <text class="upload-text">点击上传文件</text>
           <text class="upload-hint">支持图片、文档等</text>
@@ -40,8 +40,7 @@
           <view
             v-for="item in fileList"
             :key="item.id"
-            class="file-item"
-            @click="previewFile(item)"
+            class="file-item" role="button" tabindex="0" @click="previewFile(item)"
           >
             <view class="file-icon">
               <u-icon
@@ -90,7 +89,7 @@ const fileList = ref([]);
 // 主题色
 const { currentTheme } = useTheme();
 const themeColor = computed(() => {
-  return currentTheme.value?.color?.primary || "#409EFF";
+  return currentTheme.value?.color?.primary || "var(--u-type-primary)";
 });
 
 // 获取文件列表
@@ -302,7 +301,7 @@ onMounted(() => {
 // .title-dot {
 //   width: 6rpx;
 //   height: 28rpx;
-//   background: linear-gradient(180deg, #5da7ff, #6bd3ff);
+//   background: linear-gradient(180deg, var(--u-type-primary), #6bd3ff);
 //   border-radius: 4rpx;
 // }
 
@@ -312,7 +311,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   height: 200rpx;
-  border: 2rpx dashed rgba(var(--u-type-primary-rgb, 41, 121, 255), 0.35);
+  border: 2rpx dashed rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.35);
   border-radius: 18rpx;
   background: #fff;
   gap: 8rpx;
@@ -401,5 +400,37 @@ onMounted(() => {
   display: flex;
   gap: 24rpx;
   padding-left: 16rpx;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .header { background-color: #1e1e1e; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .empty-text { color: #666; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .search-bar { background-color: #2a2a2a; }
+  .tab-bar { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .tab-item { color: #b0b3b8; }
+  .tab-item.active { color: var(--u-type-primary); }
+  .status-bar { background-color: #1e1e1e; }
+  .footer { background-color: #1e1e1e; }
+  .modal { background-color: #1e1e1e; }
+  .popup { background-color: #1e1e1e; }
+  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
 }
 </style>

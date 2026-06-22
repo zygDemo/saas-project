@@ -270,8 +270,8 @@ const handleSubmit = async () => {
   align-items: center;
   gap: 8rpx;
   padding: 10rpx 28rpx;
-  background: rgba(var(--u-type-primary-rgb, 64, 158, 255), 0.2);
-  border: 1rpx solid rgba(var(--u-type-primary-rgb, 64, 158, 255), 0.35);
+  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.2);
+  border: 1rpx solid rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.35);
   border-radius: 40rpx;
   font-size: 24rpx;
   color: #ffa4ad;
@@ -314,7 +314,7 @@ const handleSubmit = async () => {
   background: #fff;
   border-radius: 32rpx;
   padding: 44rpx 32rpx 28rpx;
-  box-shadow: 0 12rpx 48rpx rgba(var(--u-type-primary-rgb, 64, 158, 255), 0.12);
+  box-shadow: 0 12rpx 48rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.12);
   position: relative;
   z-index: 2;
 }
@@ -395,7 +395,7 @@ const handleSubmit = async () => {
   border-radius: 50%;
   background: linear-gradient(
     145deg,
-    var(--u-type-primary, #8b5cf6),
+    var(--u-type-primary, var(--u-type-primary)),
     var(--u-type-primary-light, #a78bfa)
   );
   display: flex;
@@ -458,7 +458,7 @@ const handleSubmit = async () => {
   font-weight: 700 !important;
   letter-spacing: 6rpx;
   color: #fff !important;
-  box-shadow: 0 10rpx 36rpx rgba(var(--u-type-primary-rgb, 232, 69, 60), 0.4);
+  box-shadow: 0 10rpx 36rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.4);
 
   // 去掉 uview 的 hairline 边框
   &::after {
@@ -467,7 +467,7 @@ const handleSubmit = async () => {
 
   &:active {
     transform: scale(0.97);
-    box-shadow: 0 6rpx 20rpx rgba(var(--u-type-primary-rgb, 232, 69, 60), 0.35);
+    box-shadow: 0 6rpx 20rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.35);
   }
 }
 
@@ -480,5 +480,30 @@ const handleSubmit = async () => {
   margin-top: 24rpx;
   font-size: 22rpx;
   color: #bbb;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .form-item { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .textarea { background-color: #2a2a2a; color: #e5e6eb; }
+  .picker { background-color: #2a2a2a; color: #e5e6eb; }
+  .footer { background-color: #1e1e1e; }
 }
 </style>

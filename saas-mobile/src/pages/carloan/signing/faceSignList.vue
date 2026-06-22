@@ -8,7 +8,7 @@
           :current="currentTab"
           @click="onTabClick"
           line-height="6rpx"
-          :bar-style="{ background: '#5da7ff' }"
+          :bar-style="{ background: 'var(--u-type-primary)' }"
         />
       </view>
 
@@ -471,5 +471,37 @@ function handleFaceSign(item) {
 .sales {
   font-size: 24rpx;
   color: #8c8c8c;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .header { background-color: #1e1e1e; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .empty-text { color: #666; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .search-bar { background-color: #2a2a2a; }
+  .tab-bar { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .tab-item { color: #b0b3b8; }
+  .tab-item.active { color: var(--u-type-primary); }
+  .status-bar { background-color: #1e1e1e; }
+  .footer { background-color: #1e1e1e; }
+  .modal { background-color: #1e1e1e; }
+  .popup { background-color: #1e1e1e; }
+  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
 }
 </style>

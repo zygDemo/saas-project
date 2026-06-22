@@ -33,8 +33,7 @@
               'step-finish': step.status === 'finish',
               'step-doing': step.status === 'doing',
               'step-pending': step.status === 'pending',
-            }"
-            @click="goStep(step)"
+            }" role="button" tabindex="0" @click="goStep(step)"
           >
             <view class="step-dot-wrap">
               <view class="step-dot">
@@ -82,7 +81,7 @@
 
       <!-- 当前步骤提示 -->
       <view v-if="currentStep" class="tip-card">
-        <u-icon name="info-circle" size="32" color="#5da7ff" />
+        <u-icon name="info-circle" size="32" color="var(--u-type-primary)" />
         <text class="tip-text">
           当前待办：{{ currentStep.name }}，{{ currentStep.desc }}
         </text>
@@ -360,7 +359,7 @@ function finishSign() {
   font-size: 32rpx;
   font-weight: 700;
   color: #fff;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-dark));
   flex-shrink: 0;
 }
 
@@ -483,8 +482,8 @@ function finishSign() {
 
 /* 进行中 */
 .step-doing .step-dot {
-  background: #3b82f6;
-  box-shadow: 0 0 0 6rpx rgba(59, 130, 246, 0.2);
+  background: var(--u-type-primary);
+  box-shadow: 0 0 0 6rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.2);
 }
 .step-doing .dot-text {
   color: #fff;
@@ -539,5 +538,37 @@ function finishSign() {
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .header { background-color: #1e1e1e; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .empty-text { color: #666; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .search-bar { background-color: #2a2a2a; }
+  .tab-bar { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .tab-item { color: #b0b3b8; }
+  .tab-item.active { color: var(--u-type-primary); }
+  .status-bar { background-color: #1e1e1e; }
+  .footer { background-color: #1e1e1e; }
+  .modal { background-color: #1e1e1e; }
+  .popup { background-color: #1e1e1e; }
+  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
 }
 </style>

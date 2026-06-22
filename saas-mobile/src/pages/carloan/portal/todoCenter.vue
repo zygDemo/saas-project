@@ -7,8 +7,7 @@
           v-for="item in statsItems"
           :key="item.key"
           class="stat-card"
-          :class="`stat-card--${item.color}`"
-          @click="goTo(item.path)"
+          :class="`stat-card--${item.color}`" role="button" tabindex="0" @click="goTo(item.path)"
         >
           <view class="stat-icon">
             <u-icon :name="item.icon" size="48" color="#fff" />
@@ -35,8 +34,7 @@
             <view
               v-for="item in supplementList"
               :key="item.id"
-              class="todo-item"
-              @click="goToSupplement(item)"
+              class="todo-item" role="button" tabindex="0" @click="goToSupplement(item)"
             >
               <view class="todo-item__left">
                 <view class="todo-avatar">{{ (item.name || '?').charAt(0) }}</view>
@@ -70,8 +68,7 @@
             <view
               v-for="item in signingList"
               :key="item.id"
-              class="todo-item"
-              @click="goToSigning(item)"
+              class="todo-item" role="button" tabindex="0" @click="goToSigning(item)"
             >
               <view class="todo-item__left">
                 <view class="todo-avatar todo-avatar--green">{{ (item.customerName || '?').charAt(0) }}</view>
@@ -96,7 +93,7 @@
         <view class="section-card">
           <view class="section-header">
             <view class="section-title-row">
-              <u-icon name="time" size="36" color="#409EFF" />
+              <u-icon name="time" size="36" color="var(--u-type-primary)" />
               <text class="section-title">待审批</text>
             </view>
             <view class="section-count">{{ approvalList.length }}</view>
@@ -105,8 +102,7 @@
             <view
               v-for="item in approvalList"
               :key="item.id"
-              class="todo-item"
-              @click="goToApproval(item)"
+              class="todo-item" role="button" tabindex="0" @click="goToApproval(item)"
             >
               <view class="todo-item__left">
                 <view class="todo-avatar todo-avatar--blue">{{ (item.customerName || '?').charAt(0) }}</view>
@@ -131,7 +127,7 @@
         <view class="section-card">
           <view class="section-header">
             <view class="section-title-row">
-              <u-icon name="order" size="36" color="#8b5cf6" />
+              <u-icon name="order" size="36" color="var(--u-type-primary)" />
               <text class="section-title">近期订单</text>
             </view>
             <view class="section-count">{{ orderList.length }}</view>
@@ -140,8 +136,7 @@
             <view
               v-for="item in orderList.slice(0, 5)"
               :key="item.id"
-              class="todo-item"
-              @click="goToOrder(item)"
+              class="todo-item" role="button" tabindex="0" @click="goToOrder(item)"
             >
               <view class="todo-item__left">
                 <view class="todo-avatar todo-avatar--purple">{{ (item.customerName || '?').charAt(0) }}</view>
@@ -361,10 +356,10 @@ onMounted(loadAll);
     background: linear-gradient(135deg, #22c55e, #4ade80);
   }
   &--blue .stat-icon {
-    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    background: linear-gradient(135deg, var(--u-type-primary), #60a5fa);
   }
   &--purple .stat-icon {
-    background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+    background: linear-gradient(135deg, var(--u-type-primary), #a78bfa);
   }
 }
 
@@ -480,10 +475,10 @@ onMounted(loadAll);
     background: linear-gradient(135deg, #22c55e, #4ade80);
   }
   &--blue {
-    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    background: linear-gradient(135deg, var(--u-type-primary), #60a5fa);
   }
   &--purple {
-    background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+    background: linear-gradient(135deg, var(--u-type-primary), #a78bfa);
   }
 }
 
@@ -521,6 +516,38 @@ onMounted(loadAll);
 
 .empty-text {
   font-size: 26rpx;
-  color: #c0c4cc;
+  color: #999;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .header { background-color: #1e1e1e; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .empty-text { color: #666; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .search-bar { background-color: #2a2a2a; }
+  .tab-bar { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .tab-item { color: #b0b3b8; }
+  .tab-item.active { color: var(--u-type-primary); }
+  .status-bar { background-color: #1e1e1e; }
+  .footer { background-color: #1e1e1e; }
+  .modal { background-color: #1e1e1e; }
+  .popup { background-color: #1e1e1e; }
+  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
 }
 </style>

@@ -3,7 +3,7 @@
     <view class="gps-page">
       <!-- 安装说明 -->
       <view class="intro-card">
-        <u-icon name="car" size="48" color="#3b82f6" />
+        <u-icon name="car" size="48" color="var(--u-type-primary)" />
         <view class="intro-text">
           <text class="intro-title">GPS设备安装预约</text>
           <text class="intro-desc">
@@ -34,7 +34,7 @@
       <!-- 安装须知 -->
       <view class="notice-card">
         <view class="notice-title">
-          <u-icon name="info-circle" size="28" color="#3b82f6" />
+          <u-icon name="info-circle" size="28" color="var(--u-type-primary)" />
           <text>安装须知</text>
         </view>
         <view class="notice-list">
@@ -268,7 +268,7 @@ async function handleSubmit() {
 
 .intro-desc {
   font-size: 26rpx;
-  color: #3b82f6;
+  color: var(--u-type-primary);
   line-height: 1.5;
   display: block;
 }
@@ -298,7 +298,7 @@ async function handleSubmit() {
   font-size: 30rpx;
   font-weight: 700;
   color: #fff;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-dark));
   flex-shrink: 0;
 }
 
@@ -379,5 +379,30 @@ async function handleSubmit() {
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .form-item { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .textarea { background-color: #2a2a2a; color: #e5e6eb; }
+  .picker { background-color: #2a2a2a; color: #e5e6eb; }
+  .footer { background-color: #1e1e1e; }
 }
 </style>

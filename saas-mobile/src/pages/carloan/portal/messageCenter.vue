@@ -3,22 +3,22 @@
     <view class="message-page">
       <!-- 消息统计 -->
       <view class="msg-stats">
-        <view class="stat-item" @click="switchTab('all')">
+        <view class="stat-item" role="button" tabindex="0" @click="switchTab('all')">
           <text class="stat-value">{{ totalCount }}</text>
           <text class="stat-label" :class="{ active: currentTab === 'all' }">全部</text>
         </view>
         <view class="stat-divider" />
-        <view class="stat-item" @click="switchTab('unread')">
+        <view class="stat-item" role="button" tabindex="0" @click="switchTab('unread')">
           <text class="stat-value highlight">{{ unreadCount }}</text>
           <text class="stat-label" :class="{ active: currentTab === 'unread' }">未读</text>
         </view>
         <view class="stat-divider" />
-        <view class="stat-item" @click="switchTab('approval')">
+        <view class="stat-item" role="button" tabindex="0" @click="switchTab('approval')">
           <text class="stat-value">{{ approvalCount }}</text>
           <text class="stat-label" :class="{ active: currentTab === 'approval' }">审批</text>
         </view>
         <view class="stat-divider" />
-        <view class="stat-item" @click="switchTab('system')">
+        <view class="stat-item" role="button" tabindex="0" @click="switchTab('system')">
           <text class="stat-value">{{ systemCount }}</text>
           <text class="stat-label" :class="{ active: currentTab === 'system' }">系统</text>
         </view>
@@ -30,8 +30,8 @@
           <text class="action-title">{{ tabTitle }}</text>
           <text class="action-count">{{ filteredMessages.length }}条</text>
         </view>
-        <view class="action-right" @click="markAllRead">
-          <u-icon name="checkbox-mark" size="28" color="#3b82f6" />
+        <view class="action-right" role="button" tabindex="0" @click="markAllRead">
+          <u-icon name="checkbox-mark" size="28" color="var(--u-type-primary)" />
           <text class="action-link">全部已读</text>
         </view>
       </view>
@@ -380,7 +380,7 @@ onMounted(() => {
   transition: all 0.2s;
 
   &.active {
-    background: #3b82f6;
+    background: var(--u-type-primary);
     color: #fff;
   }
 }
@@ -424,7 +424,7 @@ onMounted(() => {
 
 .action-link {
   font-size: 24rpx;
-  color: #3b82f6;
+  color: var(--u-type-primary);
 }
 
 .msg-scroll {
@@ -449,7 +449,7 @@ onMounted(() => {
   opacity: 0;
 
   &--unread {
-    border-left: 6rpx solid #3b82f6;
+    border-left: 6rpx solid var(--u-type-primary);
     background: #fafbff;
   }
 
@@ -486,10 +486,10 @@ onMounted(() => {
     background: linear-gradient(135deg, #f59e0b, #fbbf24);
   }
   &--signing {
-    background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+    background: linear-gradient(135deg, var(--u-type-primary), #a78bfa);
   }
   &--loan {
-    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    background: linear-gradient(135deg, var(--u-type-primary), #60a5fa);
   }
   &--repayment {
     background: linear-gradient(135deg, #06b6d4, #67e8f9);
@@ -592,6 +592,38 @@ onMounted(() => {
 
 .empty-desc {
   font-size: 26rpx;
-  color: #c0c4cc;
+  color: #999;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .header { background-color: #1e1e1e; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .empty-text { color: #666; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .search-bar { background-color: #2a2a2a; }
+  .tab-bar { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .tab-item { color: #b0b3b8; }
+  .tab-item.active { color: var(--u-type-primary); }
+  .status-bar { background-color: #1e1e1e; }
+  .footer { background-color: #1e1e1e; }
+  .modal { background-color: #1e1e1e; }
+  .popup { background-color: #1e1e1e; }
+  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
 }
 </style>

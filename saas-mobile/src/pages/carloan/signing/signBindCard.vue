@@ -258,7 +258,7 @@ async function handleSave() {
 }
 
 .bank-card {
-  background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+  background: linear-gradient(135deg, #1e3a8a, var(--u-type-primary));
   border-radius: 20rpx;
   padding: 32rpx;
   color: #fff;
@@ -347,5 +347,30 @@ async function handleSave() {
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .form-item { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .textarea { background-color: #2a2a2a; color: #e5e6eb; }
+  .picker { background-color: #2a2a2a; color: #e5e6eb; }
+  .footer { background-color: #1e1e1e; }
 }
 </style>

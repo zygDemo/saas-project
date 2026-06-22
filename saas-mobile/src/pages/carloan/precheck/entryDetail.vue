@@ -263,7 +263,7 @@ async function handleSubmit() {
   width: 72rpx;
   height: 72rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #5da7ff, #3b82f6);
+  background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -326,7 +326,7 @@ async function handleSubmit() {
     width: 7rpx;
     height: 30rpx;
     border-radius: 8rpx;
-    background: linear-gradient(180deg, #5da7ff, #3b82f6);
+    background: linear-gradient(180deg, var(--u-type-primary), var(--u-type-primary));
     transform: translateY(-50%);
   }
 }
@@ -364,7 +364,7 @@ async function handleSubmit() {
 }
 
 .card-icon-customer {
-  background: linear-gradient(135deg, #5da7ff, #3b82f6);
+  background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary));
 }
 
 .card-icon-car {
@@ -376,7 +376,7 @@ async function handleSubmit() {
 }
 
 .card-icon-sign {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  background: linear-gradient(135deg, var(--u-type-primary), #7c3aed);
 }
 
 .card-icon-pending {
@@ -424,5 +424,30 @@ async function handleSubmit() {
 .action-area {
   margin-top: 40rpx;
   padding-bottom: 40rpx;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .form-item { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .textarea { background-color: #2a2a2a; color: #e5e6eb; }
+  .picker { background-color: #2a2a2a; color: #e5e6eb; }
+  .footer { background-color: #1e1e1e; }
 }
 </style>

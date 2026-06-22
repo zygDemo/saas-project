@@ -21,7 +21,7 @@
               v-if="selectedProduct === index"
               name="checkmark-circle-fill"
               size="40rpx"
-              color="#5da7ff"
+              color="var(--u-type-primary)"
             />
           </view>
           <view class="product-info">
@@ -51,7 +51,7 @@
                   mode="aspectFill"
                 />
                 <view v-else class="upload-placeholder">
-                  <u-icon name="plus" size="42" color="#5da7ff" />
+                  <u-icon name="plus" size="42" color="var(--u-type-primary)" />
                 </view>
               </view>
               <text class="upload-text">人像面</text>
@@ -66,7 +66,7 @@
                   mode="aspectFill"
                 />
                 <view v-else class="upload-placeholder">
-                  <u-icon name="plus" size="42" color="#5da7ff" />
+                  <u-icon name="plus" size="42" color="var(--u-type-primary)" />
                 </view>
               </view>
               <text class="upload-text">国徽面</text>
@@ -87,7 +87,7 @@
                   mode="aspectFill"
                 />
                 <view v-else class="upload-placeholder">
-                  <u-icon name="plus" size="42" color="#5da7ff" />
+                  <u-icon name="plus" size="42" color="var(--u-type-primary)" />
                 </view>
               </view>
               <text class="upload-text">行驶证主页</text>
@@ -102,7 +102,7 @@
                   mode="aspectFill"
                 />
                 <view v-else class="upload-placeholder">
-                  <u-icon name="plus" size="42" color="#5da7ff" />
+                  <u-icon name="plus" size="42" color="var(--u-type-primary)" />
                 </view>
               </view>
               <text class="upload-text">行驶证副页</text>
@@ -123,7 +123,7 @@
                   mode="aspectFill"
                 />
                 <view v-else class="upload-placeholder">
-                  <u-icon name="plus" size="42" color="#5da7ff" />
+                  <u-icon name="plus" size="42" color="var(--u-type-primary)" />
                 </view>
               </view>
               <text class="upload-text">银行流水</text>
@@ -138,7 +138,7 @@
                   mode="aspectFill"
                 />
                 <view v-else class="upload-placeholder">
-                  <u-icon name="plus" size="42" color="#5da7ff" />
+                  <u-icon name="plus" size="42" color="var(--u-type-primary)" />
                 </view>
               </view>
               <text class="upload-text">收入证明</text>
@@ -263,7 +263,7 @@ async function handleSubmit() {
   transition: all 0.3s;
 
   &.selected {
-    border-color: #5da7ff;
+    border-color: var(--u-type-primary);
     background: linear-gradient(135deg, #f0f7ff, #e8f4ff);
   }
 }
@@ -331,7 +331,7 @@ async function handleSubmit() {
 
 .upload-box {
   height: 200rpx;
-  border: 2rpx dashed rgba(93, 167, 255, 0.35);
+  border: 2rpx dashed rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.35);
   border-radius: 18rpx;
   overflow: hidden;
   background: #f8f9fa;
@@ -350,5 +350,30 @@ async function handleSubmit() {
   font-size: 26rpx;
   color: $u-tips-color;
   margin-top: 8rpx;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .form-item { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .textarea { background-color: #2a2a2a; color: #e5e6eb; }
+  .picker { background-color: #2a2a2a; color: #e5e6eb; }
+  .footer { background-color: #1e1e1e; }
 }
 </style>

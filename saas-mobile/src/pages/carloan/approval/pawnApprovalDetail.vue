@@ -361,7 +361,7 @@ function submitApproval() {
   color: #fff;
   font-size: 28rpx;
   font-weight: 700;
-  background: linear-gradient(135deg, #5da7ff, #3b82f6);
+  background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary));
 }
 
 .customer-info {
@@ -479,7 +479,7 @@ function submitApproval() {
 }
 
 .card-icon-blue {
-  background: linear-gradient(135deg, #5da7ff, #3b82f6);
+  background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary));
 }
 
 .card-icon-green {
@@ -491,7 +491,7 @@ function submitApproval() {
 }
 
 .card-icon-purple {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  background: linear-gradient(135deg, var(--u-type-primary), #7c3aed);
 }
 
 .card-body {
@@ -602,7 +602,7 @@ function submitApproval() {
 .plan-amount {
   font-size: 28rpx;
   font-weight: 800;
-  color: #2563eb;
+  color: var(--u-type-primary-dark);
 }
 
 .approval-popup {
@@ -621,5 +621,30 @@ function submitApproval() {
   font-size: 32rpx;
   font-weight: 700;
   color: #1e293b;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .form-item { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .textarea { background-color: #2a2a2a; color: #e5e6eb; }
+  .picker { background-color: #2a2a2a; color: #e5e6eb; }
+  .footer { background-color: #1e1e1e; }
 }
 </style>

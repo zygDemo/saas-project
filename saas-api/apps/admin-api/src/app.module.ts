@@ -32,6 +32,7 @@ import { MobileBusinessModule } from './modules/mobile-business/mobile-business.
 import { DataCenterModule } from './modules/data-center/data-center.module'
 import { ReadingModule } from './modules/reading/reading.module'
 import { CrawlerModule } from './modules/crawler/crawler.module'
+import { DbOpsModule } from './modules/db-ops/db-ops.module'
 
 const appEnv = process.env.NODE_ENV || 'development'
 const envFilePaths = [
@@ -86,7 +87,8 @@ const envFilePaths = [
     MobileBusinessModule,
     DataCenterModule,
     ReadingModule,
-    CrawlerModule
+    CrawlerModule,
+    DbOpsModule
   ]
 })
 export class AppModule implements NestModule {

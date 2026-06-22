@@ -3,7 +3,7 @@
     <view class="mortgage-page">
       <!-- 说明卡片 -->
       <view class="intro-card">
-        <u-icon name="file-text" size="48" color="#8b5cf6" />
+        <u-icon name="file-text" size="48" color="var(--u-type-primary)" />
         <view class="intro-text">
           <text class="intro-title">车辆抵押登记</text>
           <text class="intro-desc">
@@ -37,7 +37,7 @@
                 v-if="form.mortgageType === item.value"
                 name="checkbox-mark"
                 size="36"
-                color="#8b5cf6"
+                color="var(--u-type-primary)"
               />
               <view v-else class="check-circle" />
             </view>
@@ -70,7 +70,7 @@
                 mode="aspectFill"
               />
               <view v-else class="upload-placeholder">
-                <u-icon name="plus" size="42" color="#8b5cf6" />
+                <u-icon name="plus" size="42" color="var(--u-type-primary)" />
                 <text class="upload-text">抵押回执</text>
               </view>
             </view>
@@ -85,7 +85,7 @@
                 mode="aspectFill"
               />
               <view v-else class="upload-placeholder">
-                <u-icon name="plus" size="42" color="#8b5cf6" />
+                <u-icon name="plus" size="42" color="var(--u-type-primary)" />
                 <text class="upload-text">登记证明</text>
               </view>
             </view>
@@ -403,7 +403,7 @@ async function handleSubmit() {
   transition: all 0.25s;
 
   &.selected {
-    border-color: #8b5cf6;
+    border-color: var(--u-type-primary);
     background: #f5f3ff;
   }
 
@@ -422,10 +422,10 @@ async function handleSubmit() {
   flex-shrink: 0;
 
   &.type-SELF {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-dark));
   }
   &.type-ASSIST {
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    background: linear-gradient(135deg, var(--u-type-primary), #7c3aed);
   }
 }
 
@@ -506,7 +506,7 @@ async function handleSubmit() {
 
 .upload-text {
   font-size: 24rpx;
-  color: #8b5cf6;
+  color: var(--u-type-primary);
 }
 
 /* ===== 底部按钮 ===== */
@@ -519,5 +519,30 @@ async function handleSubmit() {
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .form-item { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .textarea { background-color: #2a2a2a; color: #e5e6eb; }
+  .picker { background-color: #2a2a2a; color: #e5e6eb; }
+  .footer { background-color: #1e1e1e; }
 }
 </style>

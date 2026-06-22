@@ -98,7 +98,7 @@
               </view>
               <view class="footer-right">
                 <text class="detail-text">去补充</text>
-                <u-icon name="arrow-right" color="#5da7ff" size="24" />
+                <u-icon name="arrow-right" color="var(--u-type-primary)" size="24" />
               </view>
             </view>
           </view>
@@ -121,8 +121,7 @@
       <!-- 回到顶部按钮 -->
       <view
         v-show="showBackTop"
-        class="back-top-btn"
-        @click="backToTop"
+        class="back-top-btn" role="button" tabindex="0" @click="backToTop"
       >
         <u-icon name="arrow-up" color="#fff" size="32" />
       </view>
@@ -493,17 +492,17 @@ fetchList(true);
   gap: 6rpx;
   padding: 8rpx 16rpx;
   border-radius: 24rpx;
-  background: rgba(93, 167, 255, 0.08);
+  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
   transition: all 0.2s ease;
 
   &:active {
-    background: rgba(93, 167, 255, 0.15);
+    background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.15);
   }
 }
 
 .detail-text {
   font-size: 24rpx;
-  color: #5da7ff;
+  color: var(--u-type-primary);
   font-weight: 600;
 }
 
@@ -536,18 +535,18 @@ fetchList(true);
   width: 84rpx;
   height: 84rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(93, 167, 255, 0.95), rgba(59, 130, 246, 0.95));
+  background: linear-gradient(135deg, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.95), rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.95));
   backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6rpx 24rpx rgba(93, 167, 255, 0.4), 0 0 0 2rpx rgba(255, 255, 255, 0.3) inset;
+  box-shadow: 0 6rpx 24rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.4), 0 0 0 2rpx rgba(255, 255, 255, 0.3) inset;
   z-index: 999;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:active {
     transform: scale(0.9);
-    box-shadow: 0 4rpx 16rpx rgba(93, 167, 255, 0.35);
+    box-shadow: 0 4rpx 16rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.35);
   }
 }
 
@@ -561,5 +560,37 @@ fetchList(true);
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .page-container { background-color: #121212; }
+  .card { background-color: #1e1e1e; }
+  .card-item { background-color: #1e1e1e; }
+  .list-item { background-color: #1e1e1e; }
+  .section { background-color: #1e1e1e; }
+  .header { background-color: #1e1e1e; }
+  .title { color: #e5e6eb; }
+  .subtitle { color: #8b8c91; }
+  .desc { color: #8b8c91; }
+  .label { color: #b0b3b8; }
+  .value { color: #e5e6eb; }
+  .name { color: #e5e6eb; }
+  .info { color: #b0b3b8; }
+  .text { color: #e5e6eb; }
+  .tip { color: #8b8c91; }
+  .empty-text { color: #666; }
+  .divider { background-color: #2a2a2a; }
+  .border { border-color: #2a2a2a; }
+  .input { background-color: #2a2a2a; color: #e5e6eb; }
+  .search-bar { background-color: #2a2a2a; }
+  .tab-bar { background-color: #1e1e1e; border-color: #2a2a2a; }
+  .tab-item { color: #b0b3b8; }
+  .tab-item.active { color: var(--u-type-primary); }
+  .status-bar { background-color: #1e1e1e; }
+  .footer { background-color: #1e1e1e; }
+  .modal { background-color: #1e1e1e; }
+  .popup { background-color: #1e1e1e; }
+  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
 }
 </style>
