@@ -27,6 +27,30 @@ export class UpdateBookCategoryDto extends CreateBookCategoryDto {
   status?: number;
 }
 
+export class CategoryQueryDto {
+  @ApiPropertyOptional({ description: '是否返回树形结构', default: false })
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  tree?: boolean;
+
+  @ApiPropertyOptional({ description: '关键词' })
+  @IsOptional()
+  @IsString()
+  keyword?: string;
+}
+
+export class BatchCategoryStatusDto {
+  @ApiProperty({ description: '分类ID列表', type: [Number] })
+  @IsArray()
+  @IsNumber({}, { each: true })
+  ids: number[];
+
+  @ApiProperty({ description: '状态 1:启用 0:禁用' })
+  @IsNumber()
+  status: number;
+}
+
 // ==================== 书籍 ====================
 
 export class CreateBookDto {

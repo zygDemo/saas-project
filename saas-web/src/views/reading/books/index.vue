@@ -17,12 +17,24 @@
         />
       </ElCol>
       <ElCol :lg="6" :md="8" :sm="12" :xs="24">
-        <ElSelect v-model="categoryFilter" placeholder="选择分类" clearable class="w-full" @change="handleSearch">
+        <ElSelect
+          v-model="categoryFilter"
+          placeholder="选择分类"
+          clearable
+          class="w-full"
+          @change="handleSearch"
+        >
           <ElOption v-for="cat in categoryList" :key="cat.id" :label="cat.name" :value="cat.id" />
         </ElSelect>
       </ElCol>
       <ElCol :lg="6" :md="8" :sm="12" :xs="24">
-        <ElSelect v-model="statusFilter" placeholder="选择状态" clearable class="w-full" @change="handleSearch">
+        <ElSelect
+          v-model="statusFilter"
+          placeholder="选择状态"
+          clearable
+          class="w-full"
+          @change="handleSearch"
+        >
           <ElOption label="上架" :value="1" />
           <ElOption label="下架" :value="0" />
         </ElSelect>
@@ -83,9 +95,13 @@
       </ElTableColumn>
       <ElTableColumn label="操作" width="200" fixed="right" align="center">
         <template #default="{ row }">
-          <ElButton size="small" type="primary" link @click="handleEdit(row)" v-auth="'edit'">编辑</ElButton>
+          <ElButton size="small" type="primary" link @click="handleEdit(row)" v-auth="'edit'"
+            >编辑</ElButton
+          >
           <ElButton size="small" type="success" link @click="handleChapters(row)">章节</ElButton>
-          <ElButton size="small" type="danger" link @click="handleDelete(row)" v-auth="'delete'">删除</ElButton>
+          <ElButton size="small" type="danger" link @click="handleDelete(row)" v-auth="'delete'"
+            >删除</ElButton
+          >
         </template>
       </ElTableColumn>
     </ElTable>
@@ -121,7 +137,12 @@
           <ElCol :span="12">
             <ElFormItem label="分类">
               <ElSelect v-model="formData.categoryId" placeholder="请选择分类" class="w-full">
-                <ElOption v-for="cat in categoryList" :key="cat.id" :label="cat.name" :value="cat.id" />
+                <ElOption
+                  v-for="cat in categoryList"
+                  :key="cat.id"
+                  :label="cat.name"
+                  :value="cat.id"
+                />
               </ElSelect>
             </ElFormItem>
           </ElCol>
@@ -139,19 +160,36 @@
           </ElCol>
           <ElCol :span="12">
             <ElFormItem label="出版日期">
-              <ElDatePicker v-model="formData.publishDate" type="date" placeholder="选择日期" class="w-full" value-format="YYYY-MM-DD" />
+              <ElDatePicker
+                v-model="formData.publishDate"
+                type="date"
+                placeholder="选择日期"
+                class="w-full"
+                value-format="YYYY-MM-DD"
+              />
             </ElFormItem>
           </ElCol>
         </ElRow>
         <ElRow :gutter="20">
           <ElCol :span="12">
             <ElFormItem label="字数">
-              <ElInputNumber v-model="formData.wordCount" :min="0" class="w-full" placeholder="请输入字数" />
+              <ElInputNumber
+                v-model="formData.wordCount"
+                :min="0"
+                class="w-full"
+                placeholder="请输入字数"
+              />
             </ElFormItem>
           </ElCol>
           <ElCol :span="12">
             <ElFormItem label="价格">
-              <ElInputNumber v-model="formData.price" :min="0" :precision="2" class="w-full" placeholder="请输入价格" />
+              <ElInputNumber
+                v-model="formData.price"
+                :min="0"
+                :precision="2"
+                class="w-full"
+                placeholder="请输入价格"
+              />
             </ElFormItem>
           </ElCol>
         </ElRow>
@@ -191,117 +229,33 @@
 </template>
 
 <script setup lang="ts">
-import { Search } from '@element-plus/icons-vue'
-import { getBooks, createBook, updateBook, deleteBook, getBookCategories } from '@/api/reading'
-import { ElMessage, ElMessageBox } from 'element-plus'
+  import { Search } from '@element-plus/icons-vue'
+  import { getBooks, createBook, updateBook, deleteBook, getBookCategories } from '@/api/reading'
+  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { useRouter } from 'vue-router'
 
-defineOptions({ name: 'ReadingBooks' })
+  defineOptions({ name: 'ReadingBooks' })
 
-const searchVal = ref('')
-const categoryFilter = ref<number | ''>('')
-const statusFilter = ref<number | ''>('')
-const showDialog = ref(false)
-const isEdit = ref(false)
-const editId = ref<number | null>(null)
-const isLoading = ref(false)
-const saving = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
+  const router = useRouter()
+  const searchVal = ref('')
+  const categoryFilter = ref<number | ''>('')
+  const statusFilter = ref<number | ''>('')
+  const showDialog = ref(false)
+  const isEdit = ref(false)
+  const editId = ref<number | null>(null)
+  const isLoading = ref(false)
+  const saving = ref(false)
+  const currentPage = ref(1)
+  const pageSize = ref(20)
+  const total = ref(0)
 
-const categoryList = ref<any[]>([])
-const bookList = ref<any[]>([])
+  const categoryList = ref<any[]>([])
+  const bookList = ref<any[]>([])
 
-const formData = reactive({
-  title: '',
-  author: '',
-  categoryId: null as number | null,
-  isbn: '',
-  publisher: '',
-  publishDate: '',
-  wordCount: 0,
-  price: 0,
-  cover: '',
-  desc: '',
-  isFree: true,
-  isVip: false,
-  isSerial: true,
-  tags: ''
-})
-
-// 加载分类列表
-const loadCategories = async () => {
-  try {
-    const res = await getBookCategories()
-    categoryList.value = res.data || []
-  } catch (error) {
-    console.error('加载分类失败', error)
-  }
-}
-
-// 加载图书列表
-const loadBooks = async () => {
-  isLoading.value = true
-  try {
-    const params: any = {
-      page: currentPage.value,
-      pageSize: pageSize.value
-    }
-    if (searchVal.value) params.keyword = searchVal.value
-    if (categoryFilter.value) params.categoryId = categoryFilter.value
-    if (statusFilter.value !== '') params.status = statusFilter.value
-
-    const res = await getBooks(params)
-    bookList.value = res.data?.items || []
-    total.value = res.data?.total || 0
-  } catch (error) {
-    console.error('加载图书失败', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const handleSearch = () => {
-  currentPage.value = 1
-  loadBooks()
-}
-
-const handleReset = () => {
-  searchVal.value = ''
-  categoryFilter.value = ''
-  statusFilter.value = ''
-  currentPage.value = 1
-  loadBooks()
-}
-
-const handlePageChange = (val: number) => {
-  currentPage.value = val
-  loadBooks()
-}
-
-const handleSizeChange = (val: number) => {
-  pageSize.value = val
-  currentPage.value = 1
-  loadBooks()
-}
-
-const formatWordCount = (count: number) => {
-  if (count >= 10000) return (count / 10000).toFixed(1) + '万'
-  return count?.toString() || '0'
-}
-
-const formatNumber = (num: number) => {
-  if (num >= 10000) return (num / 10000).toFixed(1) + '万'
-  return num?.toString() || '0'
-}
-
-const openAddDialog = () => {
-  isEdit.value = false
-  editId.value = null
-  Object.assign(formData, {
+  const formData = reactive({
     title: '',
     author: '',
-    categoryId: null,
+    categoryId: null as number | null,
     isbn: '',
     publisher: '',
     publishDate: '',
@@ -314,78 +268,165 @@ const openAddDialog = () => {
     isSerial: true,
     tags: ''
   })
-  showDialog.value = true
-}
 
-const handleEdit = (row: any) => {
-  isEdit.value = true
-  editId.value = row.id
-  Object.assign(formData, {
-    title: row.title,
-    author: row.author,
-    categoryId: row.categoryId,
-    isbn: row.isbn || '',
-    publisher: row.publisher || '',
-    publishDate: row.publishDate || '',
-    wordCount: row.wordCount || 0,
-    price: row.price || 0,
-    cover: row.cover || '',
-    desc: row.desc || '',
-    isFree: row.isFree ?? true,
-    isVip: row.isVip ?? false,
-    isSerial: row.isSerial ?? true,
-    tags: row.tags || ''
-  })
-  showDialog.value = true
-}
-
-const handleDelete = (row: any) => {
-  ElMessageBox.confirm(`确定删除图书《${row.title}》吗？`, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
+  // 加载分类列表
+  const loadCategories = async () => {
     try {
-      await deleteBook(row.id)
-      ElMessage.success('删除成功')
+      const res = await getBookCategories()
+      categoryList.value = res || []
+    } catch (error) {
+      console.error('加载分类失败', error)
+    }
+  }
+
+  // 加载图书列表
+  const loadBooks = async () => {
+    isLoading.value = true
+    try {
+      const params: any = {
+        page: currentPage.value,
+        pageSize: pageSize.value
+      }
+      if (searchVal.value) params.keyword = searchVal.value
+      if (categoryFilter.value) params.categoryId = categoryFilter.value
+      if (statusFilter.value !== '') params.status = statusFilter.value
+
+      const res = (await getBooks(params)) as any
+      bookList.value = res?.items || []
+      total.value = res?.total || 0
+    } catch (error) {
+      console.error('加载图书失败', error)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const handleSearch = () => {
+    currentPage.value = 1
+    loadBooks()
+  }
+
+  const handleReset = () => {
+    searchVal.value = ''
+    categoryFilter.value = ''
+    statusFilter.value = ''
+    currentPage.value = 1
+    loadBooks()
+  }
+
+  const handlePageChange = (val: number) => {
+    currentPage.value = val
+    loadBooks()
+  }
+
+  const handleSizeChange = (val: number) => {
+    pageSize.value = val
+    currentPage.value = 1
+    loadBooks()
+  }
+
+  const formatWordCount = (count: number) => {
+    if (count >= 10000) return (count / 10000).toFixed(1) + '万'
+    return count?.toString() || '0'
+  }
+
+  const formatNumber = (num: number) => {
+    if (num >= 10000) return (num / 10000).toFixed(1) + '万'
+    return num?.toString() || '0'
+  }
+
+  const openAddDialog = () => {
+    isEdit.value = false
+    editId.value = null
+    Object.assign(formData, {
+      title: '',
+      author: '',
+      categoryId: null,
+      isbn: '',
+      publisher: '',
+      publishDate: '',
+      wordCount: 0,
+      price: 0,
+      cover: '',
+      desc: '',
+      isFree: true,
+      isVip: false,
+      isSerial: true,
+      tags: ''
+    })
+    showDialog.value = true
+  }
+
+  const handleEdit = (row: any) => {
+    isEdit.value = true
+    editId.value = row.id
+    Object.assign(formData, {
+      title: row.title,
+      author: row.author,
+      categoryId: row.categoryId,
+      isbn: row.isbn || '',
+      publisher: row.publisher || '',
+      publishDate: row.publishDate || '',
+      wordCount: row.wordCount || 0,
+      price: row.price || 0,
+      cover: row.cover || '',
+      desc: row.desc || '',
+      isFree: row.isFree ?? true,
+      isVip: row.isVip ?? false,
+      isSerial: row.isSerial ?? true,
+      tags: row.tags || ''
+    })
+    showDialog.value = true
+  }
+
+  const handleDelete = (row: any) => {
+    ElMessageBox.confirm(`确定删除图书《${row.title}》吗？`, '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+      .then(async () => {
+        try {
+          await deleteBook(row.id)
+          ElMessage.success('删除成功')
+          loadBooks()
+        } catch (error) {
+          ElMessage.error('删除失败')
+        }
+      })
+      .catch(() => {})
+  }
+
+  const handleChapters = (row: any) => {
+    router.push(`/reading/chapters/${row.id}`)
+  }
+
+  const handleSave = async () => {
+    if (!formData.title || !formData.author) {
+      ElMessage.warning('请填写必填项')
+      return
+    }
+
+    saving.value = true
+    try {
+      if (isEdit.value && editId.value) {
+        await updateBook(editId.value, formData)
+        ElMessage.success('编辑成功')
+      } else {
+        await createBook(formData)
+        ElMessage.success('新增成功')
+      }
+      showDialog.value = false
       loadBooks()
     } catch (error) {
-      ElMessage.error('删除失败')
+      ElMessage.error(isEdit.value ? '编辑失败' : '新增失败')
+    } finally {
+      saving.value = false
     }
-  }).catch(() => {})
-}
-
-const handleChapters = (row: any) => {
-  // 跳转到章节管理页面
-  ElMessage.info('章节管理功能开发中')
-}
-
-const handleSave = async () => {
-  if (!formData.title || !formData.author) {
-    ElMessage.warning('请填写必填项')
-    return
   }
 
-  saving.value = true
-  try {
-    if (isEdit.value && editId.value) {
-      await updateBook(editId.value, formData)
-      ElMessage.success('编辑成功')
-    } else {
-      await createBook(formData)
-      ElMessage.success('新增成功')
-    }
-    showDialog.value = false
+  onMounted(() => {
+    loadCategories()
     loadBooks()
-  } catch (error) {
-    ElMessage.error(isEdit.value ? '编辑失败' : '新增失败')
-  } finally {
-    saving.value = false
-  }
-}
-
-onMounted(() => {
-  loadCategories()
-  loadBooks()
-})
+  })
 </script>

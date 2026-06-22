@@ -2,226 +2,249 @@ import request from '@/utils/http'
 
 // ==================== 书籍分类 ====================
 
-/** 获取书籍分类列表 */
-export function getBookCategories() {
-  return request.get("/reading/categories");
+/** 获取书籍分类列表（支持树形和搜索） */
+export function getBookCategories(params?: { tree?: boolean; keyword?: string }) {
+  return request.get({ url: '/reading/categories', params })
+}
+
+/** 获取书籍分类详情 */
+export function getBookCategoryById(id: number) {
+  return request.get({ url: `/reading/categories/${id}` })
+}
+
+/** 批量启用/禁用分类 */
+export function batchUpdateCategoryStatus(data: { ids: number[]; status: number }) {
+  return request.post({ url: '/reading/categories/batch-status', data, showSuccessMessage: true })
 }
 
 /** 创建书籍分类 */
 export function createBookCategory(data: {
-  name: string;
-  parentId?: number;
-  sort?: number;
+  name: string
+  parentId?: number
+  sort?: number
 }) {
-  return request.post("/reading/categories", data);
+  return request.post({ url: '/reading/categories', data, showSuccessMessage: true })
 }
 
 /** 更新书籍分类 */
 export function updateBookCategory(
   id: number,
   data: {
-    name?: string;
-    parentId?: number;
-    sort?: number;
-    status?: number;
+    name?: string
+    parentId?: number
+    sort?: number
+    status?: number
   }
 ) {
-  return request.put(`/reading/categories/${id}`, data);
+  return request.put({ url: `/reading/categories/${id}`, data, showSuccessMessage: true })
 }
 
 /** 删除书籍分类 */
 export function deleteBookCategory(id: number) {
-  return request.delete(`/reading/categories/${id}`);
+  return request.del({ url: `/reading/categories/${id}`, showSuccessMessage: true })
 }
 
 // ==================== 书籍管理 ====================
 
 /** 获取书籍列表 */
 export function getBooks(params?: {
-  keyword?: string;
-  categoryId?: number;
-  status?: number;
-  isHot?: boolean;
-  isRecommend?: boolean;
-  isFinished?: boolean;
-  page?: number;
-  pageSize?: number;
+  keyword?: string
+  categoryId?: number
+  status?: number
+  isHot?: boolean
+  isRecommend?: boolean
+  isFinished?: boolean
+  page?: number
+  pageSize?: number
 }) {
-  return request.get("/reading/books", { params });
+  return request.get({ url: '/reading/books', params })
 }
 
 /** 获取书籍详情 */
 export function getBookById(id: number) {
-  return request.get(`/reading/books/${id}`);
+  return request.get({ url: `/reading/books/${id}` })
 }
 
 /** 创建书籍 */
 export function createBook(data: {
-  title: string;
-  author: string;
-  cover?: string;
-  desc?: string;
-  categoryId?: number;
-  isbn?: string;
-  publisher?: string;
-  publishDate?: string;
-  wordCount?: number;
-  price?: number;
-  isFree?: boolean;
-  isVip?: boolean;
-  isSerial?: boolean;
-  tags?: string;
+  title: string
+  author: string
+  cover?: string
+  desc?: string
+  categoryId?: number
+  isbn?: string
+  publisher?: string
+  publishDate?: string
+  wordCount?: number
+  price?: number
+  isFree?: boolean
+  isVip?: boolean
+  isSerial?: boolean
+  tags?: string
 }) {
-  return request.post("/reading/books", data);
+  return request.post({ url: '/reading/books', data, showSuccessMessage: true })
 }
 
 /** 更新书籍 */
 export function updateBook(
   id: number,
   data: {
-    title?: string;
-    author?: string;
-    cover?: string;
-    desc?: string;
-    categoryId?: number;
-    isbn?: string;
-    publisher?: string;
-    publishDate?: string;
-    wordCount?: number;
-    price?: number;
-    isFree?: boolean;
-    isVip?: boolean;
-    isSerial?: boolean;
-    isHot?: boolean;
-    isRecommend?: boolean;
-    status?: number;
-    sort?: number;
-    tags?: string;
+    title?: string
+    author?: string
+    cover?: string
+    desc?: string
+    categoryId?: number
+    isbn?: string
+    publisher?: string
+    publishDate?: string
+    wordCount?: number
+    price?: number
+    isFree?: boolean
+    isVip?: boolean
+    isSerial?: boolean
+    isHot?: boolean
+    isRecommend?: boolean
+    status?: number
+    sort?: number
+    tags?: string
   }
 ) {
-  return request.put(`/reading/books/${id}`, data);
+  return request.put({ url: `/reading/books/${id}`, data, showSuccessMessage: true })
 }
 
 /** 删除书籍 */
 export function deleteBook(id: number) {
-  return request.delete(`/reading/books/${id}`);
+  return request.del({ url: `/reading/books/${id}`, showSuccessMessage: true })
 }
 
 // ==================== 章节管理 ====================
 
 /** 获取章节列表 */
 export function getChapters(params: {
-  bookId: number;
-  page?: number;
-  pageSize?: number;
+  bookId: number
+  page?: number
+  pageSize?: number
 }) {
-  return request.get("/reading/chapters", { params });
+  return request.get({ url: '/reading/chapters', params })
 }
 
 /** 获取章节详情 */
 export function getChapterById(id: number) {
-  return request.get(`/reading/chapters/${id}`);
+  return request.get({ url: `/reading/chapters/${id}` })
 }
 
 /** 创建章节 */
 export function createChapter(data: {
-  bookId: number;
-  title: string;
-  content?: string;
-  sort?: number;
-  isVip?: boolean;
-  price?: number;
+  bookId: number
+  title: string
+  content?: string
+  sort?: number
+  isVip?: boolean
+  price?: number
 }) {
-  return request.post("/reading/chapters", data);
+  return request.post({ url: '/reading/chapters', data, showSuccessMessage: true })
 }
 
 /** 更新章节 */
 export function updateChapter(
   id: number,
   data: {
-    title?: string;
-    content?: string;
-    sort?: number;
-    isVip?: boolean;
-    price?: number;
+    title?: string
+    content?: string
+    sort?: number
+    isVip?: boolean
+    price?: number
   }
 ) {
-  return request.put(`/reading/chapters/${id}`, data);
+  return request.put({ url: `/reading/chapters/${id}`, data, showSuccessMessage: true })
 }
 
 /** 删除章节 */
 export function deleteChapter(id: number) {
-  return request.delete(`/reading/chapters/${id}`);
+  return request.del({ url: `/reading/chapters/${id}`, showSuccessMessage: true })
 }
 
 // ==================== 用户书架 ====================
 
 /** 获取用户书架 */
 export function getUserBookshelf() {
-  return request.get("/reading/bookshelf");
+  return request.get({ url: '/reading/bookshelf' })
 }
 
 /** 加入书架 */
 export function addToBookshelf(bookId: number) {
-  return request.post("/reading/bookshelf", { bookId });
+  return request.post({ url: '/reading/bookshelf', data: { bookId } })
 }
 
 /** 移出书架 */
 export function removeFromBookshelf(bookId: number) {
-  return request.delete(`/reading/bookshelf/${bookId}`);
+  return request.del({ url: `/reading/bookshelf/${bookId}` })
 }
 
 // ==================== 阅读进度 ====================
 
 /** 获取阅读进度 */
 export function getReadingProgress(bookId: number) {
-  return request.get(`/reading/progress/${bookId}`);
+  return request.get({ url: `/reading/progress/${bookId}` })
 }
 
 /** 保存阅读进度 */
 export function saveReadingProgress(data: {
-  bookId: number;
-  chapterId: number;
-  page?: number;
-  progress?: number;
-  readTime?: number;
+  bookId: number
+  chapterId: number
+  page?: number
+  progress?: number
+  readTime?: number
 }) {
-  return request.post("/reading/progress", data);
+  return request.post({ url: '/reading/progress', data })
 }
 
 // ==================== 书籍评价 ====================
 
 /** 获取书籍评价 */
 export function getBookReviews(params: {
-  bookId: number;
-  page?: number;
-  pageSize?: number;
+  bookId: number
+  page?: number
+  pageSize?: number
 }) {
-  return request.get("/reading/reviews", { params });
+  return request.get({ url: '/reading/reviews', params })
 }
 
 /** 创建书籍评价 */
 export function createBookReview(data: {
-  bookId: number;
-  rating: number;
-  content?: string;
+  bookId: number
+  rating: number
+  content?: string
 }) {
-  return request.post("/reading/reviews", data);
+  return request.post({ url: '/reading/reviews', data })
 }
 
 // ==================== 统计 ====================
 
 /** 获取读书统计 */
 export function getReadingStatistics() {
-  return request.get("/reading/statistics");
+  return request.get({ url: '/reading/statistics' })
 }
 
 /** 获取热门书籍 */
 export function getHotBooks(limit?: number) {
-  return request.get("/reading/hot", { params: { limit } });
+  return request.get({ url: '/reading/hot', params: { limit } })
 }
 
 /** 获取推荐书籍 */
 export function getRecommendBooks(limit?: number) {
-  return request.get("/reading/recommend", { params: { limit } });
+  return request.get({ url: '/reading/recommend', params: { limit } })
+}
+
+// ==================== 爬虫下载 ====================
+
+/** 爬取小说并自动入库 */
+export function crawlNovel(data: {
+  url: string
+  name?: string
+  startChapter?: number
+  endChapter?: number
+  categoryId?: number
+}) {
+  return request.post({ url: '/crawler/download', data, timeout: 600000 })
 }

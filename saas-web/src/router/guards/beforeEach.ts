@@ -296,32 +296,38 @@ async function handleDynamicRoutes(
     // 1. 获取用户信息
     await fetchUserInfo()
 
-    // 2. 获取菜单数据
-    const backendMenuList = await menuProcessor.getMenuList()
-    const backendRouteNames = getRouteNames(backendMenuList)
-    const fallbackPrivateRoutes = privateRoutes.filter((route) => !backendRouteNames.has(route.name))
-    const menuList = [...fallbackPrivateRoutes, ...backendMenuList]
+    // 2. 获取完整路由列表（包含隐藏路由，用于注册和权限验证）
+    const fullRouteList = await menuProcessor.getFullRouteList()
+    const backendRouteNames = getRouteNames(fullRouteList)
+    const fallbackPrivateRoutes = privateRoutes.filter(
+      (route) => !backendRouteNames.has(route.name)
+    )
+    const fullRoutes = [...fallbackPrivateRoutes, ...fullRouteList]
 
-    // 3. 验证菜单数据
-    if (!menuProcessor.validateMenuList(menuList)) {
+    // 3. 验证路由数据
+    if (!menuProcessor.validateMenuList(fullRoutes)) {
       throw new Error('获取菜单列表失败，请重新登录')
     }
 
-    // 4. 注册动态路由
-    routeRegistry?.register(menuList)
+    // 4. 注册动态路由（使用完整列表，包含隐藏路由）
+    routeRegistry?.register(fullRoutes)
 
-    // 5. 保存菜单数据到 store
+    // 5. 获取可见菜单列表（过滤隐藏路由，用于菜单显示）
+    const visibleMenuList = await menuProcessor.getMenuList()
+    const visibleRoutes = [...fallbackPrivateRoutes, ...visibleMenuList]
+
+    // 6. 保存菜单数据到 store（使用可见列表）
     const menuStore = useMenuStore()
-    menuStore.setMenuList(menuList)
+    menuStore.setMenuList(visibleRoutes)
     menuStore.addRemoveRouteFns(routeRegistry?.getRemoveRouteFns() || [])
 
-    // 6. 保存 iframe 路由
+    // 7. 保存 iframe 路由
     IframeRouteManager.getInstance().save()
 
-    // 7. 验证工作标签页
+    // 8. 验证工作标签页
     useWorktabStore().validateWorktabs(router)
 
-    // 8. 静态路由不依赖菜单权限，初始化后直接恢复目标地址。
+    // 9. 静态路由不依赖菜单权限，初始化后直接恢复目标地址。
     if (isStaticRoute(to.path) || isPrivateRoute(to.path)) {
       routeInitInProgress = false
       next({
@@ -333,11 +339,11 @@ async function handleDynamicRoutes(
       return
     }
 
-    // 8. 验证目标路径权限
+    // 10. 验证目标路径权限（使用完整列表，包含隐藏路由）
     const { homePath } = useCommon()
     const { path: validatedPath, hasPermission } = RoutePermissionValidator.validatePath(
       to.path,
-      menuList,
+      fullRoutes,
       homePath.value || '/'
     )
 

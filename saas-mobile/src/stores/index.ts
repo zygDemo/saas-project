@@ -20,3 +20,4 @@ export * from './session'
 export * from './tabbar'
 
 export * from './carloan'
+export * from './reading'

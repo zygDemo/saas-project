@@ -124,6 +124,7 @@ const localStorageAdapter = {
 };
 
 export const CurrentSystem = {
+  READING: "reading",
   PORTAL: "portal",
   CARLOAN: "carloan",
   FOOD: "food",

@@ -659,12 +659,24 @@ async function main() {
     ...bizStageIds,
     ...filterIds('WorkOrder')
   ])
-  // R_ADMIN：仪表盘 + 系统基础 + 流程配置 + 全流程业务菜单
+  // 读书管理相关菜单
+  const readingIds = filterIds(
+    'Reading',
+    'ReadingBookshelf',
+    'ReadingBooks',
+    'ReadingCategory',
+    'ReadingComment',
+    'ReadingCrawler',
+    'ReadingChapters'
+  )
+
+  // R_ADMIN：仪表盘 + 系统基础 + 流程配置 + 全流程业务菜单 + 读书管理
   await connectRoleMenus(roleByCode.R_ADMIN.id, [
     ...dashIds,
     ...filterIds('Platform', 'FlowConfig'),
     ...systemBasicIds,
-    ...bizAdminIds
+    ...bizAdminIds,
+    ...readingIds
   ])
   // R_SALES_MANAGER：仪表盘 + 业务菜单
   await connectRoleMenus(roleByCode.R_SALES_MANAGER.id, [
@@ -1011,6 +1023,26 @@ async function seedAllMenus(tenantId: number) {
     icon: 'ri:chat-3-line',
     sort: 554,
     keepAlive: true
+  })
+  const readingCrawler = await upsertMenu(tenantId, {
+    parentId: reading.id,
+    path: 'crawler',
+    name: 'ReadingCrawler',
+    component: '/reading/crawler/index',
+    title: '小说爬取',
+    icon: 'ri:download-cloud-2-line',
+    sort: 555,
+    keepAlive: true
+  })
+  const readingChapters = await upsertMenu(tenantId, {
+    parentId: reading.id,
+    path: 'chapters/:bookId',
+    name: 'ReadingChapters',
+    component: '/reading/chapters/index',
+    title: '章节管理',
+    icon: 'ri:file-list-2-line',
+    sort: 556,
+    hidden: true
   })
 
   // ============== 业务管理 ==============
@@ -1368,6 +1400,7 @@ async function seedAllMenus(tenantId: number) {
     readingBooks,
     readingCategory,
     readingComment,
+    readingCrawler,
     tenantMgmt,
     packageBilling,
     productTemplate,
@@ -1455,6 +1488,8 @@ async function seedAllMenus(tenantId: number) {
     readingBooks,
     readingCategory,
     readingComment,
+    readingCrawler,
+    readingChapters,
     business,
     businessPrecheck,
     businessSupplement,
@@ -1586,7 +1621,7 @@ async function seedDefaultFlowConfigs(tenantId: number, orgId: number, businessT
         name: `${node.phaseName}-${node.name}`,
         nodeName: node.name,
         approveLevel: 'approveLevel' in node && node.approveLevel ? node.approveLevel : 1,
-        amountLimit: ('amountLimit' in node ? (node as any).amountLimit : undefined),
+        amountLimit: 'amountLimit' in node ? (node as any).amountLimit : undefined,
         requireMaterials: Boolean('requireMaterials' in node && node.requireMaterials),
         requireApproval: 'requireApproval' in node ? node.requireApproval : true,
         autoPass: Boolean('autoPass' in node && node.autoPass),

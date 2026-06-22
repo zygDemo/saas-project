@@ -59,6 +59,26 @@ export const readingRoutes: AppRouteRecord = {
         icon: 'ri:chat-3-line',
         keepAlive: true
       }
+    },
+    {
+      path: 'crawler',
+      name: 'ReadingCrawler',
+      component: '/reading/crawler/index',
+      meta: {
+        title: 'menus.reading.crawler',
+        icon: 'ri:download-cloud-2-line',
+        keepAlive: true
+      }
+    },
+    {
+      path: 'chapters/:bookId',
+      name: 'ReadingChapters',
+      component: '/reading/chapters/index',
+      meta: {
+        title: '章节管理',
+        isHide: true,
+        isHideTab: false
+      }
     }
   ]
 }

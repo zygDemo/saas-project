@@ -77,6 +77,7 @@ export const APP_ROUTES = {
 } as const;
 
 export const TABBAR_SCOPES = {
+  reading: "reading",
   portal: "portal",
   carloan: "carloan",
   food: "food",
@@ -120,6 +121,7 @@ export function buildHashRoute(route: string, query?: string | RouteQueryRecord)
 const SYSTEM_TABBAR_ROUTES = new Set([
   APP_ROUTES.portal.home,
   APP_ROUTES.carloan.home,
+  APP_ROUTES.reading.home,
   APP_ROUTES.my.home,
 ]);
 
@@ -177,8 +179,8 @@ const CARLOAN_TABBAR_ITEMS: LayoutTabbarItem[] = [
 const FOOD_TABBAR_ITEMS: LayoutTabbarItem[] = [
   {
     text: "首页",
-    iconPath: "shopping",
-    selectedIconPath: "shopping-fill",
+    iconPath: "shopping-cart",
+    selectedIconPath: "shopping-cart-fill",
     route: APP_ROUTES.food.home,
     navMode: "reLaunch",
     customIcon: false,
@@ -204,11 +206,43 @@ const FOOD_TABBAR_ITEMS: LayoutTabbarItem[] = [
   },
 ];
 
+const READING_TABBAR_ITEMS: LayoutTabbarItem[] = [
+  {
+    text: "书架",
+    iconPath: "file-text",
+    selectedIconPath: "file-text-fill",
+    route: APP_ROUTES.reading.home,
+    navMode: "redirectTo",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    text: "书城",
+    iconPath: "shopping-cart",
+    selectedIconPath: "shopping-cart-fill",
+    route: APP_ROUTES.reading.store,
+    navMode: "redirectTo",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    text: "我的",
+    iconPath: "account",
+    selectedIconPath: "account-fill",
+    route: APP_ROUTES.my.home,
+    navMode: "redirectTo",
+    customIcon: false,
+    count: 0,
+  },
+];
+
 export function getLayoutTabbar(scope: TabbarScope = TABBAR_SCOPES.portal): LayoutTabbarItem[] {
   const source =
     scope === TABBAR_SCOPES.carloan
       ? CARLOAN_TABBAR_ITEMS
-      : scope === TABBAR_SCOPES.food
+      : scope === TABBAR_SCOPES.reading
+        ? READING_TABBAR_ITEMS
+        : scope === TABBAR_SCOPES.food
         ? FOOD_TABBAR_ITEMS
         : PORTAL_TABBAR_ITEMS;
 

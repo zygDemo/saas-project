@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateBookCategoryDto,
   UpdateBookCategoryDto,
+  CategoryQueryDto,
+  BatchCategoryStatusDto,
   CreateBookDto,
   UpdateBookDto,
   BookQueryDto,
@@ -21,11 +23,59 @@ export class ReadingService {
 
   // ==================== 书籍分类 ====================
 
-  async getCategories(tenantId: number) {
-    return this.prisma.bookCategory.findMany({
-      where: { tenantId, status: 1 },
+  async getCategories(tenantId: number, query?: CategoryQueryDto) {
+    const where: any = { tenantId };
+
+    if (query?.keyword) {
+      where.name = { contains: query.keyword, mode: 'insensitive' };
+    }
+
+    const categories = await this.prisma.bookCategory.findMany({
+      where,
       orderBy: { sort: 'asc' },
+      include: {
+        _count: { select: { books: true } },
+      },
     });
+
+    if (query?.tree) {
+      return this.buildCategoryTree(categories);
+    }
+
+    return categories;
+  }
+
+  async getCategoryById(id: number, tenantId: number) {
+    const category = await this.prisma.bookCategory.findFirst({
+      where: { id, tenantId },
+      include: {
+        _count: { select: { books: true } },
+      },
+    });
+    if (!category) {
+      throw new NotFoundException('分类不存在');
+    }
+    return category;
+  }
+
+  private buildCategoryTree(categories: any[]) {
+    const map = new Map<number, any>();
+    const roots: any[] = [];
+
+    for (const cat of categories) {
+      map.set(cat.id, { ...cat, children: [] });
+    }
+
+    for (const cat of categories) {
+      const node = map.get(cat.id)!;
+      if (cat.parentId && map.has(cat.parentId)) {
+        map.get(cat.parentId)!.children.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+
+    return roots;
   }
 
   async createCategory(tenantId: number, dto: CreateBookCategoryDto) {
@@ -59,6 +109,13 @@ export class ReadingService {
     if (!category) {
       throw new NotFoundException('分类不存在');
     }
+    // 检查是否有子分类
+    const childCount = await this.prisma.bookCategory.count({
+      where: { parentId: id, tenantId },
+    });
+    if (childCount > 0) {
+      throw new BadRequestException('该分类下有子分类，请先删除子分类');
+    }
     // 检查是否有书籍使用此分类
     const bookCount = await this.prisma.book.count({
       where: { categoryId: id },
@@ -67,6 +124,20 @@ export class ReadingService {
       throw new BadRequestException('该分类下有书籍，无法删除');
     }
     return this.prisma.bookCategory.delete({ where: { id } });
+  }
+
+  async batchUpdateCategoryStatus(tenantId: number, dto: BatchCategoryStatusDto) {
+    const categories = await this.prisma.bookCategory.findMany({
+      where: { id: { in: dto.ids }, tenantId },
+    });
+    if (categories.length !== dto.ids.length) {
+      throw new NotFoundException('部分分类不存在');
+    }
+    await this.prisma.bookCategory.updateMany({
+      where: { id: { in: dto.ids }, tenantId },
+      data: { status: dto.status },
+    });
+    return { affected: categories.length };
   }
 
   // ==================== 书籍管理 ====================
@@ -394,7 +465,7 @@ export class ReadingService {
     const reviews = await this.prisma.bookReview.findMany({
       where: { bookId: dto.bookId, status: 1 },
     });
-    const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+    const avgRating = reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length;
 
     await this.prisma.book.update({
       where: { id: dto.bookId },

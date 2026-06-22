@@ -1,5 +1,5 @@
 <template>
-  <layout nav-title="书城" :back="true">
+  <layout nav-title="书城" :show-tabbar="true" tabbar-scope="reading" :active-tab="1" back back-url="/pages/reading/index/index">
     <scroll-view
       class="store-scroll"
       scroll-y
@@ -93,7 +93,7 @@
             <text class="function-text">排行榜</text>
           </view>
           <view class="function-item" @click="goFreeBooks">
-            <view class="function-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+            <view class="function-icon" style="background: linear-gradient(135deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%)">
               <u-icon name="gift" color="#fff" size="36" />
             </view>
             <text class="function-text">限免</text>
@@ -416,21 +416,21 @@ const countdown = ref({ hours: "05", minutes: "23", seconds: "45" });
 const bannerList = ref<BannerItem[]>([
   {
     id: "1",
-    image: "https://picsum.photos/seed/banner1/750/300",
+    image: "/static/reading/covers/banner1.svg",
     title: "新书推荐",
     desc: "《诡秘之主》作者新书上线",
     link: "",
   },
   {
     id: "2",
-    image: "https://picsum.photos/seed/banner2/750/300",
+    image: "/static/reading/covers/banner2.svg",
     title: "限时免费",
     desc: "精选100本好书限时畅读",
     link: "",
   },
   {
     id: "3",
-    image: "https://picsum.photos/seed/banner3/750/300",
+    image: "/static/reading/covers/banner3.svg",
     title: "完本推荐",
     desc: "经典完本，一口气看完",
     link: "",
@@ -442,7 +442,7 @@ const bookList = ref<BookItem[]>([
     id: "1",
     title: "斗破苍穹",
     author: "天蚕土豆",
-    cover: "https://picsum.photos/seed/book1/200/280",
+    cover: "/static/reading/covers/book1.svg",
     category: "玄幻",
     isSerial: false,
     isHot: true,
@@ -456,7 +456,7 @@ const bookList = ref<BookItem[]>([
     id: "2",
     title: "凡人修仙传",
     author: "忘语",
-    cover: "https://picsum.photos/seed/book2/200/280",
+    cover: "/static/reading/covers/book2.svg",
     category: "仙侠",
     isSerial: false,
     isHot: true,
@@ -470,7 +470,7 @@ const bookList = ref<BookItem[]>([
     id: "3",
     title: "诡秘之主",
     author: "爱潜水的乌贼",
-    cover: "https://picsum.photos/seed/book3/200/280",
+    cover: "/static/reading/covers/book3.svg",
     category: "玄幻",
     isSerial: false,
     isHot: true,
@@ -484,7 +484,7 @@ const bookList = ref<BookItem[]>([
     id: "4",
     title: "大奉打更人",
     author: "卖报小郎君",
-    cover: "https://picsum.photos/seed/book4/200/280",
+    cover: "/static/reading/covers/book4.svg",
     category: "仙侠",
     isSerial: true,
     views: 7890000,
@@ -497,7 +497,7 @@ const bookList = ref<BookItem[]>([
     id: "5",
     title: "夜的命名术",
     author: "会说话的肘子",
-    cover: "https://picsum.photos/seed/book5/200/280",
+    cover: "/static/reading/covers/book5.svg",
     category: "都市",
     isSerial: true,
     views: 6540000,
@@ -510,7 +510,7 @@ const bookList = ref<BookItem[]>([
     id: "6",
     title: "赘婿",
     author: "愤怒的香蕉",
-    cover: "https://picsum.photos/seed/book6/200/280",
+    cover: "/static/reading/covers/book6.svg",
     category: "历史",
     isSerial: true,
     views: 5430000,
@@ -523,7 +523,7 @@ const bookList = ref<BookItem[]>([
     id: "7",
     title: "庆余年",
     author: "猫腻",
-    cover: "https://picsum.photos/seed/book7/200/280",
+    cover: "/static/reading/covers/book7.svg",
     category: "历史",
     isSerial: false,
     views: 4320000,
@@ -536,7 +536,7 @@ const bookList = ref<BookItem[]>([
     id: "8",
     title: "超神机械师",
     author: "齐佩甲",
-    cover: "https://picsum.photos/seed/book8/200/280",
+    cover: "/static/reading/covers/book8.svg",
     category: "科幻",
     isSerial: false,
     views: 3210000,
@@ -549,7 +549,7 @@ const bookList = ref<BookItem[]>([
     id: "9",
     title: "全球高武",
     author: "老鹰吃小鸡",
-    cover: "https://picsum.photos/seed/book9/200/280",
+    cover: "/static/reading/covers/book9.svg",
     category: "都市",
     isSerial: false,
     views: 2980000,
@@ -562,7 +562,7 @@ const bookList = ref<BookItem[]>([
     id: "10",
     title: "十方武圣",
     author: "莫默",
-    cover: "https://picsum.photos/seed/book10/200/280",
+    cover: "/static/reading/covers/book10.svg",
     category: "玄幻",
     isSerial: true,
     views: 2150000,
@@ -587,9 +587,9 @@ const bookLists = ref<BookList[]>([
     desc: "不可错过的玄幻巨作",
     bookCount: 50,
     covers: [
-      "https://picsum.photos/seed/list1a/200/280",
-      "https://picsum.photos/seed/list1b/200/280",
-      "https://picsum.photos/seed/list1c/200/280",
+      "/static/reading/covers/list1a.svg",
+      "/static/reading/covers/list1b.svg",
+      "/static/reading/covers/list1c.svg",
     ],
   },
   {
@@ -598,9 +598,9 @@ const bookLists = ref<BookList[]>([
     desc: "修仙问道，逍遥天地",
     bookCount: 35,
     covers: [
-      "https://picsum.photos/seed/list2a/200/280",
-      "https://picsum.photos/seed/list2b/200/280",
-      "https://picsum.photos/seed/list2c/200/280",
+      "/static/reading/covers/list2a.svg",
+      "/static/reading/covers/list2b.svg",
+      "/static/reading/covers/list2c.svg",
     ],
   },
   {
@@ -609,9 +609,9 @@ const bookLists = ref<BookList[]>([
     desc: "都市逆袭，爽快阅读",
     bookCount: 42,
     covers: [
-      "https://picsum.photos/seed/list3a/200/280",
-      "https://picsum.photos/seed/list3b/200/280",
-      "https://picsum.photos/seed/list3c/200/280",
+      "/static/reading/covers/list3a.svg",
+      "/static/reading/covers/list3b.svg",
+      "/static/reading/covers/list3c.svg",
     ],
   },
 ]);
@@ -757,7 +757,7 @@ const viewMore = (type: string) => {
 
 /* 搜索栏 */
 .search-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
   padding: 20rpx 24rpx 30rpx;
 }
 
@@ -818,7 +818,7 @@ const viewMore = (type: string) => {
   transform: translateX(-50%);
   width: 48rpx;
   height: 6rpx;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%);
   border-radius: 3rpx;
 }
 
@@ -843,7 +843,7 @@ const viewMore = (type: string) => {
   color: #606266;
 
   &.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
     color: #fff;
   }
 }
@@ -996,7 +996,7 @@ const viewMore = (type: string) => {
   border-radius: 4rpx;
 
   &.active {
-    color: #667eea;
+    color: var(--u-type-primary);
     background: rgba(102, 126, 234, 0.1);
   }
 }
@@ -1014,7 +1014,7 @@ const viewMore = (type: string) => {
   border-radius: 4rpx;
 
   &.active {
-    color: #667eea;
+    color: var(--u-type-primary);
     background: rgba(102, 126, 234, 0.1);
   }
 }
@@ -1203,7 +1203,7 @@ const viewMore = (type: string) => {
   border-radius: 4rpx;
 
   &.serial {
-    color: #667eea;
+    color: var(--u-type-primary);
     background: rgba(102, 126, 234, 0.1);
   }
 
@@ -1303,7 +1303,7 @@ const viewMore = (type: string) => {
 .booklist-count {
   display: block;
   font-size: 22rpx;
-  color: #667eea;
+  color: var(--u-type-primary);
   margin-top: 8rpx;
 }
 
@@ -1364,7 +1364,7 @@ const viewMore = (type: string) => {
   border-radius: 4rpx;
 
   &.serial {
-    color: #667eea;
+    color: var(--u-type-primary);
     background: rgba(102, 126, 234, 0.1);
   }
 

@@ -1,5 +1,5 @@
 <template>
-  <layout nav-title="下载管理" :back="true">
+  <layout nav-title="下载管理" :show-tabbar="true" tabbar-scope="reading" back back-url="/pages/reading/index/index">
     <scroll-view class="download-scroll" scroll-y>
       <view class="download-page">
         <!-- 下载统计 -->
@@ -50,7 +50,7 @@
                 <u-icon
                   v-if="item.isPaused"
                   name="play-circle"
-                  color="#667eea"
+                  color="var(--u-type-primary)"
                   size="48"
                   @click="resumeDownload(item)"
                 />
@@ -149,7 +149,7 @@ const downloadingList = ref<DownloadItem[]>([
     id: "1",
     title: "斗破苍穹",
     author: "天蚕土豆",
-    cover: "https://picsum.photos/seed/book1/200/280",
+    cover: "/static/reading/covers/book1.svg",
     progress: 65,
     downloadedSize: "12.5MB",
     totalSize: "19.2MB",
@@ -160,7 +160,7 @@ const downloadingList = ref<DownloadItem[]>([
     id: "2",
     title: "凡人修仙传",
     author: "忘语",
-    cover: "https://picsum.photos/seed/book2/200/280",
+    cover: "/static/reading/covers/book2.svg",
     progress: 32,
     downloadedSize: "8.1MB",
     totalSize: "25.3MB",
@@ -174,7 +174,7 @@ const completedList = ref<DownloadItem[]>([
     id: "3",
     title: "诡秘之主",
     author: "爱潜水的乌贼",
-    cover: "https://picsum.photos/seed/book3/200/280",
+    cover: "/static/reading/covers/book3.svg",
     progress: 100,
     downloadedSize: "22.8MB",
     totalSize: "22.8MB",
@@ -186,7 +186,7 @@ const completedList = ref<DownloadItem[]>([
     id: "4",
     title: "大奉打更人",
     author: "卖报小郎君",
-    cover: "https://picsum.photos/seed/book4/200/280",
+    cover: "/static/reading/covers/book4.svg",
     progress: 100,
     downloadedSize: "18.5MB",
     totalSize: "18.5MB",
@@ -306,7 +306,7 @@ const goBookStore = () => {
 .stat-value {
   font-size: 40rpx;
   font-weight: 700;
-  color: #667eea;
+  color: var(--u-type-primary);
 }
 
 .stat-label {
@@ -342,7 +342,7 @@ const goBookStore = () => {
 
 .section-action {
   font-size: 24rpx;
-  color: #667eea;
+  color: var(--u-type-primary);
 }
 
 .download-list {
@@ -407,14 +407,14 @@ const goBookStore = () => {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%);
   border-radius: 4rpx;
   transition: width 0.3s;
 }
 
 .progress-text {
   font-size: 22rpx;
-  color: #667eea;
+  color: var(--u-type-primary);
   width: 60rpx;
   text-align: right;
 }

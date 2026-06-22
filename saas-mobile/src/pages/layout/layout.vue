@@ -5,10 +5,11 @@
       :background="navBackground"
       title-color="#ffffff"
       title-bold
-      :is-back="false"
+      :is-back="showBack"
       :is-fixed="true"
       :immersive="false"
       :border-bottom="false"
+      @left-click="handleBack"
       :z-index="980"
     />
 
@@ -47,6 +48,8 @@ const props = defineProps<{
   activeTab?: number;
   showTabbar?: boolean;
   tabbarScope?: TabbarScope;
+  back?: boolean;
+  backUrl?: string;
 }>();
 
 const { currentTheme } = useTheme();
@@ -55,6 +58,22 @@ const tabConfig = ref<LayoutTabbarItem[]>([]);
 const switchingTab = ref(false);
 
 const currentScope = computed<TabbarScope>(() => props.tabbarScope || TABBAR_SCOPES.portal);
+const showBack = computed(() => Boolean(props.back));
+
+function handleBack() {
+  if (props.backUrl) {
+    uni.reLaunch({ url: props.backUrl });
+    return;
+  }
+
+  if (getCurrentPages().length > 1) {
+    uni.navigateBack({ delta: 1 });
+    return;
+  }
+
+  uni.reLaunch({ url: "/pages/index/index" });
+}
+
 
 const themeColor = computed(() => currentTheme.value?.color?.primary || "#409EFF");
 

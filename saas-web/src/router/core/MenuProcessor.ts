@@ -16,9 +16,30 @@ export class MenuProcessor {
     return this.processMenuList(menuList)
   }
 
+  /**
+   * 获取完整路由列表（包含隐藏路由，用于路由注册和权限验证）
+   */
+  async getFullRouteList(): Promise<AppRouteRecord[]> {
+    const { isFrontendMode } = useAppMode()
+    const menuList = isFrontendMode.value
+      ? await this.processFrontendMenu()
+      : await this.processBackendMenu()
+
+    return this.processRouteList(menuList)
+  }
+
   processMenuList(menuList: AppRouteRecord[]): AppRouteRecord[] {
     const visibleMenuList = this.filterHiddenMenus(menuList)
     const filteredMenuList = this.filterEmptyMenus(visibleMenuList)
+    this.validateMenuPaths(filteredMenuList)
+    return this.normalizeMenuPaths(filteredMenuList)
+  }
+
+  /**
+   * 处理路由列表（不过滤隐藏路由，保留 isHide 的路由用于注册）
+   */
+  processRouteList(menuList: AppRouteRecord[]): AppRouteRecord[] {
+    const filteredMenuList = this.filterEmptyMenus(menuList)
     this.validateMenuPaths(filteredMenuList)
     return this.normalizeMenuPaths(filteredMenuList)
   }

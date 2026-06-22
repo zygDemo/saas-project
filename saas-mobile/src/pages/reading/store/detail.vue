@@ -52,7 +52,7 @@
             :class="{ inShelf: isInBookshelf }"
             @click="toggleBookshelf"
           >
-            <u-icon :name="isInBookshelf ? 'checkmark-circle' : 'plus-circle'" :color="isInBookshelf ? '#667eea' : '#606266'" size="32" />
+            <u-icon :name="isInBookshelf ? 'checkmark-circle' : 'plus-circle'" :color="isInBookshelf ? 'var(--u-type-primary)' : '#606266'" size="32" />
             <text>{{ isInBookshelf ? '已加入' : '加入书架' }}</text>
           </view>
           <view class="action-btn" @click="downloadBook">
@@ -92,7 +92,7 @@
             <text class="book-desc" :class="{ expanded: descExpanded }">{{ book.desc }}</text>
             <view class="expand-btn" @click="descExpanded = !descExpanded">
               <text>{{ descExpanded ? '收起' : '展开全部' }}</text>
-              <u-icon :name="descExpanded ? 'arrow-up' : 'arrow-down'" color="#667eea" size="20" />
+              <u-icon :name="descExpanded ? 'arrow-up' : 'arrow-down'" color="var(--u-type-primary)" size="20" />
             </view>
           </view>
         </view>
@@ -171,7 +171,7 @@
               <text class="review-content">{{ review.content }}</text>
               <view class="review-footer">
                 <view class="review-action" @click="likeReview(review)">
-                  <u-icon :name="review.liked ? 'thumb-up-fill' : 'thumb-up'" :color="review.liked ? '#667eea' : '#909399'" size="20" />
+                  <u-icon :name="review.liked ? 'thumb-up-fill' : 'thumb-up'" :color="review.liked ? 'var(--u-type-primary)' : '#909399'" size="20" />
                   <text>{{ review.likes }}</text>
                 </view>
               </view>
@@ -280,7 +280,7 @@ const book = ref<BookItem>({
   id: "1",
   title: "斗破苍穹",
   author: "天蚕土豆",
-  cover: "https://picsum.photos/seed/book1/200/280",
+  cover: "/static/reading/covers/book1.svg",
   category: "玄幻",
   style: "热血",
   ending: "逆袭",
@@ -290,7 +290,7 @@ const book = ref<BookItem>({
   totalChapters: 1648,
   wordCount: "532万字",
   rating: 4.8,
-  authorAvatar: "https://picsum.photos/seed/author1/100/100",
+  authorAvatar: "/static/reading/covers/author1.svg",
   authorDesc: "起点白金作家，网络文学代表性人物之一",
   authorBooks: 6,
   authorFans: 2580000,
@@ -326,7 +326,7 @@ const reviews = ref<Review[]>([
   {
     id: "1",
     nickname: "书虫小明",
-    avatar: "https://picsum.photos/seed/user1/80/80",
+    avatar: "/static/reading/covers/user1.svg",
     rating: 5,
     content: "经典中的经典！看了三遍还是觉得很好看，作者的想象力太丰富了。萧炎的成长历程让人热血沸腾，强烈推荐！",
     time: "2024-01-15",
@@ -336,7 +336,7 @@ const reviews = ref<Review[]>([
   {
     id: "2",
     nickname: "玄幻迷",
-    avatar: "https://picsum.photos/seed/user2/80/80",
+    avatar: "/static/reading/covers/user2.svg",
     rating: 4,
     content: "整体很不错，就是后期有点拖沓。不过异火系统设定很有创意，药老这个角色塑造得很好。",
     time: "2024-01-10",
@@ -346,7 +346,7 @@ const reviews = ref<Review[]>([
   {
     id: "3",
     nickname: "阅读达人",
-    avatar: "https://picsum.photos/seed/user3/80/80",
+    avatar: "/static/reading/covers/user3.svg",
     rating: 5,
     content: "斗破苍穹是我入坑的第一本书，从此爱上了网络小说。虽然现在看来有些套路，但当年看的时候真的惊为天人。",
     time: "2024-01-05",
@@ -356,11 +356,11 @@ const reviews = ref<Review[]>([
 ]);
 
 const recommendBooks = ref<RecommendBook[]>([
-  { id: "2", title: "凡人修仙传", author: "忘语", cover: "https://picsum.photos/seed/book2/200/280", rating: 4.7 },
-  { id: "3", title: "诡秘之主", author: "爱潜水的乌贼", cover: "https://picsum.photos/seed/book3/200/280", rating: 4.9 },
-  { id: "4", title: "大奉打更人", author: "卖报小郎君", cover: "https://picsum.photos/seed/book4/200/280", rating: 4.6 },
-  { id: "5", title: "夜的命名术", author: "会说话的肘子", cover: "https://picsum.photos/seed/book5/200/280", rating: 4.5 },
-  { id: "6", title: "赘婿", author: "愤怒的香蕉", cover: "https://picsum.photos/seed/book6/200/280", rating: 4.4 },
+  { id: "2", title: "凡人修仙传", author: "忘语", cover: "/static/reading/covers/book2.svg", rating: 4.7 },
+  { id: "3", title: "诡秘之主", author: "爱潜水的乌贼", cover: "/static/reading/covers/book3.svg", rating: 4.9 },
+  { id: "4", title: "大奉打更人", author: "卖报小郎君", cover: "/static/reading/covers/book4.svg", rating: 4.6 },
+  { id: "5", title: "夜的命名术", author: "会说话的肘子", cover: "/static/reading/covers/book5.svg", rating: 4.5 },
+  { id: "6", title: "赘婿", author: "愤怒的香蕉", cover: "/static/reading/covers/book6.svg", rating: 4.4 },
 ]);
 
 const isInBookshelf = computed(() => readingStore.isInBookshelf(bookId.value));
@@ -472,7 +472,7 @@ const goDetail = (item: RecommendBook) => {
   left: 0;
   right: 0;
   height: 360rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
 }
 
 .header-content {
@@ -509,7 +509,7 @@ const goDetail = (item: RecommendBook) => {
 }
 
 .serial-badge {
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%);
 }
 
 .finish-badge {
@@ -590,14 +590,14 @@ const goDetail = (item: RecommendBook) => {
   color: #606266;
 
   &.primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
     color: #fff;
     padding: 16rpx 32rpx;
     border-radius: 32rpx;
   }
 
   &.inShelf {
-    color: #667eea;
+    color: var(--u-type-primary);
   }
 }
 
@@ -734,7 +734,7 @@ const goDetail = (item: RecommendBook) => {
   gap: 8rpx;
   margin-top: 16rpx;
   font-size: 24rpx;
-  color: #667eea;
+  color: var(--u-type-primary);
 }
 
 /* 目录 */
@@ -761,7 +761,7 @@ const goDetail = (item: RecommendBook) => {
 
   &.is-latest {
     .chapter-title {
-      color: #667eea;
+      color: var(--u-type-primary);
       font-weight: 600;
     }
   }
@@ -998,7 +998,7 @@ const goDetail = (item: RecommendBook) => {
 
   &.primary {
     flex: 1;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
     color: #fff;
     border-radius: 40rpx;
     margin-left: 20rpx;

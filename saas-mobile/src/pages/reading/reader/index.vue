@@ -73,7 +73,7 @@
           <text>书签</text>
         </view>
         <view class="nav-btn" @click.stop="toggleListenMode">
-          <u-icon name="headphones" color="#fff" size="32" />
+          <u-icon name="mic" color="#fff" size="32" />
           <text>听书</text>
         </view>
         <view
@@ -96,9 +96,9 @@
           :value="currentPage"
           :max="currentPages.length - 1"
           :step="1"
-          activeColor="#667eea"
+          activeColor="var(--u-type-primary)"
           backgroundColor="rgba(255,255,255,0.2)"
-          block-color="#667eea"
+          block-color="var(--u-type-primary)"
           block-size="20"
           @change="onProgressChange"
         />
@@ -107,7 +107,7 @@
       <!-- 设置 -->
       <view class="settings-section">
         <view class="setting-item" @click.stop="toggleNightMode">
-          <u-icon :name="isNightMode ? 'sun' : 'moon'" color="#fff" size="40" />
+          <u-icon :name="isNightMode ? 'info-circle-fill' : 'info-circle'" color="#fff" size="40" />
           <text>{{ isNightMode ? "日间" : "夜间" }}</text>
         </view>
         <view class="setting-item" @click.stop="decreaseFontSize">
@@ -206,33 +206,26 @@
         </view>
 
         <!-- 背景颜色 -->
-        <view class="setting-row">
+        <view class="setting-row bg-setting-row">
           <text class="setting-label">背景颜色</text>
-          <view class="bg-color-control">
+          <view class="bg-color-strip">
             <view
               v-for="color in bgColors"
               :key="color.value"
-              class="bg-color-item"
+              class="bg-color-option"
               :class="{ active: bgColor === color.value }"
-              :style="{ background: color.color }"
               @click="onBgColorChange(color.value)"
             >
-              <u-icon
-                v-if="bgColor === color.value"
-                name="checkmark"
-                color="#667eea"
-                size="28"
-              />
+              <view class="bg-color-dot" :style="{ background: color.color }">
+                <u-icon
+                  v-if="bgColor === color.value"
+                  name="checkmark"
+                  :color="color.value === 'dark' ? '#c0c4cc' : 'var(--u-type-primary)'"
+                  size="18"
+                />
+              </view>
+              <text class="bg-color-name">{{ color.name }}</text>
             </view>
-          </view>
-          <view class="bg-color-names">
-            <text
-              v-for="color in bgColors"
-              :key="color.value"
-              class="bg-color-name"
-              :class="{ active: bgColor === color.value }"
-              >{{ color.name }}</text
-            >
           </view>
         </view>
 
@@ -265,19 +258,19 @@
         <view class="setting-row">
           <text class="setting-label">亮度</text>
           <view class="brightness-control">
-            <u-icon name="moon" color="#909399" size="28" />
+            <u-icon name="info-circle" color="#909399" size="28" />
             <slider
               class="brightness-slider"
               :value="brightness"
               :min="20"
               :max="100"
-              activeColor="#667eea"
+              activeColor="var(--u-type-primary)"
               backgroundColor="#f0f0f0"
-              block-color="#667eea"
+              block-color="var(--u-type-primary)"
               block-size="20"
               @change="onBrightnessChange"
             />
-            <u-icon name="sun" color="#303133" size="28" />
+            <u-icon name="info-circle-fill" color="#303133" size="28" />
           </view>
         </view>
       </view>
@@ -324,7 +317,7 @@
     <!-- 听书模式提示 -->
     <view v-if="isListenMode" class="listen-mode-toast">
       <view class="listen-content">
-        <u-icon name="headphones" color="#667eea" size="48" />
+        <u-icon name="mic" color="var(--u-type-primary)" size="48" />
         <text class="listen-text">听书模式已开启</text>
         <text class="listen-hint">正在朗读中...</text>
         <u-button
@@ -381,10 +374,12 @@ const touchStartY = ref(0);
 
 const bgColors = [
   { value: "default", color: "#f5f0e6", name: "默认" },
-  { value: "green", color: "#c7edcc", name: "护眼绿" },
+  { value: "warm", color: "#f0e6d3", name: "暖纸" },
+  { value: "green", color: "#c7edcc", name: "护眼" },
   { value: "blue", color: "#d6e6f2", name: "淡蓝" },
   { value: "pink", color: "#f2d6d6", name: "粉色" },
-  { value: "yellow", color: "#f5e6c8", name: "羊皮纸" },
+  { value: "yellow", color: "#f5e6c8", name: "羊皮" },
+  { value: "gray", color: "#e8e8e8", name: "浅灰" },
   { value: "dark", color: "#1a1a1a", name: "暗黑" },
 ];
 
@@ -951,7 +946,7 @@ const toggleListenMode = () => {
 
 .popup-close {
   font-size: 28rpx;
-  color: #667eea;
+  color: var(--u-type-primary);
 }
 
 .chapter-scroll {
@@ -969,7 +964,7 @@ const toggleListenMode = () => {
     background: rgba(102, 126, 234, 0.1);
 
     .chapter-name {
-      color: #667eea;
+      color: var(--u-type-primary);
       font-weight: 600;
     }
   }
@@ -1019,23 +1014,42 @@ const toggleListenMode = () => {
   text-align: center;
 }
 
-.bg-color-control {
-  display: flex;
-  gap: 20rpx;
-  flex-wrap: wrap;
-  padding: 10rpx 0;
+.bg-setting-row {
+  margin-bottom: 24rpx;
 }
 
-.bg-color-item {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  border: 4rpx solid transparent;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+.bg-color-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10rpx;
+  padding: 4rpx 0 0;
+}
 
-  &.active {
-    border-color: #667eea;
-    box-shadow: 0 0 0 4rpx rgba(102, 126, 234, 0.3);
+.bg-color-option {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.bg-color-dot {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  border: 2rpx solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1rpx 3rpx rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bg-color-option.active {
+  .bg-color-dot {
+    border-color: var(--u-type-primary);
+    box-shadow: 0 0 0 3rpx rgba(102, 126, 234, 0.16);
   }
 }
 
@@ -1108,6 +1122,24 @@ const toggleListenMode = () => {
   margin-top: 8rpx;
 }
 
+
+
+.bg-color-name {
+  max-width: 70rpx;
+  font-size: 18rpx;
+  line-height: 1.2;
+  color: #606266;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bg-color-option.active .bg-color-name {
+  color: var(--u-type-primary);
+  font-weight: 600;
+}
+
 .settings-popup-header {
   display: flex;
   justify-content: space-between;
@@ -1121,24 +1153,6 @@ const toggleListenMode = () => {
   font-size: 32rpx;
   font-weight: 600;
   color: #303133;
-}
-
-.bg-color-names {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 12rpx;
-}
-
-.bg-color-name {
-  font-size: 20rpx;
-  color: #909399;
-  width: 80rpx;
-  text-align: center;
-
-  &.active {
-    color: #667eea;
-    font-weight: 600;
-  }
 }
 
 /* 听书模式提示 */

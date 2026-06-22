@@ -1,5 +1,5 @@
 <template>
-  <layout :active-tab="0" nav-title="我的书架" show-tabbar tabbar-scope="reading">
+  <layout :active-tab="0" nav-title="我的书架" :show-tabbar="true" tabbar-scope="reading" back back-url="/pages/index/index">
     <scroll-view
       class="bookshelf-scroll"
       scroll-y
@@ -11,9 +11,7 @@
         <!-- 顶部渐变头部 -->
         <view class="header-section">
           <view class="header-bg">
-            <view class="header-particles">
-              <view v-for="i in 6" :key="i" class="particle" :style="particleStyle(i)" />
-            </view>
+
           </view>
           <view class="header-content">
             <view class="header-left">
@@ -30,13 +28,28 @@
               </view>
             </view>
           </view>
+
+          <view class="header-shortcuts">
+            <view class="header-shortcut" @click="goBookStore">
+              <u-icon name="shopping-cart" color="#fff" size="30" />
+              <text>去书城</text>
+            </view>
+            <view class="header-shortcut" @click="goDownload">
+              <u-icon name="download" color="#fff" size="30" />
+              <text>下载管理</text>
+            </view>
+            <view class="header-shortcut" @click="goPortal">
+              <u-icon name="home" color="#fff" size="30" />
+              <text>项目选择</text>
+            </view>
+          </view>
         </view>
 
         <!-- 阅读统计卡片 -->
         <view class="stats-card">
           <view class="stats-row">
             <view class="stat-item" @click="goReadingHistory">
-              <view class="stat-icon-wrap" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+              <view class="stat-icon-wrap" style="background: linear-gradient(135deg, var(--u-type-primary-dark, #3b2f8a) 0%, var(--u-type-primary, #5240FE) 100%)">
                 <u-icon name="clock" color="#fff" size="28" />
               </view>
               <text class="stat-value">{{ todayReadMinutes }}</text>
@@ -74,7 +87,7 @@
               <text class="section-title">今日推荐</text>
             </view>
             <view class="refresh-btn" @click="refreshRecommend">
-              <u-icon name="reload" color="#667eea" size="28" />
+              <u-icon name="reload" color="var(--u-type-primary)" size="28" />
               <text>换一批</text>
             </view>
           </view>
@@ -116,18 +129,19 @@
             <view class="section-title-wrap">
               <text class="section-icon">📚</text>
               <text class="section-title">我的书架</text>
+              <text class="section-count">{{ bookshelf.length }}本</text>
             </view>
             <view class="section-actions">
               <view class="action-btn" :class="{ active: sortMode === 'time' }" @click="sortMode = 'time'">
-                <u-icon name="clock" :color="sortMode === 'time' ? '#667eea' : '#909399'" size="24" />
-                <text :style="{ color: sortMode === 'time' ? '#667eea' : '#909399' }">时间</text>
+                <u-icon name="clock" :color="sortMode === 'time' ? 'var(--u-type-primary, #5240FE)' : '#909399'" size="24" />
+                <text :style="{ color: sortMode === 'time' ? 'var(--u-type-primary, #5240FE)' : '#909399' }">时间</text>
               </view>
               <view class="action-btn" :class="{ active: sortMode === 'name' }" @click="sortMode = 'name'">
-                <u-icon name="list" :color="sortMode === 'name' ? '#667eea' : '#909399'" size="24" />
-                <text :style="{ color: sortMode === 'name' ? '#667eea' : '#909399' }">名称</text>
+                <u-icon name="list" :color="sortMode === 'name' ? 'var(--u-type-primary, #5240FE)' : '#909399'" size="24" />
+                <text :style="{ color: sortMode === 'name' ? 'var(--u-type-primary, #5240FE)' : '#909399' }">名称</text>
               </view>
               <view class="action-btn add-btn" @click="goBookStore">
-                <u-icon name="plus-circle-fill" color="#667eea" size="28" />
+                <u-icon name="plus-circle-fill" color="var(--u-type-primary)" size="28" />
               </view>
             </view>
           </view>
@@ -142,6 +156,7 @@
                 placeholder="搜索书架中的书"
                 placeholder-class="search-placeholder"
                 confirm-type="search"
+                @input="onSearchInput"
               />
               <view v-if="keyword" class="clear-btn" @click="keyword = ''">
                 <u-icon name="close-circle-fill" color="#c0c4cc" size="28" />
@@ -178,6 +193,12 @@
                   <text class="last-read">{{ book.lastReadChapter || '未开始阅读' }}</text>
                   <text class="last-time">{{ formatTime(book.lastReadTime) }}</text>
                 </view>
+                <view class="book-actions-row">
+                  <view class="continue-btn" @click.stop="openBook(book)">
+                    <u-icon name="play-right" color="#fff" size="20" />
+                    <text>继续阅读</text>
+                  </view>
+                </view>
                 <view class="book-progress-bar">
                   <view class="progress-bg" />
                   <view class="progress-fill" :style="{ width: book.progress + '%' }" />
@@ -196,7 +217,7 @@
             <!-- 空状态 -->
             <view v-if="filteredBooks.length === 0" class="empty-state">
               <view class="empty-icon-wrap">
-                <u-icon name="book" color="#ddd" size="120" />
+                <u-icon name="file-text" color="#ddd" size="120" />
               </view>
               <text class="empty-title">{{ keyword ? '没有找到匹配的书籍' : '书架还是空的' }}</text>
               <text class="empty-desc">{{ keyword ? '换个关键词试试' : '去书城找找喜欢的书吧' }}</text>
@@ -272,8 +293,14 @@ const keyword = ref("");
 const refreshing = ref(false);
 const hasSigned = ref(false);
 const sortMode = ref<"time" | "name">("time");
+const searchTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 const readingStore = useReadingStore();
 const localStore = useLocalStore();
+
+const onSearchInput = () => {
+  if (searchTimer.value) clearTimeout(searchTimer.value);
+  searchTimer.value = setTimeout(() => {}, 300);
+};
 
 const bookshelf = computed(() => readingStore.bookshelf);
 const totalReadCount = computed(() => readingStore.totalReadCount);
@@ -284,7 +311,7 @@ const todayRecommend = ref<BookItem | null>({
   id: "10",
   title: "十方武圣",
   author: "莫默",
-  cover: "https://picsum.photos/seed/book10/200/280",
+  cover: "/static/reading/covers/book10.svg",
   category: "玄幻",
   wordCount: "156万字",
   isSerial: true,
@@ -347,11 +374,11 @@ const onRefresh = () => {
 
 const handleSign = () => {
   if (hasSigned.value) {
-    uni.showToast({ title: "今天已经签到过了", icon: "none" });
+    uni.showToast({ title: "今日已签到，明日再来", icon: "none" });
     return;
   }
   hasSigned.value = true;
-  uni.showToast({ title: "签到成功 +10积分", icon: "success" });
+  uni.showToast({ title: "签到成功 +10阅读积分", icon: "success" });
 };
 
 const formatTime = (timestamp?: number) => {
@@ -430,6 +457,11 @@ const clearSearch = () => {
   keyword.value = "";
 };
 
+const goPortal = () => {
+  localStore.setCurrentSystem(CurrentSystem.PORTAL);
+  uni.reLaunch({ url: "/pages/index/index" });
+};
+
 const refreshRecommend = () => {
   uni.showToast({ title: "换一批推荐", icon: "success" });
 };
@@ -458,7 +490,7 @@ const refreshRecommend = () => {
   left: 0;
   right: 0;
   height: 280rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
   border-radius: 0 0 40rpx 40rpx;
   overflow: hidden;
 }
@@ -692,7 +724,7 @@ const refreshRecommend = () => {
 
   text {
     font-size: 24rpx;
-    color: #667eea;
+    color: var(--u-type-primary);
   }
 }
 
@@ -771,7 +803,7 @@ const refreshRecommend = () => {
   border-radius: 6rpx;
 
   &.category {
-    color: #667eea;
+    color: var(--u-type-primary);
     background: rgba(102, 126, 234, 0.1);
   }
 
@@ -959,9 +991,41 @@ const refreshRecommend = () => {
   margin-top: 8rpx;
 }
 
+.book-actions-row {
+  margin-top: 10rpx;
+}
+
+.continue-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  background: linear-gradient(135deg, var(--u-type-primary-dark, #3b2f8a), var(--u-type-primary, #5240FE));
+  padding: 6rpx 20rpx;
+  border-radius: 24rpx;
+  align-self: flex-start;
+
+  text {
+    font-size: 22rpx;
+    color: #fff;
+    font-weight: 500;
+  }
+
+  &:active {
+    opacity: 0.8;
+    transform: scale(0.96);
+  }
+}
+
+.section-count {
+  font-size: 24rpx;
+  color: #909399;
+  font-weight: 400;
+  margin-left: 8rpx;
+}
+
 .last-read {
   font-size: 22rpx;
-  color: #667eea;
+  color: var(--u-type-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -998,7 +1062,7 @@ const refreshRecommend = () => {
   top: 0;
   left: 0;
   bottom: 0;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%);
   border-radius: 4rpx;
   transition: width 0.5s ease;
 }
@@ -1008,7 +1072,7 @@ const refreshRecommend = () => {
   right: 0;
   top: -24rpx;
   font-size: 18rpx;
-  color: #667eea;
+  color: var(--u-type-primary);
   font-weight: 500;
 }
 
@@ -1133,7 +1197,7 @@ const refreshRecommend = () => {
 }
 
 .empty-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
   color: #fff;
   font-size: 28rpx;
   padding: 20rpx 48rpx;
@@ -1144,4 +1208,38 @@ const refreshRecommend = () => {
     transform: scale(0.98);
   }
 }
+
+
+.header-shortcuts {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16rpx;
+  padding: 28rpx 32rpx 0;
+}
+
+.header-shortcut {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  height: 72rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.28);
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(12px);
+
+  text {
+    color: #fff;
+    font-size: 24rpx;
+    font-weight: 500;
+  }
+
+  &:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.24);
+  }
+}
+
 </style>

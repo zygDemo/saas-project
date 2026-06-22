@@ -195,6 +195,7 @@ const isLoggedIn = computed(() => Boolean(localStore.token && currentUser.value)
 const currentTabbarScope = computed(() => {
   if (localStore.currentSystem === CurrentSystem.CARLOAN) return TABBAR_SCOPES.carloan;
   if (localStore.currentSystem === CurrentSystem.FOOD) return TABBAR_SCOPES.food;
+  if (localStore.currentSystem === CurrentSystem.READING) return TABBAR_SCOPES.reading;
   return TABBAR_SCOPES.portal;
 });
 
@@ -207,6 +208,7 @@ const currentProjectLabel = computed(() => {
   if (localStore.currentSystem === CurrentSystem.CARLOAN) return '当前：车贷业务，点击返回项目选择';
   if (localStore.currentSystem === CurrentSystem.FOOD) return '当前：点餐业务，点击返回项目选择';
   if (localStore.currentSystem === CurrentSystem.CREDIT) return '当前：征信查询，点击返回项目选择';
+  if (localStore.currentSystem === CurrentSystem.READING) return '当前：读书模块，点击返回项目选择';
   return '当前：项目选择首页';
 });
 
