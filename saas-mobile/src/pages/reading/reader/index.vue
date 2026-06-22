@@ -7,12 +7,26 @@
       :class="{ show: showToolbar }"
       @click.stop
     >
-      <view class="toolbar-left" @click="goBack">
+      <view
+        class="toolbar-left"
+        role="button"
+        tabindex="0"
+        @click="goBack"
+        @keyup.enter="goBack"
+      >
         <u-icon name="arrow-left" color="#fff" size="40" />
       </view>
       <text class="toolbar-title">{{ currentChapter?.title || "" }}</text>
       <view class="toolbar-right">
-        <u-icon name="share" color="#fff" size="40" @click="shareBook" />
+        <u-icon
+          name="share"
+          color="#fff"
+          size="40"
+          role="button"
+          tabindex="0"
+          @click="shareBook"
+          @keyup.enter="shareBook"
+        />
       </view>
     </view>
 
@@ -86,11 +100,23 @@
           <u-icon name="arrow-left" color="#fff" size="32" />
           <text>上一章</text>
         </view>
-        <view class="nav-btn" @click.stop="showChapterList">
+        <view
+          class="nav-btn"
+          role="button"
+          tabindex="0"
+          @click.stop="showChapterList"
+          @keyup.enter="showChapterList"
+        >
           <u-icon name="list" color="#fff" size="32" />
           <text>目录</text>
         </view>
-        <view class="nav-btn" @click.stop="toggleBookmark">
+        <view
+          class="nav-btn"
+          role="button"
+          tabindex="0"
+          @click.stop="toggleBookmark"
+          @keyup.enter="toggleBookmark"
+        >
           <u-icon
             :name="isBookmarked ? 'bookmark-fill' : 'bookmark'"
             :color="isBookmarked ? '#ffd43b' : '#fff'"
@@ -98,7 +124,13 @@
           />
           <text>书签</text>
         </view>
-        <view class="nav-btn" @click.stop="toggleListenMode">
+        <view
+          class="nav-btn"
+          role="button"
+          tabindex="0"
+          @click.stop="toggleListenMode"
+          @keyup.enter="toggleListenMode"
+        >
           <u-icon name="mic" color="#fff" size="32" />
           <text>听书</text>
         </view>
@@ -133,19 +165,47 @@
 
       <!-- 设置 -->
       <view class="settings-section">
-        <view class="setting-item" @click.stop="toggleNightMode">
-          <u-icon :name="isNightMode ? 'info-circle-fill' : 'info-circle'" color="#fff" size="40" />
+        <view
+          class="setting-item"
+          role="button"
+          tabindex="0"
+          @click.stop="toggleNightMode"
+          @keyup.enter="toggleNightMode"
+        >
+          <u-icon
+            :name="isNightMode ? 'info-circle-fill' : 'info-circle'"
+            color="#fff"
+            size="40"
+          />
           <text>{{ isNightMode ? "日间" : "夜间" }}</text>
         </view>
-        <view class="setting-item" @click.stop="decreaseFontSize">
+        <view
+          class="setting-item"
+          role="button"
+          tabindex="0"
+          @click.stop="decreaseFontSize"
+          @keyup.enter="decreaseFontSize"
+        >
           <text class="font-btn">A-</text>
           <text>小字</text>
         </view>
-        <view class="setting-item" @click.stop="increaseFontSize">
+        <view
+          class="setting-item"
+          role="button"
+          tabindex="0"
+          @click.stop="increaseFontSize"
+          @keyup.enter="increaseFontSize"
+        >
           <text class="font-btn large">A+</text>
           <text>大字</text>
         </view>
-        <view class="setting-item" @click.stop="showSettings">
+        <view
+          class="setting-item"
+          role="button"
+          tabindex="0"
+          @click.stop="showSettings"
+          @keyup.enter="showSettings"
+        >
           <u-icon name="setting" color="#fff" size="40" />
           <text>设置</text>
         </view>
@@ -176,59 +236,47 @@
 
     <!-- 设置弹窗 -->
     <u-popup v-model="showSettingsPopup" mode="bottom" border-radius="16">
-      <view class="settings-popup">
+      <view class="settings-popup" :style="{ background: bgColorStyle, color: bgColor === 'dark' ? '#c0c4cc' : '#333' }">
         <view class="settings-popup-header">
           <text class="settings-popup-title">阅读设置</text>
           <u-icon
             name="close"
-            color="#909399"
+            color="currentColor"
             size="40"
+            role="button"
+            tabindex="0"
             @click="showSettingsPopup = false"
+            @keyup.enter="showSettingsPopup = false"
           />
         </view>
 
         <!-- 字体大小 -->
-        <view class="setting-row">
-          <text class="setting-label">字体大小</text>
-          <view class="font-size-control">
-            <u-button
-              text="A-"
-              size="small"
-              :disabled="fontSize <= 14"
-              @click="decreaseFontSize"
-            />
+        <view class="setting-row-inline">
+          <text class="setting-label-inline">字体大小</text>
+          <view class="setting-control-inline">
+            <view class="setting-btn" :class="{ disabled: fontSize <= 14 }" @click="decreaseFontSize">
+              <text class="setting-btn-text">A-</text>
+            </view>
             <text class="font-size-value">{{ fontSize }}px</text>
-            <u-button
-              text="A+"
-              size="small"
-              :disabled="fontSize >= 28"
-              @click="increaseFontSize"
-            />
+            <view class="setting-btn" :class="{ disabled: fontSize >= 28 }" @click="increaseFontSize">
+              <text class="setting-btn-text large">A+</text>
+            </view>
           </view>
         </view>
 
         <!-- 行间距 -->
-        <view class="setting-row">
-          <text class="setting-label">行间距</text>
-          <view class="line-height-control">
-            <u-button
-              text="紧凑"
-              size="small"
-              :type="lineHeight === 1.5 ? 'primary' : 'default'"
-              @click="setLineHeight(1.5)"
-            />
-            <u-button
-              text="标准"
-              size="small"
-              :type="lineHeight === 1.8 ? 'primary' : 'default'"
-              @click="setLineHeight(1.8)"
-            />
-            <u-button
-              text="宽松"
-              size="small"
-              :type="lineHeight === 2.0 ? 'primary' : 'default'"
-              @click="setLineHeight(2.0)"
-            />
+        <view class="setting-row-inline">
+          <text class="setting-label-inline">行间距</text>
+          <view class="setting-pill-group">
+            <view class="setting-pill" :class="{ active: lineHeight === 1.5 }" @click="setLineHeight(1.5)">
+              <text class="pill-text">紧凑</text>
+            </view>
+            <view class="setting-pill" :class="{ active: lineHeight === 1.8 }" @click="setLineHeight(1.8)">
+              <text class="pill-text">标准</text>
+            </view>
+            <view class="setting-pill" :class="{ active: lineHeight === 2.0 }" @click="setLineHeight(2.0)">
+              <text class="pill-text">宽松</text>
+            </view>
           </view>
         </view>
 
@@ -240,6 +288,8 @@
               v-for="color in bgColors"
               :key="color.value"
               class="bg-color-option"
+              role="button"
+              tabindex="0"
               :class="{ active: bgColor === color.value }"
               @click="onBgColorChange(color.value)"
             >
@@ -247,7 +297,9 @@
                 <u-icon
                   v-if="bgColor === color.value"
                   name="checkmark"
-                  :color="color.value === 'dark' ? '#c0c4cc' : 'var(--u-type-primary)'"
+                  :color="
+                    color.value === 'dark' ? '#c0c4cc' : 'var(--u-type-primary)'
+                  "
                   size="18"
                 />
               </view>
@@ -257,47 +309,38 @@
         </view>
 
         <!-- 翻页方式 -->
-        <view class="setting-row">
-          <text class="setting-label">翻页方式</text>
-          <view class="page-mode-control">
-            <u-button
-              text="覆盖"
-              size="small"
-              :type="pageMode === 'cover' ? 'primary' : 'default'"
-              @click="setPageMode('cover')"
-            />
-            <u-button
-              text="滑动"
-              size="small"
-              :type="pageMode === 'slide' ? 'primary' : 'default'"
-              @click="setPageMode('slide')"
-            />
-            <u-button
-              text="上下"
-              size="small"
-              :type="pageMode === 'vertical' ? 'primary' : 'default'"
-              @click="setPageMode('vertical')"
-            />
+        <view class="setting-row-inline">
+          <text class="setting-label-inline">翻页方式</text>
+          <view class="setting-pill-group">
+            <view class="setting-pill" :class="{ active: pageMode === 'cover' }" @click="setPageMode('cover')">
+              <text class="pill-text">覆盖</text>
+            </view>
+            <view class="setting-pill" :class="{ active: pageMode === 'slide' }" @click="setPageMode('slide')">
+              <text class="pill-text">滑动</text>
+            </view>
+            <view class="setting-pill" :class="{ active: pageMode === 'vertical' }" @click="setPageMode('vertical')">
+              <text class="pill-text">上下</text>
+            </view>
           </view>
         </view>
 
         <!-- 亮度 -->
-        <view class="setting-row setting-row-last">
-          <text class="setting-label">亮度</text>
-          <view class="brightness-control">
-            <u-icon name="info-circle" color="#909399" size="28" />
+        <view class="setting-row-inline setting-row-last">
+          <text class="setting-label-inline">亮度</text>
+          <view class="setting-control-inline">
+            <u-icon name="info-circle" :color="bgColor === 'dark' ? '#666' : '#909399'" size="22" />
             <slider
               class="brightness-slider"
               :value="brightness"
               :min="20"
               :max="100"
               activeColor="var(--u-type-primary)"
-              backgroundColor="#f0f0f0"
+              :backgroundColor="bgColor === 'dark' ? '#333' : '#e8e8e8'"
               block-color="var(--u-type-primary)"
-              :block-size="20"
+              :block-size="16"
               @change="onBrightnessChange"
             />
-            <u-icon name="info-circle-fill" color="#303133" size="28" />
+            <u-icon name="info-circle-fill" :color="bgColor === 'dark' ? '#999' : '#333'" size="22" />
           </view>
         </view>
       </view>
@@ -308,7 +351,12 @@
       <view class="bookmark-popup">
         <view class="popup-header">
           <text class="popup-title">书签</text>
-          <text class="popup-close" @click="showBookmarkPopup = false"
+          <text
+            class="popup-close"
+            role="button"
+            tabindex="0"
+            @click="showBookmarkPopup = false"
+            @keyup.enter="showBookmarkPopup = false"
             >关闭</text
           >
         </view>
@@ -321,7 +369,10 @@
             v-for="bookmark in bookmarks"
             :key="bookmark.id"
             class="bookmark-item"
+            role="button"
+            tabindex="0"
             @click="jumpToBookmark(bookmark)"
+            @keyup.enter="jumpToBookmark(bookmark)"
           >
             <view class="bookmark-info">
               <text class="bookmark-chapter">{{ bookmark.chapterTitle }}</text>
@@ -424,13 +475,13 @@ const touchStartY = ref(0);
 
 const bgColors = [
   { value: "default", color: "#f5f0e6", name: "默认" },
-  { value: "warm", color: "#f0e6d3", name: "暖纸" },
-  { value: "green", color: "#c7edcc", name: "护眼" },
-  { value: "blue", color: "#d6e6f2", name: "淡蓝" },
-  { value: "pink", color: "#f2d6d6", name: "粉色" },
-  { value: "yellow", color: "#f5e6c8", name: "羊皮" },
-  { value: "gray", color: "#e8e8e8", name: "浅灰" },
-  { value: "dark", color: "#1a1a1a", name: "暗黑" },
+  { value: "warm", color: "#efe5d5", name: "暖纸" },
+  { value: "green", color: "#dce8d4", name: "护眼" },
+  { value: "blue", color: "#dce4ee", name: "淡蓝" },
+  { value: "pink", color: "#f0dcd8", name: "粉色" },
+  { value: "yellow", color: "#eee0c4", name: "羊皮" },
+  { value: "gray", color: "#e6e6e6", name: "浅灰" },
+  { value: "dark", color: "#1e1e1e", name: "暗黑" },
 ];
 
 const bgColorStyle = computed(() => {
@@ -464,7 +515,7 @@ const currentChapterIndex = computed(() => {
 
 const hasPrevChapter = computed(() => currentChapterIndex.value > 0);
 const hasNextChapter = computed(
-  () => currentChapterIndex.value < chapterList.value.length - 1
+  () => currentChapterIndex.value < chapterList.value.length - 1,
 );
 
 // 模拟章节内容
@@ -535,7 +586,7 @@ const chapterContent = ref(
 
 "从今天开始，老夫会教你真正的修炼之法，让你重新成为天才。"
 
-萧炎的眼中闪过一丝光芒，他知道，自己的命运从这一刻开始改变了。`
+萧炎的眼中闪过一丝光芒，他知道，自己的命运从这一刻开始改变了。`,
 );
 
 const currentPages = computed(() => {
@@ -566,7 +617,7 @@ function saveSettings() {
         pageMode: pageMode.value,
         brightness: brightness.value,
         isNightMode: isNightMode.value,
-      })
+      }),
     );
   } catch {
     // ignore
@@ -578,7 +629,7 @@ watch(
   [fontSize, lineHeight, bgColor, pageMode, brightness, isNightMode],
   () => {
     saveSettings();
-  }
+  },
 );
 
 // 切换翻页模式
@@ -606,7 +657,7 @@ const onTouchStart = (e: TouchEvent) => {
 
 const checkBookmarkStatus = () => {
   isBookmarked.value = bookmarks.value.some(
-    (b) => b.chapterId === chapterId.value && b.page === currentPage.value
+    (b) => b.chapterId === chapterId.value && b.page === currentPage.value,
   );
 };
 
@@ -669,7 +720,9 @@ onLoad(async (options) => {
 
   if (bookId.value) {
     try {
-      const res = await readingApi.getChapters(bookId.value, { pageSize: 1000 });
+      const res = await readingApi.getChapters(bookId.value, {
+        pageSize: 1000,
+      });
       const list = res.data?.items || [];
       chapterList.value = list.map((item: any) => ({
         id: String(item.id),
@@ -698,7 +751,7 @@ onUnload(() => {
     readingStore.saveReadingProgress(
       bookId.value,
       chapterId.value,
-      currentPage.value
+      currentPage.value,
     );
   }
   // 最后保存一次设置
@@ -833,7 +886,7 @@ const toggleBookmark = () => {
   if (isBookmarked.value) {
     // 删除当前页书签
     const idx = bookmarks.value.findIndex(
-      (b) => b.chapterId === chapterId.value && b.page === currentPage.value
+      (b) => b.chapterId === chapterId.value && b.page === currentPage.value,
     );
     if (idx > -1) {
       bookmarks.value.splice(idx, 1);
@@ -915,13 +968,14 @@ const toggleListenMode = () => {
   background: #f5f0e6;
 
   &.night-mode {
-    background: #1a1a1a;
+    background: #1e1e1e;
 
     .content-text {
       color: #999;
     }
 
     .chapter-title-text {
+      text-wrap: balance;
       color: #666;
     }
   }
@@ -1067,6 +1121,7 @@ const toggleListenMode = () => {
 }
 
 .chapter-title-text {
+  text-wrap: balance;
   display: block;
   font-size: 36rpx;
   font-weight: 600;
@@ -1080,6 +1135,13 @@ const toggleListenMode = () => {
   color: #333;
   line-height: 1.8;
   text-align: justify;
+}
+
+/* 减少动画 */
+@media (prefers-reduced-motion: reduce) {
+  .toolbar {
+    transition: none !important;
+  }
 }
 
 /* 垂直滚动阅读模式 */
@@ -1168,31 +1230,243 @@ const toggleListenMode = () => {
   border-radius: 4rpx;
 }
 
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .reader-page {
+    background: #121212;
+  }
+
+  .reader-page.night-mode {
+    background: #1e1e1e;
+  }
+
+  .toolbar {
+    background: rgba(30, 30, 30, 0.95);
+  }
+
+  .chapter-popup {
+    background: #1e1e1e;
+  }
+
+  .popup-header {
+    border-bottom-color: #2a2a2a;
+  }
+
+  .popup-title {
+    color: #e5e6eb;
+  }
+
+  .popup-sub {
+    color: #8b8c91;
+  }
+
+  .chapter-item {
+    border-bottom-color: #2a2a2a;
+
+    &.active {
+      background: rgba(82, 64, 254, 0.15);
+    }
+  }
+
+  .chapter-name {
+    color: #e5e6eb;
+  }
+
+  .settings-popup {
+    background: #1e1e1e;
+    color: #c0c4cc;
+  }
+
+  .settings-popup-header {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .setting-label {
+    opacity: 0.8;
+  }
+
+  .bg-color-name {
+    &.active {
+      color: var(--u-type-primary);
+    }
+  }
+
+  .popup-close {
+    color: var(--u-type-primary);
+  }
+
+  .bookmark-popup {
+    background: #1e1e1e;
+  }
+
+  .bookmark-item {
+    border-bottom-color: #2a2a2a;
+  }
+
+  .bookmark-chapter {
+    color: #e5e6eb;
+  }
+
+  .bookmark-content {
+    color: #b0b3b8;
+  }
+
+  .bookmark-time {
+    color: #8b8c91;
+  }
+
+  .listen-content {
+    background: rgba(30, 30, 30, 0.95);
+  }
+}
+
+/* 设置行 - label + 控件同行 */
+.setting-row-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18rpx;
+}
+
+.setting-label-inline {
+  font-size: 26rpx;
+  flex-shrink: 0;
+  width: 120rpx;
+  opacity: 0.7;
+}
+
+.setting-control-inline {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+/* 设置按钮 - 字体大小 */
+.setting-btn {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border: 2rpx solid rgba(0, 0, 0, 0.04);
+}
+
+.setting-btn:active {
+  background: rgba(0, 0, 0, 0.12);
+  transform: scale(0.95);
+}
+
+.setting-btn.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.setting-btn-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #333;
+  line-height: 1;
+}
+
+.setting-btn-text.large {
+  font-size: 28rpx;
+}
+
+/* pill 按钮组 - 行间距、翻页方式 */
+.setting-pill-group {
+  display: flex;
+  gap: 8rpx;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.setting-pill {
+  padding: 10rpx 20rpx;
+  border-radius: 28rpx;
+  background: rgba(0, 0, 0, 0.06);
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease;
+  min-width: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.setting-pill:active {
+  transform: scale(0.95);
+}
+
+.setting-pill.active {
+  background: var(--u-type-primary);
+  border-color: var(--u-type-primary);
+  box-shadow: 0 4rpx 12rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.3);
+}
+
+.pill-text {
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.2;
+}
+
+.setting-pill.active .pill-text {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .setting-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .setting-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .setting-btn-text {
+    color: #c0c4cc;
+  }
+
+  .setting-pill {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .pill-text {
+    color: #b0b3b8;
+  }
+}
+
 /* 设置弹窗 - 限制高度 */
 .settings-popup {
-  padding: 30rpx 24rpx;
-  padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
-  max-height: 60vh;
+  padding: 16rpx 24rpx 20rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  max-height: 55vh;
   overflow-y: auto;
+  transition: background 0.3s ease;
 }
 
 .settings-popup-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24rpx 0;
-  margin-bottom: 20rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  padding: 12rpx 0 16rpx;
+  margin-bottom: 12rpx;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.06);
 }
 
 .settings-popup-title {
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: 600;
-  color: #303133;
 }
 
 .setting-row {
-  margin-bottom: 24rpx;
+  margin-bottom: 18rpx;
 }
 
 .setting-row-last {
@@ -1201,46 +1475,45 @@ const toggleListenMode = () => {
 
 .setting-label {
   display: block;
-  font-size: 28rpx;
-  color: #303133;
-  margin-bottom: 16rpx;
+  font-size: 26rpx;
+  margin-bottom: 10rpx;
+  opacity: 0.7;
 }
 
 .font-size-control {
   display: flex;
   align-items: center;
-  gap: 20rpx;
+  gap: 16rpx;
 }
 
 .line-height-control {
   display: flex;
   align-items: center;
-  gap: 20rpx;
+  gap: 16rpx;
 }
 
 .page-mode-control {
   display: flex;
   align-items: center;
-  gap: 20rpx;
+  gap: 16rpx;
 }
 
 .font-size-value {
-  font-size: 28rpx;
-  color: #606266;
-  width: 80rpx;
+  font-size: 26rpx;
+  width: 72rpx;
   text-align: center;
 }
 
 .bg-setting-row {
-  margin-bottom: 24rpx;
+  margin-bottom: 18rpx;
 }
 
 .bg-color-strip {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10rpx;
-  padding: 4rpx 0 0;
+  gap: 8rpx;
+  padding: 2rpx 0 0;
 }
 
 .bg-color-option {
@@ -1249,15 +1522,15 @@ const toggleListenMode = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8rpx;
+  gap: 6rpx;
 }
 
 .bg-color-dot {
-  width: 48rpx;
-  height: 48rpx;
+  width: 44rpx;
+  height: 44rpx;
   border-radius: 50%;
-  border: 2rpx solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 1rpx 3rpx rgba(0, 0, 0, 0.06);
+  border: 2rpx solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1rpx 3rpx rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1266,18 +1539,33 @@ const toggleListenMode = () => {
 .bg-color-option.active {
   .bg-color-dot {
     border-color: var(--u-type-primary);
-    box-shadow: 0 0 0 3rpx rgba(102, 126, 234, 0.16);
+    box-shadow: 0 0 0 3rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.2);
   }
 }
 
 .brightness-control {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 12rpx;
 }
 
 .brightness-slider {
   flex: 1;
+}
+
+.bg-color-name {
+  max-width: 70rpx;
+  font-size: 16rpx;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bg-color-option.active .bg-color-name {
+  color: var(--u-type-primary);
+  font-weight: 600;
 }
 
 /* 书签弹窗 */

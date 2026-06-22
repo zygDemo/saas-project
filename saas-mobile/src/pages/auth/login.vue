@@ -2,22 +2,34 @@
   <app-page nav-title="登录">
     <view class="login-page">
       <view class="login-card">
-        <u-text text="用户名密码登录" size="34rpx" bold />
+        <view class="login-brand">
+          <image class="login-logo" src="/static/logo.png" mode="aspectFit" />
+          <text class="login-app-name">予艺助手</text>
+        </view>
+        <u-text text="账号登录" size="30rpx" color="u-content" />
         <u-gap height="24" />
-        <u-input
-          v-model="username"
-          type="text"
-          placeholder="请输入用户名"
-          clearable
-        />
+        <view class="form-item">
+          <text class="form-label">用户名</text>
+          <u-input
+            v-model="username"
+            type="text"
+            placeholder="请输入用户名"
+            clearable
+            autocomplete="username"
+          />
+        </view>
         <u-gap height="16" />
-        <u-input
-          v-model="password"
-          type="password"
-          placeholder="请输入密码"
-          clearable
-        />
-        <u-gap height="24" />
+        <view class="form-item">
+          <text class="form-label">密码</text>
+          <u-input
+            v-model="password"
+            type="password"
+            placeholder="请输入密码"
+            clearable
+            autocomplete="current-password"
+          />
+        </view>
+        <u-gap height="32" />
         <u-button type="primary" :loading="loading" @click="handleLogin">
           登录
         </u-button>
@@ -27,7 +39,7 @@
         <u-text
           text="开发环境可使用后端配置的演示账号登录"
           size="24rpx"
-          color="info"
+          color="u-content"
         />
       </view>
     </view>
@@ -182,8 +194,54 @@ function normalizeRoles(roles) {
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
 }
 
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.login-logo {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.login-app-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1f2937;
+  letter-spacing: 0.02em;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.form-label {
+  font-size: 26rpx;
+  color: #4b5563;
+  font-weight: 500;
+}
+
 .login-tip {
   text-align: center;
   padding: 0 32rpx;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .login-card {
+    background: #1f2937;
+  }
+  .login-app-name {
+    color: #f3f4f6;
+  }
+  .form-label {
+    color: #d1d5db;
+  }
 }
 </style>

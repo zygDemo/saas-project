@@ -6,7 +6,7 @@
         <scroll-view class="cart-scroll" scroll-y>
           <view class="cart-header">
             <text class="cart-count">共{{ cartTotalCount }}件商品</text>
-            <text class="clear-btn" @click="onClearCart">清空购物车</text>
+            <text class="clear-btn" role="button" tabindex="0" @click="onClearCart" @keyup.enter="onClearCart">清空购物车</text>
           </view>
 
           <view class="cart-list">
@@ -15,7 +15,7 @@
               :key="item.goods.id"
               class="cart-item"
             >
-              <image class="item-img" :src="item.goods.image" mode="aspectFill" />
+              <image class="item-img" :src="item.goods.image" mode="aspectFill" :alt="item.goods.name" />
               <view class="item-info">
                 <text class="item-name">{{ item.goods.name }}</text>
                 <text v-if="item.goods.desc" class="item-desc">{{ item.goods.desc }}</text>
@@ -25,11 +25,11 @@
                     <text class="item-price">{{ item.goods.price.toFixed(2) }}</text>
                   </view>
                   <view class="stepper">
-                    <view class="step-btn minus" @click="decrease(item.goods.id)">
+                    <view class="step-btn minus" role="button" tabindex="0" @click="decrease(item.goods.id)" @keyup.enter="decrease(item.goods.id)">
                       <u-icon name="minus" size="22" color="#606266" />
                     </view>
                     <text class="step-count">{{ item.count }}</text>
-                    <view class="step-btn plus" @click="increase(item.goods)">
+                    <view class="step-btn plus" role="button" tabindex="0" @click="increase(item.goods)" @keyup.enter="increase(item.goods)">
                       <u-icon name="plus" size="22" color="#fff" />
                     </view>
                   </view>
@@ -86,7 +86,7 @@
               <text class="total-price">{{ totalPrice.toFixed(2) }}</text>
             </view>
           </view>
-          <view class="submit-btn" @click="toSubmit">
+          <view class="submit-btn" role="button" tabindex="0" @click="toSubmit" @keyup.enter="toSubmit">
             <text class="submit-text">提交订单</text>
           </view>
         </view>
@@ -194,7 +194,7 @@ const toSubmit = () => {
 
 .clear-btn {
   font-size: 26rpx;
-  color: #ff6b6b;
+  color: var(--u-type-primary);
 }
 
 .cart-list {
@@ -226,6 +226,7 @@ const toSubmit = () => {
 }
 
 .item-name {
+  text-wrap: balance;
   font-size: 30rpx;
   font-weight: 500;
   color: #303133;
@@ -258,20 +259,26 @@ const toSubmit = () => {
 
 .symbol {
   font-size: 22rpx;
-  color: #ff6b6b;
+  color: var(--u-type-primary);
   font-weight: 600;
 }
 
 .item-price {
   font-size: 32rpx;
   font-weight: 700;
-  color: #ff6b6b;
+  color: var(--u-type-primary);
 }
 
 .stepper {
   display: flex;
   align-items: center;
   gap: 8rpx;
+}
+
+/* 减少动画 */
+@media (prefers-reduced-motion: reduce) {
+  .step-btn { transition: none !important; }
+  .submit-btn { transition: none !important; }
 }
 
 .step-btn {
@@ -289,7 +296,7 @@ const toSubmit = () => {
   }
 
   &.plus {
-    background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+    background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-dark));
   }
 
   &:active {
@@ -329,7 +336,7 @@ const toSubmit = () => {
 }
 
 .remark-placeholder {
-  color: #c0c4cc;
+  color: #999;
 }
 
 /* 费用明细 */
@@ -374,14 +381,14 @@ const toSubmit = () => {
 
 .total-symbol {
   font-size: 24rpx;
-  color: #ff6b6b;
+  color: var(--u-type-primary);
   font-weight: 600;
 }
 
 .total-price {
   font-size: 36rpx;
   font-weight: 700;
-  color: #ff6b6b;
+  color: var(--u-type-primary);
 }
 
 .bottom-placeholder {
@@ -414,10 +421,10 @@ const toSubmit = () => {
 }
 
 .submit-btn {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+  background: linear-gradient(135deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%);
   padding: 20rpx 48rpx;
   border-radius: 40rpx;
-  box-shadow: 0 4rpx 16rpx rgba(255, 107, 107, 0.3);
+  box-shadow: 0 4rpx 16rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.3);
 
   &:active {
     transform: scale(0.95);
@@ -445,6 +452,7 @@ const toSubmit = () => {
 }
 
 .empty-title {
+  text-wrap: balance;
   font-size: 32rpx;
   font-weight: 600;
   color: #303133;
@@ -455,5 +463,29 @@ const toSubmit = () => {
   font-size: 26rpx;
   color: #909399;
   margin-bottom: 48rpx;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .cart-page { background: #121212; }
+  .cart-header { }
+  .cart-count { color: #8b8c91; }
+  .clear-btn { color: var(--u-type-primary); }
+  .cart-item { background: #1e1e1e; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.15); }
+  .item-name { color: #e5e6eb; }
+  .item-desc { color: #8b8c91; }
+  .step-btn.minus { background: #2a2a2a; border-color: #444; }
+  .step-count { color: #e5e6eb; }
+  .remark-section { background: #1e1e1e; }
+  .remark-label { color: #e5e6eb; }
+  .remark-input { background: #2a2a2a; color: #e5e6eb; }
+  .fee-section { background: #1e1e1e; }
+  .fee-label { color: #b0b3b8; }
+  .fee-value { color: #e5e6eb; }
+  .fee-divider { background: #2a2a2a; }
+  .total-label { color: #e5e6eb; }
+  .bottom-bar { background: #1e1e1e; box-shadow: 0 -4rpx 16rpx rgba(0,0,0,0.3); }
+  .empty-title { color: #e5e6eb; }
+  .empty-desc { color: #8b8c91; }
 }
 </style>

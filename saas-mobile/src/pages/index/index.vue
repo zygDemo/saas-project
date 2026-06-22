@@ -11,7 +11,7 @@
             <text class="hero-date">{{ currentDate }}</text>
           </view>
           <view class="hero-avatar" @click="goProfile">
-            <image :src="avatar || defaultAvatar" mode="aspectFill" />
+            <image :src="avatar || defaultAvatar" mode="aspectFill" alt="用户头像" />
           </view>
         </view>
       </view>
@@ -33,8 +33,8 @@
           <view
             v-for="item in serviceCards"
             :key="item.key"
-            class="service-card"
-            @click="item.handler"
+            class="service-card" role="button" :tabindex="0"
+            @click="item.handler" @keyup.enter="item.handler"
           >
             <view class="service-card-icon" :class="item.iconClass">
               <u-icon :name="item.icon" color="#fff" size="44" />
@@ -55,8 +55,8 @@
           <view
             v-for="item in shortcutItems"
             :key="item.key"
-            class="shortcut-item"
-            @click="item.handler"
+            class="shortcut-item" role="button" :tabindex="0"
+            @click="item.handler" @keyup.enter="item.handler"
           >
             <view class="shortcut-icon-wrap" :style="{ background: item.bgColor }">
               <u-icon :name="item.icon" color="#fff" size="30" />
@@ -67,7 +67,7 @@
       </view>
 
       <!-- 未登录提示 -->
-      <view v-if="!hasLogin" class="login-hint" @click="goLogin">
+      <view v-if="!hasLogin" class="login-hint" role="button" tabindex="0" @click="goLogin" @keyup.enter="goLogin">
         <u-icon name="account-fill" color="var(--u-type-primary)" size="32" />
         <text class="login-hint-text">登录后查看进件、订单、征信等</text>
         <u-icon name="arrow-right" color="#c0c4cc" size="24" />
@@ -304,6 +304,61 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   }
 }
 
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .index-page {
+    background: linear-gradient(
+      180deg,
+      rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08) 0%,
+      #1a1a2e 30%
+    );
+  }
+
+  .notice-bar {
+    background: #2a2a3e;
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.2);
+  }
+
+  .notice-text {
+    color: #b0b3b8;
+  }
+
+  .section-label-text {
+    color: #e5e6eb;
+  }
+
+  .service-card {
+    background: #2a2a3e;
+    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
+  }
+
+  .service-card-title {
+    color: #e5e6eb;
+  }
+
+  .service-card-desc {
+    color: #8b8c91;
+  }
+
+  .shortcut-section {
+    background: #2a2a3e;
+    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
+  }
+
+  .shortcut-label {
+    color: #b0b3b8;
+  }
+
+  .login-hint {
+    background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
+    border-color: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.2);
+  }
+
+  .login-hint-text {
+    color: var(--u-type-primary-light);
+  }
+}
+
 /* ===== Notice bar ===== */
 .notice-bar {
   position: relative;
@@ -385,23 +440,23 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 }
 
 .icon-carloan {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 8rpx 20rpx rgba(102, 126, 234, 0.3);
+  background: linear-gradient(135deg, #5b5ce2 0%, #4a3db8 100%);
+  box-shadow: 0 8rpx 20rpx rgba(91, 92, 226, 0.35);
 }
 
 .icon-food {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  box-shadow: 0 8rpx 20rpx rgba(245, 87, 108, 0.3);
+  background: linear-gradient(135deg, #f5576c 0%, #e84575 100%);
+  box-shadow: 0 8rpx 20rpx rgba(245, 87, 108, 0.35);
 }
 
 .icon-credit {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  box-shadow: 0 8rpx 20rpx rgba(79, 172, 254, 0.3);
+  background: linear-gradient(135deg, #409EFF 0%, #337ECC 100%);
+  box-shadow: 0 8rpx 20rpx rgba(64, 158, 255, 0.35);
 }
 
 .icon-reading {
-  background: linear-gradient(135deg, #a8e6cf 0%, #3dc1d3 100%);
-  box-shadow: 0 8rpx 20rpx rgba(61, 193, 211, 0.3);
+  background: linear-gradient(135deg, #3dc1d3 0%, #2ba3b3 100%);
+  box-shadow: 0 8rpx 20rpx rgba(61, 193, 211, 0.35);
 }
 
 .icon-more {

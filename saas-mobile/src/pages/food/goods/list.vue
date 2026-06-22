@@ -3,7 +3,7 @@
     <view class="goods-page">
       <!-- 门店信息头部 -->
       <view class="store-header">
-        <image class="store-bg" :src="storeInfo.logo" mode="aspectFill" />
+        <image class="store-bg" :src="storeInfo.logo" mode="aspectFill" :alt="storeInfo.name" />
         <view class="store-overlay">
           <view class="store-main-info">
             <text class="store-name">{{ storeInfo.name }}</text>
@@ -25,7 +25,10 @@
             :key="cat.id"
             class="sidebar-item"
             :class="{ active: currentCatIndex === idx }"
+            role="button"
+            tabindex="0"
             @click="switchCategory(idx)"
+            @keyup.enter="switchCategory(idx)"
           >
             <view v-if="cat.hot" class="hot-dot" />
             <text class="sidebar-text">{{ cat.name }}</text>
@@ -56,7 +59,7 @@
               class="goods-card"
             >
               <view class="goods-img-wrap">
-                <image class="goods-img" :src="goods.image" mode="aspectFill" />
+                <image class="goods-img" :src="goods.image" mode="aspectFill" :alt="goods.name" />
                 <view v-if="goods.originalPrice" class="discount-tag">
                   {{ Math.round((goods.price / goods.originalPrice) * 10) }}折
                 </view>
@@ -79,14 +82,17 @@
                     <view
                       v-if="getGoodsCount(goods.id) > 0"
                       class="step-btn minus"
+                      role="button"
+                      tabindex="0"
                       @click.stop="decreaseGoods(goods.id)"
+                      @keyup.enter="decreaseGoods(goods.id)"
                     >
                       <u-icon name="minus" size="24" color="#606266" />
                     </view>
                     <text v-if="getGoodsCount(goods.id) > 0" class="step-count">
                       {{ getGoodsCount(goods.id) }}
                     </text>
-                    <view class="step-btn plus" @click.stop="addGoods(goods)">
+                    <view class="step-btn plus" role="button" tabindex="0" @click.stop="addGoods(goods)" @keyup.enter="addGoods(goods)">
                       <u-icon name="plus" size="24" color="#fff" />
                     </view>
                   </view>
@@ -102,7 +108,7 @@
 
       <!-- 底部购物车栏 -->
       <view class="bottom-cart-bar" :class="{ 'has-goods': cartCount > 0 }">
-        <view class="cart-icon-area" @click="goCart">
+        <view class="cart-icon-area" role="button" tabindex="0" @click="goCart" @keyup.enter="goCart">
           <view class="cart-icon-circle">
             <u-icon name="shopping-cart" :color="cartCount > 0 ? '#fff' : '#909399'" size="40" />
             <view v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</view>
@@ -115,7 +121,10 @@
         <view
           class="submit-btn"
           :class="{ disabled: cartCount === 0 }"
+          role="button"
+          tabindex="0"
           @click="goSubmit"
+          @keyup.enter="goSubmit"
         >
           <text class="submit-text">{{ cartCount > 0 ? '去结算' : '未选购商品' }}</text>
         </view>
@@ -307,6 +316,7 @@ const goSubmit = () => {
 }
 
 .store-name {
+  text-wrap: balance;
   font-size: 36rpx;
   font-weight: 700;
   color: #fff;
@@ -352,7 +362,7 @@ const goSubmit = () => {
 
   &.active {
     background: #fff;
-    color: #ff6b6b;
+    color: var(--u-type-primary);
     font-weight: 600;
 
     &::before {
@@ -363,7 +373,7 @@ const goSubmit = () => {
       transform: translateY(-50%);
       width: 6rpx;
       height: 36rpx;
-      background: #ff6b6b;
+      background: var(--u-type-primary);
       border-radius: 0 3rpx 3rpx 0;
     }
   }
@@ -375,7 +385,7 @@ const goSubmit = () => {
   right: 16rpx;
   width: 12rpx;
   height: 12rpx;
-  background: #ff6b6b;
+  background: var(--u-type-primary);
   border-radius: 50%;
 }
 
@@ -402,6 +412,7 @@ const goSubmit = () => {
 }
 
 .group-name {
+  text-wrap: balance;
   font-size: 28rpx;
   font-weight: 600;
   color: #303133;
@@ -409,7 +420,7 @@ const goSubmit = () => {
 
 .group-desc {
   font-size: 22rpx;
-  color: #c0c4cc;
+  color: #999;
 }
 
 .goods-card {
@@ -440,7 +451,7 @@ const goSubmit = () => {
   position: absolute;
   top: 0;
   left: 0;
-  background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+  background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-dark));
   color: #fff;
   font-size: 18rpx;
   padding: 2rpx 8rpx;
@@ -455,6 +466,7 @@ const goSubmit = () => {
 }
 
 .goods-name {
+  text-wrap: balance;
   font-size: 28rpx;
   font-weight: 500;
   color: #303133;
@@ -478,8 +490,8 @@ const goSubmit = () => {
 
 .hot-tag {
   font-size: 20rpx;
-  color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.1);
+  color: var(--u-type-primary);
+  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.1);
   padding: 2rpx 8rpx;
   border-radius: 4rpx;
 }
@@ -499,14 +511,14 @@ const goSubmit = () => {
 
 .symbol {
   font-size: 22rpx;
-  color: #ff6b6b;
+  color: var(--u-type-primary);
   font-weight: 600;
 }
 
 .price {
   font-size: 32rpx;
   font-weight: 700;
-  color: #ff6b6b;
+  color: var(--u-type-primary);
 }
 
 .original-price {
@@ -521,6 +533,12 @@ const goSubmit = () => {
   display: flex;
   align-items: center;
   gap: 8rpx;
+}
+
+/* 减少动画 */
+@media (prefers-reduced-motion: reduce) {
+  .step-btn { transition: none !important; }
+  .sidebar-item { transition: none !important; }
 }
 
 .step-btn {
@@ -538,8 +556,8 @@ const goSubmit = () => {
   }
 
   &.plus {
-    background: linear-gradient(135deg, #ff6b6b, #ff8e53);
-    box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.3);
+    background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-dark));
+    box-shadow: 0 4rpx 12rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.3);
   }
 
   &:active {
@@ -589,7 +607,7 @@ const goSubmit = () => {
   justify-content: center;
 
   .has-goods & {
-    background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+    background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-dark));
     border-color: transparent;
   }
 }
@@ -603,7 +621,7 @@ const goSubmit = () => {
   padding: 0 8rpx;
   border-radius: 16rpx;
   background: #fff;
-  color: #ff6b6b;
+  color: var(--u-type-primary);
   font-size: 20rpx;
   font-weight: 700;
   display: flex;
@@ -634,7 +652,7 @@ const goSubmit = () => {
   border-radius: 40rpx;
 
   .has-goods & {
-    background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+    background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-dark));
   }
 
   &.disabled {
@@ -650,5 +668,26 @@ const goSubmit = () => {
   font-size: 28rpx;
   font-weight: 600;
   color: #fff;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .goods-page { background: #121212; }
+  .category-sidebar { background: #1e1e1e; }
+  .sidebar-item { color: #b0b3b8; }
+  .sidebar-item.active { background: #2a2a2a; color: var(--u-type-primary); }
+  .sidebar-item.active::before { background: var(--u-type-primary); }
+  .hot-dot { background: var(--u-type-primary); }
+  .group-name { color: #e5e6eb; }
+  .group-desc { color: #8b8c91; }
+  .goods-card { background: #1e1e1e; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.15); }
+  .goods-name { color: #e5e6eb; }
+  .goods-desc { color: #8b8c91; }
+  .step-btn.minus { background: #2a2a2a; border-color: #444; }
+  .step-count { color: #e5e6eb; }
+  .bottom-cart-bar { background: #1a1a1a; }
+  .bottom-cart-bar.has-goods { background: #252525; }
+  .cart-icon-circle { background: #2a2a2a; border-color: #444; }
+  .has-goods .cart-icon-circle { background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-dark)); border-color: transparent; }
 }
 </style>

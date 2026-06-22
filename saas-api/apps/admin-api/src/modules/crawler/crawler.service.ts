@@ -10,14 +10,71 @@ interface ChapterLink {
   link: string
 }
 
+export interface CrawlProgress {
+  status: 'preparing' | 'downloading' | 'paused' | 'completed' | 'error' | 'cancelled'
+  currentChapter: number
+  totalChapters: number
+  currentChapterTitle: string
+  completedChapters: number
+  failedChapters: number
+  totalWordCount: number
+  message: string
+  result?: any
+}
+
 @Injectable()
 export class CrawlerService {
   private readonly logger = new Logger(CrawlerService.name)
+  private progressMap = new Map<string, CrawlProgress>()
+  private cancelFlags = new Map<string, boolean>()
+  private pauseFlags = new Map<string, boolean>()
 
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * 下载小说并写入数据库
+   * 获取进度
+   */
+  getProgress(taskId: string): CrawlProgress | null {
+    return this.progressMap.get(taskId) || null
+  }
+
+  /**
+   * 暂停任务
+   */
+  pauseTask(taskId: string): boolean {
+    const progress = this.progressMap.get(taskId)
+    if (!progress || progress.status !== 'downloading') return false
+    this.pauseFlags.set(taskId, true)
+    progress.status = 'paused'
+    progress.message = '任务已暂停'
+    return true
+  }
+
+  /**
+   * 恢复任务
+   */
+  resumeTask(taskId: string): boolean {
+    const progress = this.progressMap.get(taskId)
+    if (!progress || progress.status !== 'paused') return false
+    this.pauseFlags.set(taskId, false)
+    progress.status = 'downloading'
+    progress.message = '任务已恢复...'
+    return true
+  }
+
+  /**
+   * 取消任务
+   */
+  cancelTask(taskId: string): boolean {
+    const progress = this.progressMap.get(taskId)
+    if (!progress || progress.status === 'completed' || progress.status === 'cancelled') return false
+    this.cancelFlags.set(taskId, true)
+    this.pauseFlags.set(taskId, false) // 如果暂停中，先解除暂停以便退出循环
+    return true
+  }
+
+  /**
+   * 下载小说并写入数据库（带进度）
    */
   async downloadNovel(
     tenantId: number,
@@ -25,8 +82,44 @@ export class CrawlerService {
     name?: string,
     startChapter?: number,
     endChapter?: number,
-    categoryId?: number
+    categoryId?: number,
+    taskId?: string
   ) {
+    const progressKey = taskId || `task_${Date.now()}`
+    
+    const updateProgress = (data: Partial<CrawlProgress>) => {
+      // 检查取消标志
+      if (this.cancelFlags.get(progressKey)) {
+        data.status = 'cancelled'
+        data.message = '任务已取消'
+        const current = this.progressMap.get(progressKey) || {
+          status: 'cancelled' as const,
+          currentChapter: 0,
+          totalChapters: 0,
+          currentChapterTitle: '',
+          completedChapters: 0,
+          failedChapters: 0,
+          totalWordCount: 0,
+          message: '任务已取消'
+        }
+        this.progressMap.set(progressKey, { ...current, ...data })
+        throw new Error('__CANCELLED__')
+      }
+      const current = this.progressMap.get(progressKey) || {
+        status: 'preparing' as const,
+        currentChapter: 0,
+        totalChapters: 0,
+        currentChapterTitle: '',
+        completedChapters: 0,
+        failedChapters: 0,
+        totalWordCount: 0,
+        message: ''
+      }
+      this.progressMap.set(progressKey, { ...current, ...data })
+    }
+
+    updateProgress({ status: 'preparing', message: '正在获取目录页...' })
+
     this.logger.log(`开始爬取: ${url}`)
 
     // 1. 获取目录页
@@ -43,6 +136,7 @@ export class CrawlerService {
       const fullCatalogUrl = new URL(catalogLink, url).toString()
       if (fullCatalogUrl !== url && !url.includes('index.html')) {
         this.logger.log(`发现完整目录链接: ${fullCatalogUrl}，切换中...`)
+        updateProgress({ message: '正在获取完整目录...' })
         const res = await this.fetchPage(fullCatalogUrl)
         html = res.html
         $ = cheerio.load(html)
@@ -81,6 +175,7 @@ export class CrawlerService {
     )
 
     if (uniqueChapters.length === 0) {
+      this.progressMap.delete(progressKey)
       throw new BadRequestException('未找到章节列表，请确认链接正确或网站结构暂不支持')
     }
 
@@ -97,6 +192,7 @@ export class CrawlerService {
     }
 
     if (start >= total || start >= end) {
+      this.progressMap.delete(progressKey)
       throw new BadRequestException(`章节范围无效，总章节数: ${total}`)
     }
 
@@ -105,6 +201,12 @@ export class CrawlerService {
     this.logger.log(
       `共找到 ${total} 章，准备下载 ${uniqueChapters.length} 章 (${start + 1} - ${end})，书名: ${name}`
     )
+
+    updateProgress({
+      status: 'downloading',
+      totalChapters: uniqueChapters.length,
+      message: `共 ${uniqueChapters.length} 章，开始下载...`
+    })
 
     // 4. 创建书籍记录
     const book = await this.prisma.book.create({
@@ -130,10 +232,33 @@ export class CrawlerService {
     let totalWordCount = 0
     let failedCount = 0
 
+    // 等待暂停恢复的辅助函数
+    const waitIfPaused = async () => {
+      while (this.pauseFlags.get(progressKey)) {
+        await this.sleep(500)
+        // 暂停期间也检查取消
+        if (this.cancelFlags.get(progressKey)) {
+          throw new Error('__CANCELLED__')
+        }
+      }
+    }
+
     const tasks = uniqueChapters.map((chapter, index) => {
       return limit(async () => {
+        // 检查暂停
+        await waitIfPaused()
+
         // 随机延迟，避免被封
         await this.sleep(500 + Math.random() * 1000)
+
+        // 再次检查暂停
+        await waitIfPaused()
+
+        updateProgress({
+          currentChapter: start + index + 1,
+          currentChapterTitle: chapter.title,
+          message: `正在下载: ${chapter.title}`
+        })
 
         const maxRetries = 3
         let retryCount = 0
@@ -158,6 +283,12 @@ export class CrawlerService {
             })
 
             completedCount++
+            updateProgress({
+              completedChapters: completedCount,
+              totalWordCount,
+              message: `已完成 ${completedCount}/${uniqueChapters.length}`
+            })
+
             if (completedCount % 20 === 0 || completedCount === uniqueChapters.length) {
               this.logger.log(`下载进度: ${completedCount}/${uniqueChapters.length}`)
               // 更新书籍字数
@@ -175,6 +306,10 @@ export class CrawlerService {
             if (retryCount >= maxRetries) {
               this.logger.error(`章节 "${chapter.title}" 永久下载失败`)
               failedCount++
+              updateProgress({
+                failedChapters: failedCount,
+                message: `章节 "${chapter.title}" 下载失败`
+              })
               // 创建失败占位章节
               await this.prisma.bookChapter.create({
                 data: {
@@ -196,7 +331,51 @@ export class CrawlerService {
       })
     })
 
-    await Promise.all(tasks)
+    try {
+      await Promise.all(tasks)
+    } catch (err: any) {
+      if (err.message === '__CANCELLED__' || err?.cause?.message === '__CANCELLED__') {
+        // 任务被取消
+        this.logger.log(`任务 ${progressKey} 已被取消`)
+        this.cancelFlags.delete(progressKey)
+        this.pauseFlags.delete(progressKey)
+        // 更新已下载的书籍章节计数
+        const finalChapters = await this.prisma.bookChapter.count({ where: { bookId: book.id } })
+        await this.prisma.book.update({
+          where: { id: book.id },
+          data: { wordCount: totalWordCount, chapterCount: finalChapters }
+        })
+        updateProgress({
+          status: 'cancelled',
+          completedChapters: completedCount,
+          failedChapters: failedCount,
+          totalWordCount,
+          message: `任务已取消，已完成 ${completedCount} 章`,
+          result: {
+            bookId: book.id,
+            title: book.title,
+            author: book.author,
+            totalChapters: completedCount,
+            failedChapters: failedCount,
+            totalWordCount,
+            cancelled: true
+          }
+        })
+        return {
+          bookId: book.id,
+          title: book.title,
+          author: book.author,
+          totalChapters: completedCount,
+          failedChapters: failedCount,
+          totalWordCount,
+          cancelled: true
+        }
+      }
+      throw err
+    }
+
+    this.cancelFlags.delete(progressKey)
+    this.pauseFlags.delete(progressKey)
 
     // 6. 最终更新书籍统计
     await this.prisma.book.update({
@@ -211,7 +390,7 @@ export class CrawlerService {
       `下载完成: ${book.title}，共 ${uniqueChapters.length} 章，${failedCount} 章失败，总字数 ${totalWordCount}`
     )
 
-    return {
+    const result = {
       bookId: book.id,
       title: book.title,
       author: book.author,
@@ -219,6 +398,22 @@ export class CrawlerService {
       failedChapters: failedCount,
       totalWordCount
     }
+
+    updateProgress({
+      status: 'completed',
+      completedChapters: completedCount,
+      failedChapters: failedCount,
+      totalWordCount,
+      message: '下载完成！',
+      result
+    })
+
+    // 5分钟后清理进度数据
+    setTimeout(() => {
+      this.progressMap.delete(progressKey)
+    }, 5 * 60 * 1000)
+
+    return result
   }
 
   /**
@@ -383,7 +578,7 @@ export class CrawlerService {
     }
   }
 
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
-  }
+    private sleep(ms: number): Promise<void> {
+      return new Promise((resolve) => setTimeout(resolve, ms))
+    }
 }

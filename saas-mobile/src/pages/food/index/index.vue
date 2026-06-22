@@ -45,6 +45,7 @@
                 class="banner-img"
                 :src="banner.image"
                 mode="aspectFill"
+                alt="推广banner"
                 @click="onBannerClick(banner)"
               />
             </swiper-item>
@@ -60,7 +61,10 @@
                 :key="item.id"
                 class="category-item"
                 :class="{ active: currentCategory === index }"
+                role="button"
+                tabindex="0"
                 @click="selectCategory(index, item.id)"
+                @keyup.enter="selectCategory(index, item.id)"
               >
                 <view class="category-icon">{{ item.icon }}</view>
                 <text class="category-name">{{ item.name }}</text>
@@ -81,10 +85,13 @@
             v-for="store in filteredStoreList"
             :key="store.id"
             class="store-card"
+            role="button"
+            tabindex="0"
             @click="goStoreGoods(store)"
+            @keyup.enter="goStoreGoods(store)"
           >
             <view class="store-img-wrap">
-              <image class="store-img" :src="store.logo" mode="aspectFill" />
+              <image class="store-img" :src="store.logo" mode="aspectFill" :alt="store.name" />
               <view v-if="!store.isOpen" class="store-closed-mask">
                 <text class="closed-text">休息中</text>
               </view>
@@ -134,7 +141,7 @@
     </scroll-view>
 
     <!-- 浮动购物车按钮 -->
-    <view class="cart-float-btn" @click="goCart">
+    <view class="cart-float-btn" role="button" tabindex="0" @click="goCart" @keyup.enter="goCart">
       <view class="cart-icon-wrap">
         <u-icon name="shopping-cart" color="#fff" size="44" />
         <view v-if="cartCount > 0" class="cart-badge">{{ cartCount > 99 ? '99+' : cartCount }}</view>
@@ -372,7 +379,7 @@ const goCart = () => {
 /* 搜索栏 */
 .search-bar {
   padding: 20rpx 24rpx;
-  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+  background: linear-gradient(135deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%);
 }
 
 .search-input-wrap {
@@ -391,14 +398,14 @@ const goCart = () => {
 }
 
 .search-placeholder {
-  color: #c0c4cc;
+  color: #999;
   font-size: 28rpx;
 }
 
 /* Banner */
 .banner-section {
   padding: 20rpx 24rpx;
-  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+  background: linear-gradient(135deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%);
   padding-bottom: 40rpx;
 }
 
@@ -444,10 +451,10 @@ const goCart = () => {
   transition: all 0.3s;
 
   &.active {
-    background: rgba(255, 107, 107, 0.1);
+    background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.1);
 
     .category-name {
-      color: #ff6b6b;
+      color: var(--u-type-primary);
       font-weight: 600;
     }
   }
@@ -473,6 +480,7 @@ const goCart = () => {
 }
 
 .section-title {
+  text-wrap: balance;
   font-size: 32rpx;
   font-weight: 600;
   color: #303133;
@@ -536,7 +544,7 @@ const goCart = () => {
   position: absolute;
   top: 0;
   left: 0;
-  background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+  background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-dark));
   color: #fff;
   font-size: 20rpx;
   padding: 4rpx 12rpx;
@@ -558,6 +566,7 @@ const goCart = () => {
 }
 
 .store-name {
+  text-wrap: balance;
   font-size: 32rpx;
   font-weight: 600;
   color: #303133;
@@ -568,8 +577,8 @@ const goCart = () => {
 
 .new-badge {
   font-size: 20rpx;
-  color: #ff6b6b;
-  border: 1rpx solid #ff6b6b;
+  color: var(--u-type-primary);
+  border: 1rpx solid var(--u-type-primary);
   padding: 2rpx 10rpx;
   border-radius: 6rpx;
   flex-shrink: 0;
@@ -642,10 +651,10 @@ const goCart = () => {
   bottom: calc(120rpx + env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+  background: linear-gradient(135deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%);
   border-radius: 48rpx;
   padding: 16rpx 28rpx 16rpx 20rpx;
-  box-shadow: 0 8rpx 24rpx rgba(255, 107, 107, 0.4);
+  box-shadow: 0 8rpx 24rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.4);
   z-index: 100;
   transition: transform 0.2s;
 
@@ -667,7 +676,7 @@ const goCart = () => {
   padding: 0 8rpx;
   border-radius: 16rpx;
   background: #fff;
-  color: #ff6b6b;
+  color: var(--u-type-primary);
   font-size: 20rpx;
   font-weight: 600;
   display: flex;
@@ -681,6 +690,13 @@ const goCart = () => {
   flex-direction: column;
 }
 
+/* 减少动画 */
+@media (prefers-reduced-motion: reduce) {
+  .cart-float-btn { transition: none !important; }
+  .store-card { transition: none !important; }
+  .category-item { transition: none !important; }
+}
+
 .cart-price {
   font-size: 30rpx;
   font-weight: 700;
@@ -690,5 +706,28 @@ const goCart = () => {
 .cart-hint {
   font-size: 20rpx;
   color: rgba(255, 255, 255, 0.8);
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .food-index-page { background-color: #121212; }
+  .search-bar { background: linear-gradient(135deg, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.3) 0%, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.15) 100%); }
+  .search-input-wrap { background: #2a2a2a; }
+  .search-input { color: #e5e6eb; }
+  .banner-section { background: linear-gradient(135deg, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.3) 0%, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.15) 100%); }
+  .category-section { background: #1e1e1e; }
+  .category-name { color: #b0b3b8; }
+  .category-item.active { background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.15); }
+  .category-item.active .category-name { color: var(--u-type-primary); }
+  .section-title { color: #e5e6eb; }
+  .section-subtitle { color: #8b8c91; }
+  .store-card { background: #1e1e1e; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.2); }
+  .store-name { color: #e5e6eb; }
+  .store-desc { color: #8b8c91; }
+  .monthly-sales { color: #8b8c91; }
+  .store-meta { color: #8b8c91; }
+  .meta-item { color: #8b8c91; }
+  .min-order { color: #8b8c91; }
+  .empty-text { color: #666; }
 }
 </style>

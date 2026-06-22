@@ -18,11 +18,7 @@ export function batchUpdateCategoryStatus(data: { ids: number[]; status: number 
 }
 
 /** 创建书籍分类 */
-export function createBookCategory(data: {
-  name: string
-  parentId?: number
-  sort?: number
-}) {
+export function createBookCategory(data: { name: string; parentId?: number; sort?: number }) {
   return request.post({ url: '/reading/categories', data, showSuccessMessage: true })
 }
 
@@ -120,11 +116,7 @@ export function deleteBook(id: number) {
 // ==================== 章节管理 ====================
 
 /** 获取章节列表 */
-export function getChapters(params: {
-  bookId: number
-  page?: number
-  pageSize?: number
-}) {
+export function getChapters(params: { bookId: number; page?: number; pageSize?: number }) {
   return request.get({ url: '/reading/chapters', params })
 }
 
@@ -202,20 +194,12 @@ export function saveReadingProgress(data: {
 // ==================== 书籍评价 ====================
 
 /** 获取书籍评价 */
-export function getBookReviews(params: {
-  bookId: number
-  page?: number
-  pageSize?: number
-}) {
+export function getBookReviews(params: { bookId: number; page?: number; pageSize?: number }) {
   return request.get({ url: '/reading/reviews', params })
 }
 
 /** 创建书籍评价 */
-export function createBookReview(data: {
-  bookId: number
-  rating: number
-  content?: string
-}) {
+export function createBookReview(data: { bookId: number; rating: number; content?: string }) {
   return request.post({ url: '/reading/reviews', data })
 }
 
@@ -238,7 +222,7 @@ export function getRecommendBooks(limit?: number) {
 
 // ==================== 爬虫下载 ====================
 
-/** 爬取小说并自动入库 */
+/** 爬取小说并自动入库（同步） */
 export function crawlNovel(data: {
   url: string
   name?: string
@@ -247,4 +231,35 @@ export function crawlNovel(data: {
   categoryId?: number
 }) {
   return request.post({ url: '/crawler/download', data, timeout: 600000 })
+}
+
+/** 异步爬取小说（返回taskId，可轮询进度） */
+export function crawlNovelAsync(data: {
+  url: string
+  name?: string
+  startChapter?: number
+  endChapter?: number
+  categoryId?: number
+}) {
+  return request.post({ url: '/crawler/download-async', data })
+}
+
+/** 获取爬取进度 */
+export function getCrawlProgress(taskId: string) {
+  return request.get({ url: `/crawler/progress/${taskId}` })
+}
+
+/** 暂停爬取任务 */
+export function pauseCrawlTask(taskId: string) {
+  return request.post({ url: `/crawler/pause/${taskId}` })
+}
+
+/** 恢复爬取任务 */
+export function resumeCrawlTask(taskId: string) {
+  return request.post({ url: `/crawler/resume/${taskId}` })
+}
+
+/** 取消爬取任务 */
+export function cancelCrawlTask(taskId: string) {
+  return request.post({ url: `/crawler/cancel/${taskId}` })
 }

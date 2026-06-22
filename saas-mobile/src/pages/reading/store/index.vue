@@ -39,7 +39,10 @@
             :key="tab.id"
             class="tab-item"
             :class="{ active: currentMainTab === idx }"
+            role="tab"
+            tabindex="0"
             @click="switchMainTab(idx)"
+            @keyup.enter="switchMainTab(idx)"
           >
             <text class="tab-text">{{ tab.name }}</text>
             <view v-if="currentMainTab === idx" class="tab-indicator" />
@@ -54,7 +57,10 @@
               :key="sub.id"
               class="sub-category-item"
               :class="{ active: currentSubTab === idx }"
+              role="tab"
+              tabindex="0"
               @click="switchSubTab(idx)"
+              @keyup.enter="switchSubTab(idx)"
             >
               <text>{{ sub.name }}</text>
             </view>
@@ -73,8 +79,8 @@
             indicator-active-color="#fff"
           >
             <swiper-item v-for="(banner, idx) in bannerList" :key="idx">
-              <view class="banner-item" @click="onBannerClick(banner)">
-                <image class="banner-img" :src="banner.image" mode="aspectFill" />
+              <view class="banner-item" role="button" tabindex="0" @click="onBannerClick(banner)" @keyup.enter="onBannerClick(banner)">
+                <image class="banner-img" :src="banner.image" mode="aspectFill" :alt="banner.title" />
                 <view class="banner-overlay">
                   <text class="banner-title">{{ banner.title }}</text>
                   <text class="banner-desc">{{ banner.desc }}</text>
@@ -86,31 +92,31 @@
 
         <!-- 功能入口 -->
         <view v-if="!keyword" class="function-grid">
-          <view class="function-item" @click="goRanking">
+          <view class="function-item" role="button" tabindex="0" @click="goRanking" @keyup.enter="goRanking">
             <view class="function-icon" style="background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%)">
               <u-icon name="list" color="#fff" size="36" />
             </view>
             <text class="function-text">排行榜</text>
           </view>
-          <view class="function-item" @click="goFreeBooks">
+          <view class="function-item" role="button" tabindex="0" @click="goFreeBooks" @keyup.enter="goFreeBooks">
             <view class="function-icon" style="background: linear-gradient(135deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%)">
               <u-icon name="gift" color="#fff" size="36" />
             </view>
             <text class="function-text">限免</text>
           </view>
-          <view class="function-item" @click="goBookList">
+          <view class="function-item" role="button" tabindex="0" @click="goBookList" @keyup.enter="goBookList">
             <view class="function-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
               <u-icon name="star" color="#fff" size="36" />
             </view>
             <text class="function-text">书单</text>
           </view>
-          <view class="function-item" @click="goFinish">
+          <view class="function-item" role="button" tabindex="0" @click="goFinish" @keyup.enter="goFinish">
             <view class="function-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)">
               <u-icon name="checkmark-circle" color="#fff" size="36" />
             </view>
             <text class="function-text">完结</text>
           </view>
-          <view class="function-item" @click="goAuthor">
+          <view class="function-item" role="button" tabindex="0" @click="goAuthor" @keyup.enter="goAuthor">
             <view class="function-icon" style="background: linear-gradient(135deg, #a8e6cf 0%, #3dc1d3 100%)">
               <u-icon name="account" color="#fff" size="36" />
             </view>
@@ -122,7 +128,7 @@
         <view v-if="!keyword" class="section">
           <view class="section-header">
             <text class="section-title">🔥 热门推荐</text>
-            <view class="section-more" @click="viewMore('hot')">
+            <view class="section-more" role="button" tabindex="0" @click="viewMore('hot')" @keyup.enter="viewMore('hot')">
               <text>更多</text>
               <u-icon name="arrow-right" color="#909399" size="20" />
             </view>
@@ -132,11 +138,11 @@
               <view
                 v-for="book in hotBooks"
                 :key="book.id"
-                class="hot-item"
-                @click="goDetail(book)"
+                class="hot-item" role="button" tabindex="0"
+                @click="goDetail(book)" @keyup.enter="goDetail(book)"
               >
                 <view class="hot-cover-wrap">
-                  <image class="hot-cover" :src="book.cover" mode="aspectFill" />
+                  <image class="hot-cover" :src="book.cover" mode="aspectFill" :alt="book.title" />
                   <view v-if="book.isHot" class="hot-badge">HOT</view>
                 </view>
                 <text class="hot-title">{{ book.title }}</text>
@@ -164,7 +170,7 @@
                 <view class="countdown-item">{{ countdown.seconds }}</view>
               </view>
             </view>
-            <view class="section-more" @click="goFreeBooks">
+            <view class="section-more" role="button" tabindex="0" @click="goFreeBooks" @keyup.enter="goFreeBooks">
               <text>更多</text>
               <u-icon name="arrow-right" color="#909399" size="20" />
             </view>
@@ -174,10 +180,10 @@
               <view
                 v-for="book in freeBooks"
                 :key="book.id"
-                class="free-item"
-                @click="goDetail(book)"
+                class="free-item" role="button" tabindex="0"
+                @click="goDetail(book)" @keyup.enter="goDetail(book)"
               >
-                <image class="free-cover" :src="book.cover" mode="aspectFill" />
+                <image class="free-cover" :src="book.cover" mode="aspectFill" :alt="book.title" />
                 <text class="free-title">{{ book.title }}</text>
                 <view class="free-original">原价 ¥{{ book.originalPrice }}</view>
                 <view class="free-price">免费</view>
@@ -196,7 +202,10 @@
                 :key="tab.id"
                 class="rank-tab"
                 :class="{ active: currentRankTab === idx }"
+                role="tab"
+                tabindex="0"
                 @click="switchRankTab(idx)"
+                @keyup.enter="switchRankTab(idx)"
               >
                 <text>{{ tab.name }}</text>
               </view>
@@ -206,13 +215,13 @@
             <view
               v-for="(book, idx) in rankBooks"
               :key="book.id"
-              class="rank-item"
-              @click="goDetail(book)"
+              class="rank-item" role="button" tabindex="0"
+              @click="goDetail(book)" @keyup.enter="goDetail(book)"
             >
               <view class="rank-index" :class="{ 'top-3': idx < 3 }">
                 <text>{{ idx + 1 }}</text>
               </view>
-              <image class="rank-cover" :src="book.cover" mode="aspectFill" />
+              <image class="rank-cover" :src="book.cover" mode="aspectFill" :alt="book.title" />
               <view class="rank-info">
                 <text class="rank-title">{{ book.title }}</text>
                 <text class="rank-author">{{ book.author }}</text>
@@ -232,7 +241,7 @@
         <view v-if="!keyword" class="section">
           <view class="section-header">
             <text class="section-title">📚 精选书单</text>
-            <view class="section-more" @click="goBookList">
+            <view class="section-more" role="button" tabindex="0" @click="goBookList" @keyup.enter="goBookList">
               <text>更多</text>
               <u-icon name="arrow-right" color="#909399" size="20" />
             </view>
@@ -242,13 +251,13 @@
               <view
                 v-for="list in bookLists"
                 :key="list.id"
-                class="booklist-item"
+                class="booklist-item" role="button" tabindex="0"
                 @click="goBookListDetail(list)"
               >
                 <view class="booklist-cover-wrap">
-                  <image class="booklist-cover" :src="list.covers[0]" mode="aspectFill" />
-                  <image class="booklist-cover booklist-cover-2" :src="list.covers[1]" mode="aspectFill" />
-                  <image class="booklist-cover booklist-cover-3" :src="list.covers[2]" mode="aspectFill" />
+                  <image class="booklist-cover" :src="list.covers[0]" mode="aspectFill" alt="书单封面" />
+                  <image class="booklist-cover booklist-cover-2" :src="list.covers[1]" mode="aspectFill" alt="书单封面" />
+                  <image class="booklist-cover booklist-cover-3" :src="list.covers[2]" mode="aspectFill" alt="书单封面" />
                 </view>
                 <view class="booklist-info">
                   <text class="booklist-title">{{ list.title }}</text>
@@ -280,10 +289,10 @@
             <view
               v-for="book in filteredBooks"
               :key="book.id"
-              class="book-card"
-              @click="goDetail(book)"
+              class="book-card" role="button" tabindex="0"
+              @click="goDetail(book)" @keyup.enter="goDetail(book)"
             >
-              <image class="book-cover" :src="book.cover" mode="aspectFill" />
+              <image class="book-cover" :src="book.cover" mode="aspectFill" :alt="book.title" />
               <view class="book-info">
                 <text class="book-title">{{ book.title }}</text>
                 <text class="book-author">{{ book.author }}</text>
@@ -856,6 +865,174 @@ const viewMore = (type: string) => {
   padding-bottom: 40rpx;
 }
 
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .store-page {
+    background-color: #121212;
+  }
+
+  .search-section {
+    background: linear-gradient(135deg, #2d1b69 0%, #1a0f3e 100%);
+  }
+
+  .search-input-wrap {
+    background: #2a2a2a;
+  }
+
+  .search-input {
+    color: #e5e6eb;
+  }
+
+  .search-placeholder {
+    color: #666;
+  }
+
+  .category-tabs {
+    background: #1e1e1e;
+    border-bottom-color: #2a2a2a;
+  }
+
+  .tab-text {
+    color: #b0b3b8;
+
+    .active & {
+      color: #e5e6eb;
+    }
+  }
+
+  .sub-category-scroll {
+    background: #1e1e1e;
+    border-bottom-color: #2a2a2a;
+  }
+
+  .sub-category-item {
+    background: #2a2a2a;
+    color: #b0b3b8;
+
+    &.active {
+      background: linear-gradient(135deg, var(--u-type-primary-dark, #3b2f8a) 0%, var(--u-type-primary, #5240FE) 100%);
+      color: #fff;
+    }
+  }
+
+  .section-title {
+  text-wrap: balance;
+    color: #e5e6eb;
+  }
+
+  .section-more {
+    color: #8b8c91;
+  }
+
+  .countdown-item {
+    background: #e84575;
+  }
+
+  .countdown-sep {
+    color: #e84575;
+  }
+
+  .rank-tab {
+    color: #8b8c91;
+
+    &.active {
+      color: var(--u-type-primary);
+      background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.15);
+    }
+  }
+
+  .filter-item {
+    color: #8b8c91;
+
+    &.active {
+      color: var(--u-type-primary);
+      background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.15);
+    }
+  }
+
+  .hot-title {
+  text-wrap: balance;
+    color: #e5e6eb;
+  }
+
+  .hot-author {
+    color: #8b8c91;
+  }
+
+  .hot-stats {
+    color: #8b8c91;
+  }
+
+  .free-title {
+    color: #e5e6eb;
+  }
+
+  .free-original {
+    color: #8b8c91;
+  }
+
+  .rank-list {
+    background: #1e1e1e;
+  }
+
+  .rank-item {
+    border-bottom-color: #2a2a2a;
+  }
+
+  .rank-title {
+  text-wrap: balance;
+    color: #e5e6eb;
+  }
+
+  .rank-author {
+    color: #8b8c91;
+  }
+
+  .rank-category,
+  .rank-views {
+    color: #8b8c91;
+  }
+
+  .booklist-item {
+    background: #1e1e1e;
+  }
+
+  .booklist-cover-wrap {
+    background: #2a2a2a;
+  }
+
+  .booklist-title {
+  text-wrap: balance;
+    color: #e5e6eb;
+  }
+
+  .booklist-desc {
+    color: #8b8c91;
+  }
+
+  .book-card {
+    background: #1e1e1e;
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.2);
+  }
+
+  .book-title {
+  text-wrap: balance;
+    color: #e5e6eb;
+  }
+
+  .book-author {
+    color: #8b8c91;
+  }
+
+  .book-desc {
+    color: #b0b3b8;
+  }
+
+  .rating-score {
+    color: #ffb74d;
+  }
+}
+
 /* 搜索栏 */
 .search-section {
   background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
@@ -884,7 +1061,7 @@ const viewMore = (type: string) => {
 }
 
 .search-placeholder {
-  color: #c0c4cc;
+  color: #999;
   font-size: 28rpx;
 }
 
@@ -981,6 +1158,7 @@ const viewMore = (type: string) => {
 }
 
 .banner-title {
+  text-wrap: balance;
   display: block;
   font-size: 32rpx;
   font-weight: 600;
@@ -1045,6 +1223,7 @@ const viewMore = (type: string) => {
 }
 
 .section-title {
+  text-wrap: balance;
   font-size: 32rpx;
   font-weight: 600;
   color: #303133;
@@ -1158,6 +1337,7 @@ const viewMore = (type: string) => {
 }
 
 .hot-title {
+  text-wrap: balance;
   display: block;
   font-size: 26rpx;
   color: #303133;
@@ -1275,6 +1455,7 @@ const viewMore = (type: string) => {
 }
 
 .rank-title {
+  text-wrap: balance;
   display: block;
   font-size: 28rpx;
   font-weight: 600;
@@ -1382,6 +1563,7 @@ const viewMore = (type: string) => {
 }
 
 .booklist-title {
+  text-wrap: balance;
   display: block;
   font-size: 28rpx;
   font-weight: 600;
@@ -1406,6 +1588,13 @@ const viewMore = (type: string) => {
   font-size: 22rpx;
   color: var(--u-type-primary);
   margin-top: 8rpx;
+}
+
+/* 减少动画 */
+@media (prefers-reduced-motion: reduce) {
+  .banner-swiper {
+    animation: none !important;
+  }
 }
 
 /* 书籍列表 */
@@ -1436,6 +1625,7 @@ const viewMore = (type: string) => {
 }
 
 .book-title {
+  text-wrap: balance;
   display: block;
   font-size: 30rpx;
   font-weight: 600;

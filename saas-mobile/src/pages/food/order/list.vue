@@ -8,7 +8,7 @@
           :key="idx"
           class="tab-item"
           :class="{ active: currentTab === idx }"
-          @click="switchTab(idx)"
+          role="button" tabindex="0" @click="switchTab(idx)" @keyup.enter="switchTab(idx)"
         >
           <text class="tab-text">{{ tab.name }}</text>
           <view v-if="tab.count > 0" class="tab-badge">{{ tab.count }}</view>
@@ -22,11 +22,11 @@
             v-for="order in filteredOrders"
             :key="order.id"
             class="order-card"
-            @click="goOrderDetail(order)"
+            role="button" tabindex="0" @click="goOrderDetail(order)" @keyup.enter="goOrderDetail(order)"
           >
             <view class="order-header">
               <view class="store-info">
-                <u-icon name="home" color="#ff6b6b" size="28" />
+                <u-icon name="home" color="var(--u-type-primary)" size="28" />
                 <text class="store-name">{{ order.storeName }}</text>
               </view>
               <text class="order-status" :class="`status-${order.status}`">
@@ -40,7 +40,7 @@
                 :key="item.goods.id"
                 class="order-item"
               >
-                <image :src="item.goods.image" class="item-img" mode="aspectFill" />
+                <image :src="item.goods.image" class="item-img" mode="aspectFill" :alt="item.goods.name" />
                 <view class="item-info">
                   <text class="item-name">{{ item.goods.name }}</text>
                   <text class="item-spec">x{{ item.count }}</text>
@@ -101,7 +101,7 @@
             type="primary"
             shape="circle"
             size="small"
-            @click="goHome"
+            role="button" tabindex="0" @click="goHome" @keyup.enter="goHome"
           />
         </view>
 
@@ -222,7 +222,7 @@ const goHome = () => {
 
   &.active {
     .tab-text {
-      color: #ff6b6b;
+      color: var(--u-type-primary);
       font-weight: 600;
     }
 
@@ -234,7 +234,7 @@ const goHome = () => {
       transform: translateX(-50%);
       width: 48rpx;
       height: 6rpx;
-      background: #ff6b6b;
+      background: var(--u-type-primary);
       border-radius: 3rpx;
     }
   }
@@ -253,7 +253,7 @@ const goHome = () => {
   height: 28rpx;
   padding: 0 6rpx;
   border-radius: 14rpx;
-  background: #ff6b6b;
+  background: var(--u-type-primary);
   color: #fff;
   font-size: 18rpx;
   display: flex;
@@ -268,6 +268,12 @@ const goHome = () => {
 
 .order-list {
   padding: 20rpx 24rpx;
+}
+
+/* 减少动画 */
+@media (prefers-reduced-motion: reduce) {
+  .order-card { transition: none !important; }
+  .tab-item { transition: none !important; }
 }
 
 .order-card {
@@ -381,7 +387,7 @@ const goHome = () => {
 
 .time-text {
   font-size: 24rpx;
-  color: #c0c4cc;
+  color: #999;
 }
 
 .order-right {
@@ -397,7 +403,7 @@ const goHome = () => {
 .order-total {
   font-size: 32rpx;
   font-weight: 700;
-  color: #ff6b6b;
+  color: var(--u-type-primary);
 }
 
 .order-actions {
@@ -422,6 +428,7 @@ const goHome = () => {
 }
 
 .empty-title {
+  text-wrap: balance;
   font-size: 30rpx;
   font-weight: 600;
   color: #303133;
@@ -440,6 +447,23 @@ const goHome = () => {
 
 .tip-text {
   font-size: 24rpx;
-  color: #c0c4cc;
+  color: #999;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .order-page { background: #121212; }
+  .tab-bar { background: #1e1e1e; border-bottom-color: #2a2a2a; }
+  .tab-item { color: #b0b3b8; }
+  .tab-item.active { color: var(--u-type-primary); border-color: var(--u-type-primary); }
+  .order-card { background: #1e1e1e; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.15); }
+  .order-title { color: #e5e6eb; }
+  .order-no { color: #8b8c91; }
+  .order-status { color: var(--u-type-primary); }
+  .item-name { color: #e5e6eb; }
+  .item-desc { color: #8b8c91; }
+  .order-total { color: #e5e6eb; }
+  .empty-title { color: #e5e6eb; }
+  .empty-desc { color: #8b8c91; }
 }
 </style>

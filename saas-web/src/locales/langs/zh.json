@@ -321,7 +321,7 @@
       "books": "图书管理",
       "category": "分类管理",
       "comment": "评论管理",
-      "crawler": "小说爬取"
+      "crawler": "小说下载"
     },
     "help": {
       "title": "帮助中心",
