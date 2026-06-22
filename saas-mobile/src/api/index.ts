@@ -7,4 +7,5 @@ export * from "./auth";
 export * from "./carloan";
 export * from "./food";
 export * from "./credit";
+export * from "./reading";
 export * from "./business";

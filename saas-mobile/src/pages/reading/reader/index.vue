@@ -23,11 +23,13 @@
       @touchstart="onTouchStart"
       @touchend="onTouchEnd"
     >
+      <!-- 水平翻页模式 (滑动/覆盖) -->
       <swiper
+        v-if="pageMode !== 'vertical'"
         class="chapter-swiper"
         :current="currentPage"
         @change="onPageChange"
-        :duration="200"
+        :duration="pageMode === 'cover' ? 350 : 200"
         :style="{ background: bgColorStyle }"
       >
         <swiper-item v-for="(page, idx) in currentPages" :key="idx">
@@ -41,6 +43,30 @@
           </scroll-view>
         </swiper-item>
       </swiper>
+      <!-- 上下滚动模式 (连续滚动) -->
+      <scroll-view
+        v-else
+        :key="chapterId"
+        class="vertical-scroll-reader"
+        scroll-y
+        :scroll-top="verticalScrollTop"
+        :lower-threshold="150"
+        :style="{ background: bgColorStyle }"
+        @scroll="onVerticalScroll"
+        @scrolltolower="onScrollToLower"
+      >
+        <view class="vertical-content">
+          <text class="chapter-title-text">{{
+            currentChapter?.title || ""
+          }}</text>
+          <text class="content-text" :style="textStyle">{{
+            chapterContent
+          }}</text>
+          <view v-if="hasNextChapter" class="load-more-hint">
+            <text class="load-more-text">— 上拉加载下一章 —</text>
+          </view>
+        </view>
+      </scroll-view>
     </view>
 
     <!-- 底部工具栏 -->
@@ -88,10 +114,11 @@
 
       <!-- 进度条 -->
       <view class="progress-section">
-        <text class="progress-text"
+        <text v-if="pageMode !== 'vertical'" class="progress-text"
           >{{ currentPage + 1 }}/{{ currentPages.length }}</text
         >
         <slider
+          v-if="pageMode !== 'vertical'"
           class="progress-slider"
           :value="currentPage"
           :max="currentPages.length - 1"
@@ -99,7 +126,7 @@
           activeColor="var(--u-type-primary)"
           backgroundColor="rgba(255,255,255,0.2)"
           block-color="var(--u-type-primary)"
-          block-size="20"
+          :block-size="20"
           @change="onProgressChange"
         />
       </view>
@@ -188,19 +215,19 @@
               text="紧凑"
               size="small"
               :type="lineHeight === 1.5 ? 'primary' : 'default'"
-              @click="lineHeight = 1.5"
+              @click="setLineHeight(1.5)"
             />
             <u-button
               text="标准"
               size="small"
               :type="lineHeight === 1.8 ? 'primary' : 'default'"
-              @click="lineHeight = 1.8"
+              @click="setLineHeight(1.8)"
             />
             <u-button
               text="宽松"
               size="small"
               :type="lineHeight === 2.0 ? 'primary' : 'default'"
-              @click="lineHeight = 2.0"
+              @click="setLineHeight(2.0)"
             />
           </view>
         </view>
@@ -237,25 +264,25 @@
               text="覆盖"
               size="small"
               :type="pageMode === 'cover' ? 'primary' : 'default'"
-              @click="pageMode = 'cover'"
+              @click="setPageMode('cover')"
             />
             <u-button
               text="滑动"
               size="small"
               :type="pageMode === 'slide' ? 'primary' : 'default'"
-              @click="pageMode = 'slide'"
+              @click="setPageMode('slide')"
             />
             <u-button
               text="上下"
               size="small"
               :type="pageMode === 'vertical' ? 'primary' : 'default'"
-              @click="pageMode = 'vertical'"
+              @click="setPageMode('vertical')"
             />
           </view>
         </view>
 
         <!-- 亮度 -->
-        <view class="setting-row">
+        <view class="setting-row setting-row-last">
           <text class="setting-label">亮度</text>
           <view class="brightness-control">
             <u-icon name="info-circle" color="#909399" size="28" />
@@ -267,7 +294,7 @@
               activeColor="var(--u-type-primary)"
               backgroundColor="#f0f0f0"
               block-color="var(--u-type-primary)"
-              block-size="20"
+              :block-size="20"
               @change="onBrightnessChange"
             />
             <u-icon name="info-circle-fill" color="#303133" size="28" />
@@ -335,6 +362,10 @@
 import { useReadingStore } from "@/stores/reading";
 import { computed, ref, watch, onMounted, onUnmounted } from "vue";
 import { onLoad, onUnload } from "@dcloudio/uni-app";
+import { useReadingApi } from "@/api/reading";
+
+// 本地存储 key
+const STORAGE_KEY = "reader_settings";
 
 interface Chapter {
   id: string;
@@ -352,20 +383,39 @@ interface Bookmark {
   time: number;
 }
 
+// 从本地存储读取设置
+function loadSettings() {
+  try {
+    const saved = uni.getStorageSync(STORAGE_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 const readingStore = useReadingStore();
+const readingApi = useReadingApi();
 const showToolbar = ref(false);
 const showChapterPopup = ref(false);
 const showSettingsPopup = ref(false);
 const showBookmarkPopup = ref(false);
-const isNightMode = ref(false);
+
+// 初始化设置（优先从本地存储读取）
+const savedSettings = loadSettings();
+const isNightMode = ref(savedSettings?.isNightMode ?? false);
+const fontSize = ref(savedSettings?.fontSize ?? 18);
+const lineHeight = ref(savedSettings?.lineHeight ?? 1.8);
+const bgColor = ref(savedSettings?.bgColor ?? "default");
+const pageMode = ref(savedSettings?.pageMode ?? "slide");
+const brightness = ref(savedSettings?.brightness ?? 80);
+
 const isListenMode = ref(false);
 const isBookmarked = ref(false);
 const currentPage = ref(0);
-const fontSize = ref(18);
-const lineHeight = ref(1.8);
-const bgColor = ref("default");
-const pageMode = ref("slide");
-const brightness = ref(80);
+const verticalScrollTop = ref(0);
 const bookId = ref("");
 const chapterId = ref("");
 const totalChapters = ref(0);
@@ -388,20 +438,7 @@ const bgColorStyle = computed(() => {
   return color?.color || "#f5f0e6";
 });
 
-const chapterList = ref<Chapter[]>([
-  { id: "1", title: "第一章 陨落的天才", isVip: false },
-  { id: "2", title: "第二章 斗之气三段", isVip: false },
-  { id: "3", title: "第三章 客人", isVip: false },
-  { id: "4", title: "第四章 云岚宗", isVip: false },
-  { id: "5", title: "第五章 萧薰儿", isVip: false },
-  { id: "6", title: "第六章 炼丹", isVip: false },
-  { id: "7", title: "第七章 异火榜", isVip: false },
-  { id: "8", title: "第八章 修炼", isVip: false },
-  { id: "9", title: "第九章 比试", isVip: false },
-  { id: "10", title: "第十章 药老", isVip: true },
-  { id: "11", title: "第十一章 突破", isVip: true },
-  { id: "12", title: "第十二章 斗技", isVip: true },
-]);
+const chapterList = ref<Chapter[]>([]);
 
 const bookmarks = ref<Bookmark[]>([
   {
@@ -427,7 +464,7 @@ const currentChapterIndex = computed(() => {
 
 const hasPrevChapter = computed(() => currentChapterIndex.value > 0);
 const hasNextChapter = computed(
-  () => currentChapterIndex.value < chapterList.value.length - 1,
+  () => currentChapterIndex.value < chapterList.value.length - 1
 );
 
 // 模拟章节内容
@@ -498,7 +535,7 @@ const chapterContent = ref(
 
 "从今天开始，老夫会教你真正的修炼之法，让你重新成为天才。"
 
-萧炎的眼中闪过一丝光芒，他知道，自己的命运从这一刻开始改变了。`,
+萧炎的眼中闪过一丝光芒，他知道，自己的命运从这一刻开始改变了。`
 );
 
 const currentPages = computed(() => {
@@ -513,18 +550,92 @@ const currentPages = computed(() => {
 });
 
 const textStyle = computed(() => ({
-  fontSize: fontSize.value + "px",
+  fontSize: `${fontSize.value}px`,
   lineHeight: lineHeight.value,
 }));
+
+// 保存设置到本地存储
+function saveSettings() {
+  try {
+    uni.setStorageSync(
+      STORAGE_KEY,
+      JSON.stringify({
+        fontSize: fontSize.value,
+        lineHeight: lineHeight.value,
+        bgColor: bgColor.value,
+        pageMode: pageMode.value,
+        brightness: brightness.value,
+        isNightMode: isNightMode.value,
+      })
+    );
+  } catch {
+    // ignore
+  }
+}
+
+// 监听设置变化并保存到本地存储
+watch(
+  [fontSize, lineHeight, bgColor, pageMode, brightness, isNightMode],
+  () => {
+    saveSettings();
+  }
+);
+
+// 切换翻页模式
+const setPageMode = (mode: string) => {
+  pageMode.value = mode;
+};
+
+// 切换行间距
+const setLineHeight = (val: number) => {
+  lineHeight.value = val;
+};
+
+// 切换翻页模式时重置页码
+watch(pageMode, (newVal, _oldVal) => {
+  currentPage.value = 0;
+  if (newVal === "vertical") {
+    verticalScrollTop.value = 0;
+  }
+});
 
 const onTouchStart = (e: TouchEvent) => {
   touchStartX.value = e.touches[0].clientX;
   touchStartY.value = e.touches[0].clientY;
 };
 
-const onTouchEnd = (e: TouchEvent) => {
-  const endX = e.changedTouches[0].clientX;
-  const endY = e.changedTouches[0].clientY;
+const checkBookmarkStatus = () => {
+  isBookmarked.value = bookmarks.value.some(
+    (b) => b.chapterId === chapterId.value && b.page === currentPage.value
+  );
+};
+
+const prevChapter = async () => {
+  if (!hasPrevChapter.value) return;
+  const prevIdx = currentChapterIndex.value - 1;
+  chapterId.value = chapterList.value[prevIdx].id;
+  currentPage.value = 0;
+  checkBookmarkStatus();
+  const detail = await readingApi.getChapterDetail(chapterId.value);
+  chapterContent.value = detail.data?.content || "";
+};
+
+const nextChapter = async () => {
+  if (!hasNextChapter.value) return;
+  const nextIdx = currentChapterIndex.value + 1;
+  chapterId.value = chapterList.value[nextIdx].id;
+  currentPage.value = 0;
+  checkBookmarkStatus();
+  const detail = await readingApi.getChapterDetail(chapterId.value);
+  chapterContent.value = detail.data?.content || "";
+};
+
+const onTouchEnd = (ev: TouchEvent) => {
+  // 垂直模式下不处理水平滑动
+  if (pageMode.value === "vertical") return;
+
+  const endX = ev.changedTouches[0].clientX;
+  const endY = ev.changedTouches[0].clientY;
   const diffX = endX - touchStartX.value;
   const diffY = endY - touchStartY.value;
 
@@ -548,16 +659,36 @@ const onTouchEnd = (e: TouchEvent) => {
   }
 };
 
-onLoad((options) => {
+onLoad(async (options) => {
   if (options?.bookId) {
-    bookId.value = options.bookId;
+    bookId.value = String(options.bookId);
   }
   if (options?.chapterId) {
-    chapterId.value = options.chapterId;
+    chapterId.value = String(options.chapterId);
   }
-  totalChapters.value = chapterList.value.length;
 
-  // 检查当前页是否已收藏书签
+  if (bookId.value) {
+    try {
+      const res = await readingApi.getChapters(bookId.value, { pageSize: 1000 });
+      const list = res.data?.items || [];
+      chapterList.value = list.map((item: any) => ({
+        id: String(item.id),
+        title: item.title,
+        isVip: !!item.isVip,
+      }));
+      if (!chapterId.value && list.length) {
+        chapterId.value = String(list[0].id);
+      }
+      if (chapterId.value) {
+        const detail = await readingApi.getChapterDetail(chapterId.value);
+        chapterContent.value = detail.data?.content || "";
+      }
+    } catch (e) {
+      console.error("reader fetch error", e);
+    }
+  }
+
+  totalChapters.value = chapterList.value.length;
   checkBookmarkStatus();
 });
 
@@ -567,9 +698,11 @@ onUnload(() => {
     readingStore.saveReadingProgress(
       bookId.value,
       chapterId.value,
-      currentPage.value,
+      currentPage.value
     );
   }
+  // 最后保存一次设置
+  saveSettings();
 });
 
 const toggleToolbar = () => {
@@ -587,29 +720,64 @@ const shareBook = () => {
   });
 };
 
-const onPageChange = (e: any) => {
-  currentPage.value = e.detail.current;
-  checkBookmarkStatus();
+const isAutoLoading = ref(false);
+
+const onVerticalScroll = (_scrollEvent: any) => {
+  // scroll-view 滚动事件，实际加载通过 scrolltolower 触发
 };
 
-const onProgressChange = (e: any) => {
-  currentPage.value = e.detail.value;
-  checkBookmarkStatus();
+const resetScrollToTop = () => {
+  // 通过 :key="chapterId" 变化会重建 scroll-view，自动回到顶部
+  verticalScrollTop.value = 0;
 };
 
-const prevChapter = () => {
-  if (!hasPrevChapter.value) return;
-  const prevIdx = currentChapterIndex.value - 1;
-  chapterId.value = chapterList.value[prevIdx].id;
-  currentPage.value = 0;
-  checkBookmarkStatus();
+const onScrollToLower = async () => {
+  // 滚动到底部，自动加载下一章
+  if (hasNextChapter.value && !isAutoLoading.value) {
+    isAutoLoading.value = true;
+    try {
+      const nextIdx = currentChapterIndex.value + 1;
+      chapterId.value = chapterList.value[nextIdx].id;
+      const detail = await readingApi.getChapterDetail(chapterId.value);
+      chapterContent.value = detail.data?.content || "";
+      // 滚动到新章节顶部
+      resetScrollToTop();
+      checkBookmarkStatus();
+    } catch (err) {
+      console.error("vertical auto-load failed", err);
+    } finally {
+      isAutoLoading.value = false;
+    }
+  }
 };
 
-const nextChapter = () => {
-  if (!hasNextChapter.value) return;
-  const nextIdx = currentChapterIndex.value + 1;
-  chapterId.value = chapterList.value[nextIdx].id;
-  currentPage.value = 0;
+const onPageChange = async (changeEvent: any) => {
+  currentPage.value = changeEvent.detail.current;
+  checkBookmarkStatus();
+  // 滑到最后一页时自动加载下一章
+  if (
+    currentPage.value >= currentPages.value.length - 1 &&
+    hasNextChapter.value &&
+    !isAutoLoading.value
+  ) {
+    isAutoLoading.value = true;
+    try {
+      const nextIdx = currentChapterIndex.value + 1;
+      chapterId.value = chapterList.value[nextIdx].id;
+      currentPage.value = 0;
+      const detail = await readingApi.getChapterDetail(chapterId.value);
+      chapterContent.value = detail.data?.content || "";
+      checkBookmarkStatus();
+    } catch (err) {
+      console.error("auto-load next chapter failed", err);
+    } finally {
+      isAutoLoading.value = false;
+    }
+  }
+};
+
+const onProgressChange = (progressEvent: any) => {
+  currentPage.value = progressEvent.detail.value;
   checkBookmarkStatus();
 };
 
@@ -617,11 +785,13 @@ const showChapterList = () => {
   showChapterPopup.value = true;
 };
 
-const jumpToChapter = (chapter: Chapter) => {
+const jumpToChapter = async (chapter: Chapter) => {
   chapterId.value = chapter.id;
   currentPage.value = 0;
   showChapterPopup.value = false;
   checkBookmarkStatus();
+  const detail = await readingApi.getChapterDetail(chapterId.value);
+  chapterContent.value = detail.data?.content || "";
 };
 
 const toggleNightMode = () => {
@@ -654,8 +824,8 @@ const onBgColorChange = (color: string) => {
   }
 };
 
-const onBrightnessChange = (e: any) => {
-  brightness.value = e.detail.value;
+const onBrightnessChange = (brightnessEvent: any) => {
+  brightness.value = brightnessEvent.detail.value;
   // 实际项目中这里可以调整屏幕亮度
 };
 
@@ -663,7 +833,7 @@ const toggleBookmark = () => {
   if (isBookmarked.value) {
     // 删除当前页书签
     const idx = bookmarks.value.findIndex(
-      (b) => b.chapterId === chapterId.value && b.page === currentPage.value,
+      (b) => b.chapterId === chapterId.value && b.page === currentPage.value
     );
     if (idx > -1) {
       bookmarks.value.splice(idx, 1);
@@ -677,19 +847,13 @@ const toggleBookmark = () => {
       id: Date.now().toString(),
       chapterId: chapterId.value,
       chapterTitle: currentChapter.value?.title || "",
-      content: content + "...",
+      content: `${content}...`,
       page: currentPage.value,
       time: Date.now(),
     });
     isBookmarked.value = true;
     uni.showToast({ title: "已添加书签", icon: "success" });
   }
-};
-
-const checkBookmarkStatus = () => {
-  isBookmarked.value = bookmarks.value.some(
-    (b) => b.chapterId === chapterId.value && b.page === currentPage.value,
-  );
 };
 
 const deleteBookmark = (bookmark: Bookmark) => {
@@ -918,6 +1082,27 @@ const toggleListenMode = () => {
   text-align: justify;
 }
 
+/* 垂直滚动阅读模式 */
+.vertical-scroll-reader {
+  width: 100%;
+  height: 100%;
+}
+
+.vertical-content {
+  padding: 20rpx 30rpx 60rpx;
+  min-height: 100%;
+}
+
+.load-more-hint {
+  padding: 40rpx 0 80rpx;
+  text-align: center;
+}
+
+.load-more-text {
+  font-size: 26rpx;
+  color: #999;
+}
+
 .chapter-popup {
   width: 600rpx;
   height: 100%;
@@ -983,13 +1168,35 @@ const toggleListenMode = () => {
   border-radius: 4rpx;
 }
 
+/* 设置弹窗 - 限制高度 */
 .settings-popup {
   padding: 30rpx 24rpx;
   padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.settings-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 0;
+  margin-bottom: 20rpx;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.settings-popup-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #303133;
 }
 
 .setting-row {
-  margin-bottom: 30rpx;
+  margin-bottom: 24rpx;
+}
+
+.setting-row-last {
+  margin-bottom: 0;
 }
 
 .setting-label {
@@ -999,8 +1206,18 @@ const toggleListenMode = () => {
   margin-bottom: 16rpx;
 }
 
-.font-size-control,
-.line-height-control,
+.font-size-control {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.line-height-control {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
 .page-mode-control {
   display: flex;
   align-items: center;
@@ -1122,8 +1339,6 @@ const toggleListenMode = () => {
   margin-top: 8rpx;
 }
 
-
-
 .bg-color-name {
   max-width: 70rpx;
   font-size: 18rpx;
@@ -1138,21 +1353,6 @@ const toggleListenMode = () => {
 .bg-color-option.active .bg-color-name {
   color: var(--u-type-primary);
   font-weight: 600;
-}
-
-.settings-popup-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24rpx 0;
-  margin-bottom: 20rpx;
-  border-bottom: 1rpx solid #f5f5f5;
-}
-
-.settings-popup-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #303133;
 }
 
 /* 听书模式提示 */

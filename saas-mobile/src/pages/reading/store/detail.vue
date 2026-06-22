@@ -223,6 +223,7 @@
 import layout from "@/pages/layout/layout.vue";
 import { useReadingStore } from "@/stores/reading";
 import { computed, ref } from "vue";
+import { useReadingApi } from "@/api/reading";
 import { onLoad } from "@dcloudio/uni-app";
 
 interface Chapter {
@@ -273,6 +274,7 @@ interface RecommendBook {
 }
 
 const readingStore = useReadingStore();
+const readingApi = useReadingApi();
 const descExpanded = ref(false);
 const bookId = ref("");
 
@@ -365,12 +367,48 @@ const recommendBooks = ref<RecommendBook[]>([
 
 const isInBookshelf = computed(() => readingStore.isInBookshelf(bookId.value));
 
-onLoad((options) => {
+onLoad(async (options) => {
   if (options?.id) {
     bookId.value = options.id;
-    // 实际项目中这里会根据 id 加载书籍详情
+    await fetchBookDetail(options.id);
   }
 });
+
+const formatWordCount = (count?: number) => {
+  if (!count) return "";
+  if (count >= 10000) return (count / 10000).toFixed(0) + "万字";
+  return count + "字";
+};
+
+const fetchBookDetail = async (id: string) => {
+  try {
+    const res = await readingApi.getBookDetail(id);
+    if (res?.code === 200 && res.data) {
+      const data = res.data;
+      book.value = {
+        id: String(data.id),
+        title: data.title || "",
+        author: data.author || "未知",
+        cover: data.cover || "/static/reading/covers/default.svg",
+        category: data.category?.name || "其他",
+        style: "",
+        ending: "",
+        isSerial: data.isSerial ?? false,
+        views: data.readCount || 0,
+        desc: data.desc || "",
+        totalChapters: data.chapterCount || 0,
+        wordCount: formatWordCount(data.wordCount),
+        rating: Number(data.rating) || 0,
+        authorAvatar: "/static/reading/covers/author1.svg",
+        authorDesc: "",
+        authorBooks: 0,
+        authorFans: 0,
+      };
+    }
+  } catch (e) {
+    console.error("获取书籍详情失败", e);
+  }
+};
 
 const formatNumber = (num: number) => {
   if (num >= 10000000) return (num / 10000000).toFixed(1) + "千万";

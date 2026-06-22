@@ -311,6 +311,8 @@
 <script setup lang="ts">
 import layout from "@/pages/layout/layout.vue";
 import { computed, ref, onMounted, onUnmounted } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import { useReadingApi } from "@/api/reading";
 
 interface BookItem {
   id: string;
@@ -344,6 +346,8 @@ interface BookList {
   covers: string[];
 }
 
+type ReadingBookRecord = Record<string, any>;
+
 const keyword = ref("");
 const currentMainTab = ref(0);
 const currentSubTab = ref(0);
@@ -351,6 +355,7 @@ const currentRankTab = ref(0);
 const currentFilter = ref("hot");
 const refreshing = ref(false);
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
+const readingApi = useReadingApi();
 
 const mainTabs = [
   { id: 0, name: "男生" },
@@ -573,12 +578,50 @@ const bookList = ref<BookItem[]>([
   },
 ]);
 
-const freeBooks = ref<BookItem[]>([
-  { ...bookList.value[6], originalPrice: 25 },
-  { ...bookList.value[7], originalPrice: 30 },
-  { ...bookList.value[8], originalPrice: 20 },
-  { ...bookList.value[9], originalPrice: 15 },
-]);
+// 格式化字数
+const formatWordCount = (count?: number) => {
+  if (!count) return "";
+  if (count >= 10000) return (count / 10000).toFixed(0) + "万字";
+  return count + "字";
+};
+
+// 从API获取图书列表
+const fetchBooks = async () => {
+  try {
+    const res = await readingApi.getBooks({ page: 1, pageSize: 20 });
+    if (res?.code === 200 && res.data?.items) {
+      bookList.value = res.data.items.map((item) => ({
+        id: String(item.id),
+        title: item.title || "",
+        author: item.author || "未知",
+        cover: item.cover || "/static/reading/covers/default.svg",
+        category: item.category?.name || "其他",
+        isSerial: item.isSerial ?? false,
+        isHot: item.isHot ?? false,
+        views: item.readCount || 0,
+        desc: item.desc || "",
+        totalChapters: item.chapterCount || 0,
+        wordCount: formatWordCount(item.wordCount),
+        rating: Number(item.rating) || 0,
+      }));
+      freeBooks.value = bookList.value.slice(0, 4).map((book, idx) => ({
+        ...book,
+        originalPrice: [25, 30, 20, 15][idx] || 20,
+      }));
+    }
+  } catch (e) {
+    console.error("获取图书列表失败", e);
+  }
+};
+
+onLoad(() => {
+  fetchBooks();
+});
+
+const freeBooks = ref<BookItem[]>(bookList.value.slice(0, 4).map((book, idx) => ({
+  ...book,
+  originalPrice: [25, 30, 20, 15][idx] || 20,
+})));
 
 const bookLists = ref<BookList[]>([
   {
@@ -616,7 +659,10 @@ const bookLists = ref<BookList[]>([
   },
 ]);
 
-const hotBooks = computed(() => bookList.value.filter((b) => b.isHot).slice(0, 5));
+const hotBooks = computed(() => {
+  const hotList = bookList.value.filter((b) => b.isHot);
+  return (hotList.length ? hotList : bookList.value).slice(0, 5);
+});
 const rankBooks = computed(() => bookList.value.slice(0, 8));
 
 const filteredBooks = computed(() => {
@@ -649,6 +695,58 @@ const formatNumber = (num: number) => {
   return num.toString();
 };
 
+
+
+const getResponseData = (res: any) => {
+  return res?.data?.data || res?.data || res;
+};
+
+const getBookItems = (payload: any): ReadingBookRecord[] => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.list)) return payload.list;
+  if (Array.isArray(payload?.records)) return payload.records;
+  return [];
+};
+
+const normalizeBook = (book: ReadingBookRecord, idx: number): BookItem => {
+  const category =
+    book.category?.name ||
+    book.categoryName ||
+    book.categoryTitle ||
+    book.category ||
+    "未分类";
+  const rating = Number(book.rating || 0);
+
+  return {
+    id: String(book.id ?? book.bookId ?? idx),
+    title: String(book.title || book.name || "未命名书籍"),
+    author: String(book.author || "未知作者"),
+    cover: String(book.cover || book.coverUrl || "/static/reading/covers/book1.svg"),
+    category: String(category),
+    isSerial: book.isSerial !== undefined ? Boolean(book.isSerial) : !Boolean(book.isFinished),
+    isHot: Boolean(book.isHot || book.isRecommend),
+    views: Number(book.readCount || book.views || book.viewCount || 0),
+    desc: String(book.desc || book.description || "暂无简介"),
+    totalChapters: Number(book.chapterCount || book.totalChapters || book._count?.chapters || 0),
+    wordCount: typeof book.wordCount === "string" ? book.wordCount : formatWordCount(book.wordCount),
+    rating: rating > 0 ? rating : 4.5,
+    originalPrice: Number(book.price || 0) || undefined,
+  };
+};
+
+const refreshDerivedBooks = () => {
+  freeBooks.value = bookList.value
+    .filter((book) => book.originalPrice || !book.isSerial)
+    .slice(0, 4)
+    .map((book) => ({
+      ...book,
+      originalPrice: book.originalPrice || 20,
+    }));
+};
+
+
+
 const updateCountdown = () => {
   let total = 5 * 3600 + 23 * 60 + 45;
   countdownTimer = setInterval(() => {
@@ -670,6 +768,7 @@ const updateCountdown = () => {
 
 onMounted(() => {
   updateCountdown();
+  fetchBooks();
 });
 
 onUnmounted(() => {
@@ -678,12 +777,14 @@ onUnmounted(() => {
   }
 });
 
-const onRefresh = () => {
+const onRefresh = async () => {
   refreshing.value = true;
-  setTimeout(() => {
-    refreshing.value = false;
+  try {
+    await fetchBooks();
     uni.showToast({ title: "已刷新", icon: "success" });
-  }, 1000);
+  } finally {
+    refreshing.value = false;
+  }
 };
 
 const switchMainTab = (idx: number) => {

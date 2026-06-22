@@ -21,6 +21,20 @@ import {
 export class ReadingService {
   constructor(private prisma: PrismaService) {}
 
+  private sanitizeChapterContent(text: string | null | undefined): string {
+    if (!text) return '';
+    let s = text;
+    // 去除抓站常见的转码/广告噪声
+    s = s.replace(/chapter_content\(\);?/g, '');
+    s = s.replace(/site_con_ad\([^)]*\);?/g, '');
+    s = s.replace(/\.\.\.\.\.\.\.👉👉 当前浏览器转码失败.*?原网页”。?/g, '');
+    s = s.replace(/👉👉 当前浏览器转码失败.*?原网页”。?/g, '');
+    s = s.replace(/当前浏览器转码失败.*?显示完整内容.*?原网页。?/g, '');
+    // 规范化空白
+    s = s.replace(/\u3000+/g, '    ').replace(/[ \t]{2,}/g, '    ').trim();
+    return s;
+  }
+
   // ==================== 书籍分类 ====================
 
   async getCategories(tenantId: number, query?: CategoryQueryDto) {
@@ -237,7 +251,7 @@ export class ReadingService {
     const { bookId, page = 1, pageSize = 100 } = query;
     const where = { tenantId, bookId };
 
-    const [items, total] = await Promise.all([
+    const [rows, total] = await Promise.all([
       this.prisma.bookChapter.findMany({
         where,
         orderBy: { sort: 'asc' },
@@ -246,6 +260,11 @@ export class ReadingService {
       }),
       this.prisma.bookChapter.count({ where }),
     ]);
+
+    const items = rows.map((row) => ({
+      ...row,
+      content: this.sanitizeChapterContent(row.content),
+    }));
 
     return { items, total, page, pageSize };
   }
@@ -257,7 +276,10 @@ export class ReadingService {
     if (!chapter) {
       throw new NotFoundException('章节不存在');
     }
-    return chapter;
+    return {
+      ...chapter,
+      content: this.sanitizeChapterContent(chapter.content),
+    };
   }
 
   async createChapter(tenantId: number, dto: CreateChapterDto) {
