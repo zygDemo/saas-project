@@ -137,6 +137,15 @@ export class RequestLoggerInterceptor implements NestInterceptor {
       return value
     }
 
+    // Convert Prisma Decimal objects to plain numbers
+    if (
+      typeof (value as any).toNumber === 'function' &&
+      typeof (value as any).toFixed === 'function' &&
+      (value as any).s !== undefined
+    ) {
+      return Number((value as any).toString())
+    }
+
     return Object.entries(value as Record<string, unknown>).reduce<Record<string, unknown>>(
       (masked, [key, fieldValue]) => {
         masked[key] = this.isSensitiveKey(key) ? '***' : this.maskSensitiveData(fieldValue)

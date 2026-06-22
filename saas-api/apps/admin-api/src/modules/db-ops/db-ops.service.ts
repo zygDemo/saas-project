@@ -13,15 +13,11 @@ export class DbOpsService {
    * 获取数据库状态概览
    */
   async getStatus() {
-    const bookCount = await this.prisma.book.count()
-    const chapterCount = await this.prisma.bookChapter.count()
     const userCount = await this.prisma.user.count()
     const roleCount = await this.prisma.role.count()
     const menuCount = await this.prisma.menu.count()
 
     return {
-      books: bookCount,
-      chapters: chapterCount,
       users: userCount,
       roles: roleCount,
       menus: menuCount,

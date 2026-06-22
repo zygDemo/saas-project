@@ -8,6 +8,7 @@
     "start:dev": "dotenv -e env/.env.development -- cross-env NODE_ENV=development nest start --watch",
     "start:sit": "dotenv -e env/.env.sit -- cross-env NODE_ENV=sit nest start --watch",
     "start:prod": "cross-env NODE_ENV=production node dist/main.js",
+    "start:prod:local": "dotenv -e env/.env.production -- cross-env NODE_ENV=production nest start --watch",
     "lint": "eslint \"src/**/*.ts\"",
     "prisma:generate": "dotenv -e env/.env.development -- prisma generate",
     "prisma:migrate": "dotenv -e env/.env.development -- prisma migrate dev",

@@ -1135,6 +1135,7 @@ const toggleListenMode = () => {
   color: #333;
   line-height: 1.8;
   text-align: justify;
+  text-indent: 2em;
 }
 
 /* 减少动画 */

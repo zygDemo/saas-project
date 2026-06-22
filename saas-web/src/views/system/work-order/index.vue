@@ -15,15 +15,7 @@
       </template>
 
       <!-- 数据库状态概览 -->
-      <div class="grid grid-cols-2 gap-4 md:grid-cols-5 mb-5">
-        <div class="bg-gray-50 p-3 rounded text-center">
-          <div class="text-gray-500 text-sm">书籍</div>
-          <div class="text-xl font-medium text-blue-600">{{ dbStatus.books ?? '-' }}</div>
-        </div>
-        <div class="bg-gray-50 p-3 rounded text-center">
-          <div class="text-gray-500 text-sm">章节</div>
-          <div class="text-xl font-medium text-green-600">{{ dbStatus.chapters ?? '-' }}</div>
-        </div>
+      <div class="grid grid-cols-2 gap-4 md:grid-cols-3 mb-5">
         <div class="bg-gray-50 p-3 rounded text-center">
           <div class="text-gray-500 text-sm">用户</div>
           <div class="text-xl font-medium text-purple-600">{{ dbStatus.users ?? '-' }}</div>
@@ -293,8 +285,6 @@
   const opLoading = ref('')
   const opResult = ref<any>(null)
   const dbStatus = reactive<Record<string, any>>({
-    books: null,
-    chapters: null,
     users: null,
     roles: null,
     menus: null

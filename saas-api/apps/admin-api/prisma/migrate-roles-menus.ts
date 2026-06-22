@@ -354,6 +354,16 @@ async function main() {
       hidden: true,
       hiddenTab: true
     },
+    {
+      parentKey: 'System',
+      path: 'work-order',
+      name: 'SystemWorkOrder',
+      component: '/system/work-order',
+      title: '工单管理',
+      icon: 'ri:customer-service-2-line',
+      sort: 52,
+      keepAlive: true
+    },
 
     // 车贷业务
     { path: '/business', name: 'Business', title: '车贷业务', icon: 'ri:briefcase-line', sort: 60 },
@@ -551,7 +561,7 @@ async function main() {
     'Funder'
   )
   const dataCenterIds = filterIds('DataCenter', 'DataStats', 'AuditLog')
-  const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter')
+  const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter', 'SystemWorkOrder')
   const bizCoreIds = filterIds(
     'Business',
     'Lead',
@@ -689,7 +699,8 @@ async function main() {
     'RegionMgmt',
     'FileManage',
     'MsgTemplate',
-    'Notice'
+    'Notice',
+    'SystemWorkOrder'
   ]
 
   let permCount = 0

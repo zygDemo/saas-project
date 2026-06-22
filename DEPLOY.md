@@ -99,3 +99,24 @@ https://www.yugui.store/saas/
 https://www.yugui.store/saas/api/health
 https://www.yugui.store/saas/api/docs
 ```
+
+
+## 2.1. Local Production Mode
+
+Use start:prod:local to run the API locally with production environment variables
+(connecting to Alibaba Cloud RDS) while keeping hot-reload for development:
+
+    cd saas-api/apps/admin-api
+    pnpm run start:prod:local
+
+Script Reference
+
+    start:dev        env/.env.development    Local dev (local DB)
+    start:prod:local env/.env.production     Local with production DB (hot-reload)
+    start:prod       System env vars         Production deployment (requires build first)
+
+Important Notes
+
+- Ensure your local public IP is whitelisted in Alibaba Cloud RDS security group
+- Be careful when operating against production database
+- saas-web and saas-mobile do not need changes — they connect to localhost:3001

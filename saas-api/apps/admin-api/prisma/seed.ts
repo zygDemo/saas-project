@@ -572,9 +572,10 @@ async function main() {
     'SysParam',
     'Notice',
     'UserCenter',
-    'WorkOrder'
+    'WorkOrder',
+    'SystemWorkOrder'
   )
-  const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter')
+  const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter', 'SystemWorkOrder')
   const bizStageIds = filterIds(
     'Business',
     'BusinessPrecheck',
@@ -967,9 +968,9 @@ async function seedAllMenus(tenantId: number) {
   const systemWorkOrder = await upsertMenu(tenantId, {
     parentId: system.id,
     path: 'work-order',
-    name: 'WorkOrder',
+    name: 'SystemWorkOrder',
     component: '/system/work-order',
-    title: '执行工单',
+    title: '工单管理',
     icon: 'ri:customer-service-2-line',
     sort: 52,
     keepAlive: true
@@ -1483,6 +1484,7 @@ async function seedAllMenus(tenantId: number) {
     sysParam,
     notice,
     userCenter,
+    systemWorkOrder,
     reading,
     readingBookshelf,
     readingBooks,
