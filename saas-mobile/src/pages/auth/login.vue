@@ -1,46 +1,74 @@
 <template>
-  <app-page nav-title="登录">
+  <app-page hide-nav>
     <view class="login-page">
-      <view class="login-card">
-        <view class="login-brand">
-          <image class="login-logo" src="/static/logo.png" mode="aspectFit" />
-          <text class="login-app-name">予艺助手</text>
+      <!-- 装饰背景 -->
+      <view class="bg-decor">
+        <view class="bg-circle bg-circle--1" />
+        <view class="bg-circle bg-circle--2" />
+      </view>
+
+      <!-- 品牌区 -->
+      <view class="brand-section">
+        <view class="brand-logo-wrap">
+          <image class="brand-logo" src="/static/logo.png" mode="aspectFit" />
         </view>
-        <u-text text="账号登录" size="30rpx" color="u-content" />
-        <u-gap height="24" />
+        <text class="brand-name">予艺助手</text>
+        <text class="brand-slogan">智能车贷 · 高效办公</text>
+      </view>
+
+      <!-- 表单卡片 -->
+      <view class="form-card">
+        <view class="form-header">
+          <text class="form-title">账号登录</text>
+          <text class="form-subtitle">欢迎回来，请输入账号信息</text>
+        </view>
+
         <view class="form-item">
-          <text class="form-label">用户名</text>
+          <view class="form-icon">
+            <u-icon name="account" size="36rpx" color="#8b93a7" />
+          </view>
           <u-input
             v-model="username"
             type="text"
             placeholder="请输入用户名"
             clearable
             autocomplete="username"
+            :custom-style="{ paddingLeft: '8rpx' }"
           />
         </view>
-        <u-gap height="16" />
+
         <view class="form-item">
-          <text class="form-label">密码</text>
+          <view class="form-icon">
+            <u-icon name="lock" size="36rpx" color="#8b93a7" />
+          </view>
           <u-input
             v-model="password"
             type="password"
             placeholder="请输入密码"
             clearable
             autocomplete="current-password"
+            :custom-style="{ paddingLeft: '8rpx' }"
           />
         </view>
-        <u-gap height="32" />
-        <u-button type="primary" :loading="loading" @click="handleLogin">
-          登录
+
+        <u-button
+          type="primary"
+          :loading="loading"
+          :custom-style="loginBtnStyle"
+          @click="handleLogin"
+        >
+          登 录
         </u-button>
+
+        <view v-if="showDemoTip" class="demo-tip">
+          <u-icon name="info-circle" size="24rpx" color="#8b93a7" />
+          <text class="demo-tip__text">开发环境可使用演示账号登录</text>
+        </view>
       </view>
-      <u-gap height="16" />
-      <view v-if="showDemoTip" class="login-tip">
-        <u-text
-          text="开发环境可使用后端配置的演示账号登录"
-          size="24rpx"
-          color="u-content"
-        />
+
+      <!-- 底部协议 -->
+      <view class="footer">
+        <text class="footer__text">登录即代表同意《用户协议》和《隐私政策》</text>
       </view>
     </view>
   </app-page>
@@ -63,6 +91,17 @@ const username = ref("Super");
 const password = ref("123456");
 const loading = ref(false);
 const showDemoTip = computed(() => isDev);
+
+const loginBtnStyle = {
+  marginTop: "16rpx",
+  height: "88rpx",
+  borderRadius: "16rpx",
+  fontSize: "32rpx",
+  fontWeight: "600",
+  letterSpacing: "8rpx",
+  backgroundImage: "linear-gradient(135deg, #4f7cff, #6366f1)",
+  boxShadow: "0 8rpx 24rpx rgba(79, 124, 255, 0.3)",
+};
 
 /**
  * 处理登录逻辑
@@ -177,71 +216,220 @@ function normalizeRoles(roles) {
 </script>
 
 <style lang="scss" scoped>
+$primary: #4f7cff;
+$text-main: #1a1d29;
+$text-body: #4e5566;
+$text-hint: #8b93a7;
+$text-light: #b0b8cc;
+$ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
 .login-page {
-  padding: 32rpx 24rpx;
-
-  background: linear-gradient(
-    180deg,
-    rgba(var(--u-type-primary-rgb, 41, 121, 255), 0.06) 0%,
-    transparent 60%
-  );
+  position: relative;
+  min-height: 100vh;
+  padding: 0 48rpx;
+  background: linear-gradient(180deg, #f0f3ff 0%, #f5f7fa 40%, #f5f7fa 100%);
+  overflow: hidden;
 }
 
-.login-card {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 40rpx 32rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+/* ===== 装饰背景 ===== */
+.bg-decor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 600rpx;
+  pointer-events: none;
+  overflow: hidden;
 }
 
-.login-brand {
+.bg-circle {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(2rpx);
+
+  &--1 {
+    top: -120rpx;
+    right: -80rpx;
+    width: 360rpx;
+    height: 360rpx;
+    background: radial-gradient(circle, rgba(79, 124, 255, 0.18), transparent 70%);
+  }
+
+  &--2 {
+    top: 80rpx;
+    left: -100rpx;
+    width: 300rpx;
+    height: 300rpx;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.12), transparent 70%);
+  }
+}
+
+/* ===== 品牌区 ===== */
+.brand-section {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding-top: 140rpx;
+  padding-bottom: 60rpx;
+}
+
+.brand-logo-wrap {
+  width: 128rpx;
+  height: 128rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 32rpx;
+  box-shadow: 0 8rpx 32rpx rgba(79, 124, 255, 0.18);
   margin-bottom: 24rpx;
 }
 
-.login-logo {
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 20rpx;
-  margin-bottom: 16rpx;
+.brand-logo {
+  width: 80rpx;
+  height: 80rpx;
 }
 
-.login-app-name {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #1f2937;
-  letter-spacing: 0.02em;
+.brand-name {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: $text-main;
+  letter-spacing: 2rpx;
+  margin-bottom: 8rpx;
+}
+
+.brand-slogan {
+  font-size: 24rpx;
+  color: $text-hint;
+  letter-spacing: 1rpx;
+}
+
+/* ===== 表单卡片 ===== */
+.form-card {
+  position: relative;
+  z-index: 1;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 48rpx 40rpx 40rpx;
+  box-shadow: 0 8rpx 40rpx rgba(26, 29, 41, 0.06);
+}
+
+.form-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  margin-bottom: 40rpx;
+}
+
+.form-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: $text-main;
+}
+
+.form-subtitle {
+  font-size: 24rpx;
+  color: $text-hint;
 }
 
 .form-item {
   display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-}
+  align-items: center;
+  height: 96rpx;
+  padding: 0 24rpx;
+  margin-bottom: 24rpx;
+  background: #f5f7fa;
+  border-radius: 16rpx;
+  border: 1rpx solid transparent;
+  transition: all 0.2s $ease-out;
 
-.form-label {
-  font-size: 26rpx;
-  color: #4b5563;
-  font-weight: 500;
-}
-
-.login-tip {
-  text-align: center;
-  padding: 0 32rpx;
-}
-
-/* 深色模式适配 */
-@media (prefers-color-scheme: dark) {
-  .login-card {
-    background: #1f2937;
+  &:focus-within {
+    background: #fff;
+    border-color: $primary;
+    box-shadow: 0 0 0 4rpx rgba(79, 124, 255, 0.1);
   }
-  .login-app-name {
+}
+
+.form-icon {
+  width: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ===== 演示提示 ===== */
+.demo-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  margin-top: 24rpx;
+}
+
+.demo-tip__text {
+  font-size: 22rpx;
+  color: $text-hint;
+}
+
+/* ===== 底部 ===== */
+.footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx 0 calc(48rpx + env(safe-area-inset-bottom));
+}
+
+.footer__text {
+  font-size: 22rpx;
+  color: $text-light;
+}
+
+/* ===== 深色模式 ===== */
+@media (prefers-color-scheme: dark) {
+  .login-page {
+    background: linear-gradient(180deg, #1a1d29 0%, #14161f 40%, #14161f 100%);
+  }
+
+  .bg-circle--1 {
+    background: radial-gradient(circle, rgba(79, 124, 255, 0.25), transparent 70%);
+  }
+  .bg-circle--2 {
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.18), transparent 70%);
+  }
+
+  .brand-logo-wrap {
+    background: #252836;
+  }
+
+  .brand-name {
     color: #f3f4f6;
   }
-  .form-label {
-    color: #d1d5db;
+
+  .form-card {
+    background: #1f2231;
+    box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.3);
+  }
+
+  .form-title {
+    color: #f3f4f6;
+  }
+
+  .form-item {
+    background: #252836;
+
+    &:focus-within {
+      background: #2a2d3e;
+      border-color: $primary;
+    }
+  }
+
+  .footer__text {
+    color: #5a6178;
   }
 }
 </style>
