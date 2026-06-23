@@ -221,9 +221,9 @@ function handleDetail(item) {
   const phone = item.phone || "";
   const remark = item.supplementRemark || "";
 
-  // 保存订单ID到sessionStore
+  // 保存订单ID到sessionStore（使用授信订单号，避免后续取错）
   sessionStore.setOrderInfo({
-    orderId: item.id,
+    orderId: item.creditOrderId,
   });
 
   uni.navigateTo({

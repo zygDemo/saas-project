@@ -421,6 +421,12 @@ export function useCarloanApi() {
     /** 兼容旧调用：当前接口清单未提供状态推进，返回订单详情保持页面流程可继续 */
     submitInitialAudit: (creditOrderId: string) =>
       http.get(`/m/credit/getCreditDetailByOrderId/${creditOrderId}`),
+    /** 资料补充完成，推进到初审（需要传入 application 主键 id） */
+    completeSupplement: (applicationId: string | number) =>
+      http.post(`/application/${applicationId}/complete-supplement`),
+    /** 提交进件/预审（需要传入 application 主键 id） */
+    submitApplication: (applicationId: string | number) =>
+      http.post(`/application/${applicationId}/submit`),
     /** 兼容旧调用：当前接口清单未提供状态推进，返回订单详情保持页面流程可继续 */
     completeFileSupplement: (creditOrderId: string) =>
       http.get(`/m/credit/getCreditDetailByOrderId/${creditOrderId}`),

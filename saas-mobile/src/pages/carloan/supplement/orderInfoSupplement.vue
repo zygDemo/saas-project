@@ -154,7 +154,7 @@ async function loadCreditDetail() {
       // 还款方式：后端返回数字，需要转换为中文显示
       form.repaymentMethod = formatRepaymentMethodToLabel(data.repaymentMethod);
       form.executeRate = data.executeRate
-        ? `${Number(data.executeRate)}%`
+        ? `${Number(data.executeRate) * 100}%`
         : "";
     }
   } catch (e) {
@@ -291,7 +291,7 @@ async function saveOrderInfo() {
         ? formatRepaymentMethodToValue(form.repaymentMethod)
         : undefined,
       executeRate: form.executeRate
-        ? Number(String(form.executeRate).replace("%", ""))
+        ? Number(String(form.executeRate).replace("%", "")) / 100
         : undefined,
       id: creditId.value || undefined,
     };

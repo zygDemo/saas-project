@@ -202,13 +202,14 @@ async function loadData() {
     if (res?.code === 200 && res.data) {
       const data = res.data as Record<string, unknown>;
 
-      // 通用字段映射加载
-      for (const [apiField, { key, transform }] of Object.entries(FIELD_MAP)) {
-        const val = data[apiField];
-        if (val != null || val !== undefined) {
-          (form as any)[key] = transform ? transform(val) : val;
-        }
-      }
+  // 通用字段映射加载
+  for (const [apiField, { key, transform }] of Object.entries(FIELD_MAP)) {
+    const val = data[apiField];
+    if (val !== undefined && val !== null) {
+      (form as any)[key] = transform ? transform(val) : val;
+    }
+  }
+
     }
   } catch (e) {
     console.error("加载车辆信息失败", e);

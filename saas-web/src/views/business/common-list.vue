@@ -717,6 +717,36 @@
 
   const applicationActions: ActionConfig[] = [
     {
+      name: 'process',
+      label: '处理',
+      type: 'primary',
+      path: (row) => {
+        const status = String(row.status)
+        if (status === 'DRAFT' || status === 'PENDING_SUPPLEMENT') return `/application/${row.id}/submit`
+        if (status === 'SUBMITTED' || status === 'PENDING_RISK_PRE') return `/application/${row.id}/risk-pre-pass`
+        if (status === 'PENDING_FUNDER_PRE' || status === 'RISK_PRE_PASSED') return `/application/${row.id}/funder-pre-pass`
+        if (status === 'FUNDER_PRE_PASSED') return `/application/${row.id}/submit-funder-review`
+        return `/application/${row.id}/submit`
+      },
+      fields: [
+        { prop: 'approverId', label: '处理人ID', type: 'number', required: true },
+        { prop: 'opinion', label: '处理意见', type: 'textarea' },
+        { prop: 'amount', label: '核定金额', type: 'number', precision: 2 },
+        { prop: 'term', label: '核定期限(月)', type: 'number' },
+        { prop: 'rate', label: '核定利率', type: 'number', precision: 4 },
+        { prop: 'funderApprovalNo', label: '资方审批编号' }
+      ],
+      defaults: (row) => ({
+        amount: row.approvedAmount || row.amount,
+        term: row.approvedTerm || row.term,
+        rate: row.approvedRate || row.rate
+      }),
+      visible: (row) => {
+        const status = String(row.status || row.currentStatusName || '')
+        return status !== 'DISBURSED' && status !== 'CANCELLED' && !status.includes('REJECTED')
+      }
+    },
+    {
       name: 'submit',
       label: '提交进件',
       path: (row) => `/application/${row.id}/submit`,
@@ -1412,6 +1442,7 @@
       title: '进件管理',
       description: '进件资料、审批流、签约、放款与还款的核心入口。',
       api: 'application',
+      listApi: 'flow-list',
       keywordField: 'applicationNo',
       statusMap: commonStatusMap,
       columns: [
@@ -1918,7 +1949,7 @@
     if (metaModule && configs[String(metaModule)]) return String(metaModule)
 
     const pathModule = getRoutePathModule()
-    if (applicationPhaseByPath[pathModule]) return 'order-query'
+    if (applicationPhaseByPath[pathModule]) return 'application'
     if (pathModule && configs[pathModule]) return pathModule
 
     const name = String(route.name || '').replace(/^Business/i, '')

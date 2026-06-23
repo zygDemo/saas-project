@@ -589,7 +589,7 @@ function goPreAuditStep(item) {
     fromEntry: 1,
   });
   const urlMap = {
-    idInfo: buildRoute(APP_ROUTES.carloan.supplement.idInfoSupplement, detailRouteQuery),
+    idInfo: buildRoute(APP_ROUTES.carloan.precheck.idInfo, detailRouteQuery),
     carInfo: buildRoute(APP_ROUTES.carloan.precheck.carInfo, detailRouteQuery),
     applyInfo: buildRoute(APP_ROUTES.carloan.precheck.applyInfo, detailRouteQuery),
     authSign: buildRoute(APP_ROUTES.carloan.signing.videoFaceSign, detailRouteQuery),

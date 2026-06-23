@@ -103,6 +103,7 @@ const customerName = ref("");
 const customerPhone = ref("");
 const orderNo = ref("");
 const creditOrderId = ref("");
+const applicationId = ref("");
 const uuidVal = ref("");
 const supplementRemark = ref("");
 const submitting = ref(false);
@@ -137,6 +138,7 @@ async function loadCreditDetail() {
       customerName.value = data.name || "";
       customerPhone.value = data.phone || "";
       orderNo.value = data.creditOrderId || "";
+      applicationId.value = String(data.id || "");
       uuidVal.value = data.uuid || uuidVal.value;
       supplementRemark.value = data.remark || "";
       suppStatus.value.customer = data.isSupplementCustomer || 0;
@@ -209,6 +211,10 @@ async function handleSubmitAudit() {
     uni.showToast({ title: "缺少订单编号", icon: "none" });
     return;
   }
+  if (!applicationId.value) {
+    uni.showToast({ title: "缺少订单信息，请稍后重试", icon: "none" });
+    return;
+  }
 
   const { confirm } = await uni.showModal({
     title: "确认提交",
@@ -220,7 +226,7 @@ async function handleSubmitAudit() {
 
   submitting.value = true;
   try {
-    await businessApi.submitInitialAudit(creditOrderId.value);
+    await businessApi.completeSupplement(applicationId.value);
     uni.showToast({ title: "提交成功", icon: "success" });
     setTimeout(() => {
       uni.redirectTo({ url: APP_ROUTES.carloan.supplement.supplementList });

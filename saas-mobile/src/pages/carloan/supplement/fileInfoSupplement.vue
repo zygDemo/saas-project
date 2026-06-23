@@ -105,6 +105,7 @@ const currentMaxCount = ref(0);
 const currentUploadList = ref([]);
 const loading = ref(false);
 const uploadRef = ref(null);
+const applicationId = ref("");
 const files = reactive({});
 const maxFiles = reactive({});
 const fileIdMap = reactive({});
@@ -419,8 +420,10 @@ onLoad(async (options) => {
 });
 
 async function loadCreditReadonlyStatus() {
+  if (!carloanStore.pageContext.creditOrderId) return;
   try {
     const res = await businessApi.getCreditDetailByOrderId(carloanStore.pageContext.creditOrderId);
+    applicationId.value = String(res?.data?.id || "");
     const businessNode = res?.data?.businessNode || "";
     if (businessNode && businessNode !== "SUPPLEMENT_MATERIALS") {
       readonly.value = true;
@@ -628,6 +631,10 @@ async function handleSubmit() {
     $u.toast("缺少授信申请编号", "error");
     return;
   }
+  if (!applicationId.value) {
+    $u.toast("缺少订单信息，请稍后重试", "error");
+    return;
+  }
 
   // 2. 校验必传文件类型是否已上传至少一个文件
   for (const item of fileList.value) {
@@ -642,6 +649,7 @@ async function handleSubmit() {
 
   try {
     loading.value = true;
+    await businessApi.completeSupplement(applicationId.value);
     $u.toast("提交成功", "success");
     setTimeout(() => {
       uni.redirectTo({

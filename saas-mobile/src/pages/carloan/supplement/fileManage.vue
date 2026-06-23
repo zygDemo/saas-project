@@ -76,7 +76,8 @@
 
 <script setup>
 import { $u, useTheme } from "uview-pro";
-import { computed, onMounted, ref } from "vue";
+import { computed, ref } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { normalizeFileRecord, toFilePreviewUrl } from "@/common/file-url";
 import { useLocalStore } from "@/stores";
@@ -95,7 +96,7 @@ const themeColor = computed(() => {
 // 获取文件列表
 async function fetchFileList() {
   const userInfo = localStore.userInfo || {};
-  const uuid = Object.hasOwn(userInfo, "uuid") ? String(userInfo.uuid) : "1";
+  const uuid = userInfo.uuid ? String(userInfo.uuid) : "";
   if (!uuid) {
     $u.toast("用户信息缺失，请重新登录", "error");
     return;
@@ -280,7 +281,7 @@ function formatSize(bytes) {
   return `${(bytes / k ** i).toFixed(2)} ${sizes[i]}`;
 }
 
-onMounted(() => {
+onLoad(() => {
   fetchFileList();
 });
 </script>
