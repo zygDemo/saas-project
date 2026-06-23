@@ -61,6 +61,7 @@ enum ApplicationStatus {
   PENDING_DISBURSEMENT
   DISBURSED
   CANCELLED
+  SETTLED
 }
 
 enum ApprovalAction {

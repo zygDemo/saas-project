@@ -1117,6 +1117,13 @@ export class ApplicationQueryDto extends OrgScopedQueryDto {
   @Min(0)
   currentStatus?: number
 
+  @ApiPropertyOptional({ description: '阶段编码，按大节点过滤订单' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(0)
+  phaseCode?: number
+
   @ApiPropertyOptional({ description: '客户ID' })
   @IsOptional()
   @ToNumber()

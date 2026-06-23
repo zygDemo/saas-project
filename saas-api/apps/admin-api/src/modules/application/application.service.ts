@@ -123,7 +123,8 @@ function flowByApplicationStatus(status: ApplicationStatus) {
     [ApplicationStatus.LOAN_REQUEST_REJECTED]: { currentNode: 1700, currentStatus: 30 },
     [ApplicationStatus.PENDING_DISBURSEMENT]: { currentNode: 1800, currentStatus: 10 },
     [ApplicationStatus.DISBURSED]: { currentNode: 1900, currentStatus: 90 },
-    [ApplicationStatus.CANCELLED]: { currentNode: 0, currentStatus: 30 }
+    [ApplicationStatus.CANCELLED]: { currentNode: 0, currentStatus: 30 },
+    [ApplicationStatus.SETTLED]: { currentNode: 1900, currentStatus: 90 }
   }
   return map[status]
 }
@@ -166,6 +167,29 @@ export class ApplicationService extends BaseBusinessCrudService<
         'currentNode',
         'currentStatus'
       ],
+      buildWhere: (query: ApplicationQueryDto) => {
+        const where: Record<string, unknown> = {}
+        if (hasQueryValue(query.orgId)) where.orgId = query.orgId
+        if (hasQueryValue(query.status)) where.status = query.status
+        if (hasQueryValue(query.customerId)) where.customerId = query.customerId
+        if (hasQueryValue(query.creatorId)) where.creatorId = query.creatorId
+        if (hasQueryValue(query.businessType)) where.businessType = query.businessType
+
+        if (hasQueryValue(query.currentNode)) {
+          where.currentNode = query.currentNode
+        } else if (hasQueryValue(query.phaseCode)) {
+          const phaseCode = Number(query.phaseCode)
+          const phaseNodeCodes = Object.entries(DEFAULT_FLOW_NODE_PHASES)
+            .filter(([, code]) => code === phaseCode)
+            .map(([node]) => Number(node))
+          where.currentNode = phaseNodeCodes.length ? { in: phaseNodeCodes } : phaseCode
+        }
+        if (hasQueryValue(query.currentStatus)) where.currentStatus = query.currentStatus
+
+        if (hasQueryValue(query.applicationNo)) where.applicationNo = containsText(String(query.applicationNo))
+
+        return where
+      },
       include: {
         org: true,
         customer: true,
@@ -294,7 +318,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     ])
 
     return toPaginatedResponse(
-      records.map((record) => this.mapFlowApplication(record)),
+      records.map((record: any) => this.mapFlowApplication(record)),
       total,
       pagination
     )
@@ -314,37 +338,54 @@ export class ApplicationService extends BaseBusinessCrudService<
         take: pagination.take,
         orderBy: { id: 'desc' },
         include: {
-          org: { include: { flowConfigs: true } },
-          customer: { include: { vehicles: true } },
-          product: true,
-          funder: true,
-          creator: { select: { id: true, userName: true, nickName: true } }
+          org: {
+            select: {
+              name: true,
+              flowConfigs: {
+                select: {
+                  businessType: true,
+                  nodeCode: true,
+                  nodeName: true,
+                  ruleConfig: true
+                }
+              }
+            }
+          },
+          customer: {
+            select: {
+              name: true,
+              phone: true,
+              vehicles: {
+                select: { plateNumber: true, brand: true, model: true },
+                take: 1
+              }
+            }
+          },
+          product: { select: { name: true } },
+          funder: { select: { name: true } },
+          creator: { select: { userName: true, nickName: true } }
         }
       }),
       this.prisma.application.count({ where })
     ])
 
     return toPaginatedResponse(
-      records.map((record) => this.mapOrderListItem(record)),
+      records.map((record: any) => this.mapOrderListItem(record)),
       total,
       pagination
     )
   }
 
   async submit(id: number) {
-    const application = await this.ensureExists(id)
-    if (
-      ![ApplicationStatus.DRAFT, ApplicationStatus.PENDING_SUPPLEMENT].includes(application.status)
-    ) {
-      throw new BadRequestException('当前状态不允许提交')
-    }
-    return this.prisma.application.update({
-      where: { id },
-      data: {
+    return this.atomicTransition(
+      id,
+      [ApplicationStatus.DRAFT, ApplicationStatus.PENDING_SUPPLEMENT],
+      '当前状态不允许提交',
+      {
         status: ApplicationStatus.PENDING_RISK_PRE,
         ...flowPatch(ApplicationStatus.PENDING_RISK_PRE)
       }
-    })
+    )
   }
 
   async precheckPass(id: number, dto: PrecheckActionDto) {
@@ -352,30 +393,25 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   async riskPrePass(id: number, dto: PrecheckActionDto) {
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
-      [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE],
-      '当前状态不允许风控预审通过'
-    )
     if (dto.reviewerId) await this.ensureRelatedExists(this.prisma.user, dto.reviewerId, '预审人不存在')
-    return this.prisma.application.update({
-      where: { id },
-      data: {
+    return this.atomicTransition(
+      id,
+      [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE],
+      '当前状态不允许风控预审通过',
+      {
         status: ApplicationStatus.PENDING_FUNDER_PRE,
         ...flowPatch(ApplicationStatus.PENDING_FUNDER_PRE)
       }
-    })
+    )
   }
 
   async riskPreReject(id: number, dto: PrecheckActionDto) {
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    if (dto.reviewerId) await this.ensureRelatedExists(this.prisma.user, dto.reviewerId, '预审人不存在')
+    const application = await this.findAndAssertStatus(
+      id,
       [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE],
       '当前状态不允许风控预审拒绝'
     )
-    if (dto.reviewerId) await this.ensureRelatedExists(this.prisma.user, dto.reviewerId, '预审人不存在')
     return this.prisma.application.update({
       where: { id },
       data: {
@@ -388,74 +424,37 @@ export class ApplicationService extends BaseBusinessCrudService<
 
   async funderPrePass(id: number, dto: FunderReviewDto) {
     await this.ensureRelatedExists(this.prisma.user, dto.approverId, '处理人不存在')
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    const application = await this.findAndAssertStatus(
+      id,
       [ApplicationStatus.PENDING_FUNDER_PRE],
       '当前状态不允许资方预审通过'
     )
-    return this.prisma.$transaction(async (tx: any) => {
-      await tx.approvalRecord.create({
-        data: {
-          applicationId: id,
-          approverId: dto.approverId,
-          stage: 'FUNDER_PRE',
-          action: ApprovalAction.PASS,
-          opinion: dto.opinion || dto.funderApprovalNo,
-          amount: dto.amount,
-          term: dto.term,
-          rate: dto.rate
-        }
-      })
-      return tx.application.update({
-        where: { id },
-        data: {
-          status: ApplicationStatus.PENDING_SUPPLEMENT,
-          ...flowPatch(ApplicationStatus.PENDING_SUPPLEMENT),
-          approvedAmount: dto.amount ?? application.approvedAmount,
-          approvedTerm: dto.term ?? application.approvedTerm,
-          approvedRate: dto.rate ?? application.approvedRate
-        }
-      })
-    })
+    return this.transitionWithApproval(
+      id,
+      [ApplicationStatus.PENDING_FUNDER_PRE],
+      '当前状态不允许资方预审通过',
+      { approverId: dto.approverId, stage: 'FUNDER_PRE', action: ApprovalAction.PASS, opinion: dto.opinion || dto.funderApprovalNo, amount: dto.amount, term: dto.term, rate: dto.rate },
+      ApplicationStatus.PENDING_SUPPLEMENT,
+      { approvedAmount: dto.amount ?? application.approvedAmount, approvedTerm: dto.term ?? application.approvedTerm, approvedRate: dto.rate ?? application.approvedRate },
+      application
+    )
   }
 
   async funderPreReject(id: number, dto: FunderReviewDto) {
     await this.ensureRelatedExists(this.prisma.user, dto.approverId, '处理人不存在')
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    return this.transitionWithApproval(
+      id,
       [ApplicationStatus.PENDING_FUNDER_PRE],
-      '当前状态不允许资方预审拒绝'
+      '当前状态不允许资方预审拒绝',
+      { approverId: dto.approverId, stage: 'FUNDER_PRE', action: ApprovalAction.REJECT, opinion: dto.opinion || dto.funderApprovalNo },
+      ApplicationStatus.FUNDER_PRE_REJECTED
     )
-    return this.prisma.$transaction(async (tx: any) => {
-      await tx.approvalRecord.create({
-        data: {
-          applicationId: id,
-          approverId: dto.approverId,
-          stage: 'FUNDER_PRE',
-          action: ApprovalAction.REJECT,
-          opinion: dto.opinion || dto.funderApprovalNo
-        }
-      })
-      return tx.application.update({
-        where: { id },
-        data: {
-          status: ApplicationStatus.FUNDER_PRE_REJECTED,
-          ...flowPatch(ApplicationStatus.FUNDER_PRE_REJECTED)
-        }
-      })
-    })
   }
 
   async completeSupplement(id: number, dto: CompleteSupplementDto) {
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
-      [
-        ApplicationStatus.PENDING_SUPPLEMENT,
-        ApplicationStatus.FUNDER_PRE_PASSED
-      ],
+    const application = await this.findAndAssertStatus(
+      id,
+      [ApplicationStatus.PENDING_SUPPLEMENT, ApplicationStatus.FUNDER_PRE_PASSED],
       '当前状态不允许完成资料补充'
     )
     return this.prisma.application.update({
@@ -471,44 +470,27 @@ export class ApplicationService extends BaseBusinessCrudService<
 
   async approve(id: number, dto: ApprovalActionDto) {
     await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    const application = await this.findAndAssertStatus(
+      id,
       [ApplicationStatus.PENDING_FIRST_REVIEW, ApplicationStatus.PENDING_FINAL_REVIEW],
       '当前状态不允许审批通过'
     )
     const nextStatus = this.resolvePassStatus(application.status)
-    return this.prisma.$transaction(async (tx: any) => {
-      await tx.approvalRecord.create({
-        data: {
-          applicationId: id,
-          approverId: dto.approverId,
-          stage: dto.stage || this.resolveApprovalStage(application.status),
-          action: ApprovalAction.PASS,
-          opinion: dto.opinion,
-          amount: dto.amount,
-          term: dto.term,
-          rate: dto.rate
-        }
-      })
-      return tx.application.update({
-        where: { id },
-        data: {
-          status: nextStatus,
-          ...flowPatch(nextStatus),
-          approvedAmount: dto.amount ?? application.approvedAmount,
-          approvedTerm: dto.term ?? application.approvedTerm,
-          approvedRate: dto.rate ?? application.approvedRate
-        }
-      })
-    })
+    return this.transitionWithApproval(
+      id,
+      [ApplicationStatus.PENDING_FIRST_REVIEW, ApplicationStatus.PENDING_FINAL_REVIEW],
+      '当前状态不允许审批通过',
+      { approverId: dto.approverId, stage: dto.stage || this.resolveApprovalStage(application.status), action: ApprovalAction.PASS, opinion: dto.opinion, amount: dto.amount, term: dto.term, rate: dto.rate },
+      nextStatus,
+      { approvedAmount: dto.amount ?? application.approvedAmount, approvedTerm: dto.term ?? application.approvedTerm, approvedRate: dto.rate ?? application.approvedRate },
+      application
+    )
   }
 
   async reject(id: number, dto: ApprovalActionDto) {
     await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    const application = await this.findAndAssertStatus(
+      id,
       [
         ApplicationStatus.SUBMITTED,
         ApplicationStatus.PENDING_RISK_PRE,
@@ -521,31 +503,8 @@ export class ApplicationService extends BaseBusinessCrudService<
       '当前状态不允许审批驳回'
     )
     const nextStatus = this.resolveRejectStatus(application.status)
-    return this.prisma.$transaction(async (tx: any) => {
-      await tx.approvalRecord.create({
-        data: {
-          applicationId: id,
-          approverId: dto.approverId,
-          stage: dto.stage || this.resolveApprovalStage(application.status),
-          action: ApprovalAction.REJECT,
-          opinion: dto.opinion,
-          amount: dto.amount,
-          term: dto.term,
-          rate: dto.rate
-        }
-      })
-      return tx.application.update({
-        where: { id },
-        data: { status: nextStatus, ...flowPatch(nextStatus) }
-      })
-    })
-  }
-
-  async requestSupplement(id: number, dto: SupplementActionDto) {
-    await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    return this.transitionWithApproval(
+      id,
       [
         ApplicationStatus.SUBMITTED,
         ApplicationStatus.PENDING_RISK_PRE,
@@ -555,34 +514,37 @@ export class ApplicationService extends BaseBusinessCrudService<
         ApplicationStatus.PENDING_FUNDER_REVIEW,
         ApplicationStatus.LOAN_REQUEST_REVIEWING
       ],
-      '当前状态不允许要求补件'
+      '当前状态不允许审批驳回',
+      { approverId: dto.approverId, stage: dto.stage || this.resolveApprovalStage(application.status), action: ApprovalAction.REJECT, opinion: dto.opinion, amount: dto.amount, term: dto.term, rate: dto.rate },
+      nextStatus,
+      {},
+      application
     )
-    return this.prisma.$transaction(async (tx: any) => {
-      await tx.approvalRecord.create({
-        data: {
-          applicationId: id,
-          approverId: dto.approverId,
-          stage: dto.stage || 'SUPPLEMENT',
-          action: ApprovalAction.SUPPLEMENT,
-          opinion: dto.reason
-        }
-      })
-      return tx.application.update({
-        where: { id },
-        data: {
-          status: ApplicationStatus.PENDING_SUPPLEMENT,
-          ...flowPatch(ApplicationStatus.PENDING_SUPPLEMENT),
-          supplementReason: dto.reason,
-          supplementDeadline: dto.deadline ? new Date(dto.deadline) : undefined
-        }
-      })
-    })
+  }
+
+  async requestSupplement(id: number, dto: SupplementActionDto) {
+    await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
+    return this.transitionWithApproval(
+      id,
+      [
+        ApplicationStatus.SUBMITTED,
+        ApplicationStatus.PENDING_RISK_PRE,
+        ApplicationStatus.PENDING_FUNDER_PRE,
+        ApplicationStatus.PENDING_FIRST_REVIEW,
+        ApplicationStatus.PENDING_FINAL_REVIEW,
+        ApplicationStatus.PENDING_FUNDER_REVIEW,
+        ApplicationStatus.LOAN_REQUEST_REVIEWING
+      ],
+      '当前状态不允许要求补件',
+      { approverId: dto.approverId, stage: dto.stage || 'SUPPLEMENT', action: ApprovalAction.SUPPLEMENT, opinion: dto.reason },
+      ApplicationStatus.PENDING_SUPPLEMENT,
+      { supplementReason: dto.reason, supplementDeadline: dto.deadline ? new Date(dto.deadline) : undefined }
+    )
   }
 
   async submitFunderReview(id: number) {
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    const application = await this.findAndAssertStatus(
+      id,
       [ApplicationStatus.FINAL_REVIEW_PASSED],
       '当前状态不允许提交资方审批'
     )
@@ -598,73 +560,36 @@ export class ApplicationService extends BaseBusinessCrudService<
 
   async funderPass(id: number, dto: FunderReviewDto) {
     await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    const application = await this.findAndAssertStatus(
+      id,
       [ApplicationStatus.PENDING_FUNDER_REVIEW],
       '当前状态不允许资方审批通过'
     )
-    return this.prisma.$transaction(async (tx: any) => {
-      await tx.approvalRecord.create({
-        data: {
-          applicationId: id,
-          approverId: dto.approverId,
-          stage: 'FUNDER_REVIEW',
-          action: ApprovalAction.PASS,
-          opinion: dto.opinion || dto.funderApprovalNo,
-          amount: dto.amount,
-          term: dto.term,
-          rate: dto.rate
-        }
-      })
-      return tx.application.update({
-        where: { id },
-        data: {
-          status: ApplicationStatus.FUNDER_REVIEW_PASSED,
-          ...flowPatch(ApplicationStatus.FUNDER_REVIEW_PASSED),
-          approvedAmount: dto.amount ?? application.approvedAmount,
-          approvedTerm: dto.term ?? application.approvedTerm,
-          approvedRate: dto.rate ?? application.approvedRate
-        }
-      })
-    })
+    return this.transitionWithApproval(
+      id,
+      [ApplicationStatus.PENDING_FUNDER_REVIEW],
+      '当前状态不允许资方审批通过',
+      { approverId: dto.approverId, stage: 'FUNDER_REVIEW', action: ApprovalAction.PASS, opinion: dto.opinion || dto.funderApprovalNo, amount: dto.amount, term: dto.term, rate: dto.rate },
+      ApplicationStatus.FUNDER_REVIEW_PASSED,
+      { approvedAmount: dto.amount ?? application.approvedAmount, approvedTerm: dto.term ?? application.approvedTerm, approvedRate: dto.rate ?? application.approvedRate },
+      application
+    )
   }
 
   async funderReject(id: number, dto: FunderReviewDto) {
     await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    return this.transitionWithApproval(
+      id,
       [ApplicationStatus.PENDING_FUNDER_REVIEW],
-      '当前状态不允许资方审批拒绝'
+      '当前状态不允许资方审批拒绝',
+      { approverId: dto.approverId, stage: 'FUNDER_REVIEW', action: ApprovalAction.REJECT, opinion: dto.opinion || dto.funderApprovalNo, amount: dto.amount, term: dto.term, rate: dto.rate },
+      ApplicationStatus.FUNDER_REVIEW_REJECTED
     )
-    return this.prisma.$transaction(async (tx: any) => {
-      await tx.approvalRecord.create({
-        data: {
-          applicationId: id,
-          approverId: dto.approverId,
-          stage: 'FUNDER_REVIEW',
-          action: ApprovalAction.REJECT,
-          opinion: dto.opinion || dto.funderApprovalNo,
-          amount: dto.amount,
-          term: dto.term,
-          rate: dto.rate
-        }
-      })
-      return tx.application.update({
-        where: { id },
-        data: {
-          status: ApplicationStatus.FUNDER_REVIEW_REJECTED,
-          ...flowPatch(ApplicationStatus.FUNDER_REVIEW_REJECTED)
-        }
-      })
-    })
   }
 
   async startSigning(id: number, dto: StartSigningDto) {
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    await this.findAndAssertStatus(
+      id,
       [ApplicationStatus.FINAL_REVIEW_PASSED, ApplicationStatus.FUNDER_REVIEW_PASSED],
       '当前状态不允许发起签约'
     )
@@ -690,9 +615,8 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   async completeSigning(id: number, dto: CompleteSigningDto) {
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    await this.findAndAssertStatus(
+      id,
       [ApplicationStatus.PENDING_SIGN],
       '当前状态不允许完成签约'
     )
@@ -729,9 +653,8 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   async submitLoanRequest(id: number, dto: RequestDisbursementDto) {
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    const application = await this.findAndAssertStatus(
+      id,
       [ApplicationStatus.SIGNED, ApplicationStatus.PENDING_LOAN_REQUEST, ApplicationStatus.LOAN_REQUEST_REJECTED],
       '当前状态不允许提交请款资料'
     )
@@ -747,67 +670,29 @@ export class ApplicationService extends BaseBusinessCrudService<
 
   async approveLoanRequest(id: number, dto: ApprovalActionDto) {
     await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    return this.transitionWithApproval(
+      id,
       [ApplicationStatus.LOAN_REQUEST_REVIEWING],
-      '当前状态不允许请款审核通过'
+      '当前状态不允许请款审核通过',
+      { approverId: dto.approverId, stage: 'LOAN_REQUEST', action: ApprovalAction.PASS, opinion: dto.opinion, amount: dto.amount, term: dto.term, rate: dto.rate },
+      ApplicationStatus.LOAN_REQUEST_APPROVED
     )
-    return this.prisma.$transaction(async (tx: any) => {
-      await tx.approvalRecord.create({
-        data: {
-          applicationId: id,
-          approverId: dto.approverId,
-          stage: 'LOAN_REQUEST',
-          action: ApprovalAction.PASS,
-          opinion: dto.opinion,
-          amount: dto.amount,
-          term: dto.term,
-          rate: dto.rate
-        }
-      })
-      return tx.application.update({
-        where: { id },
-        data: {
-          status: ApplicationStatus.LOAN_REQUEST_APPROVED,
-          ...flowPatch(ApplicationStatus.LOAN_REQUEST_APPROVED)
-        }
-      })
-    })
   }
 
   async rejectLoanRequest(id: number, dto: ApprovalActionDto) {
     await this.ensureRelatedExists(this.prisma.user, dto.approverId, '审批人不存在')
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    return this.transitionWithApproval(
+      id,
       [ApplicationStatus.LOAN_REQUEST_REVIEWING],
-      '当前状态不允许请款审核拒绝'
+      '当前状态不允许请款审核拒绝',
+      { approverId: dto.approverId, stage: 'LOAN_REQUEST', action: ApprovalAction.REJECT, opinion: dto.opinion },
+      ApplicationStatus.LOAN_REQUEST_REJECTED
     )
-    return this.prisma.$transaction(async (tx: any) => {
-      await tx.approvalRecord.create({
-        data: {
-          applicationId: id,
-          approverId: dto.approverId,
-          stage: 'LOAN_REQUEST',
-          action: ApprovalAction.REJECT,
-          opinion: dto.opinion
-        }
-      })
-      return tx.application.update({
-        where: { id },
-        data: {
-          status: ApplicationStatus.LOAN_REQUEST_REJECTED,
-          ...flowPatch(ApplicationStatus.LOAN_REQUEST_REJECTED)
-        }
-      })
-    })
   }
 
   async completeGpsInstall(id: number, dto: GpsInstalledDto) {
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    await this.findAndAssertStatus(
+      id,
       [ApplicationStatus.PENDING_DISBURSEMENT, ApplicationStatus.LOAN_REQUEST_APPROVED],
       '当前状态不允许登记GPS安装'
     )
@@ -830,9 +715,8 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   async completeMortgage(id: number, dto: MortgageDoneDto) {
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    await this.findAndAssertStatus(
+      id,
       [ApplicationStatus.PENDING_DISBURSEMENT, ApplicationStatus.LOAN_REQUEST_APPROVED],
       '当前状态不允许登记抵押'
     )
@@ -855,9 +739,8 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   async requestDisbursement(id: number, dto: RequestDisbursementDto) {
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    await this.findAndAssertStatus(
+      id,
       [ApplicationStatus.LOAN_REQUEST_APPROVED, ApplicationStatus.PENDING_DISBURSEMENT],
       '当前状态不允许提交资方放款申请'
     )
@@ -878,17 +761,16 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   async confirmDisbursement(id: number, dto: ConfirmDisbursementDto) {
-    const application = await this.ensureExists(id)
-    this.assertStatus(
-      application.status,
+    const application = await this.findAndAssertStatus(
+      id,
       [ApplicationStatus.PENDING_DISBURSEMENT],
       '当前状态不允许放款确认'
     )
-    const disbursement = await this.prisma.disbursement.findUnique({ where: { applicationId: id } })
-    if (disbursement?.status !== DisbursementStatus.PENDING_APPROVAL) {
-      throw new BadRequestException('请先提交出账申请')
-    }
     return this.prisma.$transaction(async (tx: any) => {
+      const disbursement = await tx.disbursement.findUnique({ where: { applicationId: id } })
+      if (disbursement?.status !== DisbursementStatus.PENDING_APPROVAL) {
+        throw new BadRequestException('请先提交出账申请')
+      }
       await tx.disbursement.upsert({
         where: { applicationId: id },
         update: {
@@ -927,19 +809,21 @@ export class ApplicationService extends BaseBusinessCrudService<
 
   async registerRepayment(planId: number, dto: RegisterRepaymentDto) {
     await this.ensureRelatedExists(this.prisma.user, dto.createdBy, '登记人不存在')
-    const plan = await this.prisma.repaymentPlan.findUnique({ where: { id: planId } })
-    if (!plan) throw new BadRequestException('还款计划不存在')
-
-    const principal = dto.principal ?? dto.amount
-    const interest = dto.interest ?? 0
-    const penalty = dto.penalty ?? 0
-    const paidPrincipal = Number(plan.paidPrincipal) + principal
-    const paidInterest = Number(plan.paidInterest) + interest
-    const paidTotal = Number(plan.paidTotal) + dto.amount
-    const totalDue = Number(plan.totalAmount) + Number(plan.penaltyAmount)
-    const nextStatus = paidTotal >= totalDue ? RepaymentStatus.PAID : RepaymentStatus.PARTIAL
-
     return this.prisma.$transaction(async (tx: any) => {
+      const plan = await tx.repaymentPlan.findFirst({
+        where: this.addTenantId({ id: planId })
+      })
+      if (!plan) throw new BadRequestException('还款计划不存在')
+
+      const principal = dto.principal ?? dto.amount
+      const interest = dto.interest ?? 0
+      const penalty = dto.penalty ?? 0
+      const paidPrincipal = Number(plan.paidPrincipal) + principal
+      const paidInterest = Number(plan.paidInterest) + interest
+      const paidTotal = Number(plan.paidTotal) + dto.amount
+      const totalDue = Number(plan.totalAmount) + Number(plan.penaltyAmount)
+      const nextStatus = paidTotal >= totalDue ? RepaymentStatus.PAID : RepaymentStatus.PARTIAL
+
       await tx.repaymentRecord.create({
         data: {
           planId,
@@ -969,31 +853,38 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   async settle(id: number, dto: SettleApplicationDto) {
-    const application = await this.ensureExists(id)
-    this.assertStatus(application.status, [ApplicationStatus.DISBURSED], '当前状态不允许结清')
-    const unpaid = await this.prisma.repaymentPlan.count({
-      where: {
-        applicationId: id,
-        status: { notIn: [RepaymentStatus.PAID, RepaymentStatus.SETTLED] }
-      }
-    })
-    if (unpaid > 0) throw new BadRequestException('仍有未结清还款计划')
-    await this.prisma.repaymentPlan.updateMany({
-      where: { applicationId: id },
-      data: { status: RepaymentStatus.SETTLED }
-    })
-    return this.prisma.application.update({
-      where: { id },
-      data: {
-        status: ApplicationStatus.CANCELLED,
-        ...flowPatch(ApplicationStatus.CANCELLED),
-        remark: dto.remark ?? application.remark
-      }
+    const application = await this.findAndAssertStatus(
+      id,
+      [ApplicationStatus.DISBURSED],
+      '当前状态不允许结清'
+    )
+    return this.prisma.$transaction(async (tx: any) => {
+      const unpaid = await tx.repaymentPlan.count({
+        where: {
+          applicationId: id,
+          status: { notIn: [RepaymentStatus.PAID, RepaymentStatus.SETTLED] }
+        }
+      })
+      if (unpaid > 0) throw new BadRequestException('仍有未结清还款计划')
+      await tx.repaymentPlan.updateMany({
+        where: { applicationId: id },
+        data: { status: RepaymentStatus.SETTLED }
+      })
+      return tx.application.update({
+        where: { id },
+        data: {
+          status: ApplicationStatus.SETTLED,
+          ...flowPatch(ApplicationStatus.SETTLED),
+          remark: dto.remark ?? application.remark
+        }
+      })
     })
   }
 
   async convertLeadToApplication(id: number) {
-    const application = await this.prisma.application.findUnique({ where: { id } })
+    const application = await this.prisma.application.findFirst({
+      where: this.addTenantId({ id })
+    })
     if (!application?.sourceLeadId) return application
     await this.prisma.lead.update({
       where: { id: application.sourceLeadId },
@@ -1130,6 +1021,104 @@ export class ApplicationService extends BaseBusinessCrudService<
     return ApplicationStatus.FINAL_REVIEW_REJECTED
   }
 
+  /**
+   * 通用审批流转：校验状态 → 创建审批记录 → 更新申请状态（全部在事务内）
+   */
+  private async transitionWithApproval(
+    id: number,
+    allowedStatuses: ApplicationStatus[],
+    statusMessage: string,
+    approvalData: {
+      approverId: number
+      stage: string
+      action: ApprovalAction
+      opinion?: string
+      amount?: number
+      term?: number
+      rate?: number
+    },
+    nextStatus: ApplicationStatus,
+    extraUpdateData: Record<string, unknown> = {},
+    preLoadedApplication?: unknown
+  ) {
+    if (!preLoadedApplication) await this.findAndAssertStatus(id, allowedStatuses, statusMessage)
+    return this.prisma.$transaction(async (tx: any) => {
+      await tx.approvalRecord.create({
+        data: {
+          applicationId: id,
+          approverId: approvalData.approverId,
+          stage: approvalData.stage,
+          action: approvalData.action,
+          opinion: approvalData.opinion,
+          amount: approvalData.amount,
+          term: approvalData.term,
+          rate: approvalData.rate
+        }
+      })
+      return tx.application.update({
+        where: { id },
+        data: {
+          status: nextStatus,
+          ...flowPatch(nextStatus),
+          ...extraUpdateData
+        }
+      })
+    })
+  }
+
+  「读 + 状态校验 + 写」，避免 TOCTOU 竞态。
+   * 用于不需要读取 application 其他字段的简单状态变更。
+   */
+
+  private async atomicTransition(
+    id: number,
+    allowedStatuses: ApplicationStatus[],
+    statusMessage: string,
+    updateData: Record<string, unknown>
+  ) {
+    const tenantId = getCurrentTenantId()
+    const where: Record<string, unknown> = { id, status: { in: allowedStatuses } }
+    if (tenantId) where.tenantId = tenantId
+    const application = await this.prisma.application.findFirst({ where })
+    if (!application) {
+      const exists = await this.prisma.application.findFirst({
+        where: tenantId ? { id, tenantId } : { id }
+      })
+      if (!exists) throw new NotFoundException('数据不存在')
+      throw new BadRequestException(statusMessage)
+    }
+    return this.prisma.application.update({ where: { id }, data: updateData })
+  }
+
+  /**
+   * 添加租户过滤条件
+   */
+  private addTenantId(where: Record<string, unknown>): Record<string, unknown> {
+    const tenantId = getCurrentTenantId()
+    if (!tenantId) return where
+    return { ...where, tenantId }
+  }
+
+  /**
+   * 原子查询 + 状态校验，返回 application 对象。
+   * 用于需要读取 application 字段（如 remark）的场景。
+   */
+  private async findAndAssertStatus(
+    id: number,
+    allowedStatuses: ApplicationStatus[],
+    statusMessage: string
+  ) {
+    const application = await this.prisma.application.findFirst({
+      where: this.addTenantId({ id, status: { in: allowedStatuses } })
+    })
+    if (!application) {
+      const exists = await this.prisma.application.findFirst({ where: this.addTenantId({ id }) })
+      if (!exists) throw new NotFoundException('数据不存在')
+      throw new BadRequestException(statusMessage)
+    }
+    return application
+  }
+
   private assertStatus(current: ApplicationStatus, allowed: ApplicationStatus[], message: string) {
     if (!allowed.includes(current)) throw new BadRequestException(message)
   }
@@ -1209,22 +1198,13 @@ export class ApplicationService extends BaseBusinessCrudService<
 
     return {
       id: application.id,
-      tenantId: application.tenantId,
-      orgId: application.orgId,
       orgName: application.org?.name,
-      customerId: application.customerId,
-      uuid: customer ? String(customer.id) : String(application.customerId),
       customerName: customer?.name || '',
-      personName: customer?.name || '',
       name: customer?.name || '',
       phone: customer?.phone || '',
-      telephone: customer?.phone || '',
-      idCard: customer?.idCard || '',
-      vehicleId: vehicle?.id,
       plateNumber: vehicle?.plateNumber || '',
       vehicleBrand: vehicle?.brand || '',
       vehicleModel: vehicle?.model || '',
-      vehicleOwner: vehicle?.ownerName || '',
       applicationNo: application.applicationNo,
       orderNo: application.applicationNo,
       creditOrderId: application.applicationNo,
@@ -1235,7 +1215,6 @@ export class ApplicationService extends BaseBusinessCrudService<
       approvedTerm: application.approvedTerm,
       approvedRate: application.approvedRate,
       status: application.status,
-      businessType: application.businessType,
       currentNode,
       nodeCode: currentNode,
       currentNodeName: nodeName,
@@ -1246,15 +1225,9 @@ export class ApplicationService extends BaseBusinessCrudService<
       nodeStatusName,
       phaseCode,
       phaseName: this.resolveFlowPhaseName(application, phaseCode),
-      productId: application.productId,
       productName: application.product?.name,
-      funderId: application.funderId,
       funderName: application.funder?.name,
-      creatorId: application.creatorId,
       creatorName: application.creator?.nickName || application.creator?.userName,
-      supplementReason: application.supplementReason,
-      supplementDeadline: application.supplementDeadline,
-      remark: application.remark,
       createdAt: application.createdAt,
       updatedAt: application.updatedAt
     }
@@ -1688,7 +1661,8 @@ export class ApplicationService extends BaseBusinessCrudService<
         index === term - 1
           ? amount - Number(monthlyPrincipal.toFixed(2)) * (term - 1)
           : Number(monthlyPrincipal.toFixed(2))
-      const interest = Number((amount * monthlyRate).toFixed(2))
+      const remainingPrincipal = amount - monthlyPrincipal * index
+      const interest = Number((remainingPrincipal * monthlyRate).toFixed(2))
       return {
         applicationId: application.id,
         period: index + 1,

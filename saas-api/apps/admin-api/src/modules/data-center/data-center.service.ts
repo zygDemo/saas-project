@@ -6,12 +6,13 @@ import { PrismaService } from '../prisma/prisma.service'
 import { AuditLogQueryDto, DateRangeQueryDto } from './dto/data-center.dto'
 
 const PHASES = [
-  { code: 1000, name: '预审阶段', nodes: [1100, 1200, 1300] },
-  { code: 1400, name: '补件阶段', nodes: [1400] },
-  { code: 2000, name: '风控审批', nodes: [2100, 2200] },
-  { code: 3000, name: '资方终审', nodes: [3100] },
-  { code: 4000, name: '客户签约', nodes: [4100] },
-  { code: 5000, name: '请款放款', nodes: [5100, 6100] }
+  { code: 1000, name: '预审阶段', nodes: [1100, 1110, 1120, 1130, 1140, 1200, 1250] },
+  { code: 1300, name: '补件阶段', nodes: [1300, 1310, 1320, 1330, 1340, 1350] },
+  { code: 1400, name: '风控审批', nodes: [1400, 1450] },
+  { code: 1500, name: '资方终审', nodes: [1500] },
+  { code: 1600, name: '签约阶段', nodes: [1600, 1610, 1620, 1630, 1640, 1650, 1660] },
+  { code: 1700, name: '请款放款', nodes: [1700, 1800] },
+  { code: 1900, name: '贷后阶段', nodes: [1900] }
 ]
 
 const TERMINAL_REJECTED = [

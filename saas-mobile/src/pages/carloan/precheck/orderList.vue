@@ -313,6 +313,37 @@ const APPLICATION_STATUS_CLASS: Record<string, string> = {
   CANCELLED: "2",
 };
 
+const APPLICATION_STATUS_LABELS: Record<string, string> = {
+  DRAFT: "草稿",
+  SUBMITTED: "已提交",
+  PENDING_RISK_PRE: "风控预审中",
+  RISK_PRE_PASSED: "风控预审通过",
+  RISK_PRE_REJECTED: "风控预审拒绝",
+  PENDING_FUNDER_PRE: "资方预审中",
+  FUNDER_PRE_PASSED: "资方预审通过",
+  FUNDER_PRE_REJECTED: "资方预审拒绝",
+  PENDING_FIRST_REVIEW: "待初审",
+  FIRST_REVIEW_PASSED: "初审通过",
+  FIRST_REVIEW_REJECTED: "初审拒绝",
+  PENDING_SUPPLEMENT: "待补件",
+  PENDING_FINAL_REVIEW: "待终审",
+  FINAL_REVIEW_PASSED: "终审通过",
+  FINAL_REVIEW_REJECTED: "终审拒绝",
+  PENDING_FUNDER_REVIEW: "待资方审核",
+  FUNDER_REVIEW_PASSED: "资方通过",
+  FUNDER_REVIEW_REJECTED: "资方拒绝",
+  PENDING_SIGN: "待签约",
+  SIGNING_PROGRESS: "签约中",
+  SIGNED: "已签约",
+  PENDING_LOAN_REQUEST: "待请款",
+  LOAN_REQUEST_REVIEWING: "请款审核中",
+  LOAN_REQUEST_APPROVED: "请款通过",
+  LOAN_REQUEST_REJECTED: "请款拒绝",
+  PENDING_DISBURSEMENT: "待放款",
+  DISBURSED: "已放款",
+  CANCELLED: "已取消",
+};
+
 const NODE_STATUS_CLASS: Record<string, string> = {
   "10": "4",
   "20": "1",
@@ -361,7 +392,12 @@ function getBusinessNodeLabel(node: unknown) {
     return "未知节点";
   }
   const code = String(node);
-  const normalizedCode = code.endsWith("00") ? code : `${code.charAt(0)}000`;
+  // 兼容 web 端子节点编码：1250 属于资方预审（1300）节点组
+  if (code.startsWith("125")) {
+    return businessNodeMap.value["1300"] || "资方预审";
+  }
+  // 按节点段归一化：1200/1299 都属于 1200 节点组
+  const normalizedCode = code.length >= 3 ? `${code.slice(0, 2)}00` : code;
   return (
     businessNodeMap.value[code] || businessNodeMap.value[normalizedCode] || code
   );
@@ -370,6 +406,7 @@ function getBusinessNodeLabel(node: unknown) {
 const NODE_DETAIL_ROUTE_MAP: Record<string, string> = {
   "1100": APP_ROUTES.carloan.precheck.applyDetail,
   "1200": APP_ROUTES.carloan.precheck.applyDetail,
+  "1250": APP_ROUTES.carloan.precheck.applyDetail,
   "1300": APP_ROUTES.carloan.precheck.applyDetail,
   "1400": APP_ROUTES.carloan.supplement.supplementDetail,
   "2100": APP_ROUTES.carloan.precheck.applyDetail,
@@ -384,7 +421,10 @@ function normalizeNodeCode(node: unknown) {
   const code = String(node || "");
   if (!code) return "";
   if (NODE_DETAIL_ROUTE_MAP[code]) return code;
-  const stageCode = `${code.charAt(0)}000`;
+  // 兼容 web 端子节点编码：1250 归属到资方预审（1300）节点组
+  if (code.startsWith("125")) return "1300";
+  // 按节点段归一化：其余子状态归属到对应的父节点组
+  const stageCode = code.length >= 3 ? `${code.slice(0, 2)}00` : code;
   return NODE_DETAIL_ROUTE_MAP[stageCode] ? stageCode : code;
 }
 
@@ -599,6 +639,7 @@ function normalizeOrderItem(order: CreditListItem): OrderListViewItem {
       getBusinessNodeLabel(businessNode),
     ),
     nodeStatusLabel: firstText(
+      APPLICATION_STATUS_LABELS[order.status || ""],
       order.currentStatusName,
       order.nodeStatusName,
       getNodeStatusLabel(nodeStatus),

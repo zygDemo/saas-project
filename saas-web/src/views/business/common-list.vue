@@ -206,6 +206,7 @@
     fetchBusinessList,
     fetchBusinessUpdate
   } from '@/api/business'
+  import { useUserStore } from '@/store/modules/user'
 
   type FieldType = 'text' | 'number' | 'textarea' | 'json' | 'select' | 'switch' | 'date'
   type OptionConfig = { label: string; value: string | number | boolean }
@@ -267,6 +268,8 @@
   }
 
   const route = useRoute()
+  const userStore = useUserStore()
+  const currentUserId = computed(() => Number(userStore.info?.userId) || undefined)
   const loading = ref(false)
   const submitting = ref(false)
   const keyword = ref('')
@@ -722,10 +725,9 @@
       type: 'primary',
       path: (row) => {
         const status = String(row.status)
-        if (status === 'DRAFT' || status === 'PENDING_SUPPLEMENT') return `/application/${row.id}/submit`
+        if (status === 'PENDING_SUPPLEMENT') return `/application/${row.id}/complete-supplement`
         if (status === 'SUBMITTED' || status === 'PENDING_RISK_PRE') return `/application/${row.id}/risk-pre-pass`
-        if (status === 'PENDING_FUNDER_PRE' || status === 'RISK_PRE_PASSED') return `/application/${row.id}/funder-pre-pass`
-        if (status === 'FUNDER_PRE_PASSED') return `/application/${row.id}/submit-funder-review`
+        if (status === 'PENDING_FUNDER_PRE') return `/application/${row.id}/funder-pre-pass`
         return `/application/${row.id}/submit`
       },
       fields: [
@@ -743,7 +745,33 @@
       }),
       visible: (row) => {
         const status = String(row.status || row.currentStatusName || '')
-        return status !== 'DISBURSED' && status !== 'CANCELLED' && !status.includes('REJECTED')
+        // 终态不显示
+        if (status === 'DISBURSED' || status === 'CANCELLED' || status.includes('REJECTED')) return false
+        // 已有专门操作按钮的状态不再显示通用处理，避免重复入口
+        const dedicatedStatuses = new Set([
+          'DRAFT',
+          'PENDING_SUPPLEMENT',
+          'FUNDER_PRE_PASSED',
+          'SUBMITTED',
+          'PENDING_RISK_PRE',
+          'PENDING_FUNDER_PRE',
+          'PENDING_FIRST_REVIEW',
+          'PENDING_FINAL_REVIEW',
+          'FINAL_REVIEW_PASSED',
+          'PENDING_FUNDER_REVIEW',
+          'PENDING_SIGN',
+          'SIGNING_PROGRESS',
+          'SIGNED',
+          'PENDING_LOAN_REQUEST',
+          'LOAN_REQUEST_REJECTED',
+          'LOAN_REQUEST_REVIEWING',
+          'LOAN_REQUEST_APPROVED',
+          'PENDING_DISBURSEMENT',
+          'DISBURSED',
+          'RISK_PRE_PASSED',
+          'FUNDER_REVIEW_PASSED'
+        ])
+        return !dedicatedStatuses.has(status)
       }
     },
     {
@@ -1434,7 +1462,13 @@
         { prop: 'address', label: '地址' },
         { prop: 'emergencyName', label: '紧急联系人' },
         { prop: 'emergencyPhone', label: '紧急联系人电话' },
-        { prop: 'status', label: '状态', defaultValue: 'ACTIVE' }
+        {
+          prop: 'status',
+          label: '状态',
+          type: 'select',
+          options: activeStatusOptions,
+          defaultValue: 'ACTIVE'
+        }
       ],
       actions: []
     },
@@ -1468,7 +1502,7 @@
           defaultValue: 0.068,
           required: true
         },
-        { prop: 'repaymentMethod', label: '还款方式', defaultValue: '等额本息', required: true },
+        { prop: 'repaymentMethod', label: '还款方式', type: 'select', options: repaymentMethodOptions, defaultValue: '等额本息', required: true },
         { prop: 'creatorId', label: '创建人ID', type: 'number', required: true },
         {
           prop: 'status',
@@ -1558,7 +1592,13 @@
       ],
       formFields: [
         { prop: 'applicationId', label: '进件ID', type: 'number', required: true },
-        { prop: 'status', label: '签约状态', defaultValue: 'PENDING' },
+        {
+          prop: 'status',
+          label: '签约状态',
+          type: 'select',
+          options: signingStatusOptions,
+          defaultValue: 'PENDING'
+        },
         { prop: 'contractUrl', label: '合同URL' },
         { prop: 'videoUrl', label: '面签视频URL' },
         { prop: 'signedAt', label: '签约时间', type: 'date' }
@@ -1578,7 +1618,13 @@
       ],
       formFields: [
         { prop: 'applicationId', label: '进件ID', type: 'number', required: true },
-        { prop: 'status', label: '放款状态', defaultValue: 'PENDING_APPLICATION' },
+        {
+          prop: 'status',
+          label: '放款状态',
+          type: 'select',
+          options: disbursementStatusOptions,
+          defaultValue: 'PENDING_APPLICATION'
+        },
         { prop: 'gpsDeviceNo', label: 'GPS设备号' },
         { prop: 'mortgageStatus', label: '抵押状态' },
         { prop: 'disburseAmount', label: '放款金额', type: 'number', precision: 2 },
@@ -1606,7 +1652,13 @@
         { prop: 'principal', label: '本金', type: 'number', precision: 2, required: true },
         { prop: 'interest', label: '利息', type: 'number', precision: 2, required: true },
         { prop: 'totalAmount', label: '应还总额', type: 'number', precision: 2, required: true },
-        { prop: 'status', label: '状态', defaultValue: 'PENDING' }
+        {
+          prop: 'status',
+          label: '状态',
+          type: 'select',
+          options: repaymentStatusOptions,
+          defaultValue: 'PENDING'
+        }
       ],
       actions: []
     }
@@ -2059,7 +2111,19 @@
   function openAction(row: Record<string, unknown>, action: ActionConfig) {
     activeAction.value = action
     actionRow.value = row
-    resetModel(actionModel, action.fields || [], action.defaults?.(row))
+    const defaults = action.defaults?.(row) || {}
+    // 操作人字段默认当前登录用户
+    const operatorProps = ['approverId', 'createdBy']
+    for (const prop of operatorProps) {
+      if (
+        action.fields?.some((field) => field.prop === prop) &&
+        defaults[prop] === undefined &&
+        currentUserId.value
+      ) {
+        defaults[prop] = currentUserId.value
+      }
+    }
+    resetModel(actionModel, action.fields || [], defaults)
     if (!action.fields?.length) {
       ElMessageBox.confirm(`确认执行“${action.label}”？`, '业务动作确认', { type: 'warning' })
         .then(() => submitAction())
