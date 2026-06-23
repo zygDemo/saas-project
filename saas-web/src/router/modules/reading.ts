@@ -16,7 +16,7 @@ export const readingRoutes: AppRouteRecord = {
       component: '/reading/bookshelf/index',
       meta: {
         title: 'menus.reading.bookshelf',
-        icon: 'ri:bookshelf-line',
+        icon: 'ri:book-2-line',
         keepAlive: true
       }
     },

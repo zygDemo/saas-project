@@ -52,35 +52,45 @@
               <text class="chapter-title-text">{{
                 currentChapter?.title || ""
               }}</text>
-              <text class="content-text" :style="textStyle">{{ page }}</text>
+              <view
+                v-for="(paragraph, pIdx) in getPageParagraphs(page)"
+                :key="pIdx"
+                class="content-paragraph"
+              >
+                <text :style="textStyle">{{ paragraph }}</text>
+              </view>
             </view>
           </scroll-view>
         </swiper-item>
       </swiper>
-      <!-- 上下滚动模式 (连续滚动) -->
-      <scroll-view
-        v-else
-        :key="chapterId"
-        class="vertical-scroll-reader"
-        scroll-y
-        :scroll-top="verticalScrollTop"
-        :lower-threshold="150"
-        :style="{ background: bgColorStyle }"
-        @scroll="onVerticalScroll"
-        @scrolltolower="onScrollToLower"
-      >
-        <view class="vertical-content">
-          <text class="chapter-title-text">{{
-            currentChapter?.title || ""
-          }}</text>
-          <text class="content-text" :style="textStyle">{{
-            chapterContent
-          }}</text>
-          <view v-if="hasNextChapter" class="load-more-hint">
-            <text class="load-more-text">— 上拉加载下一章 —</text>
+        <!-- 上下滚动模式 (连续滚动) -->
+        <scroll-view
+          v-else
+          :key="chapterId"
+          class="vertical-scroll-reader"
+          scroll-y
+          :scroll-top="verticalScrollTop"
+          :lower-threshold="150"
+          :style="{ background: bgColorStyle }"
+          @scroll="onVerticalScroll"
+          @scrolltolower="onScrollToLower"
+        >
+          <view class="vertical-content">
+            <text class="chapter-title-text">{{
+              currentChapter?.title || ""
+            }}</text>
+            <view
+              v-for="(paragraph, pIdx) in chapterParagraphs"
+              :key="pIdx"
+              class="content-paragraph"
+            >
+              <text :style="textStyle">{{ paragraph }}</text>
+            </view>
+            <view v-if="hasNextChapter" class="load-more-hint">
+              <text class="load-more-text">— 上拉加载下一章 —</text>
+            </view>
           </view>
-        </view>
-      </scroll-view>
+        </scroll-view>
     </view>
 
     <!-- 底部工具栏 -->
@@ -410,8 +420,7 @@
 </template>
 
 <script setup lang="ts">
-import { useReadingStore } from "@/stores/reading";
-import { computed, ref, watch, onMounted, onUnmounted } from "vue";
+import { computed, ref, watch } from "vue";
 import { onLoad, onUnload } from "@dcloudio/uni-app";
 import { useReadingApi } from "@/api/reading";
 
@@ -447,7 +456,6 @@ function loadSettings() {
   return null;
 }
 
-const readingStore = useReadingStore();
 const readingApi = useReadingApi();
 const showToolbar = ref(false);
 const showChapterPopup = ref(false);
@@ -605,6 +613,23 @@ const textStyle = computed(() => ({
   lineHeight: lineHeight.value,
 }));
 
+// 将章节内容按段落分割
+function splitIntoParagraphs(text: string): string[] {
+  if (!text) return [];
+  // 按空行分割段落，过滤掉纯空白的段落
+  return text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p !== '');
+}
+
+// 当前章节的段落数组
+const chapterParagraphs = computed(() => {
+  return splitIntoParagraphs(chapterContent.value);
+});
+
+// 将分页内容也按段落分割
+function getPageParagraphs(pageText: string): string[] {
+  return splitIntoParagraphs(pageText);
+}
+
 // 保存设置到本地存储
 function saveSettings() {
   try {
@@ -661,6 +686,25 @@ const checkBookmarkStatus = () => {
   );
 };
 
+// 防抖保存进度
+let saveProgressTimer: ReturnType<typeof setTimeout> | null = null;
+const debouncedSaveProgress = () => {
+  if (saveProgressTimer) clearTimeout(saveProgressTimer);
+  saveProgressTimer = setTimeout(async () => {
+    if (bookId.value && chapterId.value) {
+      try {
+        await readingApi.saveProgress({
+          bookId: bookId.value,
+          chapterId: chapterId.value,
+          page: currentPage.value,
+        });
+      } catch (e) {
+        console.error("保存阅读进度失败", e);
+      }
+    }
+  }, 2000);
+};
+
 const prevChapter = async () => {
   if (!hasPrevChapter.value) return;
   const prevIdx = currentChapterIndex.value - 1;
@@ -669,6 +713,7 @@ const prevChapter = async () => {
   checkBookmarkStatus();
   const detail = await readingApi.getChapterDetail(chapterId.value);
   chapterContent.value = detail.data?.content || "";
+  debouncedSaveProgress();
 };
 
 const nextChapter = async () => {
@@ -679,6 +724,7 @@ const nextChapter = async () => {
   checkBookmarkStatus();
   const detail = await readingApi.getChapterDetail(chapterId.value);
   chapterContent.value = detail.data?.content || "";
+  debouncedSaveProgress();
 };
 
 const onTouchEnd = (ev: TouchEvent) => {
@@ -720,21 +766,53 @@ onLoad(async (options) => {
 
   if (bookId.value) {
     try {
-      const res = await readingApi.getChapters(bookId.value, {
-        pageSize: 1000,
-      });
-      const list = res.data?.items || [];
-      chapterList.value = list.map((item: any) => ({
+      // 使用轻量接口一次性加载全部章节目录（仅 id/title/sort）
+      const liteRes = await readingApi.getChaptersLite(bookId.value);
+      const allItems = liteRes.data?.items || [];
+
+      chapterList.value = allItems.map((item: any) => ({
         id: String(item.id),
         title: item.title,
-        isVip: !!item.isVip,
+        isVip: false,
       }));
-      if (!chapterId.value && list.length) {
-        chapterId.value = String(list[0].id);
+
+      // 先尝试读取已保存的阅读进度（仅请求一次）
+      let savedChapterId = "";
+      let savedPage = 0;
+      if (!options?.chapterId) {
+        // 只有当 URL 没有指定章节时才恢复进度
+        try {
+          const progressRes = await readingApi.getProgress(bookId.value);
+          const saved = progressRes?.data;
+          if (saved?.chapterId) {
+            const exists = allItems.some(
+              (item: any) => String(item.id) === String(saved.chapterId),
+            );
+            if (exists) {
+              savedChapterId = String(saved.chapterId);
+              savedPage = saved.page || 0;
+            }
+          }
+        } catch {
+          // 无保存进度
+        }
       }
+
+      // 确定要加载的章节
+      if (!chapterId.value && savedChapterId) {
+        chapterId.value = savedChapterId;
+      }
+      if (!chapterId.value && allItems.length) {
+        chapterId.value = String(allItems[0].id);
+      }
+
       if (chapterId.value) {
         const detail = await readingApi.getChapterDetail(chapterId.value);
         chapterContent.value = detail.data?.content || "";
+        // 恢复保存的页码
+        if (savedPage > 0) {
+          currentPage.value = savedPage;
+        }
       }
     } catch (e) {
       console.error("reader fetch error", e);
@@ -746,13 +824,13 @@ onLoad(async (options) => {
 });
 
 onUnload(() => {
-  // 保存阅读进度
+  // 离开页面时立即保存进度（不防抖）
   if (bookId.value && chapterId.value) {
-    readingStore.saveReadingProgress(
-      bookId.value,
-      chapterId.value,
-      currentPage.value,
-    );
+    readingApi.saveProgress({
+      bookId: bookId.value,
+      chapterId: chapterId.value,
+      page: currentPage.value,
+    }).catch((e) => console.error("保存阅读进度失败", e));
   }
   // 最后保存一次设置
   saveSettings();
@@ -807,6 +885,7 @@ const onScrollToLower = async () => {
 const onPageChange = async (changeEvent: any) => {
   currentPage.value = changeEvent.detail.current;
   checkBookmarkStatus();
+  debouncedSaveProgress();
   // 滑到最后一页时自动加载下一章
   if (
     currentPage.value >= currentPages.value.length - 1 &&
@@ -821,6 +900,7 @@ const onPageChange = async (changeEvent: any) => {
       const detail = await readingApi.getChapterDetail(chapterId.value);
       chapterContent.value = detail.data?.content || "";
       checkBookmarkStatus();
+      debouncedSaveProgress();
     } catch (err) {
       console.error("auto-load next chapter failed", err);
     } finally {
@@ -845,6 +925,7 @@ const jumpToChapter = async (chapter: Chapter) => {
   checkBookmarkStatus();
   const detail = await readingApi.getChapterDetail(chapterId.value);
   chapterContent.value = detail.data?.content || "";
+  debouncedSaveProgress();
 };
 
 const toggleNightMode = () => {
@@ -933,6 +1014,7 @@ const jumpToBookmark = (bookmark: Bookmark) => {
   currentPage.value = bookmark.page;
   showBookmarkPopup.value = false;
   checkBookmarkStatus();
+  debouncedSaveProgress();
 };
 
 const formatBookmarkTime = (timestamp: number) => {
@@ -968,15 +1050,21 @@ const toggleListenMode = () => {
   background: #f5f0e6;
 
   &.night-mode {
-    background: #1e1e1e;
+    background: #121212;
 
     .content-text {
-      color: #999;
+      color: #c8c8c8;
+    }
+
+    .content-paragraph {
+      text {
+        color: #c8c8c8;
+      }
     }
 
     .chapter-title-text {
       text-wrap: balance;
-      color: #666;
+      color: #8a8a8a;
     }
   }
 }
@@ -985,12 +1073,15 @@ const toggleListenMode = () => {
   position: fixed;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.85);
   z-index: 150;
   padding: 0 24rpx;
   transform: translateY(-100%);
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
+  /* 毛玻璃效果 */
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 
   &.show {
     transform: translateY(0);
@@ -1018,17 +1109,22 @@ const toggleListenMode = () => {
 .toolbar-title {
   flex: 1;
   text-align: center;
-  font-size: 32rpx;
+  font-size: 30rpx;
   color: #fff;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 500;
+  letter-spacing: 1rpx;
 }
 
 .bottom-toolbar {
   bottom: 0;
   padding-bottom: env(safe-area-inset-bottom);
   transform: translateY(100%);
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 
   &.show {
     transform: translateY(0);
@@ -1038,8 +1134,8 @@ const toggleListenMode = () => {
 .chapter-nav {
   display: flex;
   justify-content: space-around;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.1);
+  padding: 24rpx 0 20rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.08);
 }
 
 .nav-btn {
@@ -1047,25 +1143,34 @@ const toggleListenMode = () => {
   flex-direction: column;
   align-items: center;
   color: #fff;
-  font-size: 24rpx;
+  font-size: 22rpx;
   gap: 8rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 12rpx;
+  transition: background 0.2s;
+
+  &:active {
+    background: rgba(255, 255, 255, 0.1);
+  }
 
   &.disabled {
-    opacity: 0.5;
+    opacity: 0.35;
+    pointer-events: none;
   }
 }
 
 .progress-section {
   display: flex;
   align-items: center;
-  padding: 20rpx 24rpx;
+  padding: 16rpx 24rpx 8rpx;
   gap: 20rpx;
 }
 
 .progress-text {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.7);
   width: 80rpx;
+  font-variant-numeric: tabular-nums;
 }
 
 .progress-slider {
@@ -1075,8 +1180,8 @@ const toggleListenMode = () => {
 .settings-section {
   display: flex;
   justify-content: space-around;
-  padding: 20rpx 0;
-  border-top: 1rpx solid rgba(255, 255, 255, 0.1);
+  padding: 16rpx 0 24rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.08);
 }
 
 .setting-item {
@@ -1084,8 +1189,15 @@ const toggleListenMode = () => {
   flex-direction: column;
   align-items: center;
   color: #fff;
-  font-size: 22rpx;
+  font-size: 20rpx;
   gap: 8rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 12rpx;
+  transition: background 0.2s;
+
+  &:active {
+    background: rgba(255, 255, 255, 0.1);
+  }
 }
 
 .font-btn {
@@ -1115,7 +1227,7 @@ const toggleListenMode = () => {
 }
 
 .page-content {
-  padding: 120rpx 40rpx;
+  padding: 120rpx 48rpx 80rpx;
   min-height: 100%;
   box-sizing: border-box;
 }
@@ -1123,11 +1235,13 @@ const toggleListenMode = () => {
 .chapter-title-text {
   text-wrap: balance;
   display: block;
-  font-size: 36rpx;
+  font-size: 34rpx;
   font-weight: 600;
-  color: #333;
-  margin-bottom: 40rpx;
+  color: #2c2c2c;
+  margin-bottom: 44rpx;
   text-align: center;
+  letter-spacing: 2rpx;
+  line-height: 1.5;
 }
 
 .content-text {
@@ -1136,6 +1250,26 @@ const toggleListenMode = () => {
   line-height: 1.8;
   text-align: justify;
   text-indent: 2em;
+  word-break: break-all;
+  hyphens: auto;
+}
+
+/* 段落样式 - 每段首行缩进2字符 */
+.content-paragraph {
+  text-indent: 2em;
+  margin-bottom: 0.8em;
+  display: block;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  text {
+    display: block;
+    text-align: justify;
+    line-height: 1.8;
+    color: #333;
+  }
 }
 
 /* 减少动画 */
@@ -1152,49 +1286,61 @@ const toggleListenMode = () => {
 }
 
 .vertical-content {
-  padding: 20rpx 30rpx 60rpx;
+  padding: 24rpx 48rpx 120rpx;
   min-height: 100%;
 }
 
 .load-more-hint {
-  padding: 40rpx 0 80rpx;
+  padding: 48rpx 0 100rpx;
   text-align: center;
 }
 
 .load-more-text {
-  font-size: 26rpx;
-  color: #999;
+  font-size: 24rpx;
+  color: #bbb;
+  letter-spacing: 2rpx;
 }
 
 .chapter-popup {
-  width: 600rpx;
+  width: 560rpx;
   height: 100%;
   display: flex;
   flex-direction: column;
+  background: #fff;
+  border-radius: 0 16rpx 16rpx 0;
 }
 
 .popup-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 30rpx 24rpx;
-  border-bottom: 1rpx solid #eee;
+  padding: 28rpx 28rpx 24rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
 }
 
 .popup-title {
-  font-size: 36rpx;
+  font-size: 32rpx;
   font-weight: 600;
-  color: #303133;
+  color: #1a1a1a;
+  letter-spacing: 1rpx;
 }
 
 .popup-sub {
-  font-size: 24rpx;
-  color: #909399;
+  font-size: 22rpx;
+  color: #999;
+  background: #f5f5f5;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
 }
 
 .popup-close {
-  font-size: 28rpx;
-  color: var(--u-type-primary);
+  font-size: 26rpx;
+  color: #667eea;
+  padding: 8rpx 16rpx;
 }
 
 .chapter-scroll {
@@ -1205,14 +1351,19 @@ const toggleListenMode = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 28rpx 24rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  padding: 26rpx 28rpx;
+  border-bottom: 1rpx solid #f8f8f8;
+  transition: background 0.15s;
+
+  &:active {
+    background: #f8f8f8;
+  }
 
   &.active {
-    background: rgba(102, 126, 234, 0.1);
+    background: rgba(102, 126, 234, 0.08);
 
     .chapter-name {
-      color: var(--u-type-primary);
+      color: #667eea;
       font-weight: 600;
     }
   }
@@ -1220,36 +1371,75 @@ const toggleListenMode = () => {
 
 .chapter-name {
   font-size: 28rpx;
-  color: #303133;
+  color: #333;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .vip-tag {
-  font-size: 20rpx;
-  padding: 2rpx 8rpx;
-  background: #ffa502;
+  font-size: 18rpx;
+  padding: 2rpx 10rpx;
+  background: linear-gradient(135deg, #f7b733, #fc4a1a);
   color: #fff;
-  border-radius: 4rpx;
+  border-radius: 6rpx;
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  font-weight: 500;
 }
 
-/* 深色模式适配 */
+/* 系统级深色模式 */
 @media (prefers-color-scheme: dark) {
-  .reader-page {
+  .reader-page:not(.night-mode) {
     background: #121212;
+
+    .chapter-title-text {
+      color: #aaa;
+    }
+
+    .content-text {
+      color: #c0c0c0;
+    }
   }
 
-  .reader-page.night-mode {
-    background: #1e1e1e;
+  .setting-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.06);
   }
 
+  .setting-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .setting-btn-text {
+    color: #c0c4cc;
+  }
+
+  .setting-pill {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .pill-text {
+    color: #b0b3b8;
+  }
+}
+
+/* 应用内夜间模式 */
+.night-mode {
   .toolbar {
-    background: rgba(30, 30, 30, 0.95);
+    background: rgba(10, 10, 10, 0.92) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .chapter-popup {
-    background: #1e1e1e;
+    background: #1a1a1a;
+    border-radius: 0 16rpx 16rpx 0;
   }
 
   .popup-header {
+    background: #1a1a1a;
     border-bottom-color: #2a2a2a;
   }
 
@@ -1258,23 +1448,32 @@ const toggleListenMode = () => {
   }
 
   .popup-sub {
-    color: #8b8c91;
+    color: #666;
+    background: #2a2a2a;
+  }
+
+  .popup-close {
+    color: #8b9cf7;
   }
 
   .chapter-item {
-    border-bottom-color: #2a2a2a;
+    border-bottom-color: #222;
+
+    &:active {
+      background: #222;
+    }
 
     &.active {
-      background: rgba(82, 64, 254, 0.15);
+      background: rgba(102, 126, 234, 0.12);
     }
   }
 
   .chapter-name {
-    color: #e5e6eb;
+    color: #d0d0d0;
   }
 
   .settings-popup {
-    background: #1e1e1e;
+    background: #1a1a1a;
     color: #c0c4cc;
   }
 
@@ -1282,42 +1481,70 @@ const toggleListenMode = () => {
     border-bottom-color: rgba(255, 255, 255, 0.06);
   }
 
-  .setting-label {
-    opacity: 0.8;
+  .setting-label,
+  .setting-label-inline {
+    opacity: 0.65;
   }
 
   .bg-color-name {
     &.active {
-      color: var(--u-type-primary);
+      color: #8b9cf7;
     }
   }
 
-  .popup-close {
-    color: var(--u-type-primary);
-  }
-
   .bookmark-popup {
-    background: #1e1e1e;
+    background: #1a1a1a;
   }
 
   .bookmark-item {
-    border-bottom-color: #2a2a2a;
+    border-bottom-color: #222;
   }
 
   .bookmark-chapter {
-    color: #e5e6eb;
+    color: #d0d0d0;
   }
 
   .bookmark-content {
-    color: #b0b3b8;
+    color: #777;
   }
 
   .bookmark-time {
-    color: #8b8c91;
+    color: #555;
   }
 
   .listen-content {
-    background: rgba(30, 30, 30, 0.95);
+    background: rgba(20, 20, 20, 0.95);
+  }
+
+  .setting-pill-group .setting-pill {
+    background: #2a2a2a;
+    border-color: transparent;
+
+    .pill-text {
+      color: #999;
+    }
+
+    &.active {
+      background: rgba(102, 126, 234, 0.25);
+      border-color: rgba(102, 126, 234, 0.4);
+
+      .pill-text {
+        color: #8b9cf7;
+      }
+    }
+  }
+
+  .setting-btn {
+    background: #2a2a2a;
+    border-color: rgba(255, 255, 255, 0.06);
+
+    .setting-btn-text {
+      color: #aaa;
+    }
+
+    &.disabled {
+      opacity: 0.3;
+    }
   }
 }
 
@@ -1417,30 +1644,6 @@ const toggleListenMode = () => {
 .setting-pill.active .pill-text {
   color: #fff;
   font-weight: 600;
-}
-
-/* 深色模式适配 */
-@media (prefers-color-scheme: dark) {
-  .setting-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.06);
-  }
-
-  .setting-btn:active {
-    background: rgba(255, 255, 255, 0.15);
-  }
-
-  .setting-btn-text {
-    color: #c0c4cc;
-  }
-
-  .setting-pill {
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .pill-text {
-    color: #b0b3b8;
-  }
 }
 
 /* 设置弹窗 - 限制高度 */

@@ -78,7 +78,7 @@ export function createBook(data: {
   isSerial?: boolean
   tags?: string
 }) {
-  return request.post({ url: '/reading/books', data, showSuccessMessage: true })
+  return request.post({ url: '/reading/books', data })
 }
 
 /** 更新书籍 */
@@ -105,12 +105,12 @@ export function updateBook(
     tags?: string
   }
 ) {
-  return request.put({ url: `/reading/books/${id}`, data, showSuccessMessage: true })
+  return request.put({ url: `/reading/books/${id}`, data })
 }
 
 /** 删除书籍 */
 export function deleteBook(id: number) {
-  return request.del({ url: `/reading/books/${id}`, showSuccessMessage: true })
+  return request.del({ url: `/reading/books/${id}` })
 }
 
 // ==================== 章节管理 ====================

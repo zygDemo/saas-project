@@ -102,17 +102,13 @@
           <view class="section-header">
             <text class="section-title">目录</text>
             <view class="section-meta">
-              <text class="section-sub">共{{ book.totalChapters }}章</text>
-              <view class="section-more" @click="viewAllChapters">
-                <text>查看全部</text>
-                <u-icon name="arrow-right" color="#909399" size="20" />
-              </view>
+              <text class="section-sub">已加载{{ chapters.length }}章 / 共{{ chapterTotal || book.totalChapters }}章</text>
             </view>
           </view>
           <view class="chapter-list">
             <view
               v-for="(chapter, idx) in chapters"
-              :key="idx"
+              :key="chapter.id"
               class="chapter-item"
               :class="{ 'is-read': chapter.isRead, 'is-latest': chapter.isLatest, 'is-vip': chapter.isVip }"
               @click="readChapter(chapter)"
@@ -127,6 +123,14 @@
                 <u-icon name="arrow-right" color="#c0c4cc" size="20" />
               </view>
             </view>
+          </view>
+          <!-- 加载更多 -->
+          <view v-if="!chapterFinished" class="load-more-bar" @click="loadMoreChapters">
+            <text v-if="!chapterLoading" class="load-more-text">加载更多章节</text>
+            <text v-else class="load-more-text">加载中...</text>
+          </view>
+          <view v-else class="load-more-bar finished">
+            <text class="load-more-text">已展示全部章节</text>
           </view>
         </view>
 
@@ -309,20 +313,12 @@ const ratingDistribution = ref([
   { percent: 1 },
 ]);
 
-const chapters = ref<Chapter[]>([
-  { id: "1", title: "第一章 陨落的天才", isRead: true, isLatest: false, isVip: false },
-  { id: "2", title: "第二章 斗之气三段", isRead: true, isLatest: false, isVip: false },
-  { id: "3", title: "第三章 客人", isRead: true, isLatest: false, isVip: false },
-  { id: "4", title: "第四章 云岚宗", isRead: false, isLatest: false, isVip: false },
-  { id: "5", title: "第五章 萧薰儿", isRead: false, isLatest: false, isVip: false },
-  { id: "6", title: "第六章 炼丹", isRead: false, isLatest: false, isVip: false },
-  { id: "7", title: "第七章 异火榜", isRead: false, isLatest: false, isVip: false },
-  { id: "8", title: "第八章 修炼", isRead: false, isLatest: false, isVip: false },
-  { id: "9", title: "第九章 比试", isRead: false, isLatest: false, isVip: false },
-  { id: "10", title: "第十章 药老", isRead: false, isLatest: false, isVip: true },
-  { id: "11", title: "第十一章 突破", isRead: false, isLatest: false, isVip: true },
-  { id: "12", title: "第十二章 斗技", isRead: false, isLatest: true, isVip: true },
-]);
+const chapters = ref<Chapter[]>([]);
+const chapterPage = ref(1);
+const chapterPageSize = ref(20);
+const chapterTotal = ref(0);
+const chapterLoading = ref(false);
+const chapterFinished = ref(false);
 
 const reviews = ref<Review[]>([
   {
@@ -371,8 +367,52 @@ onLoad(async (options) => {
   if (options?.id) {
     bookId.value = options.id;
     await fetchBookDetail(options.id);
+    await fetchChapters(options.id, true);
   }
 });
+
+const fetchChapters = async (id: string, reset = false) => {
+  if (chapterLoading.value) return;
+  const page = reset ? 1 : chapterPage.value;
+  chapterLoading.value = true;
+  try {
+    const res = await readingApi.getChapters(id, { page, pageSize: chapterPageSize.value });
+    const data = res?.data;
+    const items = data?.items || [];
+    const total = data?.total || 0;
+    chapterTotal.value = total;
+
+    const mapped = items.map((item: any) => ({
+      id: String(item.id),
+      title: item.title,
+      isRead: false,
+      isLatest: false,
+      isVip: !!item.isVip,
+    }));
+    // 标记最新一章（最后一章）
+    if (mapped.length && page === Math.ceil(total / chapterPageSize.value)) {
+      mapped[mapped.length - 1].isLatest = true;
+    }
+
+    if (reset) {
+      chapters.value = mapped;
+    } else {
+      chapters.value.push(...mapped);
+    }
+    chapterPage.value = page + 1;
+    chapterFinished.value = chapters.value.length >= total;
+  } catch (e) {
+    console.error("获取章节目录失败", e);
+  } finally {
+    chapterLoading.value = false;
+  }
+};
+
+const loadMoreChapters = () => {
+  if (!chapterLoading.value && !chapterFinished.value) {
+    fetchChapters(bookId.value);
+  }
+};
 
 const formatWordCount = (count?: number) => {
   if (!count) return "";
@@ -458,9 +498,6 @@ const readChapter = (chapter: Chapter) => {
   });
 };
 
-const viewAllChapters = () => {
-  uni.showToast({ title: "全部章节功能开发中", icon: "none" });
-};
 
 const goAuthor = () => {
   uni.showToast({ title: "作者主页开发中", icon: "none" });
@@ -847,6 +884,26 @@ const goDetail = (item: RecommendBook) => {
 .read-status {
   font-size: 22rpx;
   color: #19be6b;
+}
+
+/* 加载更多 */
+.load-more-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx 0 8rpx;
+  border-top: 1rpx solid #f5f5f5;
+  margin-top: 8rpx;
+
+  &.finished {
+    opacity: 0.5;
+  }
+}
+
+.load-more-text {
+  font-size: 26rpx;
+  color: var(--u-type-primary);
+  letter-spacing: 1rpx;
 }
 
 /* 作者信息 */

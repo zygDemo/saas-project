@@ -991,7 +991,7 @@ async function seedAllMenus(tenantId: number) {
     name: 'ReadingBookshelf',
     component: '/reading/bookshelf/index',
     title: '书架管理',
-    icon: 'ri:bookshelf-line',
+    icon: 'ri:book-2-line',
     sort: 551,
     keepAlive: true
   })

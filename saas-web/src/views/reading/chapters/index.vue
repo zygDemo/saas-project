@@ -52,8 +52,8 @@
       />
 
       <!-- 查看内容弹窗 -->
-      <ElDialog v-model="showContentDialog" :title="viewChapter?.title || '章节内容'" width="800px">
-        <div class="chapter-content max-h-96 overflow-y-auto whitespace-pre-wrap leading-7 text-sm">
+      <ElDialog v-model="showContentDialog" :title="viewChapter?.title || '章节内容'" width="800px" @open="resetContentScroll">
+        <div ref="contentRef" class="chapter-content max-h-96 overflow-y-auto whitespace-pre-wrap leading-7 text-sm">
           {{ viewChapter?.content || '暂无内容' }}
         </div>
       </ElDialog>
@@ -115,6 +115,13 @@
 
   const showContentDialog = ref(false)
   const viewChapter = ref<any>(null)
+  const contentRef = ref<HTMLDivElement>()
+
+  const resetContentScroll = () => {
+    if (contentRef.value) {
+      contentRef.value.scrollTop = 0
+    }
+  }
   const showEditDialog = ref(false)
   const isEdit = ref(false)
   const editId = ref<number>(0)

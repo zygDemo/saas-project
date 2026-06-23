@@ -115,6 +115,12 @@ export class ReadingController {
     return this.readingService.getChapters(req.user.tenantId, query);
   }
 
+  @Get('chapters/lite')
+  @ApiOperation({ summary: '获取章节列表（轻量版，仅返回 id/title/sort，无分页）' })
+  async getChaptersLite(@Request() req: any, @Query('bookId') bookId: number) {
+    return this.readingService.getChaptersLite(req.user.tenantId, +bookId);
+  }
+
   @Get('chapters/:id')
   @ApiOperation({ summary: '获取章节详情' })
   async getChapterById(@Param('id') id: number, @Request() req: any) {

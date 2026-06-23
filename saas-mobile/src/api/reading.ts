@@ -14,7 +14,11 @@ export function useReadingApi() {
     getCategories: () =>
       http.get<ApiResponse<CategoryItem[]>>("/reading/categories"),
 
-    /** 获取章节目录 */
+    /** 获取章节目录（轻量版，仅 id/title/sort/isVip，无分页） */
+    getChaptersLite: (bookId: number | string) =>
+      http.get<ApiResponse<{ items: { id: number; title: string; sort: number; isVip: boolean }[] }>>(`/reading/chapters/lite`, { bookId }),
+
+    /** 获取章节目录（分页版） */
     getChapters: (bookId: number | string, params?: { page?: number; pageSize?: number }) =>
       http.get<ApiResponse<ChapterListResult>>(`/reading/chapters`, { bookId, ...(params || {}) }),
 
@@ -38,6 +42,14 @@ export function useReadingApi() {
     /** 获取推荐图书 */
     getRecommend: (params?: { pageSize?: number }) =>
       http.get<ApiResponse<BookItem[]>>("/reading/recommend", params),
+
+    /** 获取阅读进度 */
+    getProgress: (bookId: number | string) =>
+      http.get<ApiResponse<{ chapterId: number; page: number; progress: number }>>(`/reading/progress/${bookId}`),
+
+    /** 保存阅读进度 */
+    saveProgress: (data: { bookId: number | string; chapterId: number | string; page?: number; progress?: number }) =>
+      http.post<ApiResponse<any>>("/reading/progress", data),
   };
 }
 

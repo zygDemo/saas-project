@@ -235,12 +235,15 @@ export class ChapterQueryDto {
   @ApiPropertyOptional({ description: '页码', default: 1 })
   @IsOptional()
   @IsNumber()
+  @Min(1)
   @Type(() => Number)
   page?: number;
 
-  @ApiPropertyOptional({ description: '每页数量', default: 100 })
+  @ApiPropertyOptional({ description: '每页数量', default: 100, maximum: 200 })
   @IsOptional()
   @IsNumber()
+  @Min(1)
+  @Max(200)
   @Type(() => Number)
   pageSize?: number;
 }
@@ -258,24 +261,29 @@ export class AddBookshelfDto {
 export class SaveReadingProgressDto {
   @ApiProperty({ description: '书籍ID' })
   @IsNumber()
+  @Type(() => Number)
   bookId: number;
 
   @ApiProperty({ description: '章节ID' })
   @IsNumber()
+  @Type(() => Number)
   chapterId: number;
 
   @ApiPropertyOptional({ description: '页码', default: 0 })
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   page?: number;
 
   @ApiPropertyOptional({ description: '进度百分比', default: 0 })
   @IsOptional()
+  @Type(() => Number)
   progress?: number;
 
   @ApiPropertyOptional({ description: '阅读时长（秒）', default: 0 })
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   readTime?: number;
 }
 

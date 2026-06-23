@@ -26,7 +26,7 @@
         @click="openDetail(item)"
       >
         <div class="flex flex-col items-center py-4">
-          <ArtSvgIcon icon="ri:bookshelf-line" class="text-5xl text-primary mb-3" />
+          <ArtSvgIcon icon="ri:book-2-line" class="text-5xl text-primary mb-3" />
           <h3 class="text-base font-medium text-g-800">{{ item.name }}</h3>
           <p class="text-sm text-g-500 mt-1">{{ item.bookCount }} 本书</p>
           <p class="text-xs text-g-400 mt-1">创建于 {{ item.createTime }}</p>

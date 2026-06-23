@@ -247,6 +247,20 @@ export class ReadingService {
 
   // ==================== 章节管理 ====================
 
+  async getChaptersLite(tenantId: number, bookId: number) {
+    const chapters = await this.prisma.bookChapter.findMany({
+      where: { tenantId, bookId },
+      orderBy: { sort: 'asc' },
+      select: {
+        id: true,
+        title: true,
+        sort: true,
+        isVip: true,
+      },
+    });
+    return { items: chapters };
+  }
+
   async getChapters(tenantId: number, query: ChapterQueryDto) {
     const { bookId, page = 1, pageSize = 100 } = query;
     const where = { tenantId, bookId };
@@ -257,16 +271,24 @@ export class ReadingService {
         orderBy: { sort: 'asc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
+        // 列表只返回元信息，不返回正文 content
+        select: {
+          id: true,
+          tenantId: true,
+          bookId: true,
+          title: true,
+          wordCount: true,
+          sort: true,
+          isVip: true,
+          price: true,
+          createdAt: true,
+          updatedAt: true,
+        },
       }),
       this.prisma.bookChapter.count({ where }),
     ]);
 
-    const items = rows.map((row) => ({
-      ...row,
-      content: this.sanitizeChapterContent(row.content),
-    }));
-
-    return { items, total, page, pageSize };
+    return { items: rows, total, page, pageSize };
   }
 
   async getChapterById(id: number, tenantId: number) {
