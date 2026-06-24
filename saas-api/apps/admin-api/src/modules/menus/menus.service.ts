@@ -1,6 +1,7 @@
-﻿import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
+import { getRequiredTenantId } from '../../common/utils/helpers'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateMenuDto, CreatePermissionDto, UpdateMenuDto, UpdatePermissionDto } from './dto/menu.dto'
 
@@ -78,7 +79,7 @@ export class MenusService {
   }
 
   async updateMenu(id: number, dto: UpdateMenuDto) {
-    const menu = await this.prisma.menu.findUnique({ where: { id } })
+    const menu = await this.prisma.menu.findFirst({ where: { id } })
     if (!menu) throw new NotFoundException('菜单不存在')
 
     if (dto.name && dto.name !== menu.name) {
@@ -112,16 +113,16 @@ export class MenusService {
   }
 
   async deleteMenu(id: number) {
-    const menu = await this.prisma.menu.findUnique({ where: { id } })
+    const menu = await this.prisma.menu.findFirst({ where: { id } })
     if (!menu) throw new NotFoundException('菜单不存在')
 
-    await this.prisma.menu.delete({ where: { id } })
+    await this.prisma.menu.update({ where: { id }, data: { deletedAt: new Date() } })
     return { id }
   }
 
   async createPermission(menuId: number, dto: CreatePermissionDto) {
     const tenantId = getRequiredTenantId()
-    const menu = await this.prisma.menu.findUnique({ where: { id: menuId } })
+    const menu = await this.prisma.menu.findFirst({ where: { id: menuId } })
     if (!menu) throw new NotFoundException('菜单不存在')
     await this.assertPermissionMarkAvailable(menuId, dto.authMark)
 
@@ -139,7 +140,7 @@ export class MenusService {
   }
 
   async updatePermission(id: number, dto: UpdatePermissionDto) {
-    const permission = await this.prisma.permission.findUnique({ where: { id } })
+    const permission = await this.prisma.permission.findFirst({ where: { id } })
     if (!permission) throw new NotFoundException('权限不存在')
     if (dto.authMark && dto.authMark !== permission.authMark) {
       await this.assertPermissionMarkAvailable(permission.menuId, dto.authMark, id)
@@ -161,7 +162,7 @@ export class MenusService {
   }
 
   async deletePermission(id: number) {
-    const permission = await this.prisma.permission.findUnique({ where: { id } })
+    const permission = await this.prisma.permission.findFirst({ where: { id } })
     if (!permission) throw new NotFoundException('权限不存在')
 
     await this.prisma.permission.delete({ where: { id } })
@@ -169,7 +170,7 @@ export class MenusService {
   }
 
   private async getMenuById(id: number) {
-    const menu = await this.prisma.menu.findUnique({
+    const menu = await this.prisma.menu.findFirst({
       where: { id },
       include: menuInclude()
     })
@@ -178,7 +179,7 @@ export class MenusService {
   }
 
   private async getPermissionById(id: number) {
-    const permission = await this.prisma.permission.findUnique({
+    const permission = await this.prisma.permission.findFirst({
       where: { id },
       include: { roles: { include: { role: true } } }
     })
@@ -189,7 +190,7 @@ export class MenusService {
       menuId: permission.menuId,
       title: permission.title,
       authMark: permission.authMark,
-      roles: permission.roles.map(({ role }: any) => role.code)
+      roles: permission.roles.map(({ role }: { role: Prisma.Role }) => role.code)
     }
   }
 
@@ -203,7 +204,7 @@ export class MenusService {
       ...(roles.length
         ? [
             this.prisma.roleMenu.createMany({
-              data: roles.map((role: any) => ({ menuId, roleId: role.id })),
+              data: roles.map((role: { id: number; code: string }) => ({ menuId, roleId: role.id })),
               skipDuplicates: true
             })
           ]
@@ -221,7 +222,7 @@ export class MenusService {
       ...(roles.length
         ? [
             this.prisma.rolePermission.createMany({
-              data: roles.map((role: any) => ({ permissionId, roleId: role.id })),
+              data: roles.map((role: { id: number; code: string }) => ({ permissionId, roleId: role.id })),
               skipDuplicates: true
             })
           ]
@@ -235,7 +236,7 @@ export class MenusService {
       where: { code: { in: uniqueRoleCodes } },
       select: { id: true, code: true }
     })
-    const roleCodeSet = new Set(roles.map((role: any) => role.code))
+    const roleCodeSet = new Set(roles.map((role: { id: number; code: string }) => role.code))
     const missingRoleCodes = uniqueRoleCodes.filter((roleCode) => !roleCodeSet.has(roleCode))
 
     if (missingRoleCodes.length > 0) {
@@ -267,16 +268,11 @@ export class MenusService {
     if (!parentId) return
     if (parentId === currentId) throw new ConflictException('不能选择自己作为上级菜单')
 
-    const parent = await this.prisma.menu.findUnique({ where: { id: parentId } })
+    const parent = await this.prisma.menu.findFirst({ where: { id: parentId } })
     if (!parent) throw new NotFoundException('上级菜单不存在')
   }
 }
 
-function getRequiredTenantId() {
-  const tenantId = getCurrentTenantId()
-  if (!tenantId) throw new BadRequestException('请求头 X-Tenant-ID 不能为空')
-  return tenantId
-}
 
 function menuInclude(roleCodes?: string[]) {
   return {
@@ -329,12 +325,12 @@ function mapMenu(menu: MenuWithRelations): AppRouteRecord {
       isHideTab: menu.hiddenTab,
       link: menu.link,
       isIframe: menu.iframe,
-      roles: menu.roles.map(({ role }: any) => role.code),
+      roles: menu.roles.map(({ role }) => role.code),
       authList: menu.permissions.map((permission) => ({
         id: permission.id,
         title: permission.title,
         authMark: permission.authMark,
-        roles: permission.roles.map(({ role }: any) => role.code)
+        roles: permission.roles.map(({ role }) => role.code)
       }))
     }
   }

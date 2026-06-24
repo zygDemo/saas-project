@@ -62,25 +62,25 @@ export class DbOpsService {
     try {
       this.logger.log('[1/3] 执行 migrate deploy...')
       results.migrate = this.runSync('npx prisma migrate deploy --schema prisma/schema.prisma')
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.running = false
-      throw new InternalServerErrorException('migrate 失败: ' + e.message)
+      throw new InternalServerErrorException('migrate 失败: ' + (e instanceof Error ? e.message : String(e)))
     }
 
     try {
       this.logger.log('[2/3] 执行 seed...')
       results.seed = this.runSync('npx tsx prisma/seed.ts')
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.running = false
-      throw new InternalServerErrorException('seed 失败: ' + e.message)
+      throw new InternalServerErrorException('seed 失败: ' + (e instanceof Error ? e.message : String(e)))
     }
 
     try {
       this.logger.log('[3/3] 同步角色菜单...')
       results.syncRoles = this.runSync('npx tsx prisma/migrate-roles-menus.ts')
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.running = false
-      throw new InternalServerErrorException('角色菜单同步失败: ' + e.message)
+      throw new InternalServerErrorException('角色菜单同步失败: ' + (e instanceof Error ? e.message : String(e)))
     }
 
     this.running = false
@@ -99,7 +99,8 @@ export class DbOpsService {
       const output = this.runSync(command)
       this.logger.log(`${name} 完成`)
       return output
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const errorMsg = e instanceof Error ? e.message : String(e)
       this.logger.error(`${name} 失败: ${e.message}`)
       throw new InternalServerErrorException(`${name} 失败: ${e.message}`)
     } finally {
@@ -120,10 +121,11 @@ export class DbOpsService {
         stdio: ['pipe', 'pipe', 'pipe']
       })
       return String(output).trim()
-    } catch (e: any) {
-      const stderr = e.stderr ? e.stderr.toString().trim() : ''
-      const stdout = e.stdout ? e.stdout.toString().trim() : ''
-      const detail = stderr || stdout || e.message
+    } catch (e: unknown) {
+      const execError = e as { stderr?: Buffer; stdout?: Buffer; message?: string }
+      const stderr = execError.stderr ? e.stderr.toString().trim() : ''
+      const stdout = execError.stdout ? execError.stdout.toString().trim() : ''
+      const detail = stderr || stdout || (execError.message ?? String(e))
       this.logger.error(`命令执行失败 [${command}]: ${detail}`)
       throw new Error(detail)
     }

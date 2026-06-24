@@ -19,7 +19,15 @@ export interface CrawlProgress {
   failedChapters: number
   totalWordCount: number
   message: string
-  result?: any
+  result?: {
+    bookId: number
+    title: string
+    author: string
+    totalChapters: number
+    failedChapters: number
+    totalWordCount: number
+    cancelled?: boolean
+  }
 }
 
 @Injectable()
@@ -298,7 +306,7 @@ export class CrawlerService {
               })
             }
             return
-          } catch (error: any) {
+          } catch (error: unknown) {
             retryCount++
             this.logger.warn(
               `章节 "${chapter.title}" 下载失败 (第 ${retryCount}/${maxRetries} 次): ${error.message}`
@@ -333,8 +341,9 @@ export class CrawlerService {
 
     try {
       await Promise.all(tasks)
-    } catch (err: any) {
-      if (err.message === '__CANCELLED__' || err?.cause?.message === '__CANCELLED__') {
+    } catch (err: unknown) {
+      const errObj = err as { message?: string; cause?: { message?: string } }
+      if (errObj.message === '__CANCELLED__' || errObj.cause?.message === '__CANCELLED__') {
         // 任务被取消
         this.logger.log(`任务 ${progressKey} 已被取消`)
         this.cancelFlags.delete(progressKey)
@@ -572,7 +581,8 @@ export class CrawlerService {
         .replace(/\r\n/g, '\n')
         .replace(/\n\s*\n/g, '\n\n')
         .trim()
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const errorMsg = e instanceof Error ? e.message : String(e)
       this.logger.error(`获取章节内容失败 ${url}: ${e.message}`)
       throw e
     }

@@ -1,4 +1,4 @@
-﻿import { BadRequestException, Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateDeptDto, UpdateDeptDto, DeptQueryDto } from './dto/dept.dto'
@@ -29,7 +29,7 @@ export class DeptService extends BaseBusinessCrudService<CreateDeptDto, UpdateDe
     const managerIds = [
       ...new Set(
         page.records
-          .map((item: any) => item.managerId)
+          .map((item: { managerId?: number }) => item.managerId)
           .filter((id: unknown): id is number => typeof id === 'number')
       )
     ]
@@ -43,7 +43,7 @@ export class DeptService extends BaseBusinessCrudService<CreateDeptDto, UpdateDe
 
     return {
       ...page,
-      records: page.records.map((item: any) => {
+      records: page.records.map((item: { managerId?: number; [key: string]: unknown }) => {
         const manager = item.managerId ? managerMap.get(item.managerId) : undefined
         return {
           ...item,
@@ -67,7 +67,7 @@ export class DeptService extends BaseBusinessCrudService<CreateDeptDto, UpdateDe
 
   private async ensureManagerBelongsToOrg(managerId?: number, orgId?: number) {
     if (!managerId) return
-    const manager = await this.prisma.user.findUnique({
+    const manager = await this.prisma.user.findFirst({
       where: { id: managerId },
       include: { dept: true }
     })

@@ -1,4 +1,4 @@
-﻿import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { PrismaClient } from '@prisma/client'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 
@@ -20,11 +20,30 @@ const TENANT_MODELS = [
   'repaymentplan',
   'repaymentrecord',
   'flowconfig',
-  'fileasset'
+  'fileasset',
+  'operationlog'
 ]
 
 function isTenantModel(model: string | undefined): boolean {
   return !!model && TENANT_MODELS.includes(model.toLowerCase())
+}
+
+// 支持软删除的模型列表
+const SOFT_DELETE_MODELS = new Set([
+  'user', 'role', 'menu', 'organization', 'department',
+  'product', 'funder', 'lead', 'customer', 'application',
+  'flowconfig', 'fileasset', 'dicttype', 'bookcategory',
+  'customercontact', 'repaymentplan', 'signrecord', 'disbursement'
+])
+
+function isSoftDeleteModel(model: string | undefined): boolean {
+  return !!model && SOFT_DELETE_MODELS.has(model.toLowerCase())
+}
+
+function injectSoftDeleteFilter(args: Record<string, unknown>): Record<string, unknown> {
+  const where = args.where as Record<string, unknown> | undefined
+  if (where && 'deletedAt' in where) return args // 已有 deletedAt 条件，不覆盖
+  return { ...args, where: { ...where, deletedAt: null } }
 }
 
 // 只对可携带普通 where 条件的查询/批量操作自动注入 tenantId。
@@ -49,13 +68,19 @@ function hasTenantInWhere(where: Record<string, unknown> | undefined): boolean {
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any
-  private readonly _client: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly _client: any  // PrismaClient. return type
 
   constructor() {
     this._client = new PrismaClient().$extends({
       query: {
         $allModels: {
-          async $allOperations({ model, operation, args, query }: any) {
+          async $allOperations({ model, operation, args, query }: {
+            model: string | undefined
+            operation: string
+            args: Record<string, unknown>
+            query: (args: Record<string, unknown>) => Promise<unknown>
+          }) {
             const tenantId = getCurrentTenantId()
 
             // 非租户模型 或 无租户上下文 → 直通
@@ -71,6 +96,25 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
               }
             }
 
+            // 软删除：查询类操作自动过滤 deletedAt
+            if (isSoftDeleteModel(model) && ['findFirst', 'findFirstOrThrow', 'findMany', 'count', 'aggregate', 'groupBy'].includes(operation)) {
+              args = injectSoftDeleteFilter(args)
+            }
+
+            // 软删除：delete 转为 update 设置 deletedAt
+            if (isSoftDeleteModel(model) && operation === 'delete') {
+              return (this as any)[model!.toLowerCase()].update({
+                where: args.where,
+                data: { deletedAt: new Date() }
+              })
+            }
+            if (isSoftDeleteModel(model) && operation === 'deleteMany') {
+              return (this as any)[model!.toLowerCase()].updateMany({
+                where: args.where,
+                data: { deletedAt: new Date() }
+              })
+            }
+
             // create：给 data 注入 tenantId
             if (operation === 'create' && args?.data && typeof args.data === 'object' && !Array.isArray(args.data)) {
               args.data = { ...args.data, tenantId }
@@ -78,7 +122,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
             // createMany：给 data 数组每项注入 tenantId
             if (operation === 'createMany' && Array.isArray(args?.data)) {
-              args.data = args.data.map((item: any) => ({ ...item, tenantId }))
+              args.data = args.data.map((item: Record<string, unknown>) => ({ ...item, tenantId }))
             }
 
             // upsert：给 create 注入 tenantId（where 已由 WHERE_OPS 处理）
@@ -95,10 +139,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     // Proxy 让 PrismaService 表现得像 PrismaClient
     return new Proxy(this, {
       get(target, prop) {
-        if (prop in target) return (target as any)[prop]
+        if (prop in target) return (target as Record<string, unknown>)[prop as string]
         return target._client[prop]
       }
-    }) as any
+    }) as unknown as this  // Proxy returns different type
   }
 
   async onModuleInit() {

@@ -1,4 +1,4 @@
-﻿import {
+import {
   CallHandler,
   ExecutionContext,
   Injectable,
@@ -7,6 +7,7 @@
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { Observable, catchError, tap, throwError } from 'rxjs'
+import { Prisma } from '@prisma/client'
 import { PrismaService } from '../../modules/prisma/prisma.service'
 
 const MAX_PAYLOAD_LENGTH = 2000
@@ -99,7 +100,7 @@ export class RequestLoggerInterceptor implements NestInterceptor {
           responseData: this.limitJsonPayload(responseData) as object,
           ip: request.ip || request.socket.remoteAddress,
           userAgent: request.headers['user-agent']
-        } as any
+        } as Prisma.OperationLogCreateInput
       })
       .catch((error) => this.logger.warn(`Audit log write failed: ${error?.message || error}`))
   }
@@ -138,12 +139,13 @@ export class RequestLoggerInterceptor implements NestInterceptor {
     }
 
     // Convert Prisma Decimal objects to plain numbers
+    const valueAsRecord = value as Record<string, unknown>
     if (
-      typeof (value as any).toNumber === 'function' &&
-      typeof (value as any).toFixed === 'function' &&
-      (value as any).s !== undefined
+      typeof valueAsRecord.toNumber === 'function' &&
+      typeof valueAsRecord.toFixed === 'function' &&
+      valueAsRecord.s !== undefined
     ) {
-      return Number((value as any).toString())
+      return Number(String(valueAsRecord.toString()))
     }
 
     return Object.entries(value as Record<string, unknown>).reduce<Record<string, unknown>>(

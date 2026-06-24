@@ -1,4 +1,4 @@
-﻿import {
+import {
   BadRequestException,
   Body,
   Controller,
@@ -350,8 +350,12 @@ export class MobileSalesLeadController {
 
   @Post('add')
   @ApiOperation({ summary: '新增销售线索' })
-  add(@Body() dto: MobileSalesLeadDto, @CurrentUser() user: RequestUser) {
-    return this.service.addSalesLead(dto, user)
+  add(
+    @Body() dto: MobileSalesLeadDto,
+    @CurrentUser() user: RequestUser,
+    @Headers('x-org-id') orgId?: string
+  ) {
+    return this.service.addSalesLead(dto, user, orgId ? Number(orgId) : undefined)
   }
 }
 

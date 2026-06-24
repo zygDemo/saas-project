@@ -174,6 +174,7 @@ model User {
   @@unique([tenantId, email])
   @@index([tenantId])
   @@index([deptId])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model Role {
@@ -193,6 +194,7 @@ model Role {
 
   @@unique([tenantId, code])
   @@index([tenantId])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model UserRole {
@@ -229,6 +231,7 @@ model Menu {
 
   @@unique([tenantId, name])
   @@index([tenantId])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model RoleMenu {
@@ -238,6 +241,7 @@ model RoleMenu {
   menu   Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
 
   @@id([roleId, menuId])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model Permission {
@@ -254,6 +258,7 @@ model Permission {
 
   @@unique([tenantId, menuId, authMark])
   @@index([tenantId])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model RolePermission {
@@ -263,6 +268,7 @@ model RolePermission {
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model DictType {
@@ -280,6 +286,7 @@ model DictType {
   @@unique([tenantId, code])
   @@index([tenantId])
   @@index([status])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model DictData {
@@ -300,6 +307,7 @@ model DictData {
   @@index([tenantId])
   @@index([typeId])
   @@index([status])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model FileAsset {
@@ -331,6 +339,7 @@ model FileAsset {
   @@index([categoryCode])
   @@index([status])
   @@index([uploadedBy])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 // ==================== 机构/部门模型 ====================
@@ -362,6 +371,7 @@ model Organization {
 
   @@index([tenantId])
   @@index([status])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model Department {
@@ -423,6 +433,7 @@ model Product {
   @@index([tenantId])
   @@index([orgId])
   @@index([status])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model Funder {
@@ -450,6 +461,7 @@ model Funder {
   @@unique([orgId, code])
   @@index([tenantId])
   @@index([orgId])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model FlowConfig {
@@ -481,6 +493,7 @@ model FlowConfig {
   @@index([businessType])
   @@index([nodeCode])
   @@index([status])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 // ==================== 线索模型 ====================
@@ -512,8 +525,10 @@ model Lead {
   @@index([tenantId])
   @@index([orgId])
   @@index([phone])
+  @@index([tenantId, phone])
   @@index([status])
   @@index([assigneeId])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model LeadFollowUp {
@@ -569,8 +584,10 @@ model Customer {
 
   @@unique([orgId, phone])
   @@index([tenantId])
+  @@index([tenantId, phone])
   @@index([orgId])
   @@index([idCard])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model CustomerContact {
@@ -586,6 +603,7 @@ model CustomerContact {
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model Vehicle {
@@ -683,6 +701,8 @@ model Application {
   @@index([currentStatus])
   @@index([creatorId])
   @@index([applicationNo])
+  @@index([tenantId, applicationNo])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model ApplicationFile {
@@ -699,6 +719,7 @@ model ApplicationFile {
 
   @@index([applicationId])
   @@index([fileType])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 // ==================== 审批模型 ====================
@@ -805,6 +826,7 @@ model RepaymentPlan {
   @@index([applicationId])
   @@index([status])
   @@index([dueDate])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model RepaymentRecord {
@@ -870,6 +892,7 @@ model BookCategory {
 
   @@index([tenantId])
   @@index([parentId])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model Book {
@@ -951,6 +974,7 @@ model UserBookshelf {
   @@unique([userId, bookId])
   @@index([tenantId])
   @@index([userId])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model ReadingProgress {

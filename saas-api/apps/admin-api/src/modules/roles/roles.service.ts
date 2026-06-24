@@ -1,4 +1,4 @@
-﻿import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { PaginatedResponse } from '../../common/types/pagination'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
@@ -57,7 +57,7 @@ export class RolesService {
   }
 
   async updateRole(id: number, dto: UpdateRoleDto) {
-    const role = await this.prisma.role.findUnique({ where: { id } })
+    const role = await this.prisma.role.findFirst({ where: { id } })
     if (!role) throw new NotFoundException('角色不存在')
 
     if (dto.roleCode && dto.roleCode !== role.code) {
@@ -78,15 +78,15 @@ export class RolesService {
   }
 
   async deleteRole(id: number) {
-    const role = await this.prisma.role.findUnique({ where: { id } })
+    const role = await this.prisma.role.findFirst({ where: { id } })
     if (!role) throw new NotFoundException('角色不存在')
 
-    await this.prisma.role.delete({ where: { id } })
+    await this.prisma.role.update({ where: { id }, data: { deletedAt: new Date() } })
     return { id }
   }
 
   async getRolePermission(id: number) {
-    const role = await this.prisma.role.findUnique({
+    const role = await this.prisma.role.findFirst({
       where: { id },
       include: {
         menus: { select: { menuId: true } },
@@ -97,13 +97,13 @@ export class RolesService {
 
     return {
       roleId: role.id,
-      menuIds: role.menus.map((item: any) => item.menuId),
-      permissionIds: role.permissions.map((item: any) => item.permissionId)
+      menuIds: role.menus.map((item: { menuId: number }) => item.menuId),
+      permissionIds: role.permissions.map((item: { permissionId: number }) => item.permissionId)
     }
   }
 
   async saveRolePermission(id: number, dto: SaveRolePermissionDto) {
-    const role = await this.prisma.role.findUnique({ where: { id } })
+    const role = await this.prisma.role.findFirst({ where: { id } })
     if (!role) throw new NotFoundException('角色不存在')
 
     const menuIds = [...new Set(dto.menuIds ?? [])]
@@ -152,7 +152,7 @@ export class RolesService {
       where: { id: { in: menuIds } },
       select: { id: true }
     })
-    const menuIdSet = new Set(menus.map((menu: any) => menu.id))
+    const menuIdSet = new Set(menus.map((menu: { id: number }) => menu.id))
     const missingMenuIds = menuIds.filter((menuId) => !menuIdSet.has(menuId))
 
     if (missingMenuIds.length > 0) {
@@ -167,7 +167,7 @@ export class RolesService {
       where: { id: { in: permissionIds } },
       select: { id: true }
     })
-    const permissionIdSet = new Set(permissions.map((permission: any) => permission.id))
+    const permissionIdSet = new Set(permissions.map((permission: { id: number }) => permission.id))
     const missingPermissionIds = permissionIds.filter((permissionId) => !permissionIdSet.has(permissionId))
 
     if (missingPermissionIds.length > 0) {

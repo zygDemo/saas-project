@@ -1,6 +1,11 @@
-import { Controller, Get, Post, HttpCode } from '@nestjs/common'
+import { Controller, Get, Post, HttpCode, UseGuards } from '@nestjs/common'
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
+import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { DbOpsService } from './db-ops.service'
 
+@ApiTags('数据库运维')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('db-ops')
 export class DbOpsController {
   constructor(private readonly dbOpsService: DbOpsService) {}

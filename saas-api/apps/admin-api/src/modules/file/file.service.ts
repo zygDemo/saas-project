@@ -1,4 +1,5 @@
-﻿import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { hasValue } from '../../common/utils/helpers'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Prisma } from '@prisma/client'
 import { randomUUID } from 'crypto'
@@ -43,9 +44,6 @@ export interface UploadedImageFile {
   buffer: Buffer
 }
 
-function hasValue(value: unknown) {
-  return value !== undefined && value !== null && value !== ''
-}
 
 @Injectable()
 export class FileService {
@@ -157,7 +155,7 @@ export class FileService {
     const fileAsset = this.requireFileAssetModel()
     await this.getDetail(id)
     try {
-      await fileAsset.delete({ where: { id } })
+      await fileAsset.update({ where: { id }, data: { deletedAt: new Date() } })
     } catch (error) {
       this.throwIfMissingFileAssetStorage(error)
       throw error

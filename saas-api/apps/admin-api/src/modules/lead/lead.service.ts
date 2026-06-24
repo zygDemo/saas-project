@@ -1,4 +1,4 @@
-﻿import { Injectable } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { LeadStatus } from '@prisma/client'
 import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { PrismaService } from '../prisma/prisma.service'
@@ -39,7 +39,7 @@ export class LeadService extends BaseBusinessCrudService<CreateLeadDto, UpdateLe
   async addFollowUp(id: number, dto: CreateLeadFollowUpDto) {
     await this.ensureExists(id)
     await this.ensureRelatedExists(this.prisma.user, dto.createdBy, '跟进人不存在')
-    return this.prisma.$transaction(async (tx: any) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.leadFollowUp.create({
         data: {
           leadId: id,

@@ -91,13 +91,19 @@ export class OrganizationService extends BaseBusinessCrudService<
 
   private async ensureUniqueCode(code?: string, excludeId?: number) {
     if (!code) return
-    const item = await this.prisma.organization.findUnique({ where: { code } })
+    const tenantId = getCurrentTenantId()
+    const where: Record<string, unknown> = { code }
+    if (tenantId) where.tenantId = tenantId
+    const item = await this.prisma.organization.findFirst({ where })
     if (item && item.id !== excludeId) throw new BadRequestException('机构编码已存在')
   }
 
   private async ensureUniqueCreditCode(creditCode?: string, excludeId?: number) {
     if (!creditCode) return
-    const item = await this.prisma.organization.findUnique({ where: { creditCode } })
+    const tenantId = getCurrentTenantId()
+    const where: Record<string, unknown> = { creditCode }
+    if (tenantId) where.tenantId = tenantId
+    const item = await this.prisma.organization.findFirst({ where })
     if (item && item.id !== excludeId) throw new BadRequestException('统一社会信用代码已存在')
   }
 }

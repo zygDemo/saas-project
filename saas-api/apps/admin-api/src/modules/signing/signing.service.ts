@@ -25,7 +25,7 @@ export class SigningService extends BaseBusinessCrudService<CreateSigningDto, Up
    */
   async authorizeSign(id: number) {
     // 查询签署记录
-    const signRecord = await this.prisma.signRecord.findUnique({
+    const signRecord = await this.prisma.signRecord.findFirst({
       where: { id },
       include: { application: true }
     })

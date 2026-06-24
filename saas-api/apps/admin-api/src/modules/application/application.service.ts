@@ -1,4 +1,4 @@
-﻿import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import {
   ApplicationStatus,
   ApprovalAction,
@@ -318,7 +318,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     ])
 
     return toPaginatedResponse(
-      records.map((record: any) => this.mapFlowApplication(record)),
+      records.map((record: Record<string, unknown>) => this.mapFlowApplication(record)),
       total,
       pagination
     )
@@ -370,7 +370,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     ])
 
     return toPaginatedResponse(
-      records.map((record: any) => this.mapOrderListItem(record)),
+      records.map((record: Record<string, unknown>) => this.mapOrderListItem(record)),
       total,
       pagination
     )
@@ -593,7 +593,7 @@ export class ApplicationService extends BaseBusinessCrudService<
       [ApplicationStatus.FINAL_REVIEW_PASSED, ApplicationStatus.FUNDER_REVIEW_PASSED],
       '当前状态不允许发起签约'
     )
-    return this.prisma.$transaction(async (tx: any) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.signRecord.upsert({
         where: { applicationId: id },
         update: { status: SignStatus.SENT, contractUrl: dto.contractUrl, expiredAt: dto.expiredAt },
@@ -620,7 +620,7 @@ export class ApplicationService extends BaseBusinessCrudService<
       [ApplicationStatus.PENDING_SIGN],
       '当前状态不允许完成签约'
     )
-    return this.prisma.$transaction(async (tx: any) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.signRecord.upsert({
         where: { applicationId: id },
         update: {
@@ -744,7 +744,7 @@ export class ApplicationService extends BaseBusinessCrudService<
       [ApplicationStatus.LOAN_REQUEST_APPROVED, ApplicationStatus.PENDING_DISBURSEMENT],
       '当前状态不允许提交资方放款申请'
     )
-    return this.prisma.$transaction(async (tx: any) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.disbursement.upsert({
         where: { applicationId: id },
         update: { status: DisbursementStatus.PENDING_APPROVAL, remark: dto.remark },
@@ -766,8 +766,8 @@ export class ApplicationService extends BaseBusinessCrudService<
       [ApplicationStatus.PENDING_DISBURSEMENT],
       '当前状态不允许放款确认'
     )
-    return this.prisma.$transaction(async (tx: any) => {
-      const disbursement = await tx.disbursement.findUnique({ where: { applicationId: id } })
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const disbursement = await tx.disbursement.findFirst({ where: { applicationId: id } })
       if (disbursement?.status !== DisbursementStatus.PENDING_APPROVAL) {
         throw new BadRequestException('请先提交出账申请')
       }
@@ -809,7 +809,7 @@ export class ApplicationService extends BaseBusinessCrudService<
 
   async registerRepayment(planId: number, dto: RegisterRepaymentDto) {
     await this.ensureRelatedExists(this.prisma.user, dto.createdBy, '登记人不存在')
-    return this.prisma.$transaction(async (tx: any) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const plan = await tx.repaymentPlan.findFirst({
         where: this.addTenantId({ id: planId })
       })
@@ -858,7 +858,7 @@ export class ApplicationService extends BaseBusinessCrudService<
       [ApplicationStatus.DISBURSED],
       '当前状态不允许结清'
     )
-    return this.prisma.$transaction(async (tx: any) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const unpaid = await tx.repaymentPlan.count({
         where: {
           applicationId: id,
@@ -969,7 +969,7 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   private async assertSameOrg(
-    model: any,
+    model: Record<string, unknown>,
     id: number | undefined,
     orgId: number,
     notFoundMessage: string,
@@ -980,7 +980,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     if (item.orgId !== orgId) throw new BadRequestException(mismatchMessage)
   }
 
-  private async getScopedRelated(model: any, id: number | undefined, message: string) {
+  private async getScopedRelated(model: Record<string, unknown>, id: number | undefined, message: string) {
     if (id === undefined || id === null) throw new BadRequestException(message)
     const tenantId = getCurrentTenantId()
     const where = tenantId ? { id, tenantId } : { id }
@@ -1042,7 +1042,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     preLoadedApplication?: unknown
   ) {
     if (!preLoadedApplication) await this.findAndAssertStatus(id, allowedStatuses, statusMessage)
-    return this.prisma.$transaction(async (tx: any) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.approvalRecord.create({
         data: {
           applicationId: id,
@@ -1187,7 +1187,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     return where
   }
 
-  private mapOrderListItem(application: any) {
+  private mapOrderListItem(application: Record<string, unknown>) {
     const customer = application.customer
     const vehicle = customer?.vehicles?.[0] || customer?.vehicles?.at?.(0)
     const currentNode = Number(application.currentNode)
@@ -1233,7 +1233,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     }
   }
 
-  private mapApplicationDetail(application: any) {
+  private mapApplicationDetail(application: Record<string, unknown>) {
     const customer = application.customer
     const vehicles = Array.isArray(customer?.vehicles) ? customer.vehicles : []
     const vehicle = vehicles[0] || vehicles.at?.(0)
@@ -1295,7 +1295,7 @@ export class ApplicationService extends BaseBusinessCrudService<
       ),
       customer: customer ? this.mapDetailCustomer(customer) : undefined,
       vehicle: vehicle ? this.mapDetailVehicle(vehicle) : undefined,
-      vehicles: vehicles.map((item: any) => this.mapDetailVehicle(item)),
+      vehicles: vehicles.map((item: Record<string, unknown>) => this.mapDetailVehicle(item)),
       product: application.product ? this.mapDetailProduct(application.product) : undefined,
       funder: application.funder ? this.mapDetailFunder(application.funder) : undefined,
       org: application.org ? this.mapDetailOrg(application.org) : undefined,
@@ -1312,7 +1312,7 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   private mapDetailOrder(
-    application: any,
+    application: Record<string, unknown>,
     currentNode: number,
     currentStatus: number,
     currentNodeName: string,
@@ -1348,7 +1348,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailCustomer(customer: any) {
+  private mapDetailCustomer(customer: Record<string, unknown>) {
     return omitEmptyValues({
       id: customer.id,
       name: customer.name,
@@ -1375,7 +1375,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailVehicle(vehicle: any) {
+  private mapDetailVehicle(vehicle: Record<string, unknown>) {
     return omitEmptyValues({
       id: vehicle.id,
       plateNumber: vehicle.plateNumber,
@@ -1400,7 +1400,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailProduct(product: any) {
+  private mapDetailProduct(product: Record<string, unknown>) {
     return omitEmptyValues({
       id: product.id,
       name: product.name,
@@ -1425,7 +1425,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailFunder(funder: any) {
+  private mapDetailFunder(funder: Record<string, unknown>) {
     return omitEmptyValues({
       id: funder.id,
       name: funder.name,
@@ -1440,7 +1440,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailOrg(org: any) {
+  private mapDetailOrg(org: Record<string, unknown>) {
     return omitEmptyValues({
       id: org.id,
       name: org.name,
@@ -1456,7 +1456,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailCreator(creator: any) {
+  private mapDetailCreator(creator: Record<string, unknown>) {
     return omitEmptyValues({
       id: creator.id,
       userName: creator.userName,
@@ -1465,7 +1465,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailFiles(files: any[] = []) {
+  private mapDetailFiles(files: Record<string, unknown>[] = []) {
     const result: Record<string, unknown>[] = []
     const seen = new Set<string>()
 
@@ -1490,7 +1490,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     return result
   }
 
-  private mapApprovals(approvals: any[] = []) {
+  private mapApprovals(approvals: Record<string, unknown>[] = []) {
     return approvals.map((approval) =>
       omitEmptyValues({
         id: approval.id,
@@ -1507,7 +1507,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     )
   }
 
-  private mapSignRecord(record: any) {
+  private mapSignRecord(record: Record<string, unknown>) {
     return omitEmptyValues({
       id: record.id,
       status: record.status,
@@ -1519,7 +1519,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDisbursement(disbursement: any) {
+  private mapDisbursement(disbursement: Record<string, unknown>) {
     return omitEmptyValues({
       id: disbursement.id,
       status: disbursement.status,
@@ -1538,7 +1538,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapRepayments(repayments: any[] = []) {
+  private mapRepayments(repayments: Record<string, unknown>[] = []) {
     return repayments.map((repayment) =>
       omitEmptyValues({
         id: repayment.id,
@@ -1570,7 +1570,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     }
   }
 
-  private mapFlowApplication(application: any) {
+  private mapFlowApplication(application: Record<string, unknown>) {
     return {
       ...application,
       creditOrderId: application.applicationNo,
@@ -1586,11 +1586,11 @@ export class ApplicationService extends BaseBusinessCrudService<
     }
   }
 
-  private resolveFlowNodeName(application: any) {
+  private resolveFlowNodeName(application: Record<string, unknown>) {
     const flowConfigs = application.org?.flowConfigs
     const config = Array.isArray(flowConfigs)
       ? flowConfigs.find(
-          (item: any) =>
+          (item: Record<string, unknown>) =>
             item.businessType === application.businessType &&
             String(item.nodeCode) === String(application.currentNode)
         )
@@ -1602,12 +1602,12 @@ export class ApplicationService extends BaseBusinessCrudService<
     )
   }
 
-  private resolveFlowPhaseCode(application: any) {
+  private resolveFlowPhaseCode(application: Record<string, unknown>) {
     const currentNode = Number(application.currentNode)
     const flowConfigs = application.org?.flowConfigs
     const config = Array.isArray(flowConfigs)
       ? flowConfigs.find(
-          (item: any) =>
+          (item: Record<string, unknown>) =>
             item.businessType === application.businessType &&
             String(item.nodeCode) === String(application.currentNode)
         )
@@ -1618,11 +1618,11 @@ export class ApplicationService extends BaseBusinessCrudService<
     return Number.isFinite(phaseCode) ? phaseCode : currentNode
   }
 
-  private resolveFlowPhaseName(application: any, phaseCode: number) {
+  private resolveFlowPhaseName(application: Record<string, unknown>, phaseCode: number) {
     const flowConfigs = application.org?.flowConfigs
     const config = Array.isArray(flowConfigs)
       ? flowConfigs.find(
-          (item: any) =>
+          (item: Record<string, unknown>) =>
             item.businessType === application.businessType &&
             String(item.nodeCode) === String(application.currentNode)
         )
@@ -1637,8 +1637,8 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   private async createRepaymentPlansIfNeeded(
-    tx: any,
-    application: any,
+    tx: Prisma.TransactionClient,
+    application: Record<string, unknown>,
     dto: ConfirmDisbursementDto
   ) {
     const existed = await tx.repaymentPlan.count({ where: { applicationId: application.id } })
@@ -1648,7 +1648,8 @@ export class ApplicationService extends BaseBusinessCrudService<
     const amount = Number(dto.disburseAmount)
     const annualRate = Number(application.approvedRate ?? application.rate)
     const monthlyRate = annualRate / 12
-    const monthlyPrincipal = amount / term
+    // 统一舍入：先将月供舍入到分，后续计算全部基于舍入后的值，避免浮点累积误差
+    const roundedMonthlyPrincipal = Math.round((amount / term) * 100) / 100
     const baseDueDate = dto.firstDueDate
       ? new Date(dto.firstDueDate)
       : new Date(dto.disburseAt || new Date())
@@ -1657,19 +1658,21 @@ export class ApplicationService extends BaseBusinessCrudService<
     const plans = Array.from({ length: term }, (_, index) => {
       const dueDate = new Date(baseDueDate)
       dueDate.setMonth(baseDueDate.getMonth() + index)
+      // 最后一期本金 = 总额 - 前N-1期已舍入本金之和（用整数乘法避免浮点误差）
       const principal =
         index === term - 1
-          ? amount - Number(monthlyPrincipal.toFixed(2)) * (term - 1)
-          : Number(monthlyPrincipal.toFixed(2))
-      const remainingPrincipal = amount - monthlyPrincipal * index
-      const interest = Number((remainingPrincipal * monthlyRate).toFixed(2))
+          ? Math.round((amount - roundedMonthlyPrincipal * (term - 1)) * 100) / 100
+          : roundedMonthlyPrincipal
+      // 剩余本金也基于舍入后的月供计算
+      const remainingPrincipal = Math.round((amount - roundedMonthlyPrincipal * index) * 100) / 100
+      const interest = Math.round(remainingPrincipal * monthlyRate * 100) / 100
       return {
         applicationId: application.id,
         period: index + 1,
         dueDate,
         principal,
         interest,
-        totalAmount: Number((principal + interest).toFixed(2)),
+        totalAmount: Math.round((principal + interest) * 100) / 100,
         status: RepaymentStatus.NOT_DUE
       }
     })

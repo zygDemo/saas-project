@@ -1,10 +1,13 @@
-﻿import { BadRequestException, NotFoundException } from '@nestjs/common'
+import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { getPagination, toPaginatedResponse } from '../common/utils/pagination'
 import { getCurrentTenantId } from '../common/tenant/tenant-context'
+import { hasValue } from '../common/utils/helpers'
 
-type ModelDelegate = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type ModelDelegate = any  // TODO: proper generic delegate interface
 
-type PrismaWithTransaction = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type PrismaWithTransaction = any  // TODO: PrismaClient type
 
 interface CrudOptions<TCreate, TUpdate, TQuery> {
   model: ModelDelegate
@@ -21,9 +24,6 @@ interface CrudOptions<TCreate, TUpdate, TQuery> {
   skipTenantFilter?: boolean
 }
 
-function hasValue(value: unknown) {
-  return value !== undefined && value !== null && value !== ''
-}
 
 export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate extends object, TQuery extends object> {
   protected constructor(private readonly options: CrudOptions<TCreate, TUpdate, TQuery>) {}
@@ -71,17 +71,18 @@ export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate ex
     await this.ensureExists(id)
     await this.options.validateUpdate?.(id, dto)
     const data = (await this.options.beforeUpdate?.(dto)) ?? dto
-    return this.options.model.update({ where: { id }, data })
+    const where = this.addTenantFilter({ id })
+    return this.options.model.update({ where, data })
   }
 
   async remove(id: number) {
     await this.ensureExists(id)
-    await this.options.model.delete({ where: { id } })
+    await this.options.model.update({ where: { id }, data: { deletedAt: new Date() } })
     return { id }
   }
 
   protected async ensureExists(id: number) {
-    const where = this.addTenantFilter({ id })
+    const where = this.addTenantFilter({ id, deletedAt: null })
     const item = await this.options.model.findFirst({ where })
     if (!item) throw new NotFoundException('数据不存在')
     return item
@@ -89,7 +90,7 @@ export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate ex
 
   protected async ensureRelatedExists(model: ModelDelegate, id: number | undefined, message: string) {
     if (!hasValue(id)) return
-    const item = await model.findUnique({ where: { id } })
+    const item = await model.findFirst({ where: { id } })
     if (!item) throw new BadRequestException(message)
     return item
   }
@@ -119,8 +120,8 @@ export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate ex
         }
       }
     }
-    // 自动添加租户过滤
-    return this.addTenantFilter(where)
+    // 自动添加租户过滤 + 排除已删除
+    return this.addTenantFilter({ ...where, deletedAt: null })
   }
 }
 

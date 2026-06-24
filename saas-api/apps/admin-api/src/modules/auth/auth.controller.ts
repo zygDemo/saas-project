@@ -9,6 +9,7 @@ import { LoginDto } from './dto/login.dto'
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post('login')
   @HttpCode(200)
   @ApiTenantHeader()

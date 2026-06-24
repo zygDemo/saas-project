@@ -492,47 +492,48 @@ export class FlowConfigService extends BaseBusinessCrudService<
       }
     })
 
-    const rows: unknown[] = []
-    for (const node of DEFAULT_FLOW_NODES) {
-      const created = await this.prisma.flowConfig.upsert({
-        where: {
-          orgId_businessType_nodeCode: {
+    // 批量 upsert：所有节点在同一个事务中并行执行
+    const results = await this.prisma.$transaction(
+      DEFAULT_FLOW_NODES.map((node) =>
+        this.prisma.flowConfig.upsert({
+          where: {
+            orgId_businessType_nodeCode: {
+              orgId: dto.orgId,
+              businessType,
+              nodeCode: String(node.code)
+            }
+          },
+          update: {
+            name: `${node.phaseName}-${node.name}`,
+            nodeName: node.name,
+            approveLevel: node.approveLevel || 1,
+            requireMaterials: Boolean(node.requireMaterials),
+            requireApproval: node.requireApproval ?? true,
+            autoPass: Boolean(node.autoPass),
+            ruleConfig: this.buildRuleConfig(node),
+            status: 'ACTIVE'
+          },
+          create: {
+            tenantId,
             orgId: dto.orgId,
+            name: `${node.phaseName}-${node.name}`,
             businessType,
-            nodeCode: String(node.code)
+            nodeCode: String(node.code),
+            nodeName: node.name,
+            approveLevel: node.approveLevel || 1,
+            amountLimit: node.amountLimit,
+            requireMaterials: Boolean(node.requireMaterials),
+            requireApproval: node.requireApproval ?? true,
+            autoPass: Boolean(node.autoPass),
+            ruleConfig: this.buildRuleConfig(node),
+            status: 'ACTIVE'
           }
-        },
-        update: {
-          name: `${node.phaseName}-${node.name}`,
-          nodeName: node.name,
-          approveLevel: node.approveLevel || 1,
-          requireMaterials: Boolean(node.requireMaterials),
-          requireApproval: node.requireApproval ?? true,
-          autoPass: Boolean(node.autoPass),
-          ruleConfig: this.buildRuleConfig(node),
-          status: 'ACTIVE'
-        },
-        create: {
-          tenantId,
-          orgId: dto.orgId,
-          name: `${node.phaseName}-${node.name}`,
-          businessType,
-          nodeCode: String(node.code),
-          nodeName: node.name,
-          approveLevel: node.approveLevel || 1,
-          amountLimit: node.amountLimit,
-          requireMaterials: Boolean(node.requireMaterials),
-          requireApproval: node.requireApproval ?? true,
-          autoPass: Boolean(node.autoPass),
-          ruleConfig: this.buildRuleConfig(node),
-          status: 'ACTIVE'
-        }
-      })
-      rows.push(created)
-    }
+        })
+      )
+    )
     return {
-      count: rows.length,
-      records: rows
+      count: results.length,
+      records: results
     }
   }
 

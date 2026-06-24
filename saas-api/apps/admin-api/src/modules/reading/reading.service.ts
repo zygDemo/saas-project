@@ -38,7 +38,7 @@ export class ReadingService {
   // ==================== 书籍分类 ====================
 
   async getCategories(tenantId: number, query?: CategoryQueryDto) {
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
 
     if (query?.keyword) {
       where.name = { contains: query.keyword, mode: 'insensitive' };
@@ -72,9 +72,9 @@ export class ReadingService {
     return category;
   }
 
-  private buildCategoryTree(categories: any[]) {
+  private buildCategoryTree(categories: Record<string, unknown>[]) {
     const map = new Map<number, any>();
-    const roots: any[] = [];
+    const roots: Record<string, unknown>[] = [];
 
     for (const cat of categories) {
       map.set(cat.id, { ...cat, children: [] });
@@ -137,7 +137,7 @@ export class ReadingService {
     if (bookCount > 0) {
       throw new BadRequestException('该分类下有书籍，无法删除');
     }
-    return this.prisma.bookCategory.delete({ where: { id } });
+    return this.prisma.bookCategory.update({ where: { id }, data: { deletedAt: new Date() } });
   }
 
   async batchUpdateCategoryStatus(tenantId: number, dto: BatchCategoryStatusDto) {
@@ -158,7 +158,7 @@ export class ReadingService {
 
   async getBooks(tenantId: number, query: BookQueryDto) {
     const { keyword, categoryId, status, isHot, isRecommend, isFinished, page = 1, pageSize = 20 } = query;
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
 
     if (keyword) {
       where.OR = [
@@ -505,17 +505,19 @@ export class ReadingService {
       },
     });
 
-    // 更新书籍评分
-    const reviews = await this.prisma.bookReview.findMany({
+    // 更新书籍评分（使用 aggregate 避免加载全部记录到内存）
+    const agg = await this.prisma.bookReview.aggregate({
       where: { bookId: dto.bookId, status: 1 },
+      _avg: { rating: true },
+      _count: true,
     });
-    const avgRating = reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length;
+    const avgRating = agg._avg.rating ?? 0;
 
     await this.prisma.book.update({
       where: { id: dto.bookId },
       data: {
         rating: Math.round(avgRating * 10) / 10,
-        ratingCount: reviews.length,
+        ratingCount: agg._count,
       },
     });
 

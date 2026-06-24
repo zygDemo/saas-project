@@ -1,4 +1,4 @@
-﻿import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcryptjs'
@@ -30,7 +30,7 @@ export class AuthService {
     const matched = await bcrypt.compare(dto.password, user.passwordHash)
     if (!matched) throw new UnauthorizedException('用户名或密码错误')
 
-    const roles = user.roles.map(({ role }: any) => role.code)
+    const roles = user.roles.map(({ role }: { role: { code: string } }) => role.code)
     const payload = { sub: user.id, userName: user.userName, tenantId, roles }
 
     const token = `Bearer ${await this.jwt.signAsync(payload)}`

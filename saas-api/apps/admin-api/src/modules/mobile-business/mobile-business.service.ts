@@ -1,5 +1,8 @@
+import { hasValue } from '../../common/utils/helpers'
+import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 ﻿import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { Prisma } from '@prisma/client'
 import { ApplicationStatus, Gender, Prisma } from '@prisma/client'
 import { RequestUser } from '../../common/types/request-user'
 import {
@@ -103,9 +106,6 @@ export interface MobileUploadResult {
   uploadedBy: number
 }
 
-function hasValue(value: unknown) {
-  return value !== undefined && value !== null && value !== ''
-}
 
 @Injectable()
 export class MobileBusinessService {
@@ -165,7 +165,7 @@ export class MobileBusinessService {
       where,
       orderBy: { id: 'desc' }
     })
-    return (files as any[]).map((file) => this.mapFileAsset(file))
+    return (files as Record<string, unknown>[]).map((file) => this.mapFileAsset(file))
   }
 
   async getFileListByType(query: Record<string, string>, user: RequestUser) {
@@ -702,7 +702,7 @@ export class MobileBusinessService {
   }
 
   private async ensureCustomerDraftApplication(
-    customer: any,
+    customer: Record<string, unknown>,
     user: RequestUser,
     options: { businessType?: string } = {}
   ) {
@@ -745,7 +745,7 @@ export class MobileBusinessService {
     )
   }
 
-  private mapCustomer(customer: any) {
+  private mapCustomer(customer: Record<string, unknown>) {
     return {
       id: customer.id,
       uuid: String(customer.id),
@@ -766,7 +766,7 @@ export class MobileBusinessService {
     }
   }
 
-  private mapVehicle(vehicle: any, uuid: string) {
+  private mapVehicle(vehicle: Record<string, unknown>, uuid: string) {
     return {
       id: vehicle.id,
       uuid,
@@ -788,7 +788,7 @@ export class MobileBusinessService {
     }
   }
 
-  private mapApplication(application: any, includeDetail = false) {
+  private mapApplication(application: Record<string, unknown>, includeDetail = false) {
     const customer = application.customer
     const vehicle = customer?.vehicles?.[0] || customer?.vehicles?.at?.(0)
     return {
@@ -822,7 +822,7 @@ export class MobileBusinessService {
     }
   }
 
-  private async linkCustomerImages(customer: any, dto: MobileIdCardInfoDto, user: RequestUser) {
+  private async linkCustomerImages(customer: Record<string, unknown>, dto: MobileIdCardInfoDto, user: RequestUser) {
     if (dto.idcardFront) {
       await this.createFileAsset({
         orgId: customer.orgId,
@@ -847,7 +847,7 @@ export class MobileBusinessService {
     }
   }
 
-  private async linkApplicationFiles(application: any, customer: any) {
+  private async linkApplicationFiles(application: Record<string, unknown>, customer: Record<string, unknown>) {
     const vehicles = await this.prisma.vehicle.findMany({
       where: { customerId: customer.id },
       select: { id: true }
@@ -868,7 +868,7 @@ export class MobileBusinessService {
           }
         ]
       }
-    })) as any[] | undefined
+    })) as Record<string, unknown>[] | undefined
 
     if (!fileAssets?.length) return
     await this.prisma.applicationFile.createMany({
@@ -1023,7 +1023,7 @@ export class MobileBusinessService {
     return vehicles.map((item) => item.id)
   }
 
-  private mapFileAsset(file: any) {
+  private mapFileAsset(file: Record<string, unknown>) {
     const fileUrl = normalizeFileUrl(file.fileUrl, this.config.get<string>('API_PREFIX', 'saas/api'))
     return {
       ...file,
@@ -1219,6 +1219,11 @@ export class MobileBusinessService {
     }
 
     if (dto.id) {
+      // 校验联系人归属当前客户，防止跨租户篡改
+      const existing = await this.prisma.customerContact.findFirst({
+        where: { id: dto.id, customerId: customer.id }
+      })
+      if (!existing) throw new NotFoundException('联系人不存在')
       return this.prisma.customerContact.update({
         where: { id: dto.id },
         data
@@ -1239,15 +1244,17 @@ export class MobileBusinessService {
   }
 
   async deleteContact(id: number) {
-    await this.prisma.customerContact.delete({ where: { id } })
+    await this.prisma.customerContact.update({ where: { id }, data: { deletedAt: new Date() } })
     return { code: 200, msg: 'success' }
   }
 
   // ==================== 销售线索 ====================
 
-  async addSalesLead(dto: MobileSalesLeadDto, user: RequestUser) {
+  async addSalesLead(dto: MobileSalesLeadDto, user: RequestUser, headerOrgId?: number) {
+    const org = await this.getDefaultOrg(headerOrgId)
+
     const customer = await this.prisma.customer.findFirst({
-      where: { phone: dto.telephone }
+      where: { orgId: org.id, phone: dto.telephone }
     })
 
     if (customer) {
@@ -1264,8 +1271,7 @@ export class MobileBusinessService {
 
     const newCustomer = await this.prisma.customer.create({
       data: {
-        tenantId: user.tenantId || 1,
-        orgId: 1,
+        orgId: org.id,
         name: dto.personName,
         phone: dto.telephone,
         idCard: dto.idCard,
@@ -1275,8 +1281,7 @@ export class MobileBusinessService {
 
     await this.prisma.lead.create({
       data: {
-        tenantId: user.tenantId || 1,
-        orgId: 1,
+        orgId: org.id,
         source: dto.source || 'SELF',
         name: dto.personName,
         phone: dto.telephone,
@@ -1422,7 +1427,7 @@ export class MobileBusinessService {
     const application = await this.findApplicationByOrderId(creditOrderId)
     if (!application) throw new NotFoundException('订单不存在')
 
-    const signRecord = await this.prisma.signRecord.findUnique({
+    const signRecord = await this.prisma.signRecord.findFirst({
       where: { applicationId: application.id }
     })
 
@@ -1441,7 +1446,7 @@ export class MobileBusinessService {
     const application = await this.findApplicationByOrderId(creditOrderId)
     if (!application) throw new NotFoundException('订单不存在')
 
-    const signRecord = await this.prisma.signRecord.findUnique({
+    const signRecord = await this.prisma.signRecord.findFirst({
       where: { applicationId: application.id }
     })
 
@@ -1460,7 +1465,7 @@ export class MobileBusinessService {
     const application = await this.findApplicationByOrderId(creditOrderId)
     if (!application) throw new NotFoundException('订单不存在')
 
-    const signRecord = await this.prisma.signRecord.findUnique({
+    const signRecord = await this.prisma.signRecord.findFirst({
       where: { applicationId: application.id }
     })
 

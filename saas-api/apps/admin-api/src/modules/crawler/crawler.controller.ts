@@ -1,3 +1,4 @@
+import { RequestUser } from '../../common/types/request-user'
 import { Body, Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common'
 import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
@@ -9,11 +10,12 @@ import { DownloadNovelDto } from './dto/download-novel.dto'
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class CrawlerController {
+  private readonly logger = new Logger(CrawlerController.name)
   constructor(private readonly crawlerService: CrawlerService) {}
 
   @Post('download')
   @ApiOperation({ summary: '下载小说并入库（同步）' })
-  async downloadNovel(@Request() req: any, @Body() dto: DownloadNovelDto) {
+  async downloadNovel(@Request() req: RequestUser, @Body() dto: DownloadNovelDto) {
     return this.crawlerService.downloadNovel(
       req.user.tenantId,
       dto.url,
@@ -26,7 +28,7 @@ export class CrawlerController {
 
   @Post('download-async')
   @ApiOperation({ summary: '异步下载小说并入库（返回taskId）' })
-  async downloadNovelAsync(@Request() req: any, @Body() dto: DownloadNovelDto) {
+  async downloadNovelAsync(@Request() req: RequestUser, @Body() dto: DownloadNovelDto) {
     const taskId = `crawl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     // 异步执行，不 await
     this.crawlerService
@@ -39,7 +41,7 @@ export class CrawlerController {
         dto.categoryId,
         taskId
       )
-      .catch(() => {})
+      .catch((err) => this.logger.error(`爬虫任务 ${taskId} 异常`, err?.stack || err))
     return { taskId }
   }
 

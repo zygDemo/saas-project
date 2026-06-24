@@ -1,4 +1,6 @@
 ﻿import { ValidationPipe } from '@nestjs/common'
+import { Reflector } from '@nestjs/core'
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import { NestExpressApplication } from '@nestjs/platform-express'
@@ -54,6 +56,7 @@ async function bootstrap() {
   )
   app.useGlobalInterceptors(new RequestLoggerInterceptor(app.get(PrismaService)), new ResponseInterceptor())
   app.useGlobalFilters(new HttpExceptionFilter())
+  app.useGlobalGuards(new JwtAuthGuard(app.get(Reflector)))
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('SaaS API')

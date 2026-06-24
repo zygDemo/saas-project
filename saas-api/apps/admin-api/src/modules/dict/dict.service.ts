@@ -1,7 +1,8 @@
-﻿import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { PaginatedResponse } from '../../common/types/pagination'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
+import { getRequiredTenantId, formatDate } from '../../common/utils/helpers'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateDictDataDto, CreateDictTypeDto, UpdateDictDataDto, UpdateDictTypeDto } from './dto/dict.dto'
@@ -97,7 +98,7 @@ export class DictService {
   async deleteType(id: number) {
     const tenantId = getRequiredTenantId()
     await this.findTypeOrThrow(tenantId, id)
-    await this.prisma.dictType.delete({ where: { id } })
+    await this.prisma.dictType.update({ where: { id }, data: { deletedAt: new Date() } })
     return { id }
   }
 
@@ -221,11 +222,6 @@ export class DictService {
   }
 }
 
-function getRequiredTenantId() {
-  const tenantId = getCurrentTenantId()
-  if (!tenantId) throw new BadRequestException('请求头 X-Tenant-ID 不能为空')
-  return tenantId
-}
 
 type DictTypeWithCount = Prisma.DictTypeGetPayload<{ include: { _count: { select: { items: true } } } }>
 type DictDataWithType = Prisma.DictDataGetPayload<{ include: { type: true } }>
@@ -242,9 +238,6 @@ function normalizeCodes(value: string) {
   ]
 }
 
-function formatDate(value: Date) {
-  return value.toISOString().replace('T', ' ').slice(0, 19)
-}
 
 function mapDictType(item: DictTypeWithCount) {
   return {

@@ -1,10 +1,11 @@
-﻿import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma, UserStatus } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PaginatedResponse } from '../../common/types/pagination'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
+import { formatDate } from '../../common/utils/helpers'
 import { CreateUserDto } from './dto/create-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
 
@@ -45,9 +46,9 @@ export class UsersService {
 
     if (!user) throw new NotFoundException('用户不存在')
 
-    const roles = user.roles.map(({ role }: any) => role.code)
-    const buttons = user.roles.flatMap(({ role }: any) =>
-      role.permissions.map(({ permission }: any) => permission.authMark)
+    const roles = user.roles.map(({ role }: { role: { code: string } }) => role.code)
+    const buttons = user.roles.flatMap(({ role }: { role: { code: string; permissions: Array<{ permission: { authMark: string } }> } }) =>
+      role.permissions.map(({ permission }) => permission.authMark)
     )
 
     return {
@@ -133,7 +134,7 @@ export class UsersService {
         createdBy: operator,
         updatedBy: operator,
         roles: {
-          create: roles.map((role: any) => ({
+          create: roles.map((role: { id: number; code: string }) => ({
             role: { connect: { id: role.id } }
           }))
         }
@@ -145,7 +146,7 @@ export class UsersService {
   }
 
   async updateUser(id: number, dto: UpdateUserDto, operator = 'system') {
-    const user = await this.prisma.user.findUnique({ where: { id } })
+    const user = await this.prisma.user.findFirst({ where: { id } })
     if (!user) throw new NotFoundException('用户不存在')
     await this.ensureDeptExists(dto.deptId)
 
@@ -187,7 +188,7 @@ export class UsersService {
         roles: roles
           ? {
               deleteMany: {},
-              create: roles.map((role: any) => ({
+              create: roles.map((role: { id: number; code: string }) => ({
                 role: { connect: { id: role.id } }
               }))
             }
@@ -200,10 +201,10 @@ export class UsersService {
   }
 
   async deleteUser(id: number) {
-    const user = await this.prisma.user.findUnique({ where: { id } })
+    const user = await this.prisma.user.findFirst({ where: { id } })
     if (!user) throw new NotFoundException('用户不存在')
 
-    await this.prisma.user.delete({ where: { id } })
+    await this.prisma.user.update({ where: { id }, data: { deletedAt: new Date() } })
     return { id }
   }
 
@@ -213,7 +214,7 @@ export class UsersService {
       where: { code: { in: uniqueRoleCodes } },
       select: { id: true, code: true }
     })
-    const roleCodeSet = new Set(roles.map((role: any) => role.code))
+    const roleCodeSet = new Set(roles.map((role: { id: number; code: string }) => role.code))
     const missingRoleCodes = uniqueRoleCodes.filter((roleCode) => !roleCodeSet.has(roleCode))
 
     if (missingRoleCodes.length > 0) {
@@ -233,9 +234,6 @@ export class UsersService {
   }
 }
 
-function formatDate(date: Date) {
-  return date.toISOString().replace('T', ' ').slice(0, 19)
-}
 
 type UserWithRoles = Prisma.UserGetPayload<{
   include: { dept: { include: { org: true } }; roles: { include: { role: true } } }
@@ -255,7 +253,7 @@ function mapUserListItem(user: UserWithRoles) {
     deptName: user.dept?.name ?? '',
     orgId: user.dept?.orgId,
     orgName: user.dept?.org?.name ?? '',
-    userRoles: user.roles.map(({ role }: any) => role.code),
+    userRoles: user.roles.map(({ role }) => role.code),
     createBy: user.createdBy,
     createTime: formatDate(user.createdAt),
     updateBy: user.updatedBy,
