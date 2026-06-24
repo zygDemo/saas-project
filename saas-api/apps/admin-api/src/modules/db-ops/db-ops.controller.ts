@@ -1,11 +1,14 @@
 import { Controller, Get, Post, HttpCode, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
+import { RolesGuard } from '../../common/guards/roles.guard'
+import { Roles } from '../../common/decorators/roles.decorator'
 import { DbOpsService } from './db-ops.service'
 
 @ApiTags('数据库运维')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
 @Controller('db-ops')
 export class DbOpsController {
   constructor(private readonly dbOpsService: DbOpsService) {}
