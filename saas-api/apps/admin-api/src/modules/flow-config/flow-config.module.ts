@@ -6,6 +6,7 @@ import { FlowConfigService } from './flow-config.service'
 @Module({
   imports: [PrismaModule],
   controllers: [FlowConfigController],
-  providers: [FlowConfigService]
+  providers: [FlowConfigService],
+  exports: [FlowConfigService]
 })
 export class FlowConfigModule {}

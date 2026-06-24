@@ -12,6 +12,7 @@ import { BaseBusinessCrudService, omitNested } from '../base-business-crud.servi
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { createApplicationWithUniqueNo } from '../../common/utils/application-no'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
+import { FlowConfigService } from '../flow-config/flow-config.service'
 import { PrismaService } from '../prisma/prisma.service'
 import {
   CreateApplicationDto,
@@ -45,39 +46,16 @@ const FLOW_STATUS_LABELS: Record<number, string> = {
   90: '已完成'
 }
 
-const DEFAULT_FLOW_NODE_NAMES: Record<number, string> = {
-  1100: '预审进件',
-  1200: '风控预审',
-  1300: '资方预审',
-  1400: '资料补充',
-  2100: '风控初审',
-  2200: '风控终审',
-  3100: '资方终审',
-  4100: '客户签约',
-  5100: '请款资料',
-  6100: '资方放款'
+interface FlowMappingCache {
+  nodeNames: Record<number, string>
+  nodePhases: Record<number, number>
+  phaseNames: Record<number, string>
 }
 
-const DEFAULT_FLOW_NODE_PHASES: Record<number, number> = {
-  1100: 1000,
-  1200: 1000,
-  1300: 1000,
-  1400: 1400,
-  2100: 2000,
-  2200: 2000,
-  3100: 3000,
-  4100: 4000,
-  5100: 5000,
-  6100: 5000
-}
-
-const DEFAULT_FLOW_PHASE_NAMES: Record<number, string> = {
-  1000: '预审阶段',
-  1400: '补件阶段',
-  2000: '风控审批',
-  3000: '资方终审',
-  4000: '客户签约',
-  5000: '请款放款'
+const EMPTY_FLOW_MAPPINGS: FlowMappingCache = {
+  nodeNames: {},
+  nodePhases: {},
+  phaseNames: {}
 }
 
 function hasQueryValue(value: unknown) {
@@ -154,7 +132,13 @@ export class ApplicationService extends BaseBusinessCrudService<
   UpdateApplicationDto,
   ApplicationQueryDto
 > {
-  constructor(private readonly prisma: PrismaService) {
+  private flowMappingsCache: FlowMappingCache | null = null
+  private flowMappingsOrgId?: number
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly flowConfigService: FlowConfigService
+  ) {
     super({
       model: prisma.application,
       prisma,
@@ -180,7 +164,8 @@ export class ApplicationService extends BaseBusinessCrudService<
           where.currentNode = query.currentNode
         } else if (hasQueryValue(query.phaseCode)) {
           const phaseCode = Number(query.phaseCode)
-          const phaseNodeCodes = Object.entries(DEFAULT_FLOW_NODE_PHASES)
+          const nodePhases = this.getFlowMappings().nodePhases
+          const phaseNodeCodes = Object.entries(nodePhases)
             .filter(([, code]) => code === phaseCode)
             .map(([node]) => Number(node))
           where.currentNode = phaseNodeCodes.length ? { in: phaseNodeCodes } : phaseCode
@@ -232,6 +217,26 @@ export class ApplicationService extends BaseBusinessCrudService<
       },
       beforeUpdate: (dto) => omitNested(dto as unknown as Record<string, unknown>, ['files'])
     })
+  }
+
+  /**
+   * 从数据库预加载流程映射缓存，供 buildWhere 等同步方法使用。
+   * 不传 orgId 时查询所有机构聚合映射。
+   */
+  private async loadFlowMappings(orgId?: number) {
+    if (this.flowMappingsCache && this.flowMappingsOrgId === orgId) return
+    this.flowMappingsCache = await this.flowConfigService.getFlowMappings(orgId)
+    this.flowMappingsOrgId = orgId
+  }
+
+  /** 同步获取已缓存的流程映射 */
+  private getFlowMappings(): FlowMappingCache {
+    return this.flowMappingsCache || EMPTY_FLOW_MAPPINGS
+  }
+
+  override async getList(query: ApplicationQueryDto) {
+    await this.loadFlowMappings(query.orgId)
+    return super.getList(query)
   }
 
   override async create(dto: CreateApplicationDto) {
@@ -286,6 +291,7 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   async getFlowList(query: ApplicationQueryDto) {
+    await this.loadFlowMappings(query.orgId)
     const pagination = getPagination(query)
     const where: Record<string, unknown> = {}
     const tenantId = getCurrentTenantId()
@@ -326,6 +332,7 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   async getOrderList(query: OrderListQueryDto) {
+    await this.loadFlowMappings(query.orgId)
     const pagination = getPagination({
       current: query.current ?? query.pageNum,
       size: query.size ?? query.pageSize
@@ -1151,7 +1158,8 @@ export class ApplicationService extends BaseBusinessCrudService<
     if (hasQueryValue(nodeCode)) where.currentNode = nodeCode
     else if (hasQueryValue(query.phaseCode)) {
       const phaseCode = Number(query.phaseCode)
-      const phaseNodeCodes = Object.entries(DEFAULT_FLOW_NODE_PHASES)
+      const nodePhases = this.getFlowMappings().nodePhases
+      const phaseNodeCodes = Object.entries(nodePhases)
         .filter(([, code]) => code === phaseCode)
         .map(([node]) => Number(node))
       where.currentNode = phaseNodeCodes.length ? { in: phaseNodeCodes } : phaseCode
@@ -1610,7 +1618,7 @@ export class ApplicationService extends BaseBusinessCrudService<
       : null
     return (
       config?.nodeName ||
-      DEFAULT_FLOW_NODE_NAMES[Number(application.currentNode)] ||
+      this.getFlowMappings().nodeNames[Number(application.currentNode)] ||
       String(application.currentNode)
     )
   }
@@ -1627,7 +1635,7 @@ export class ApplicationService extends BaseBusinessCrudService<
       : null
 
     const ruleConfig = config?.ruleConfig as Record<string, unknown> | undefined
-    const phaseCode = Number(ruleConfig?.phaseCode || DEFAULT_FLOW_NODE_PHASES[currentNode])
+    const phaseCode = Number(ruleConfig?.phaseCode || this.getFlowMappings().nodePhases[currentNode])
     return Number.isFinite(phaseCode) ? phaseCode : currentNode
   }
 
@@ -1644,7 +1652,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     const ruleConfig = config?.ruleConfig as Record<string, unknown> | undefined
     return (
       (typeof ruleConfig?.phaseName === 'string' ? ruleConfig.phaseName : '') ||
-      DEFAULT_FLOW_PHASE_NAMES[phaseCode] ||
+      this.getFlowMappings().phaseNames[phaseCode] ||
       this.resolveFlowNodeName(application)
     )
   }

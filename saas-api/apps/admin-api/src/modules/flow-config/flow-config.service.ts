@@ -478,6 +478,40 @@ export class FlowConfigService extends BaseBusinessCrudService<
     }
   }
 
+  /**
+   * 从数据库查询指定机构的流程映射（nodeName / phaseCode / phaseName），
+   * 用于 application 等模块替代硬编码常量。
+   * 不传 orgId 时返回所有已配置机构的聚合映射。
+   */
+  async getFlowMappings(orgId?: number, businessType?: string) {
+    const where: Record<string, unknown> = { status: 'ACTIVE' }
+    if (orgId) where.orgId = orgId
+    if (businessType) where.businessType = businessType
+
+    const configs = await this.prisma.flowConfig.findMany({
+      where,
+      select: { nodeCode: true, nodeName: true, ruleConfig: true }
+    })
+
+    const nodeNames: Record<number, string> = {}
+    const nodePhases: Record<number, number> = {}
+    const phaseNames: Record<number, string> = {}
+
+    for (const config of configs) {
+      const code = Number(config.nodeCode)
+      if (!Number.isFinite(code)) continue
+      nodeNames[code] = config.nodeName
+      const ruleConfig = config.ruleConfig as Record<string, unknown> | null
+      const phaseCode = Number(ruleConfig?.phaseCode)
+      if (Number.isFinite(phaseCode)) {
+        nodePhases[code] = phaseCode
+        if (ruleConfig?.phaseName) phaseNames[phaseCode] = String(ruleConfig.phaseName)
+      }
+    }
+
+    return { nodeNames, nodePhases, phaseNames }
+  }
+
   async initDefault(dto: InitDefaultFlowConfigDto) {
     const org = await this.ensureRelatedExists(this.prisma.organization, dto.orgId, '机构不存在')
     const tenantId = getCurrentTenantId() || org?.tenantId
