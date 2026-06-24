@@ -216,7 +216,8 @@
     {
       "path": "pages/reading/reader/index",
       "style": {
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "pageOrientation": "auto"
       }
     },
     {

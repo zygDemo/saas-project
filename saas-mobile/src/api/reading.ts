@@ -50,6 +50,18 @@ export function useReadingApi() {
     /** 保存阅读进度 */
     saveProgress: (data: { bookId: number | string; chapterId: number | string; page?: number; progress?: number }) =>
       http.post<ApiResponse<any>>("/reading/progress", data),
+
+    /** 获取阅读统计（personal=1 查询用户个人统计） */
+    getStatistics: (personal?: string) =>
+      http.get<ApiResponse<ReadingStatistics>>("/reading/statistics", { personal: personal || undefined }),
+
+    /** 获取书籍评价 */
+    getReviews: (params: { bookId?: number | string; page?: number; pageSize?: number }) =>
+      http.get<ApiResponse<ReviewListResult>>("/reading/reviews", params),
+
+    /** 提交书籍评价 */
+    createReview: (data: { bookId: number | string; rating: number; content?: string }) =>
+      http.post<ApiResponse<any>>("/reading/reviews", data),
   };
 }
 
@@ -135,4 +147,36 @@ export interface BookshelfItem {
   progress?: number;
   lastReadChapter?: string;
   lastReadTime?: string;
+}
+
+export interface ReadingStatistics {
+  bookCount: number;
+  categoryCount: number;
+  activeReaderCount: number;
+  totalReads: number;
+  personal?: {
+    shelfCount: number;
+    completedCount: number;
+    todayReadMinutes: number;
+    totalReadMinutes: number;
+  };
+}
+
+export interface ReviewItem {
+  id: number;
+  bookId: number;
+  userId: number;
+  rating: number;
+  content: string;
+  status: number;
+  createdAt: string;
+  user?: { nickname?: string; avatar?: string };
+  book?: { title?: string };
+}
+
+export interface ReviewListResult {
+  items: ReviewItem[];
+  total: number;
+  page: number;
+  pageSize: number;
 }

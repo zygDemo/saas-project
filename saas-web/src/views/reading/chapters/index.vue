@@ -6,7 +6,9 @@
         <img
           v-if="bookInfo.cover"
           :src="bookInfo.cover"
-          class="w-12 h-16 object-cover rounded"
+          class="w-12 h-16 object-cover rounded bg-gray-100"
+          @error="(e: any) => { e.target.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 64%22%3E%3Crect fill=%22%23e5e7eb%22 width=%2248%22 height=%2264%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%239ca3af%22 font-size=%2210%22%3E无图%3C/text%3E%3C/svg%3E'; e.target.onerror = null }"
+          alt="封面"
         />
         <div>
           <div class="text-lg font-medium">{{ bookInfo.title }}</div>
@@ -25,6 +27,13 @@
           <ElButton @click="$router.back()" icon="ri:arrow-left-line">返回书籍</ElButton>
         </template>
         <template #right>
+          <ElButton
+            v-if="selectedIds.length > 0"
+            type="danger"
+            @click="handleBatchDelete"
+          >
+            批量删除 ({{ selectedIds.length }})
+          </ElButton>
           <ElButton type="primary" @click="openAddDialog">新增章节</ElButton>
           <ElInput
             v-model="searchKeyword"
@@ -50,6 +59,7 @@
         :pagination-options="paginationOptions"
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handleCurrentChange"
+        @selection-change="handleSelectionChange"
       />
 
       <!-- 查看内容弹窗 -->
@@ -60,7 +70,7 @@
       </ElDialog>
 
       <!-- 编辑弹窗 -->
-      <ElDialog v-model="showEditDialog" :title="isEdit ? '编辑章节' : '新增章节'" width="600px">
+      <ElDialog v-model="showEditDialog" :title="isEdit ? '编辑章节' : '新增章节'" width="900px">
         <ElForm :model="formData" label-width="80px">
           <ElFormItem label="章节标题" required>
             <ElInput v-model="formData.title" placeholder="请输入章节标题" />
@@ -75,7 +85,7 @@
             <ElInputNumber v-model="formData.price" :min="0" :precision="2" />
           </ElFormItem>
           <ElFormItem label="内容">
-            <ElInput v-model="formData.content" type="textarea" :rows="10" placeholder="章节内容" />
+            <ArtWangEditor v-model="formData.content" height="300px" />
           </ElFormItem>
         </ElForm>
         <template #footer>
@@ -99,6 +109,7 @@
   } from '@/api/reading'
   import { ElMessage, ElMessageBox, ElTag, ElButton } from 'element-plus'
   import { useRoute } from 'vue-router'
+  import ArtWangEditor from '@/components/core/forms/art-wang-editor/index.vue'
 
   defineOptions({ name: 'ReadingChapters' })
 
@@ -142,11 +153,42 @@
     size: pageSize.value
   }))
 
+  const selectedIds = ref<number[]>([])
+  const handleSelectionChange = (rows: any[]) => {
+    selectedIds.value = rows.map((r: any) => r.id)
+  }
+
+  const handleBatchDelete = () => {
+    if (selectedIds.value.length === 0) {
+      ElMessage.warning('请选择要删除的章节')
+      return
+    }
+    ElMessageBox.confirm(
+      `确定删除选中的 ${selectedIds.value.length} 章吗？此操作不可撤销。`,
+      '批量删除',
+      { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' }
+    )
+      .then(async () => {
+        let successCount = 0
+        for (const id of selectedIds.value) {
+          try {
+            await deleteChapter(id)
+            successCount++
+          } catch { /* 单个失败继续 */ }
+        }
+        ElMessage.success(`成功删除 ${successCount} 章`)
+        selectedIds.value = []
+        loadChapters()
+      })
+      .catch(() => {})
+  }
+
   const paginationOptions = {
     pageSizes: [20, 50, 100, 200]
   }
 
   const columns = computed(() => [
+    { type: 'selection' as const, width: 45, align: 'center' as const },
     { type: 'index' as const, width: 70, label: '序号', align: 'center' as const },
     { prop: 'title', label: '章节标题', minWidth: 300 },
     {
@@ -240,8 +282,7 @@
       }
       if (searchKeyword.value) params.keyword = searchKeyword.value
       const res = (await getChapters(params)) as any
-      const data = res?.items || res?.list || res?.data || res || []
-      const list = Array.isArray(data) ? data : []
+      const list = Array.isArray(res?.items) ? res.items : []
       chapterList.value = list
       total.value = res?.total || list.length
     } catch (error) {
@@ -285,14 +326,14 @@
     formData.isVip = row.isVip || false
     formData.price = row.price || 0
     formData.content = ''
-    showEditDialog.value = true
-    // 异步加载完整章节内容
+    // 先加载完整章节内容，再打开对话框避免闪烁
     try {
       const res = (await getChapterById(row.id)) as any
       formData.content = res?.content || ''
     } catch {
       // 加载内容失败不影响编辑其他字段
     }
+    showEditDialog.value = true
   }
 
   const handleSave = async () => {

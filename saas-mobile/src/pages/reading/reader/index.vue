@@ -1,5 +1,5 @@
 <template>
-  <view class="reader-page" :class="{ 'night-mode': isNightMode }">
+  <view class="reader-page" :class="{ 'night-mode': isNightMode, 'landscape-mode': isLandscape }">
     <!-- 顶部工具栏 -->
     <view
       v-show="showToolbar"
@@ -427,6 +427,8 @@ import { useReadingApi } from "@/api/reading";
 // 本地存储 key
 const STORAGE_KEY = "reader_settings";
 const BOOKMARK_STORAGE_KEY = "reader_bookmarks";
+const CHAPTER_CACHE_PREFIX = "reader_ch_cache_";
+const MAX_CACHED_CHAPTERS = 50;
 
 interface Chapter {
   id: string;
@@ -522,6 +524,104 @@ function saveBookmarks() {
   } catch {
     // ignore
   }
+}
+
+// ==================== 章节内容离线缓存 ====================
+
+interface ChapterCacheEntry {
+  content: string;
+  title: string;
+  time: number;
+}
+
+/** 获取章节缓存 key */
+function getChapterCacheKey(bookId: string, chapterId: string): string {
+  return `${CHAPTER_CACHE_PREFIX}${bookId}_${chapterId}`;
+}
+
+/** 从缓存中读取章节 */
+function getCachedChapter(bookId: string, chapterId: string): ChapterCacheEntry | null {
+  try {
+    const raw = uni.getStorageSync(getChapterCacheKey(bookId, chapterId));
+    if (raw) {
+      const entry = JSON.parse(raw) as ChapterCacheEntry;
+      // 缓存 7 天有效
+      if (Date.now() - entry.time < 7 * 24 * 60 * 60 * 1000) {
+        return entry;
+      }
+      // 过期则删除
+      uni.removeStorageSync(getChapterCacheKey(bookId, chapterId));
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+/** 清理最旧的缓存条目 */
+function trimChapterCache() {
+  try {
+    const keys: string[] = uni.getStorageInfoSync().keys.filter((k) =>
+      k.startsWith(CHAPTER_CACHE_PREFIX),
+    );
+    if (keys.length > MAX_CACHED_CHAPTERS) {
+      // 按时间排序，删除最旧的
+      const entries = keys
+        .map((k) => {
+          try {
+            const raw = uni.getStorageSync(k);
+            const entry = JSON.parse(raw) as ChapterCacheEntry;
+            return { key: k, time: entry.time || 0 };
+          } catch {
+            return { key: k, time: 0 };
+          }
+        })
+        .sort((a, b) => a.time - b.time);
+
+      const toRemove = entries.slice(0, entries.length - MAX_CACHED_CHAPTERS);
+      toRemove.forEach((e) => uni.removeStorageSync(e.key));
+    }
+  } catch {
+    // ignore
+  }
+}
+
+/** 缓存章节内容 */
+function cacheChapter(bookId: string, chapterId: string, content: string, title: string) {
+  if (!content || !bookId || !chapterId) return;
+  try {
+    const entry: ChapterCacheEntry = {
+      content,
+      title,
+      time: Date.now(),
+    };
+    uni.setStorageSync(getChapterCacheKey(bookId, chapterId), JSON.stringify(entry));
+    trimChapterCache();
+  } catch {
+    // 存储空间不足时静默失败
+  }
+}
+
+/** 加载章节内容：优先缓存，否则调用 API */
+async function loadChapterContent(
+  targetBookId: string,
+  targetChapterId: string,
+): Promise<string> {
+  // 1. 优先从缓存读取
+  const cached = getCachedChapter(targetBookId, targetChapterId);
+  if (cached) {
+    return cached.content;
+  }
+
+  // 2. 调用 API 获取
+  const detail = await readingApi.getChapterDetail(targetChapterId);
+  const content = detail?.data?.content || "";
+  const title = detail?.data?.title || "";
+
+  // 3. 写入缓存
+  cacheChapter(targetBookId, targetChapterId, content, title);
+
+  return content;
 }
 
 const currentChapter = computed(() => {
@@ -659,8 +759,7 @@ const prevChapter = async () => {
   chapterId.value = chapterList.value[prevIdx].id;
   currentPage.value = 0;
   checkBookmarkStatus();
-  const detail = await readingApi.getChapterDetail(chapterId.value);
-  chapterContent.value = detail.data?.content || "";
+  chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
   debouncedSaveProgress();
 };
 
@@ -670,8 +769,7 @@ const nextChapter = async () => {
   chapterId.value = chapterList.value[nextIdx].id;
   currentPage.value = 0;
   checkBookmarkStatus();
-  const detail = await readingApi.getChapterDetail(chapterId.value);
-  chapterContent.value = detail.data?.content || "";
+  chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
   debouncedSaveProgress();
 };
 
@@ -757,8 +855,7 @@ onLoad(async (options) => {
       if (chapterId.value) {
         isContentLoading.value = true;
         try {
-          const detail = await readingApi.getChapterDetail(chapterId.value);
-          chapterContent.value = detail.data?.content || "";
+          chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
           // 恢复保存的页码
           if (savedPage > 0) {
             currentPage.value = savedPage;
@@ -829,8 +926,7 @@ const onScrollToLower = async () => {
     try {
       const nextIdx = currentChapterIndex.value + 1;
       chapterId.value = chapterList.value[nextIdx].id;
-      const detail = await readingApi.getChapterDetail(chapterId.value);
-      chapterContent.value = detail.data?.content || "";
+      chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
       // 滚动到新章节顶部
       resetScrollToTop();
       checkBookmarkStatus();
@@ -857,8 +953,7 @@ const onPageChange = async (changeEvent: any) => {
       const nextIdx = currentChapterIndex.value + 1;
       chapterId.value = chapterList.value[nextIdx].id;
       currentPage.value = 0;
-      const detail = await readingApi.getChapterDetail(chapterId.value);
-      chapterContent.value = detail.data?.content || "";
+      chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
       checkBookmarkStatus();
       debouncedSaveProgress();
     } catch (err) {
@@ -883,8 +978,7 @@ const jumpToChapter = async (chapter: Chapter) => {
   currentPage.value = 0;
   showChapterPopup.value = false;
   checkBookmarkStatus();
-  const detail = await readingApi.getChapterDetail(chapterId.value);
-  chapterContent.value = detail.data?.content || "";
+  chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
   debouncedSaveProgress();
 };
 
@@ -1001,6 +1095,28 @@ const toggleListenMode = () => {
     uni.showToast({ title: "听书模式已关闭", icon: "none" });
   }
 };
+
+// ==================== 横屏阅读模式 ====================
+
+const isLandscape = ref(false);
+
+/** 检测当前屏幕方向 */
+function detectOrientation() {
+  try {
+    const sysInfo = uni.getSystemInfoSync();
+    isLandscape.value = (sysInfo.windowWidth || 0) > (sysInfo.windowHeight || 0);
+  } catch {
+    // ignore
+  }
+}
+
+// 初始化时检测方向
+detectOrientation();
+
+// 监听窗口尺寸变化（设备旋转）
+uni.onWindowResize(() => {
+  detectOrientation();
+});
 </script>
 
 <style scoped lang="scss">
@@ -1838,5 +1954,35 @@ const toggleListenMode = () => {
 .listen-hint {
   font-size: 24rpx;
   color: rgba(255, 255, 255, 0.7);
+}
+
+// ==================== 横屏模式 ====================
+
+.landscape-mode {
+  .reader-content {
+    // 横屏时阅读区域加大左右留白，提升阅读体验
+    .page-content,
+    .vertical-content {
+      max-width: 70%;
+      margin: 0 auto;
+    }
+  }
+
+  .toolbar {
+    &.top-toolbar {
+      padding: 20rpx 80rpx;
+    }
+  }
+
+  .bottom-toolbar {
+    .chapter-nav {
+      padding: 0 80rpx;
+    }
+  }
+
+  // 横屏时工具条左右留白
+  .settings-section {
+    padding: 12rpx 80rpx;
+  }
 }
 </style>

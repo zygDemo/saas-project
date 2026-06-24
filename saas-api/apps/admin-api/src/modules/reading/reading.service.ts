@@ -587,7 +587,7 @@ export class ReadingService {
 
   // ==================== 统计 ====================
 
-  async getStatistics(tenantId: number) {
+  async getStatistics(tenantId: number, userId?: number) {
     const [bookCount, categoryCount, userCount, totalReads] = await Promise.all([
       this.prisma.book.count({ where: { tenantId, deletedAt: null } }),
       this.prisma.bookCategory.count({ where: { tenantId, deletedAt: null } }),
@@ -602,12 +602,59 @@ export class ReadingService {
       }),
     ]);
 
-    return {
+    const result: Record<string, unknown> = {
       bookCount,
       categoryCount,
       activeReaderCount: userCount.length,
       totalReads: totalReads._sum.readCount || 0,
     };
+
+    // 用户级统计
+    if (userId) {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const [
+        userShelfCount,
+        userCompletedCount,
+        todayProgressRecords,
+        totalProgressRecords,
+      ] = await Promise.all([
+        this.prisma.userBookshelf.count({ where: { userId, tenantId } }),
+        this.prisma.readingProgress.count({
+          where: { userId, tenantId, progress: { gte: 100 } },
+        }),
+        this.prisma.readingProgress.findMany({
+          where: { userId, tenantId, updatedAt: { gte: todayStart } },
+          select: { readTime: true, progress: true },
+        }),
+        this.prisma.readingProgress.findMany({
+          where: { userId, tenantId },
+          select: { readTime: true },
+        }),
+      ]);
+
+      // 今日阅读分钟数（从保存的readTime累计，或按记录数估算每分钟）
+      const todayMinutes = todayProgressRecords.reduce(
+        (sum, r) => sum + (r.readTime || 0),
+        0,
+      );
+      const totalMinutes = totalProgressRecords.reduce(
+        (sum, r) => sum + (r.readTime || 0),
+        0,
+      );
+
+      Object.assign(result, {
+        personal: {
+          shelfCount: userShelfCount,
+          completedCount: userCompletedCount,
+          todayReadMinutes: todayMinutes,
+          totalReadMinutes: totalMinutes,
+        },
+      });
+    }
+
+    return result;
   }
 
   async getHotBooks(tenantId: number, limit = 10) {

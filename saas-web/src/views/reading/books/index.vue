@@ -2,7 +2,26 @@
   <div class="page-content !mb-5">
     <div class="flex items-center justify-between mb-5">
       <h1 class="text-2xl font-medium">{{ $t('menus.reading.books') }}</h1>
-      <ElButton type="primary" @click="openAddDialog" v-auth="'add'">新增图书</ElButton>
+      <div class="flex gap-2">
+        <ElButton
+          v-if="selectedIds.length > 0"
+          type="danger"
+          @click="handleBatchDelete"
+        >
+          批量删除 ({{ selectedIds.length }})
+        </ElButton>
+        <ArtExcelExport
+          :data="exportData"
+          filename="图书列表"
+          sheet-name="图书"
+          :auto-index="true"
+          index-column-title="序号"
+          button-text="导出 Excel"
+          :disabled="isLoading"
+          :columns="exportColumns"
+        />
+        <ElButton type="primary" @click="openAddDialog" v-auth="'add'">新增图书</ElButton>
+      </div>
     </div>
 
     <!-- 搜索栏 -->
@@ -49,7 +68,8 @@
     </ElRow>
 
     <!-- 图书列表 -->
-    <ElTable :data="bookList" stripe border v-loading="isLoading">
+    <ElTable :data="bookList" stripe border v-loading="isLoading" element-loading-text="加载中..." @selection-change="(rows: any[]) => selectedIds = rows.map((r: any) => r.id)">
+      <ElTableColumn type="selection" width="45" align="center" />
       <ElTableColumn type="index" label="序号" width="60" align="center" />
       <ElTableColumn prop="title" label="图书名称" min-width="180" />
       <ElTableColumn prop="author" label="作者" width="120" />
@@ -193,8 +213,26 @@
             </ElFormItem>
           </ElCol>
         </ElRow>
-        <ElFormItem label="封面URL">
-          <ElInput v-model="formData.cover" placeholder="请输入封面图片URL" />
+        <ElFormItem label="封面图片">
+          <div class="flex items-center gap-4">
+            <ElInput v-model="formData.cover" placeholder="可输入URL或上传图片" class="flex-1" />
+            <ElUpload
+              :action="uploadAction"
+              :show-file-list="false"
+              :on-success="handleCoverUploadSuccess"
+              accept="image/*"
+              :headers="uploadHeaders"
+            >
+              <ElButton>上传封面</ElButton>
+            </ElUpload>
+          </div>
+          <img
+            v-if="formData.cover"
+            :src="formData.cover"
+            class="w-20 h-28 object-cover rounded mt-2"
+            @error="(e: any) => { e.target.style.display = 'none' }"
+            alt="封面预览"
+          />
         </ElFormItem>
         <ElFormItem label="简介">
           <ElInput v-model="formData.desc" type="textarea" :rows="3" placeholder="请输入简介" />
@@ -233,10 +271,14 @@
   import { getBooks, createBook, updateBook, deleteBook, getBookCategories } from '@/api/reading'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useRouter } from 'vue-router'
+  import ArtExcelExport from '@/components/core/forms/art-excel-export/index.vue'
+  import { useUserStore } from '@/store/modules/user'
+  import { API_BASE_URL } from '@/utils/http'
 
   defineOptions({ name: 'ReadingBooks' })
 
   const router = useRouter()
+  const userStore = useUserStore()
   const searchVal = ref('')
   const categoryFilter = ref<number | ''>('')
   const statusFilter = ref<number | ''>('')
@@ -251,6 +293,45 @@
 
   const categoryList = ref<any[]>([])
   const bookList = ref<any[]>([])
+
+  // 批量操作
+  const selectedIds = ref<number[]>([])
+  const uploadAction = `${API_BASE_URL}/common/upload`
+  const uploadHeaders = computed(() => ({ Authorization: `Bearer ${userStore.accessToken}` }))
+
+  // Excel 导出列配置
+  const exportColumns = {
+    title: { title: '图书名称', width: 30 },
+    author: { title: '作者', width: 15 },
+    wordCount: { title: '字数', width: 12, formatter: (_v: any, row: any) => formatWordCount(row.wordCount) },
+    chapterCount: { title: '章节数', width: 10 },
+    rating: { title: '评分', width: 8 },
+    readCount: { title: '阅读量', width: 12, formatter: (_v: any, row: any) => formatNumber(row.readCount) },
+    status: { title: '状态', width: 8, formatter: (_v: any, row: any) => row.status === 1 ? '上架' : '下架' },
+  } as Record<string, { title: string; width?: number; formatter?: (value: any, row: any) => string }>
+
+  // 全量导出数据（去除分页限制，最多 10000 条）
+  const exportData = ref<any[]>([])
+  const loadAllDataForExport = async () => {
+    try {
+      const params: any = { page: 1, pageSize: 10000 }
+      if (searchVal.value) params.keyword = searchVal.value
+      if (categoryFilter.value) params.categoryId = categoryFilter.value
+      if (statusFilter.value !== '') params.status = statusFilter.value
+      const res = (await getBooks(params)) as any
+      exportData.value = res?.items || []
+    } catch {
+      exportData.value = bookList.value
+    }
+  }
+  // 首次加载后预加载导出数据（防抖避免频繁请求）
+  let exportDebounceTimer: ReturnType<typeof setTimeout> | null = null
+  watch(bookList, () => {
+    if (exportDebounceTimer) clearTimeout(exportDebounceTimer)
+    exportDebounceTimer = setTimeout(() => {
+      loadAllDataForExport()
+    }, 300)
+  })
 
   const formData = reactive({
     title: '',
@@ -423,6 +504,37 @@
     } finally {
       saving.value = false
     }
+  }
+
+  // 封面图片上传成功回调
+  const handleCoverUploadSuccess = (response: any) => {
+    formData.cover = response?.url || response?.data?.url || ''
+  }
+
+  // 批量删除
+  const handleBatchDelete = () => {
+    if (selectedIds.value.length === 0) {
+      ElMessage.warning('请选择要删除的图书')
+      return
+    }
+    ElMessageBox.confirm(
+      `确定删除选中的 ${selectedIds.value.length} 本图书吗？此操作不可撤销。`,
+      '批量删除',
+      { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' }
+    )
+      .then(async () => {
+        let successCount = 0
+        for (const id of selectedIds.value) {
+          try {
+            await deleteBook(id)
+            successCount++
+          } catch { /* 单个失败继续 */ }
+        }
+        ElMessage.success(`成功删除 ${successCount} 本图书`)
+        selectedIds.value = []
+        loadBooks()
+      })
+      .catch(() => {})
   }
 
   onMounted(() => {

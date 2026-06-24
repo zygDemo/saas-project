@@ -6,6 +6,7 @@
       :refresher-enabled="true"
       :refresher-triggered="refreshing"
       @refresherrefresh="onRefresh"
+      @scrolltolower="onLoadMore"
     >
       <view class="store-page">
         <!-- 搜索栏 -->
@@ -311,6 +312,29 @@
               </view>
             </view>
           </view>
+
+          <!-- 加载更多状态 -->
+          <view v-if="filteredBooks.length > 0" class="load-more-status">
+            <view v-if="isLoadingMore" class="loading-more">
+              <u-loading-icon mode="flower" size="28" />
+              <text>加载中...</text>
+            </view>
+            <view v-else-if="!hasMore" class="no-more">
+              <text>— 已加载全部 {{ totalCount }} 本 —</text>
+            </view>
+            <view v-else class="load-more-hint" @click="onLoadMore">
+              <text>上拉或点击加载更多</text>
+            </view>
+          </view>
+
+          <!-- 空状态 -->
+          <view v-if="filteredBooks.length === 0 && !isLoadingMore" class="empty-state">
+            <view class="empty-icon-wrap">
+              <u-icon name="file-text" color="#ddd" size="120" />
+            </view>
+            <text class="empty-title">{{ keyword ? '没有找到相关书籍' : '暂无书籍' }}</text>
+            <text class="empty-desc">{{ keyword ? '换个关键词试试' : '书城建设中，敬请期待' }}</text>
+          </view>
         </view>
       </view>
     </scroll-view>
@@ -355,8 +379,6 @@ interface BookList {
   covers: string[];
 }
 
-type ReadingBookRecord = Record<string, any>;
-
 const keyword = ref("");
 const currentMainTab = ref(0);
 const currentSubTab = ref(0);
@@ -366,50 +388,60 @@ const refreshing = ref(false);
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
 const readingApi = useReadingApi();
 
+// 分页状态
+const currentPage = ref(1);
+const pageSize = ref(20);
+const totalCount = ref(0);
+const hasMore = ref(true);
+const isLoadingMore = ref(false);
+
 const mainTabs = [
   { id: 0, name: "男生" },
   { id: 1, name: "女生" },
   { id: 2, name: "出版" },
 ];
 
-const subTabs = [
-  [
-    { id: 0, name: "全部" },
-    { id: 1, name: "玄幻" },
-    { id: 2, name: "仙侠" },
-    { id: 3, name: "都市" },
-    { id: 4, name: "历史" },
-    { id: 5, name: "科幻" },
-    { id: 6, name: "游戏" },
-    { id: 7, name: "悬疑" },
-    { id: 8, name: "武侠" },
-    { id: 9, name: "奇幻" },
-  ],
-  [
-    { id: 0, name: "全部" },
-    { id: 1, name: "现代言情" },
-    { id: 2, name: "古代言情" },
-    { id: 3, name: "仙侠奇缘" },
-    { id: 4, name: "浪漫青春" },
-    { id: 5, name: "悬疑推理" },
-    { id: 6, name: "科幻空间" },
-    { id: 7, name: "宫斗宅斗" },
-    { id: 8, name: "经商种田" },
-  ],
-  [
-    { id: 0, name: "全部" },
-    { id: 1, name: "文学" },
-    { id: 2, name: "小说" },
-    { id: 3, name: "传记" },
-    { id: 4, name: "历史" },
-    { id: 5, name: "哲学" },
-    { id: 6, name: "经济" },
-    { id: 7, name: "科技" },
-    { id: 8, name: "艺术" },
-  ],
-];
+// 从后端加载的分类数据
+let _apiCategories: any[] = [];
 
-const currentSubTabs = computed(() => subTabs[currentMainTab.value] || subTabs[0]);
+const subTabs = ref([
+  [
+    { id: 0, name: "全部", realId: null },
+    { id: 1, name: "玄幻", realId: null },
+    { id: 2, name: "仙侠", realId: null },
+    { id: 3, name: "都市", realId: null },
+    { id: 4, name: "历史", realId: null },
+    { id: 5, name: "科幻", realId: null },
+    { id: 6, name: "游戏", realId: null },
+    { id: 7, name: "悬疑", realId: null },
+    { id: 8, name: "武侠", realId: null },
+    { id: 9, name: "奇幻", realId: null },
+  ],
+  [
+    { id: 0, name: "全部", realId: null },
+    { id: 1, name: "现代言情", realId: null },
+    { id: 2, name: "古代言情", realId: null },
+    { id: 3, name: "仙侠奇缘", realId: null },
+    { id: 4, name: "浪漫青春", realId: null },
+    { id: 5, name: "悬疑推理", realId: null },
+    { id: 6, name: "科幻空间", realId: null },
+    { id: 7, name: "宫斗宅斗", realId: null },
+    { id: 8, name: "经商种田", realId: null },
+  ],
+  [
+    { id: 0, name: "全部", realId: null },
+    { id: 1, name: "文学", realId: null },
+    { id: 2, name: "小说", realId: null },
+    { id: 3, name: "传记", realId: null },
+    { id: 4, name: "历史", realId: null },
+    { id: 5, name: "哲学", realId: null },
+    { id: 6, name: "经济", realId: null },
+    { id: 7, name: "科技", realId: null },
+    { id: 8, name: "艺术", realId: null },
+  ],
+]);
+
+const currentSubTabs = computed(() => subTabs.value[currentMainTab.value] || subTabs.value[0]);
 
 const rankTabs = [
   { id: 0, name: "畅销榜" },
@@ -595,13 +627,23 @@ const formatWordCount = (count?: number) => {
 };
 
 // 从API获取图书列表
-const fetchBooks = async (kw?: string) => {
+const fetchBooks = async (kw?: string, append = false) => {
+  if (isLoadingMore.value) return;
+  if (!append) {
+    currentPage.value = 1;
+  }
+  const page = append ? currentPage.value : 1;
+  isLoadingMore.value = true;
   try {
-    const params: any = { page: 1, pageSize: 20 };
+    const params: any = { page, pageSize: pageSize.value };
     if (kw) params.keyword = kw;
+    if (currentSubTab.value > 0) {
+      const cat = currentSubTabs.value?.[currentSubTab.value];
+      if (cat?.realId) params.categoryId = cat.realId;
+    }
     const res = await readingApi.getBooks(params);
     if (res?.code === 200 && res.data?.items) {
-      bookList.value = res.data.items.map((item) => ({
+      const items = res.data.items.map((item: any) => ({
         id: String(item.id),
         title: item.title || "",
         author: item.author || "未知",
@@ -615,17 +657,28 @@ const fetchBooks = async (kw?: string) => {
         wordCount: formatWordCount(item.wordCount),
         rating: Number(item.rating) || 0,
       }));
-      freeBooks.value = bookList.value.slice(0, 4).map((book, idx) => ({
-        ...book,
-        originalPrice: [25, 30, 20, 15][idx] || 20,
-      }));
+      if (append) {
+        bookList.value.push(...items);
+      } else {
+        bookList.value = items;
+      }
+      totalCount.value = res.data.total || 0;
+      hasMore.value = bookList.value.length < totalCount.value;
+      currentPage.value = page + 1;
+      // 更新衍生数据
+      if (!append) {
+        refreshDerivedBooks();
+      }
     }
   } catch (e) {
     console.error("获取图书列表失败", e);
+  } finally {
+    isLoadingMore.value = false;
   }
 };
 
 onLoad(() => {
+  fetchCategories();
   fetchBooks();
 });
 
@@ -674,7 +727,21 @@ const hotBooks = computed(() => {
   const hotList = bookList.value.filter((b) => b.isHot);
   return (hotList.length ? hotList : bookList.value).slice(0, 5);
 });
-const rankBooks = computed(() => bookList.value.slice(0, 8));
+const rankBooks = computed(() => {
+  const books = [...bookList.value];
+  switch (currentRankTab.value) {
+    case 0: // 畅销榜 - 按阅读量
+      return books.sort((a, b) => b.views - a.views).slice(0, 8);
+    case 1: // 热搜榜 - 按评分
+      return books.sort((a, b) => b.rating - a.rating).slice(0, 8);
+    case 2: // 完结榜 - 只显示已完结
+      return books.filter(b => !b.isSerial).slice(0, 8);
+    case 3: // 新书榜 - 保持创建顺序（倒序）
+      return books.reverse().slice(0, 8);
+    default:
+      return books.slice(0, 8);
+  }
+});
 
 const filteredBooks = computed(() => {
   const kw = keyword.value.trim().toLowerCase();
@@ -682,8 +749,9 @@ const filteredBooks = computed(() => {
 
   return bookList.value
     .filter((book) => {
-      const categoryMatched =
-        catId === 0 || book.category === currentSubTabs.value[catId]?.name;
+      // 分类匹配：catId=0全部，否则按名称匹配
+      const targetCat = currentSubTabs.value[catId];
+      const categoryMatched = catId === 0 || book.category === targetCat?.name;
       const keywordMatched =
         !kw ||
         book.title.toLowerCase().includes(kw) ||
@@ -700,6 +768,34 @@ const filteredBooks = computed(() => {
     });
 });
 
+// 从 API 加载真实分类
+const fetchCategories = async () => {
+  try {
+    const res = await readingApi.getCategories();
+    const cats = res?.data || [];
+    if (Array.isArray(cats) && cats.length > 0) {
+      _apiCategories = cats;
+      // 用真实分类替换每组的分类标签（保留"全部"）
+      const topLevelCats = cats.filter((c: any) => c.parentId === null || c.parentId === 0);
+      if (topLevelCats.length > 0) {
+        // 将顶级分类填充到每个主tab的子分类中
+        const firstGroup = [{ id: 0, name: "全部", realId: null } as any];
+        topLevelCats.forEach((cat: any, idx: number) => {
+          firstGroup.push({ id: idx + 1, name: cat.name, realId: cat.id });
+        });
+        subTabs.value = [
+          firstGroup,
+          // 女生和出版 tab 也使用同样的分类，但可以根据 parentId 区分
+          [{ id: 0, name: "全部", realId: null } as any, ...cats.filter((c: any) => c.parentId === 1).map((c: any, i: number) => ({ id: i + 1, name: c.name, realId: c.id }))],
+          [{ id: 0, name: "全部", realId: null } as any, ...cats.filter((c: any) => c.parentId === 2).map((c: any, i: number) => ({ id: i + 1, name: c.name, realId: c.id }))],
+        ];
+      }
+    }
+  } catch {
+    // 使用内置的分类
+  }
+};
+
 const formatNumber = (num: number) => {
   if (num >= 10000000) return (num / 10000000).toFixed(1) + "千万";
   if (num >= 10000) return (num / 10000).toFixed(1) + "万";
@@ -708,43 +804,7 @@ const formatNumber = (num: number) => {
 
 
 
-const getResponseData = (res: any) => {
-  return res?.data?.data || res?.data || res;
-};
 
-const getBookItems = (payload: any): ReadingBookRecord[] => {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.items)) return payload.items;
-  if (Array.isArray(payload?.list)) return payload.list;
-  if (Array.isArray(payload?.records)) return payload.records;
-  return [];
-};
-
-const normalizeBook = (book: ReadingBookRecord, idx: number): BookItem => {
-  const category =
-    book.category?.name ||
-    book.categoryName ||
-    book.categoryTitle ||
-    book.category ||
-    "未分类";
-  const rating = Number(book.rating || 0);
-
-  return {
-    id: String(book.id ?? book.bookId ?? idx),
-    title: String(book.title || book.name || "未命名书籍"),
-    author: String(book.author || "未知作者"),
-    cover: String(book.cover || book.coverUrl || "/static/reading/covers/book1.svg"),
-    category: String(category),
-    isSerial: book.isSerial !== undefined ? Boolean(book.isSerial) : !Boolean(book.isFinished),
-    isHot: Boolean(book.isHot || book.isRecommend),
-    views: Number(book.readCount || book.views || book.viewCount || 0),
-    desc: String(book.desc || book.description || "暂无简介"),
-    totalChapters: Number(book.chapterCount || book.totalChapters || book._count?.chapters || 0),
-    wordCount: typeof book.wordCount === "string" ? book.wordCount : formatWordCount(book.wordCount),
-    rating: rating > 0 ? rating : 4.5,
-    originalPrice: Number(book.price || 0) || undefined,
-  };
-};
 
 const refreshDerivedBooks = () => {
   freeBooks.value = bookList.value
@@ -779,7 +839,6 @@ const updateCountdown = () => {
 
 onMounted(() => {
   updateCountdown();
-  fetchBooks();
 });
 
 onUnmounted(() => {
@@ -790,6 +849,8 @@ onUnmounted(() => {
 
 const onRefresh = async () => {
   refreshing.value = true;
+  hasMore.value = true;
+  isLoadingMore.value = false;
   try {
     await fetchBooks();
     uni.showToast({ title: "已刷新", icon: "success" });
@@ -798,21 +859,33 @@ const onRefresh = async () => {
   }
 };
 
+const onLoadMore = () => {
+  if (hasMore.value && !isLoadingMore.value) {
+    fetchBooks(keyword.value.trim() || undefined, true);
+  }
+};
+
 const switchMainTab = (idx: number) => {
   currentMainTab.value = idx;
   currentSubTab.value = 0;
+  hasMore.value = true;
+  fetchBooks(keyword.value.trim() || undefined);
 };
 
 const switchSubTab = (idx: number) => {
   currentSubTab.value = idx;
+  hasMore.value = true;
+  fetchBooks(keyword.value.trim() || undefined);
 };
 
 const switchRankTab = (idx: number) => {
   currentRankTab.value = idx;
 };
 
+let lastManualSearchTime = 0;
 const onSearch = () => {
   // 用户主动搜索：切换到全部tab，用关键词发起服务端搜索
+  lastManualSearchTime = Date.now();
   currentMainTab.value = 0;
   currentSubTab.value = 0;
   fetchBooks(keyword.value.trim() || undefined);
@@ -823,6 +896,8 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null;
 watch(keyword, (newVal) => {
   if (searchTimer) clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
+    // 如果用户刚手动搜索过（500ms内），跳过防抖回调
+    if (Date.now() - lastManualSearchTime < 600) return;
     if (newVal.trim()) {
       currentMainTab.value = 0;
       currentSubTab.value = 0;
@@ -1620,6 +1695,80 @@ const viewMore = (type: string) => {
 /* 书籍列表 */
 .book-list {
   padding: 0 24rpx;
+}
+
+/* 加载更多状态 */
+.load-more-status {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30rpx 24rpx;
+}
+
+.loading-more {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: 26rpx;
+  color: #909399;
+}
+
+.no-more {
+  font-size: 24rpx;
+  color: #c0c4cc;
+}
+
+.load-more-hint {
+  font-size: 26rpx;
+  color: var(--u-type-primary);
+  padding: 12rpx 48rpx;
+  border-radius: 32rpx;
+  background: rgba(102, 126, 234, 0.08);
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 24rpx;
+}
+
+.empty-icon-wrap {
+  width: 200rpx;
+  height: 200rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f6f8;
+  border-radius: 50%;
+  margin-bottom: 24rpx;
+}
+
+.empty-title {
+  font-size: 32rpx;
+  color: #303133;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.empty-desc {
+  font-size: 26rpx;
+  color: #909399;
+}
+
+@media (prefers-color-scheme: dark) {
+  .empty-icon-wrap {
+    background: #2a2a2a;
+  }
+  .empty-title { color: #e5e6eb; }
+  .empty-desc { color: #8b8c91; }
+  .loading-more { color: #8b8c91; }
+  .no-more { color: #666; }
+  .load-more-hint {
+    background: rgba(102, 126, 234, 0.15);
+  }
 }
 
 .book-card {

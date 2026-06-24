@@ -157,7 +157,7 @@
         <view class="section">
           <view class="section-header">
             <text class="section-title">读者评价</text>
-            <view class="section-more" @click="goAllReviews">
+            <view class="section-more" @click="viewAllReviews">
               <text>全部{{ reviewCount }}条</text>
               <u-icon name="arrow-right" color="#909399" size="20" />
             </view>
@@ -181,7 +181,49 @@
               </view>
             </view>
           </view>
+          <!-- 写评价按钮 -->
+          <view class="write-review-btn" @click="showWriteReview">
+            <u-icon name="edit-pen" color="var(--u-type-primary)" size="28" />
+            <text>写评价</text>
+          </view>
         </view>
+
+        <!-- 评价提交弹窗 -->
+        <u-popup :show="showReviewForm" mode="bottom" @close="showReviewForm = false" round="16">
+          <view class="review-form">
+            <view class="form-header">
+              <text class="form-title">写评价</text>
+              <u-icon name="close" size="36" color="#606266" @click="showReviewForm = false" />
+            </view>
+            <view class="form-body">
+              <view class="form-item">
+                <text class="form-label">评分</text>
+                <u-rate :count="5" v-model="reviewRating" :size="36" active-color="#ff8e53" />
+              </view>
+              <view class="form-item">
+                <text class="form-label">评价内容</text>
+                <textarea
+                  v-model="reviewContent"
+                  class="review-textarea"
+                  placeholder="说说你对这本书的看法..."
+                  placeholder-class="textarea-placeholder"
+                  maxlength="500"
+                  :auto-height="true"
+                />
+                <text class="char-count">{{ reviewContent.length }}/500</text>
+              </view>
+              <view class="form-submit">
+                <u-button
+                  type="primary"
+                  text="提交评价"
+                  :loading="submittingReview"
+                  @click="submitReview"
+                  :disabled="reviewRating === 0"
+                />
+              </view>
+            </view>
+          </view>
+        </u-popup>
 
         <!-- 同类推荐 -->
         <view class="section">
@@ -320,38 +362,81 @@ const chapterTotal = ref(0);
 const chapterLoading = ref(false);
 const chapterFinished = ref(false);
 
-const reviews = ref<Review[]>([
-  {
-    id: "1",
-    nickname: "书虫小明",
-    avatar: "/static/reading/covers/user1.svg",
-    rating: 5,
-    content: "经典中的经典！看了三遍还是觉得很好看，作者的想象力太丰富了。萧炎的成长历程让人热血沸腾，强烈推荐！",
-    time: "2024-01-15",
-    likes: 1256,
-    liked: false,
-  },
-  {
-    id: "2",
-    nickname: "玄幻迷",
-    avatar: "/static/reading/covers/user2.svg",
-    rating: 4,
-    content: "整体很不错，就是后期有点拖沓。不过异火系统设定很有创意，药老这个角色塑造得很好。",
-    time: "2024-01-10",
-    likes: 856,
-    liked: false,
-  },
-  {
-    id: "3",
-    nickname: "阅读达人",
-    avatar: "/static/reading/covers/user3.svg",
-    rating: 5,
-    content: "斗破苍穹是我入坑的第一本书，从此爱上了网络小说。虽然现在看来有些套路，但当年看的时候真的惊为天人。",
-    time: "2024-01-05",
-    likes: 654,
-    liked: true,
-  },
-]);
+const reviews = ref<Review[]>([]);
+const reviewPage = ref(1);
+const reviewTotal = ref(0);
+const reviewLoading = ref(false);
+
+// 评论提交表单
+const showReviewForm = ref(false);
+const reviewRating = ref(0);
+const reviewContent = ref("");
+const submittingReview = ref(false);
+
+const fetchReviews = async (reset = false) => {
+  if (reviewLoading.value) return;
+  const page = reset ? 1 : reviewPage.value;
+  reviewLoading.value = true;
+  try {
+    const res = await readingApi.getReviews({ bookId: bookId.value, page, pageSize: 10 });
+    const data = res?.data;
+    const items = data?.items || [];
+    const mapped = items.map((item: any) => ({
+      id: String(item.id),
+      nickname: item.user?.nickname || "匿名读者",
+      avatar: item.user?.avatar || "/static/reading/covers/user1.svg",
+      rating: Number(item.rating) || 0,
+      content: item.content || "",
+      time: item.createdAt?.slice(0, 10) || "",
+      likes: 0,
+      liked: false,
+    }));
+    if (reset) {
+      reviews.value = mapped;
+    } else {
+      reviews.value.push(...mapped);
+    }
+    reviewTotal.value = data?.total || 0;
+    reviewPage.value = page + 1;
+    reviewCount.value = reviewTotal.value;
+  } catch {
+    // 使用默认 mock 数据作为后备
+    if (reset && reviews.value.length === 0) {
+      reviews.value = [
+        { id: "1", nickname: "书虫小明", avatar: "/static/reading/covers/user1.svg", rating: 5, content: "经典中的经典！看了三遍还是觉得很好看。", time: "2024-01-15", likes: 1256, liked: false },
+        { id: "2", nickname: "玄幻迷", avatar: "/static/reading/covers/user2.svg", rating: 4, content: "整体很不错，就是后期有点拖沓。", time: "2024-01-10", likes: 856, liked: false },
+        { id: "3", nickname: "阅读达人", avatar: "/static/reading/covers/user3.svg", rating: 5, content: "斗破苍穹是我入坑的第一本书。", time: "2024-01-05", likes: 654, liked: true },
+      ];
+    }
+  } finally {
+    reviewLoading.value = false;
+  }
+};
+
+const submitReview = async () => {
+  if (reviewRating.value === 0) {
+    uni.showToast({ title: "请先评分", icon: "none" });
+    return;
+  }
+  submittingReview.value = true;
+  try {
+    await readingApi.createReview({
+      bookId: bookId.value,
+      rating: reviewRating.value,
+      content: reviewContent.value,
+    });
+    uni.showToast({ title: "评价提交成功", icon: "success" });
+    showReviewForm.value = false;
+    reviewRating.value = 0;
+    reviewContent.value = "";
+    // 重新加载评价列表
+    fetchReviews(true);
+  } catch {
+    uni.showToast({ title: "提交失败，请重试", icon: "none" });
+  } finally {
+    submittingReview.value = false;
+  }
+};
 
 const recommendBooks = ref<RecommendBook[]>([
   { id: "2", title: "凡人修仙传", author: "忘语", cover: "/static/reading/covers/book2.svg", rating: 4.7 },
@@ -366,8 +451,11 @@ const isInBookshelf = computed(() => readingStore.isInBookshelf(bookId.value));
 onLoad(async (options) => {
   if (options?.id) {
     bookId.value = options.id;
-    await fetchBookDetail(options.id);
-    await fetchChapters(options.id, true);
+    await Promise.all([
+      fetchBookDetail(options.id),
+      fetchChapters(options.id, true),
+      fetchReviews(true),
+    ]);
   }
 });
 
@@ -456,9 +544,12 @@ const formatNumber = (num: number) => {
   return num.toString();
 };
 
-const toggleBookshelf = () => {
+const toggleBookshelf = async () => {
   if (isInBookshelf.value) {
     readingStore.removeFromBookshelf(bookId.value);
+    try {
+      await readingApi.removeFromBookshelf(bookId.value);
+    } catch { /* ignore */ }
     uni.showToast({ title: "已移出书架", icon: "success" });
   } else {
     readingStore.addToBookshelf({
@@ -470,6 +561,9 @@ const toggleBookshelf = () => {
       totalChapters: book.value.totalChapters,
       category: book.value.category,
     });
+    try {
+      await readingApi.addToBookshelf(bookId.value);
+    } catch { /* ignore */ }
     uni.showToast({ title: "已加入书架", icon: "success" });
   }
 };
@@ -491,7 +585,7 @@ const shareBook = () => {
 
 onShareAppMessage(() => {
   return {
-    title: bookInfo.value?.title || '精彩好书',
+    title: book.value?.title || '精彩好书',
     path: `/pages/reading/store/detail?id=${bookId.value}`,
   };
 });
@@ -507,10 +601,15 @@ const goAuthor = () => {
   uni.showToast({ title: "作者主页开发中", icon: "none" });
 };
 
-const goAllReviews = () => {
-  uni.showToast({ title: "全部评价开发中", icon: "none" });
+const viewAllReviews = () => {
+  uni.showToast({ title: "全部评价功能开发中", icon: "none" });
 };
 
+const showWriteReview = () => {
+  showReviewForm.value = true;
+};
+
+// 本地模拟点赞（TODO: 接入后端 API）
 const likeReview = (review: Review) => {
   if (review.liked) {
     review.liked = false;
@@ -1103,5 +1202,80 @@ const goDetail = (item: RecommendBook) => {
     margin-left: 20rpx;
     font-weight: 600;
   }
+}
+
+/* 写评价按钮 */
+.write-review-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 20rpx;
+  margin-top: 8rpx;
+  border-top: 1rpx solid #f5f5f5;
+  font-size: 28rpx;
+  color: var(--u-type-primary);
+  font-weight: 500;
+}
+
+/* 评价提交表单 */
+.review-form {
+  padding: 30rpx 32rpx 40rpx;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.form-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #303133;
+}
+
+.form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 30rpx;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.form-label {
+  font-size: 28rpx;
+  color: #606266;
+  font-weight: 500;
+}
+
+.review-textarea {
+  width: 100%;
+  min-height: 200rpx;
+  background: #f5f6f8;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+  color: #303133;
+  box-sizing: border-box;
+}
+
+.textarea-placeholder {
+  color: #c0c4cc;
+}
+
+.char-count {
+  font-size: 22rpx;
+  color: #c0c4cc;
+  text-align: right;
+}
+
+.form-submit {
+  padding-top: 10rpx;
 }
 </style>

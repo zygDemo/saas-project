@@ -53,6 +53,7 @@ Run migrations, seed data, and menu sync inside the API container:
 ```bash
 docker compose -f docker-compose.prod.yml exec admin-api pnpm exec prisma migrate deploy --schema prisma/schema.prisma
 docker compose -f docker-compose.prod.yml exec admin-api pnpm exec tsx prisma/seed.ts
+docker compose -f docker-compose.prod.yml exec admin-api pnpm exec tsx prisma/seed-reading.ts
 docker compose -f docker-compose.prod.yml exec admin-api pnpm run db:sync-roles:prod
 ```
 

@@ -266,6 +266,7 @@
 <script setup lang="ts">
 import layout from "@/pages/layout/layout.vue";
 import { useReadingStore } from "@/stores/reading";
+import { useReadingApi } from "@/api/reading";
 import { computed, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { CurrentSystem, useLocalStore } from "@/stores/local";
@@ -294,8 +295,12 @@ const refreshing = ref(false);
 const hasSigned = ref(false);
 const sortMode = ref<"time" | "name">("time");
 const searchTimer = ref<ReturnType<typeof setTimeout> | null>(null);
+const readingApi = useReadingApi();
 const readingStore = useReadingStore();
 const localStore = useLocalStore();
+
+// 真实阅读统计
+const realStats = ref<{ totalReadCount: number; todayReadMinutes: number; shelfCount: number } | null>(null);
 
 const onSearchInput = () => {
   if (searchTimer.value) clearTimeout(searchTimer.value);
@@ -303,8 +308,8 @@ const onSearchInput = () => {
 };
 
 const bookshelf = computed(() => readingStore.bookshelf);
-const totalReadCount = computed(() => readingStore.totalReadCount);
-const todayReadMinutes = computed(() => readingStore.todayReadMinutes);
+const totalReadCount = computed(() => realStats.value?.totalReadCount ?? readingStore.totalReadCount);
+const todayReadMinutes = computed(() => realStats.value?.todayReadMinutes ?? readingStore.todayReadMinutes);
 const downloadCount = computed(() => readingStore.downloads.length);
 
 const todayRecommend = ref<BookItem | null>({
@@ -350,7 +355,59 @@ const filteredBooks = computed(() => {
 
 onLoad(() => {
   localStore.setCurrentSystem(CurrentSystem.READING);
+  fetchStats();
+  fetchBookshelf();
 });
+
+// 加载真实阅读统计
+const fetchStats = async () => {
+  try {
+    const res = await readingApi.getStatistics("1");
+    const data = res?.data;
+    if (data?.personal) {
+      realStats.value = {
+        totalReadCount: data.personal.completedCount,
+        todayReadMinutes: data.personal.todayReadMinutes,
+        shelfCount: data.personal.shelfCount,
+      };
+    }
+  } catch {
+    // 使用本地 store 统计作为后备
+  }
+};
+
+// 从 API 加载真实书架数据，全量同步到本地 store
+const fetchBookshelf = async () => {
+  try {
+    const res = await readingApi.getBookshelf();
+    const items = res?.data || [];
+    if (Array.isArray(items) && items.length > 0) {
+      // 记录后端返回的 bookId 集合
+      const backendIds = new Set(items.map((item: any) => item.book?.id ? String(item.book.id) : null).filter(Boolean));
+      // 移除本地有但后端没有的书籍
+      readingStore.bookshelf = readingStore.bookshelf.filter(b => backendIds.has(b.id));
+      // 将 API 数据同步到 store
+      items.forEach((item: any) => {
+        const book = item.book;
+        if (book && !readingStore.isInBookshelf(String(book.id))) {
+          readingStore.addToBookshelf({
+            id: String(book.id),
+            title: book.title || "",
+            author: book.author || "",
+            cover: book.cover || "",
+            progress: item.progress || 0,
+            lastReadChapter: item.lastReadChapter,
+            hasUpdate: false,
+            totalChapters: book.chapterCount || 0,
+            category: book.category?.name || "",
+          });
+        }
+      });
+    }
+  } catch {
+    // 使用本地 store 数据作为后备
+  }
+};
 
 const particleStyle = (index: number) => ({
   left: (index * 18) + '%',
@@ -364,12 +421,16 @@ const formatNumber = (num: number) => {
   return num.toString();
 };
 
-const onRefresh = () => {
+const onRefresh = async () => {
   refreshing.value = true;
-  setTimeout(() => {
-    refreshing.value = false;
+  try {
+    await Promise.all([fetchStats(), fetchBookshelf()]);
     uni.showToast({ title: "已刷新", icon: "success" });
-  }, 1000);
+  } catch {
+    uni.showToast({ title: "已刷新", icon: "success" });
+  } finally {
+    refreshing.value = false;
+  }
 };
 
 const handleSign = () => {
@@ -415,9 +476,15 @@ const showBookMenu = (book: BookItem) => {
           uni.showModal({
             title: "提示",
             content: `确定将《${book.title}》移出书架？`,
-            success: (modalRes) => {
+            success: async (modalRes) => {
               if (modalRes.confirm) {
                 readingStore.removeFromBookshelf(book.id);
+                // 同步后端
+                try {
+                  await readingApi.removeFromBookshelf(book.id);
+                } catch {
+                  // 即使API失败也保留本地状态
+                }
                 uni.showToast({ title: "已移出书架", icon: "success" });
               }
             },

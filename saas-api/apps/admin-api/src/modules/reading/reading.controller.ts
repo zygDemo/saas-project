@@ -210,9 +210,10 @@ export class ReadingController {
   // ==================== 统计 ====================
 
   @Get('statistics')
-  @ApiOperation({ summary: '获取读书统计' })
-  async getStatistics(@Request() req: RequestUser) {
-    return this.readingService.getStatistics(req.tenantId);
+  @ApiOperation({ summary: '获取读书统计（传入 personal=1 查询用户个人统计）' })
+  async getStatistics(@Request() req: RequestUser, @Query('personal') personal?: string) {
+    const userId = personal === '1' ? req.sub : undefined;
+    return this.readingService.getStatistics(req.tenantId, userId);
   }
 
   @Get('hot')
