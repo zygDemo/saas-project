@@ -308,8 +308,9 @@ export class CrawlerService {
             return
           } catch (error: unknown) {
             retryCount++
+            const errMsg = error instanceof Error ? error.message : String(error)
             this.logger.warn(
-              `章节 "${chapter.title}" 下载失败 (第 ${retryCount}/${maxRetries} 次): ${error.message}`
+              `章节 "${chapter.title}" 下载失败 (第 ${retryCount}/${maxRetries} 次): ${errMsg}`
             )
             if (retryCount >= maxRetries) {
               this.logger.error(`章节 "${chapter.title}" 永久下载失败`)
@@ -583,7 +584,7 @@ export class CrawlerService {
         .trim()
     } catch (e: unknown) {
       const errorMsg = e instanceof Error ? e.message : String(e)
-      this.logger.error(`获取章节内容失败 ${url}: ${e.message}`)
+      this.logger.error(`获取章节内容失败 ${url}: ${errorMsg}`)
       throw e
     }
   }

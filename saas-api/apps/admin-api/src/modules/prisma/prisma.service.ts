@@ -91,9 +91,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
             // 列表/批量查询：自动注入 tenantId
             if (AUTO_TENANT_OPS.includes(operation)) {
-              if (!hasTenantInWhere(args?.where)) {
+              if (!hasTenantInWhere(args?.where as Record<string, unknown> | undefined)) {
                 args = args || {}
-                args.where = { ...args.where, tenantId }
+                args.where = { ...(args.where as Record<string, unknown> | undefined), tenantId }
               }
             }
 

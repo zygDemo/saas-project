@@ -1,6 +1,6 @@
 import { Controller, Get, Post, HttpCode, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
-import { JwtAuthGuard } from '../auth/jwt-auth.guard'
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { DbOpsService } from './db-ops.service'
 
 @ApiTags('数据库运维')

@@ -1,5 +1,5 @@
 import { RequestUser } from '../../common/types/request-user'
-import { Body, Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Logger, Param, Post, Request, UseGuards } from '@nestjs/common'
 import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { CrawlerService } from './crawler.service'
@@ -17,7 +17,7 @@ export class CrawlerController {
   @ApiOperation({ summary: '下载小说并入库（同步）' })
   async downloadNovel(@Request() req: RequestUser, @Body() dto: DownloadNovelDto) {
     return this.crawlerService.downloadNovel(
-      req.user.tenantId,
+      req.tenantId,
       dto.url,
       dto.name,
       dto.startChapter,
@@ -33,7 +33,7 @@ export class CrawlerController {
     // 异步执行，不 await
     this.crawlerService
       .downloadNovel(
-        req.user.tenantId,
+        req.tenantId,
         dto.url,
         dto.name,
         dto.startChapter,

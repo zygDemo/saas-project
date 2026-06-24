@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { LeadStatus } from '@prisma/client'
+import { LeadStatus, Prisma } from '@prisma/client'
 import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { AssignLeadDto, CreateLeadDto, CreateLeadFollowUpDto, LeadQueryDto, UpdateLeadDto } from './dto/lead.dto'

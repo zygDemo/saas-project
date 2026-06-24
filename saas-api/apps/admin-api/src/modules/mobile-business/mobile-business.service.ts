@@ -1,8 +1,8 @@
 import { hasValue } from '../../common/utils/helpers'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
-﻿import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { Prisma } from '@prisma/client'
 import { ApplicationStatus, Gender, Prisma } from '@prisma/client'
 import { RequestUser } from '../../common/types/request-user'
 import {
@@ -702,7 +702,7 @@ export class MobileBusinessService {
   }
 
   private async ensureCustomerDraftApplication(
-    customer: Record<string, unknown>,
+    customer: any,
     user: RequestUser,
     options: { businessType?: string } = {}
   ) {
@@ -745,7 +745,7 @@ export class MobileBusinessService {
     )
   }
 
-  private mapCustomer(customer: Record<string, unknown>) {
+  private mapCustomer(customer: any) {
     return {
       id: customer.id,
       uuid: String(customer.id),
@@ -766,7 +766,7 @@ export class MobileBusinessService {
     }
   }
 
-  private mapVehicle(vehicle: Record<string, unknown>, uuid: string) {
+  private mapVehicle(vehicle: any, uuid: string) {
     return {
       id: vehicle.id,
       uuid,
@@ -788,7 +788,7 @@ export class MobileBusinessService {
     }
   }
 
-  private mapApplication(application: Record<string, unknown>, includeDetail = false) {
+  private mapApplication(application: any, includeDetail = false) {
     const customer = application.customer
     const vehicle = customer?.vehicles?.[0] || customer?.vehicles?.at?.(0)
     return {
@@ -825,9 +825,9 @@ export class MobileBusinessService {
   private async linkCustomerImages(customer: Record<string, unknown>, dto: MobileIdCardInfoDto, user: RequestUser) {
     if (dto.idcardFront) {
       await this.createFileAsset({
-        orgId: customer.orgId,
+        orgId: customer.orgId as number,
         businessType: 'CUSTOMER',
-        businessId: customer.id,
+        businessId: customer.id as number,
         categoryCode: 'ID_CARD_FRONT',
         categoryName: '身份证人像面',
         reference: dto.idcardFront,
@@ -836,9 +836,9 @@ export class MobileBusinessService {
     }
     if (dto.idcardBack) {
       await this.createFileAsset({
-        orgId: customer.orgId,
+        orgId: customer.orgId as number,
         businessType: 'CUSTOMER',
-        businessId: customer.id,
+        businessId: customer.id as number,
         categoryCode: 'ID_CARD_BACK',
         categoryName: '身份证国徽面',
         reference: dto.idcardBack,
@@ -917,7 +917,7 @@ export class MobileBusinessService {
           uploadedBy: params.user.sub
         }
       })
-      return this.mapFileAsset(created)
+      return this.mapFileAsset(created as Record<string, unknown>)
     } catch (error) {
       if (this.isMissingFileAssetStorage(error)) return null
       throw error
@@ -1024,7 +1024,7 @@ export class MobileBusinessService {
   }
 
   private mapFileAsset(file: Record<string, unknown>) {
-    const fileUrl = normalizeFileUrl(file.fileUrl, this.config.get<string>('API_PREFIX', 'saas/api'))
+    const fileUrl = normalizeFileUrl(file.fileUrl as string | null | undefined, this.config.get<string>('API_PREFIX', 'saas/api'))
     return {
       ...file,
       url: fileUrl,

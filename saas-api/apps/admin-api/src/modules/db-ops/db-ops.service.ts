@@ -101,8 +101,8 @@ export class DbOpsService {
       return output
     } catch (e: unknown) {
       const errorMsg = e instanceof Error ? e.message : String(e)
-      this.logger.error(`${name} 失败: ${e.message}`)
-      throw new InternalServerErrorException(`${name} 失败: ${e.message}`)
+      this.logger.error(`${name} 失败: ${errorMsg}`)
+      throw new InternalServerErrorException(`${name} 失败: ${errorMsg}`)
     } finally {
       this.running = false
     }
@@ -123,7 +123,7 @@ export class DbOpsService {
       return String(output).trim()
     } catch (e: unknown) {
       const execError = e as { stderr?: Buffer; stdout?: Buffer; message?: string }
-      const stderr = execError.stderr ? e.stderr.toString().trim() : ''
+      const stderr = execError.stderr ? execError.stderr.toString().trim() : ''
       const stdout = execError.stdout ? execError.stdout.toString().trim() : ''
       const detail = stderr || stdout || (execError.message ?? String(e))
       this.logger.error(`命令执行失败 [${command}]: ${detail}`)

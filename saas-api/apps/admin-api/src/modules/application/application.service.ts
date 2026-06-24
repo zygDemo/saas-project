@@ -4,6 +4,7 @@ import {
   ApprovalAction,
   DisbursementStatus,
   LeadStatus,
+  Prisma,
   RepaymentStatus,
   SignStatus
 } from '@prisma/client'
@@ -594,10 +595,12 @@ export class ApplicationService extends BaseBusinessCrudService<
       '当前状态不允许发起签约'
     )
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const tenantId = getCurrentTenantId()!
       await tx.signRecord.upsert({
         where: { applicationId: id },
         update: { status: SignStatus.SENT, contractUrl: dto.contractUrl, expiredAt: dto.expiredAt },
         create: {
+          tenantId,
           applicationId: id,
           status: SignStatus.SENT,
           contractUrl: dto.contractUrl,
@@ -621,6 +624,7 @@ export class ApplicationService extends BaseBusinessCrudService<
       '当前状态不允许完成签约'
     )
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const tenantId = getCurrentTenantId()!
       await tx.signRecord.upsert({
         where: { applicationId: id },
         update: {
@@ -630,6 +634,7 @@ export class ApplicationService extends BaseBusinessCrudService<
           signedAt: dto.signedAt || new Date()
         },
         create: {
+          tenantId,
           applicationId: id,
           status: SignStatus.SIGNED,
           contractUrl: dto.contractUrl,
@@ -640,7 +645,7 @@ export class ApplicationService extends BaseBusinessCrudService<
       await tx.disbursement.upsert({
         where: { applicationId: id },
         update: {},
-        create: { applicationId: id, status: DisbursementStatus.PENDING_APPLICATION }
+        create: { tenantId, applicationId: id, status: DisbursementStatus.PENDING_APPLICATION }
       })
       return tx.application.update({
         where: { id },
@@ -705,6 +710,7 @@ export class ApplicationService extends BaseBusinessCrudService<
         gpsInstallAt: dto.gpsInstallAt || new Date()
       },
       create: {
+        tenantId: getCurrentTenantId()!,
         applicationId: id,
         status: DisbursementStatus.GPS_INSTALLED,
         gpsDeviceNo: dto.gpsDeviceNo,
@@ -729,6 +735,7 @@ export class ApplicationService extends BaseBusinessCrudService<
         mortgageAt: dto.mortgageAt || new Date()
       },
       create: {
+        tenantId: getCurrentTenantId()!,
         applicationId: id,
         status: DisbursementStatus.MORTGAGE_DONE,
         mortgageStatus: dto.mortgageStatus || 'DONE',
@@ -745,10 +752,11 @@ export class ApplicationService extends BaseBusinessCrudService<
       '当前状态不允许提交资方放款申请'
     )
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const tenantId = getCurrentTenantId()!
       await tx.disbursement.upsert({
         where: { applicationId: id },
         update: { status: DisbursementStatus.PENDING_APPROVAL, remark: dto.remark },
-        create: { applicationId: id, status: DisbursementStatus.PENDING_APPROVAL, remark: dto.remark }
+        create: { tenantId, applicationId: id, status: DisbursementStatus.PENDING_APPROVAL, remark: dto.remark }
       })
       return tx.application.update({
         where: { id },
@@ -767,6 +775,7 @@ export class ApplicationService extends BaseBusinessCrudService<
       '当前状态不允许放款确认'
     )
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const tenantId = getCurrentTenantId()!
       const disbursement = await tx.disbursement.findFirst({ where: { applicationId: id } })
       if (disbursement?.status !== DisbursementStatus.PENDING_APPROVAL) {
         throw new BadRequestException('请先提交出账申请')
@@ -783,6 +792,7 @@ export class ApplicationService extends BaseBusinessCrudService<
           remark: dto.remark
         },
         create: {
+          tenantId,
           applicationId: id,
           status: DisbursementStatus.DISBURSED,
           disburseAmount: dto.disburseAmount,
@@ -826,6 +836,7 @@ export class ApplicationService extends BaseBusinessCrudService<
 
       await tx.repaymentRecord.create({
         data: {
+          tenantId: getCurrentTenantId()!,
           planId,
           amount: dto.amount,
           principal,
@@ -969,7 +980,7 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   private async assertSameOrg(
-    model: Record<string, unknown>,
+    model: any,
     id: number | undefined,
     orgId: number,
     notFoundMessage: string,
@@ -980,7 +991,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     if (item.orgId !== orgId) throw new BadRequestException(mismatchMessage)
   }
 
-  private async getScopedRelated(model: Record<string, unknown>, id: number | undefined, message: string) {
+  private async getScopedRelated(model: any, id: number | undefined, message: string) {
     if (id === undefined || id === null) throw new BadRequestException(message)
     const tenantId = getCurrentTenantId()
     const where = tenantId ? { id, tenantId } : { id }
@@ -1045,6 +1056,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.approvalRecord.create({
         data: {
+          tenantId: getCurrentTenantId()!,
           applicationId: id,
           approverId: approvalData.approverId,
           stage: approvalData.stage,
@@ -1066,7 +1078,8 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  「读 + 状态校验 + 写」，避免 TOCTOU 竞态。
+  /**
+   * 原子状态流转：在单次查询中完成「读 + 状态校验 + 写」，避免 TOCTOU 竞态。
    * 用于不需要读取 application 其他字段的简单状态变更。
    */
 
@@ -1187,7 +1200,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     return where
   }
 
-  private mapOrderListItem(application: Record<string, unknown>) {
+  private mapOrderListItem(application: any) {
     const customer = application.customer
     const vehicle = customer?.vehicles?.[0] || customer?.vehicles?.at?.(0)
     const currentNode = Number(application.currentNode)
@@ -1233,7 +1246,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     }
   }
 
-  private mapApplicationDetail(application: Record<string, unknown>) {
+  private mapApplicationDetail(application: any) {
     const customer = application.customer
     const vehicles = Array.isArray(customer?.vehicles) ? customer.vehicles : []
     const vehicle = vehicles[0] || vehicles.at?.(0)
@@ -1312,7 +1325,7 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   private mapDetailOrder(
-    application: Record<string, unknown>,
+    application: any,
     currentNode: number,
     currentStatus: number,
     currentNodeName: string,
@@ -1348,7 +1361,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailCustomer(customer: Record<string, unknown>) {
+  private mapDetailCustomer(customer: any) {
     return omitEmptyValues({
       id: customer.id,
       name: customer.name,
@@ -1375,7 +1388,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailVehicle(vehicle: Record<string, unknown>) {
+  private mapDetailVehicle(vehicle: any) {
     return omitEmptyValues({
       id: vehicle.id,
       plateNumber: vehicle.plateNumber,
@@ -1400,7 +1413,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailProduct(product: Record<string, unknown>) {
+  private mapDetailProduct(product: any) {
     return omitEmptyValues({
       id: product.id,
       name: product.name,
@@ -1425,7 +1438,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailFunder(funder: Record<string, unknown>) {
+  private mapDetailFunder(funder: any) {
     return omitEmptyValues({
       id: funder.id,
       name: funder.name,
@@ -1440,7 +1453,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailOrg(org: Record<string, unknown>) {
+  private mapDetailOrg(org: any) {
     return omitEmptyValues({
       id: org.id,
       name: org.name,
@@ -1456,7 +1469,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailCreator(creator: Record<string, unknown>) {
+  private mapDetailCreator(creator: any) {
     return omitEmptyValues({
       id: creator.id,
       userName: creator.userName,
@@ -1465,7 +1478,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailFiles(files: Record<string, unknown>[] = []) {
+  private mapDetailFiles(files: any[] = []) {
     const result: Record<string, unknown>[] = []
     const seen = new Set<string>()
 
@@ -1490,7 +1503,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     return result
   }
 
-  private mapApprovals(approvals: Record<string, unknown>[] = []) {
+  private mapApprovals(approvals: any[] = []) {
     return approvals.map((approval) =>
       omitEmptyValues({
         id: approval.id,
@@ -1507,7 +1520,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     )
   }
 
-  private mapSignRecord(record: Record<string, unknown>) {
+  private mapSignRecord(record: any) {
     return omitEmptyValues({
       id: record.id,
       status: record.status,
@@ -1519,7 +1532,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDisbursement(disbursement: Record<string, unknown>) {
+  private mapDisbursement(disbursement: any) {
     return omitEmptyValues({
       id: disbursement.id,
       status: disbursement.status,
@@ -1538,7 +1551,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapRepayments(repayments: Record<string, unknown>[] = []) {
+  private mapRepayments(repayments: any[] = []) {
     return repayments.map((repayment) =>
       omitEmptyValues({
         id: repayment.id,
@@ -1558,7 +1571,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     )
   }
 
-  private buildRepaymentSummary(repayments: Record<string, unknown>[] = []) {
+  private buildRepaymentSummary(repayments: any[] = []) {
     return {
       totalPeriods: repayments.length,
       paidPeriods: repayments.filter((item) => item.status === RepaymentStatus.PAID).length,
@@ -1570,7 +1583,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     }
   }
 
-  private mapFlowApplication(application: Record<string, unknown>) {
+  private mapFlowApplication(application: any) {
     return {
       ...application,
       creditOrderId: application.applicationNo,
@@ -1586,7 +1599,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     }
   }
 
-  private resolveFlowNodeName(application: Record<string, unknown>) {
+  private resolveFlowNodeName(application: any) {
     const flowConfigs = application.org?.flowConfigs
     const config = Array.isArray(flowConfigs)
       ? flowConfigs.find(
@@ -1602,7 +1615,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     )
   }
 
-  private resolveFlowPhaseCode(application: Record<string, unknown>) {
+  private resolveFlowPhaseCode(application: any) {
     const currentNode = Number(application.currentNode)
     const flowConfigs = application.org?.flowConfigs
     const config = Array.isArray(flowConfigs)
@@ -1618,7 +1631,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     return Number.isFinite(phaseCode) ? phaseCode : currentNode
   }
 
-  private resolveFlowPhaseName(application: Record<string, unknown>, phaseCode: number) {
+  private resolveFlowPhaseName(application: any, phaseCode: number) {
     const flowConfigs = application.org?.flowConfigs
     const config = Array.isArray(flowConfigs)
       ? flowConfigs.find(
@@ -1638,7 +1651,7 @@ export class ApplicationService extends BaseBusinessCrudService<
 
   private async createRepaymentPlansIfNeeded(
     tx: Prisma.TransactionClient,
-    application: Record<string, unknown>,
+    application: any,
     dto: ConfirmDisbursementDto
   ) {
     const existed = await tx.repaymentPlan.count({ where: { applicationId: application.id } })
@@ -1667,6 +1680,7 @@ export class ApplicationService extends BaseBusinessCrudService<
       const remainingPrincipal = Math.round((amount - roundedMonthlyPrincipal * index) * 100) / 100
       const interest = Math.round(remainingPrincipal * monthlyRate * 100) / 100
       return {
+        tenantId: getCurrentTenantId()!,
         applicationId: application.id,
         period: index + 1,
         dueDate,

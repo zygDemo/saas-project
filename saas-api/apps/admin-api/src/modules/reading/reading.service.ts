@@ -73,17 +73,17 @@ export class ReadingService {
   }
 
   private buildCategoryTree(categories: Record<string, unknown>[]) {
-    const map = new Map<number, any>();
+    const map = new Map<number, Record<string, unknown>>();
     const roots: Record<string, unknown>[] = [];
 
     for (const cat of categories) {
-      map.set(cat.id, { ...cat, children: [] });
+      map.set(cat.id as number, { ...cat, children: [] });
     }
 
     for (const cat of categories) {
-      const node = map.get(cat.id)!;
-      if (cat.parentId && map.has(cat.parentId)) {
-        map.get(cat.parentId)!.children.push(node);
+      const node = map.get(cat.id as number)!;
+      if (cat.parentId && map.has(cat.parentId as number)) {
+        (map.get(cat.parentId as number)!.children as Record<string, unknown>[]).push(node);
       } else {
         roots.push(node);
       }

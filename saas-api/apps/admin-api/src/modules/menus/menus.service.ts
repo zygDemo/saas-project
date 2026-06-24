@@ -1,6 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
-import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { getRequiredTenantId } from '../../common/utils/helpers'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateMenuDto, CreatePermissionDto, UpdateMenuDto, UpdatePermissionDto } from './dto/menu.dto'
@@ -190,7 +189,7 @@ export class MenusService {
       menuId: permission.menuId,
       title: permission.title,
       authMark: permission.authMark,
-      roles: permission.roles.map(({ role }: { role: Prisma.Role }) => role.code)
+      roles: permission.roles.map(({ role }: { role: { code: string } }) => role.code)
     }
   }
 

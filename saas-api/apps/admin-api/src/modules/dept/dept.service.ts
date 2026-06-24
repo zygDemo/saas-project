@@ -26,11 +26,12 @@ export class DeptService extends BaseBusinessCrudService<CreateDeptDto, UpdateDe
 
   async getList(query: DeptQueryDto) {
     const page = await super.getList(query)
+    const records = page.records as { managerId?: number; [key: string]: unknown }[]
     const managerIds = [
       ...new Set(
-        page.records
-          .map((item: { managerId?: number }) => item.managerId)
-          .filter((id: unknown): id is number => typeof id === 'number')
+        records
+          .map((item) => item.managerId)
+          .filter((id): id is number => typeof id === 'number')
       )
     ]
     if (!managerIds.length) return page
@@ -39,11 +40,11 @@ export class DeptService extends BaseBusinessCrudService<CreateDeptDto, UpdateDe
       where: { id: { in: managerIds } },
       select: { id: true, nickName: true, userName: true, phone: true }
     })
-    const managerMap = new Map<number, DeptManagerOption>(managers.map((user) => [user.id, user]))
+    const managerMap = new Map<number, DeptManagerOption>(managers.map((user: DeptManagerOption) => [user.id, user]))
 
     return {
       ...page,
-      records: page.records.map((item: { managerId?: number; [key: string]: unknown }) => {
+      records: records.map((item) => {
         const manager = item.managerId ? managerMap.get(item.managerId) : undefined
         return {
           ...item,
