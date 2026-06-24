@@ -1209,13 +1209,31 @@ export class MobileBusinessService {
     const customer = await this.getCustomerByUuid(dto.userUuid)
     if (!customer) throw new NotFoundException('客户不存在')
 
+    const relationMap: Record<number, string> = {
+      1: '配偶',
+      2: '父母',
+      3: '子女',
+      4: '朋友',
+      5: '兄弟姐妹',
+      6: '亲戚',
+      7: '同事',
+      8: '其他'
+    }
+
+    const normalizedName = dto.contactName?.trim()
+    const normalizedPhone = dto.contactTelephone?.trim()
+    const normalizedRelation = dto.contactRelationship ? relationMap[dto.contactRelationship] : undefined
+
+    if (!normalizedName) throw new BadRequestException('联系人姓名不能为空')
+    if (!normalizedPhone) throw new BadRequestException('联系人手机号不能为空')
+    if (!normalizedRelation) throw new BadRequestException('联系人关系不正确')
+
     const data = {
       customerId: customer.id,
-      contactType: dto.contactType,
-      contactName: dto.contactName,
-      contactTelephone: dto.contactTelephone,
-      contactIdcard: dto.contactIdcard,
-      contactRelationship: dto.contactRelationship
+      name: normalizedName,
+      relation: normalizedRelation,
+      phone: normalizedPhone,
+      isEmergency: dto.contactType === 2 || dto.contactType === 3
     }
 
     if (dto.id) {

@@ -1,6 +1,6 @@
 <template>
   <app-page :nav-title="pageTitle">
-    <view v-if="detail && isPreAuditDetail" class="pre-audit-detail-page">
+    <view v-if="detail && isFlowDetailPage" class="pre-audit-detail-page">
       <view class="pre-customer-card">
         <view class="pre-customer-header">
           <view class="pre-avatar">
@@ -24,7 +24,7 @@
           v-for="item in preAuditEntryItems"
           :key="item.type"
           class="pre-supplement-card"
-          :class="{ 'pre-supplement-card--submit': item.code === 'PENDING_PRECHECK' }"
+          :class="{ 'pre-supplement-card--submit': ['PENDING_PRECHECK', 'PENDING_SUPPLEMENT'].includes(item.code) }"
           @click="goPreAuditStep(item)"
         >
           <view class="pre-card-icon" :class="item.iconClass">
@@ -44,7 +44,7 @@
           </view>
           <view class="pre-card-arrow">
             <u-button
-              v-if="item.code === 'PENDING_PRECHECK'"
+              v-if="['PENDING_PRECHECK', 'PENDING_SUPPLEMENT'].includes(item.code)"
               type="primary"
               size="mini"
               :loading="submitting"
@@ -459,9 +459,19 @@ const currentNodeCode = computed(() =>
 );
 
 const isPreAuditDetail = computed(() =>
-  ["1100", "1200", "1300", "PRE_AUDIT", "INITIAL_AUDIT"].includes(
+  ["1100", "1200", "PRE_AUDIT", "INITIAL_AUDIT"].includes(
     currentNodeCode.value,
   ),
+);
+
+const isSupplementDetail = computed(() =>
+  ["1300", "1310", "1320", "1330", "1340", "SUPPLEMENT_MATERIALS"].includes(
+    currentNodeCode.value,
+  ),
+);
+
+const isFlowDetailPage = computed(
+  () => isPreAuditDetail.value || isSupplementDetail.value,
 );
 
 /** 根据节点状态获取页面标题 */
@@ -491,74 +501,131 @@ const pageTitle = computed(() => {
   if (["PRE_AUDIT", "INITIAL_AUDIT"].includes(code)) return "预审阶段";
   if (code === "SUPPLEMENT_MATERIALS") return "补件阶段";
 
+  if (isSupplementDetail.value) return "补件阶段";
+
   return isPreAuditDetail.value ? "预审阶段" : "订单详情";
 });
 
-const preAuditEntryItems = computed(() => [
-  {
-    type: "idInfo",
-    code: "ID_CARD",
-    title: "身份证信息",
-    desc: "完善客户身份、证件、联系方式等",
-    icon: "account",
-    iconClass: "pre-card-icon-customer",
-  },
-  {
-    type: "carInfo",
-    code: "VEHICLE",
-    title: "车辆信息",
-    desc: "完善车辆品牌、型号、年限等",
-    icon: "car",
-    iconClass: "pre-card-icon-car",
-  },
-  {
-    type: "applyInfo",
-    code: "APPLICATION",
-    title: "申请信息",
-    desc: "完善申请金额、期限、产品等",
-    icon: "order",
-    iconClass: "pre-card-icon-order",
-  },
-  {
-    type: "authSign",
-    code: "AUTH_SIGN",
-    title: "签署授权书",
-    desc: "签署授权书，授权资方查询征信等",
-    icon: "edit-pen",
-    iconClass: "pre-card-icon-file",
-  },
-  {
-    type: "submit",
-    code: "PENDING_PRECHECK",
-    title: "待预审",
-    desc: "资料确认完成后提交，进入预审流程",
-    icon: "clock",
-    iconClass: "pre-card-icon-pending",
-  },
-]);
+const preAuditEntryItems = computed(() => {
+  if (isSupplementDetail.value) {
+    return [
+      {
+        type: "idInfoSupplement",
+        code: "CUSTOMER_SUPPLEMENT",
+        title: "客户资料",
+        desc: "补充客户基本信息、联系方式等",
+        icon: "account",
+        iconClass: "pre-card-icon-customer",
+      },
+      {
+        type: "carInfoSupplement",
+        code: "VEHICLE_SUPPLEMENT",
+        title: "车辆资料",
+        desc: "补充车辆品牌、型号、年限等",
+        icon: "car",
+        iconClass: "pre-card-icon-car",
+      },
+      {
+        type: "orderInfoSupplement",
+        code: "ORDER_SUPPLEMENT",
+        title: "订单信息",
+        desc: "补充申请金额、期限、产品等",
+        icon: "order",
+        iconClass: "pre-card-icon-order",
+      },
+      {
+        type: "fileInfoSupplement",
+        code: "FILE_SUPPLEMENT",
+        title: "文件信息",
+        desc: "上传身份证、行驶证等材料",
+        icon: "edit-pen",
+        iconClass: "pre-card-icon-file",
+      },
+      {
+        type: "submitSupplement",
+        code: "PENDING_SUPPLEMENT",
+        title: "待提交",
+        desc: "资料补充完成后提交，进入下一环节",
+        icon: "clock",
+        iconClass: "pre-card-icon-pending",
+      },
+    ];
+  }
+
+  return [
+    {
+      type: "idInfo",
+      code: "ID_CARD",
+      title: "身份证信息",
+      desc: "完善客户身份、证件、联系方式等",
+      icon: "account",
+      iconClass: "pre-card-icon-customer",
+    },
+    {
+      type: "carInfo",
+      code: "VEHICLE",
+      title: "车辆信息",
+      desc: "完善车辆品牌、型号、年限等",
+      icon: "car",
+      iconClass: "pre-card-icon-car",
+    },
+    {
+      type: "applyInfo",
+      code: "APPLICATION",
+      title: "申请信息",
+      desc: "完善申请金额、期限、产品等",
+      icon: "order",
+      iconClass: "pre-card-icon-order",
+    },
+    {
+      type: "authSign",
+      code: "AUTH_SIGN",
+      title: "签署授权书",
+      desc: "签署授权书，授权资方查询征信等",
+      icon: "edit-pen",
+      iconClass: "pre-card-icon-file",
+    },
+    {
+      type: "submit",
+      code: "PENDING_PRECHECK",
+      title: "待预审",
+      desc: "资料确认完成后提交，进入预审流程",
+      icon: "clock",
+      iconClass: "pre-card-icon-pending",
+    },
+  ];
+});
 
 function getEntryStepDone(code) {
-  if (code === "ID_CARD") {
+  if (code === "ID_CARD" || code === "CUSTOMER_SUPPLEMENT") {
     return Boolean(carloanStore.pageContext.uuid);
   }
-  if (code === "VEHICLE") {
+  if (code === "VEHICLE" || code === "VEHICLE_SUPPLEMENT") {
     return Boolean(
       detail.value?.vehicle?.plateNumber ||
         detail.value?.plateNumber ||
         detail.value?.vehicleInfo?.plateNumber,
     );
   }
-  if (code === "APPLICATION") {
+  if (code === "APPLICATION" || code === "ORDER_SUPPLEMENT") {
     return Boolean(detail.value?.periods || detail.value?.pushQuota || detail.value?.amount);
   }
   if (code === "AUTH_SIGN") {
     return detail.value?.isSignContract === 1;
   }
+  if (code === "FILE_SUPPLEMENT") {
+    return Boolean(
+      detail.value?.fileCount ||
+        detail.value?.attachmentCount ||
+        detail.value?.materialCount ||
+        detail.value?.uploadCount,
+    );
+  }
   return false;
 }
 
 function getPreAuditStepTag(item) {
-  if (item.code === "PENDING_PRECHECK") {
+  if (["PENDING_PRECHECK", "PENDING_SUPPLEMENT"].includes(item.code)) {
     return {
       text: allPreAuditStepsDone.value ? "待提交" : "待完善",
       type: allPreAuditStepsDone.value ? "info" : "warning",
@@ -571,12 +638,12 @@ function getPreAuditStepTag(item) {
 
 const allPreAuditStepsDone = computed(() =>
   preAuditEntryItems.value
-    .filter((item) => item.code !== "PENDING_PRECHECK")
+    .filter((item) => !["PENDING_PRECHECK", "PENDING_SUPPLEMENT"].includes(item.code))
     .every((item) => getEntryStepDone(item.code)),
 );
 
 function goPreAuditStep(item) {
-  if (item.code === "PENDING_PRECHECK") {
+  if (["PENDING_PRECHECK", "PENDING_SUPPLEMENT"].includes(item.code)) {
     handlePreAuditSubmit();
     return;
   }
@@ -593,6 +660,10 @@ function goPreAuditStep(item) {
     carInfo: buildRoute(APP_ROUTES.carloan.precheck.carInfo, detailRouteQuery),
     applyInfo: buildRoute(APP_ROUTES.carloan.precheck.applyInfo, detailRouteQuery),
     authSign: buildRoute(APP_ROUTES.carloan.signing.videoFaceSign, detailRouteQuery),
+    idInfoSupplement: buildRoute(APP_ROUTES.carloan.supplement.idInfoSupplement, detailRouteQuery),
+    carInfoSupplement: buildRoute(APP_ROUTES.carloan.supplement.carInfoSupplement, detailRouteQuery),
+    orderInfoSupplement: buildRoute(APP_ROUTES.carloan.supplement.orderInfoSupplement, detailRouteQuery),
+    fileInfoSupplement: buildRoute(APP_ROUTES.carloan.supplement.fileInfoSupplement, detailRouteQuery),
   };
   const url = urlMap[item.type];
   if (url) {
@@ -609,7 +680,7 @@ async function handlePreAuditSubmit() {
 
   const { confirm } = await uni.showModal({
     title: "确认提交",
-    content: "提交后将进入预审流程，确认提交吗？",
+    content: isSupplementDetail.value ? "提交后将进入下一处理环节，确认提交吗？" : "提交后将进入预审流程，确认提交吗？",
     confirmText: "确认提交",
     cancelText: "再等等",
   });
@@ -618,7 +689,7 @@ async function handlePreAuditSubmit() {
   submitting.value = true;
   try {
     await businessApi.submitInitialAudit(orderNo.value);
-    uni.showToast({ title: "提交成功", icon: "success" });
+    uni.showToast({ title: isSupplementDetail.value ? "补件提交成功" : "提交成功", icon: "success" });
     setTimeout(() => {
       uni.navigateBack();
     }, 1200);
@@ -839,6 +910,27 @@ const copyText = (text) => {
   flex-shrink: 0;
   display: flex;
   align-items: center;
+}
+
+.pre-supplement-card--submit {
+  align-items: flex-start;
+}
+
+.pre-supplement-card--submit .pre-card-icon {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pre-supplement-card--submit .pre-card-body {
+  padding-top: 4rpx;
+}
+
+.pre-supplement-card--submit .pre-card-arrow {
+  gap: 16rpx;
+}
+
+.pre-card-icon-pending {
+  background: linear-gradient(135deg, #93c5fd, #60a5fa);
 }
 
 .pre-action-area {

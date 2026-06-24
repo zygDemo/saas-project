@@ -316,7 +316,7 @@
           <!-- 加载更多状态 -->
           <view v-if="filteredBooks.length > 0" class="load-more-status">
             <view v-if="isLoadingMore" class="loading-more">
-              <u-loading-icon mode="flower" size="28" />
+              <u-loading mode="flower" size="28" />
               <text>加载中...</text>
             </view>
             <view v-else-if="!hasMore" class="no-more">
