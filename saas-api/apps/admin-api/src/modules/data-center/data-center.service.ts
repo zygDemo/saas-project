@@ -3,7 +3,7 @@ import { ApplicationStatus, DisbursementStatus, Prisma, RepaymentStatus } from '
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
-import { AuditLogQueryDto, DateRangeQueryDto } from './dto/data-center.dto'
+import { AuditLogQueryDto, AuditLogStatsDto, DateRangeQueryDto } from './dto/data-center.dto'
 
 const PHASES = [
   { code: 1000, name: '预审阶段', nodes: [1100, 1110, 1120, 1130, 1140, 1200, 1250] },
@@ -105,9 +105,9 @@ export class DataCenterService {
         _count: { _all: true },
         _sum: { amount: true }
       }),
-      this.prisma.$queryRaw<Array<{ day: Date; count: bigint; amount: Prisma.Decimal | null }>>`
+      this.prisma.$queryRaw<Array<{ day: Date; count: number; amount: Prisma.Decimal | null }>>`
         SELECT date_trunc('day', "createdAt") AS day,
-               COUNT(*)::bigint AS count,
+               COUNT(*)::int AS count,
                SUM("amount") AS amount
         FROM "Application"
         WHERE (${this.currentTenantId()}::int IS NULL OR "tenantId" = ${this.currentTenantId()}::int)
@@ -220,6 +220,11 @@ export class DataCenterService {
     if (query.module) where.module = { contains: query.module, mode: 'insensitive' }
     if (query.action) where.action = query.action
     if (query.userName) where.userName = { contains: query.userName, mode: 'insensitive' }
+    if (query.status === 'success') {
+      where.statusCode = { gte: 200, lt: 300 }
+    } else if (query.status === 'fail') {
+      where.statusCode = { gte: 400 }
+    }
     if (query.keyword) {
       where.OR = [
         { module: { contains: query.keyword, mode: 'insensitive' } },
@@ -264,5 +269,48 @@ export class DataCenterService {
     if (!value) return value
     const text = JSON.stringify(value)
     return text.length > 1200 ? `${text.slice(0, 1200)}...` : value
+  }
+
+  async getAuditLogStats(query: AuditLogStatsDto) {
+    const dateWhere = this.buildDateWhere(query, 'createdAt')
+    const tenantWhere = this.tenantWhere()
+    const baseWhere = { ...tenantWhere, ...dateWhere }
+    
+    const moduleWhere = query.module 
+      ? { ...baseWhere, module: { contains: query.module, mode: 'insensitive' as const } }
+      : baseWhere
+
+    const [total, successCount, failCount, moduleStats, actionStats] = await this.prisma.$transaction([
+      this.prisma.operationLog.count({ where: baseWhere }),
+      this.prisma.operationLog.count({ where: { ...baseWhere, statusCode: { gte: 200, lt: 300 } } }),
+      this.prisma.operationLog.count({ where: { ...baseWhere, statusCode: { gte: 400 } } }),
+      this.prisma.operationLog.groupBy({
+        by: ['module'],
+        where: moduleWhere,
+        _count: { _all: true },
+        orderBy: { _count: { module: 'desc' } }
+      }),
+      this.prisma.operationLog.groupBy({
+        by: ['action'],
+        where: moduleWhere,
+        _count: { _all: true },
+        orderBy: { _count: { action: 'desc' } }
+      })
+    ])
+
+    return {
+      total,
+      successCount,
+      failCount,
+      successRate: total > 0 ? Number(((successCount / total) * 100).toFixed(1)) : 0,
+      modules: moduleStats.map(item => ({
+        module: item.module,
+        count: item._count._all
+      })),
+      actions: actionStats.map(item => ({
+        action: item.action,
+        count: item._count._all
+      }))
+    }
   }
 }

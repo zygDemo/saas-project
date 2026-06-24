@@ -345,7 +345,7 @@ import { computed, ref, onMounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
-import { buildEntryRouteQuery } from "@/common/carloan-route-query";
+import { buildEntryRouteQuery, buildSignRouteQuery } from "@/common/carloan-route-query";
 import { useCarloanStore } from "@/stores/carloan";
 
 const carloanStore = useCarloanStore();
@@ -470,8 +470,17 @@ const isSupplementDetail = computed(() =>
   ),
 );
 
+const isSigningDetail = computed(() => {
+  const code = currentNodeCode.value;
+  const numericCode = Number(code);
+  return (
+    (Number.isFinite(numericCode) && numericCode >= 1600 && numericCode <= 1660) ||
+    ["SIGN_CONTRACT", "PENDING_SIGN", "SIGNING_PROGRESS"].includes(code)
+  );
+});
+
 const isFlowDetailPage = computed(
-  () => isPreAuditDetail.value || isSupplementDetail.value,
+  () => isPreAuditDetail.value || isSupplementDetail.value || isSigningDetail.value,
 );
 
 /** 根据节点状态获取页面标题 */
@@ -500,13 +509,60 @@ const pageTitle = computed(() => {
   // 兼容旧的英文节点编码
   if (["PRE_AUDIT", "INITIAL_AUDIT"].includes(code)) return "预审阶段";
   if (code === "SUPPLEMENT_MATERIALS") return "补件阶段";
+  if (["SIGN_CONTRACT", "PENDING_SIGN", "SIGNING_PROGRESS"].includes(code)) return "签约阶段";
 
   if (isSupplementDetail.value) return "补件阶段";
+  if (isSigningDetail.value) return "签约阶段";
 
   return isPreAuditDetail.value ? "预审阶段" : "订单详情";
 });
 
 const preAuditEntryItems = computed(() => {
+  if (isSigningDetail.value) {
+    return [
+      {
+        type: "signConfirmAmount",
+        code: "CONFIRM_AMOUNT",
+        title: "确认额度",
+        desc: "确认资方批复的贷款额度和利率",
+        icon: "rmb-circle",
+        iconClass: "pre-card-icon-customer",
+      },
+      {
+        type: "signBindCard",
+        code: "BIND_CARD",
+        title: "绑卡",
+        desc: "绑定收款银行卡",
+        icon: "card",
+        iconClass: "pre-card-icon-car",
+      },
+      {
+        type: "videoFaceSign",
+        code: "SIGN_CONTRACT",
+        title: "合同签约",
+        desc: "在线签署贷款合同",
+        icon: "edit-pen",
+        iconClass: "pre-card-icon-order",
+      },
+      {
+        type: "signGpsAppointment",
+        code: "GPS_APPOINTMENT",
+        title: "GPS安装预约",
+        desc: "预约GPS设备安装时间和地点",
+        icon: "map",
+        iconClass: "pre-card-icon-file",
+      },
+      {
+        type: "signMortgage",
+        code: "MORTGAGE",
+        title: "抵押办理",
+        desc: "预约或办理车辆抵押登记",
+        icon: "lock",
+        iconClass: "pre-card-icon-pending",
+      },
+    ];
+  }
+
   if (isSupplementDetail.value) {
     return [
       {
@@ -621,6 +677,11 @@ function getEntryStepDone(code) {
         detail.value?.uploadCount,
     );
   }
+  // 签约子步骤状态判断 - 基于 currentNodeCode 范围
+  // 签约阶段的子步骤都显示为"待办理"，用户点击后跳转到对应页面操作
+  if (["CONFIRM_AMOUNT", "BIND_CARD", "SIGN_CONTRACT", "GPS_APPOINTMENT", "MORTGAGE"].includes(code)) {
+    return false;
+  }
   return false;
 }
 
@@ -630,6 +691,12 @@ function getPreAuditStepTag(item) {
       text: allPreAuditStepsDone.value ? "待提交" : "待完善",
       type: allPreAuditStepsDone.value ? "info" : "warning",
     };
+  }
+  // 签约子步骤显示"待办理"
+  if (["CONFIRM_AMOUNT", "BIND_CARD", "SIGN_CONTRACT", "GPS_APPOINTMENT", "MORTGAGE"].includes(item.code)) {
+    return getEntryStepDone(item.code)
+      ? { text: "已完成", type: "success" }
+      : { text: "待办理", type: "info" };
   }
   return getEntryStepDone(item.code)
     ? { text: "已完成", type: "success" }
@@ -655,6 +722,12 @@ function goPreAuditStep(item) {
     phone: customerDisplayPhone.value,
     fromEntry: 1,
   });
+  const signRouteQuery = buildSignRouteQuery({
+    creditOrderId: orderNo.value,
+    uuid: carloanStore.pageContext.uuid,
+    customerName: customerDisplayName.value,
+    customerPhone: customerDisplayPhone.value,
+  });
   const urlMap = {
     idInfo: buildRoute(APP_ROUTES.carloan.precheck.idInfo, detailRouteQuery),
     carInfo: buildRoute(APP_ROUTES.carloan.precheck.carInfo, detailRouteQuery),
@@ -664,6 +737,11 @@ function goPreAuditStep(item) {
     carInfoSupplement: buildRoute(APP_ROUTES.carloan.supplement.carInfoSupplement, detailRouteQuery),
     orderInfoSupplement: buildRoute(APP_ROUTES.carloan.supplement.orderInfoSupplement, detailRouteQuery),
     fileInfoSupplement: buildRoute(APP_ROUTES.carloan.supplement.fileInfoSupplement, detailRouteQuery),
+    signConfirmAmount: buildRoute(APP_ROUTES.carloan.signing.signConfirmAmount, signRouteQuery),
+    signBindCard: buildRoute(APP_ROUTES.carloan.signing.signBindCard, signRouteQuery),
+    videoFaceSign: buildRoute(APP_ROUTES.carloan.signing.videoFaceSign, signRouteQuery),
+    signGpsAppointment: buildRoute(APP_ROUTES.carloan.signing.signGpsAppointment, signRouteQuery),
+    signMortgage: buildRoute(APP_ROUTES.carloan.signing.signMortgage, signRouteQuery),
   };
   const url = urlMap[item.type];
   if (url) {

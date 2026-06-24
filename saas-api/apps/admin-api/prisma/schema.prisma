@@ -565,9 +565,21 @@ model Customer {
   idCardBack       String?
   maritalStatus    String?
   education        String?
+  degree           String?     // 学位
   occupation       String?
-  companyName      String?
-  monthlyIncome    Decimal?  @db.Decimal(15, 2)
+  companyName      String?     // 单位名称
+  monthlyIncome    Decimal?    @db.Decimal(15, 2)
+  dwellingCondition String?    // 居住状况
+  liveProvince     String?     // 居住省
+  liveCity         String?     // 居住市
+  liveDistrict     String?     // 居住区
+  liveDetailedAddress String?  // 居住详细地址
+  childrenNum      Int?        // 供养子女数
+  workingProvince  String?     // 单位省
+  workingCity      String?     // 单位市
+  workingDistrict  String?     // 单位区
+  workingDetailedAddress String? // 单位详细地址
+  workingTelephone String?     // 公司电话
   address          String?
   emergencyName    String?
   emergencyPhone   String?
@@ -766,6 +778,7 @@ model SignRecord {
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 // ==================== 放款模型 ====================
@@ -794,6 +807,7 @@ model Disbursement {
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  deletedAt    DateTime?   // 软删除时间戳
 }
 
 // ==================== 还款模型 ====================
@@ -865,6 +879,7 @@ model OperationLog {
   requestData  Json? // 请求数据
   responseData Json? // 响应数据
   ip           String?
+  statusCode   Int      @default(200) // HTTP状态码
   userAgent    String?
   createdAt    DateTime @default(now())
 
@@ -873,6 +888,7 @@ model OperationLog {
   @@index([userId])
   @@index([module])
   @@index([createdAt])
+  @@index([statusCode])
 }
 
 // ==================== 读书模块 ====================

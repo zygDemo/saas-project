@@ -28,10 +28,14 @@ export class RequestLoggerInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap((data) => {
-        this.logRequest(request, response.statusCode, Date.now() - startedAt, data)
+        // 从响应体的 code 字段判断状态，而非 HTTP 状态码
+        const apiCode = (data && typeof data === 'object' && 'code' in data)
+          ? (data as { code: number }).code
+          : response.statusCode
+        this.logRequest(request, apiCode, Date.now() - startedAt, data)
       }),
       catchError((error) => {
-        const statusCode = error?.status ?? error?.response?.statusCode ?? response.statusCode
+        const statusCode = error?.response?.code ?? error?.status ?? response.statusCode
         this.logRequest(request, statusCode, Date.now() - startedAt, error?.response)
         return throwError(() => error)
       })
@@ -95,6 +99,7 @@ export class RequestLoggerInterceptor implements NestInterceptor {
           userName: user?.userName,
           module: moduleName,
           action,
+          statusCode: statusCode,
           description: `${request.method} ${url} ${statusCode} ${duration}ms`,
           requestData: requestData as object,
           responseData: this.limitJsonPayload(responseData) as object,

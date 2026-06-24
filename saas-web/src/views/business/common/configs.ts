@@ -5,7 +5,8 @@ import {
   repaymentStatusOptions, approvalActionOptions, productTypeOptions,
   repaymentMethodOptions, funderTypeOptions, integrationModeOptions,
   flowBusinessTypeOptions, flowNodeOptions, applicationStatusOptions,
-  yesNoOptions, apiEnabledOptions, orgExpireStateOptions, toOption
+  yesNoOptions, apiEnabledOptions, orgExpireStateOptions, toOption,
+  commonStatusMap
 } from './constants'
 
 const approvalFields: FieldConfig[] = [

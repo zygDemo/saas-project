@@ -16,6 +16,7 @@
     module: string
     action: string
     userName: string
+    status: string
   }
 
   interface Props {
@@ -49,6 +50,12 @@
     { label: 'PUT', value: 'PUT' },
     { label: 'PATCH', value: 'PATCH' },
     { label: 'DELETE', value: 'DELETE' }
+  ]
+
+  // 状态选项
+  const statusOptions = [
+    { label: '成功 (2xx)', value: 'success' },
+    { label: '失败 (4xx/5xx)', value: 'fail' }
   ]
 
   // 模块选项（常用模块）
@@ -96,6 +103,16 @@
         placeholder: '请选择方法',
         clearable: true,
         options: methodOptions
+      }
+    },
+    {
+      label: '状态',
+      key: 'status',
+      type: 'select',
+      props: {
+        placeholder: '请选择状态',
+        clearable: true,
+        options: statusOptions
       }
     },
     {

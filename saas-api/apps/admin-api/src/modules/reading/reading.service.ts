@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateBookCategoryDto,
@@ -317,7 +318,7 @@ export class ReadingService {
       throw new NotFoundException('书籍不存在');
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const chapter = await tx.bookChapter.create({
         data: {
           tenantId,
@@ -364,7 +365,7 @@ export class ReadingService {
       throw new NotFoundException('章节不存在');
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.book.update({
         where: { id: chapter.bookId },
         data: { chapterCount: { decrement: 1 } },
@@ -636,11 +637,11 @@ export class ReadingService {
 
       // 今日阅读分钟数（从保存的readTime累计，或按记录数估算每分钟）
       const todayMinutes = todayProgressRecords.reduce(
-        (sum, r) => sum + (r.readTime || 0),
+        (sum: number, r: { readTime: number | null }) => sum + (r.readTime || 0),
         0,
       );
       const totalMinutes = totalProgressRecords.reduce(
-        (sum, r) => sum + (r.readTime || 0),
+        (sum: number, r: { readTime: number | null }) => sum + (r.readTime || 0),
         0,
       );
 
@@ -658,20 +659,30 @@ export class ReadingService {
   }
 
   async getHotBooks(tenantId: number, limit = 10) {
-    return this.prisma.book.findMany({
+    const books = await this.prisma.book.findMany({
       where: { tenantId, status: 1, deletedAt: null },
       orderBy: { readCount: 'desc' },
       take: limit,
       include: { category: true },
     });
+    return books.map((item: { price: number | string; rating: number | string }) => ({
+      ...item,
+      price: Number(item.price),
+      rating: Number(item.rating),
+    }));
   }
 
   async getRecommendBooks(tenantId: number, limit = 10) {
-    return this.prisma.book.findMany({
+    const books = await this.prisma.book.findMany({
       where: { tenantId, status: 1, isRecommend: true, deletedAt: null },
       orderBy: { rating: 'desc' },
       take: limit,
       include: { category: true },
     });
+    return books.map((item: { price: number | string; rating: number | string }) => ({
+      ...item,
+      price: Number(item.price),
+      rating: Number(item.rating),
+    }));
   }
 }

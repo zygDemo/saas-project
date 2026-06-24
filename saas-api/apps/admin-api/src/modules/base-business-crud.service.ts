@@ -3,11 +3,9 @@ import { getPagination, toPaginatedResponse } from '../common/utils/pagination'
 import { getCurrentTenantId } from '../common/tenant/tenant-context'
 import { hasValue } from '../common/utils/helpers'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-  type ModelDelegate = any  // TODO: proper generic delegate interface
+type ModelDelegate = any  // TODO: proper generic delegate interface
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-  type PrismaWithTransaction = any  // TODO: PrismaClient type
+type PrismaWithTransaction = any  // TODO: PrismaClient type
 
 interface CrudOptions<TCreate, TUpdate, TQuery> {
   model: ModelDelegate

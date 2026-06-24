@@ -48,4 +48,16 @@ export class AuditLogQueryDto extends DateRangeQueryDto {
   @IsOptional()
   @IsString()
   keyword?: string
+
+  @ApiPropertyOptional({ description: '状态筛选: success=成功(2xx), fail=失败(4xx/5xx)' })
+  @IsOptional()
+  @IsString()
+  status?: string
+}
+
+export class AuditLogStatsDto extends DateRangeQueryDto {
+  @ApiPropertyOptional({ description: '模块' })
+  @IsOptional()
+  @IsString()
+  module?: string
 }

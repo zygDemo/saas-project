@@ -1,5 +1,63 @@
 <template>
   <div class="audit-log-page art-full-height">
+    <!-- 统计卡片 -->
+    <div class="stats-cards">
+      <ElRow :gutter="16">
+        <ElCol :span="6">
+          <ElCard shadow="hover" class="stat-card">
+            <div class="stat-content">
+              <div class="stat-icon total">
+                <ElIcon :size="24"><Document /></ElIcon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ stats.total }}</div>
+                <div class="stat-label">总请求数</div>
+              </div>
+            </div>
+          </ElCard>
+        </ElCol>
+        <ElCol :span="6">
+          <ElCard shadow="hover" class="stat-card">
+            <div class="stat-content">
+              <div class="stat-icon success">
+                <ElIcon :size="24"><CircleCheck /></ElIcon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value text-success">{{ stats.successCount }}</div>
+                <div class="stat-label">成功请求</div>
+              </div>
+            </div>
+          </ElCard>
+        </ElCol>
+        <ElCol :span="6">
+          <ElCard shadow="hover" class="stat-card">
+            <div class="stat-content">
+              <div class="stat-icon fail">
+                <ElIcon :size="24"><CircleClose /></ElIcon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value text-danger">{{ stats.failCount }}</div>
+                <div class="stat-label">失败请求</div>
+              </div>
+            </div>
+          </ElCard>
+        </ElCol>
+        <ElCol :span="6">
+          <ElCard shadow="hover" class="stat-card">
+            <div class="stat-content">
+              <div class="stat-icon rate">
+                <ElIcon :size="24"><TrendCharts /></ElIcon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ stats.successRate }}%</div>
+                <div class="stat-label">成功率</div>
+              </div>
+            </div>
+          </ElCard>
+        </ElCol>
+      </ElRow>
+    </div>
+
     <!-- 搜索栏 -->
     <AuditLogSearch v-model="searchForm" @search="handleSearch" @reset="resetSearchParams" />
 
@@ -9,6 +67,8 @@
         <template #left>
           <ElSpace wrap>
             <ElTag type="info" effect="plain">共 {{ pagination.total }} 条记录</ElTag>
+            <ElTag type="success" effect="plain">成功 {{ stats.successCount }}</ElTag>
+            <ElTag type="danger" effect="plain">失败 {{ stats.failCount }}</ElTag>
           </ElSpace>
         </template>
       </ArtTableHeader>
@@ -36,6 +96,11 @@
             <ElDescriptionsItem label="方法">
               <ElTag :type="methodTag(currentRow.action)" effect="dark" size="small">{{ currentRow.action }}</ElTag>
             </ElDescriptionsItem>
+            <ElDescriptionsItem label="状态码">
+              <ElTag :type="statusTagType(currentRow.statusCode)" effect="dark" size="small">
+                {{ currentRow.statusCode || '-' }}
+              </ElTag>
+            </ElDescriptionsItem>
             <ElDescriptionsItem label="描述">{{ currentRow.description || '-' }}</ElDescriptionsItem>
             <ElDescriptionsItem label="IP">{{ currentRow.ip || '-' }}</ElDescriptionsItem>
             <ElDescriptionsItem label="User Agent">
@@ -55,13 +120,24 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, h } from 'vue'
+  import { ref, h, onMounted, reactive } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchAuditLogs, type AuditLogItem } from '@/api/data-center'
+  import { fetchAuditLogs, fetchAuditLogStats, type AuditLogItem, type AuditLogStats } from '@/api/data-center'
   import { ElTag, ElButton } from 'element-plus'
+  import { Document, CircleCheck, CircleClose, TrendCharts } from '@element-plus/icons-vue'
   import AuditLogSearch from './modules/audit-log-search.vue'
 
   defineOptions({ name: 'AuditLog' })
+
+  // 统计数据
+  const stats = reactive<AuditLogStats>({
+    total: 0,
+    successCount: 0,
+    failCount: 0,
+    successRate: 0,
+    modules: [],
+    actions: []
+  })
 
   // 详情弹窗
   const detailVisible = ref(false)
@@ -72,7 +148,8 @@
     keyword: '',
     module: '',
     action: '',
-    userName: ''
+    userName: '',
+    status: ''
   })
 
   // HTTP 方法标签配置
@@ -85,6 +162,15 @@
   }
 
   const methodTag = (method: string) => METHOD_TAG_CONFIG[method]?.type || 'info'
+
+  // 状态码标签类型
+  const statusTagType = (statusCode?: number) => {
+    if (!statusCode) return 'info' as const
+    if (statusCode >= 200 && statusCode < 300) return 'success' as const
+    if (statusCode >= 400 && statusCode < 500) return 'warning' as const
+    if (statusCode >= 500) return 'danger' as const
+    return 'info' as const
+  }
 
   // 格式化日期时间
   const formatDateTime = (value?: string) => {
@@ -129,6 +215,16 @@
   const openDetail = (row: AuditLogItem) => {
     currentRow.value = row
     detailVisible.value = true
+  }
+
+  // 获取统计数据
+  const loadStats = async () => {
+    try {
+      const result = await fetchAuditLogStats()
+      Object.assign(stats, result)
+    } catch (error) {
+      console.error('获取统计数据失败:', error)
+    }
   }
 
   // 表格配置
@@ -184,6 +280,17 @@
             h(ElTag, { type: methodTag(row.action), effect: 'dark', size: 'small' }, () => row.action)
         },
         {
+          prop: 'statusCode',
+          label: '状态码',
+          width: 100,
+          formatter: (row: AuditLogItem) => {
+            const code = row.statusCode
+            if (!code) return h('span', { class: 'text-secondary' }, '-')
+            const type = statusTagType(code)
+            return h(ElTag, { type, effect: 'dark', size: 'small' }, () => code)
+          }
+        },
+        {
           prop: 'description',
           label: '描述',
           minWidth: 260,
@@ -220,10 +327,79 @@
   const handleSearch = (params: typeof searchForm.value) => {
     replaceSearchParams(params)
     getData()
+    loadStats()
   }
+
+  // 初始化
+  onMounted(() => {
+    loadStats()
+  })
 </script>
 
 <style scoped>
+  .stats-cards {
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    .stat-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+
+      &.total {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+
+      &.success {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+      }
+
+      &.fail {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      }
+
+      &.rate {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      }
+    }
+
+    .stat-info {
+      flex: 1;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--el-text-color-primary);
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--el-text-color-secondary);
+      margin-top: 4px;
+    }
+  }
+
+  .text-success {
+    color: #67c23a;
+  }
+
+  .text-danger {
+    color: #f56c6c;
+  }
+
   .text-secondary {
     color: var(--el-text-color-secondary);
   }

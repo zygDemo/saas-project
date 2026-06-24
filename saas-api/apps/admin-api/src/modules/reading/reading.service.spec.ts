@@ -4,12 +4,12 @@ import { PrismaService } from '../prisma/prisma.service';
 
 describe('ReadingService', () => {
   let service: ReadingService;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     book: {
       count: jest.fn(),
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
@@ -19,6 +19,7 @@ describe('ReadingService', () => {
     bookCategory: {
       count: jest.fn(),
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
@@ -26,6 +27,7 @@ describe('ReadingService', () => {
     },
     bookChapter: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
@@ -33,6 +35,7 @@ describe('ReadingService', () => {
     },
     userBookshelf: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
       delete: jest.fn(),
@@ -42,6 +45,7 @@ describe('ReadingService', () => {
     },
     readingProgress: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
@@ -51,6 +55,7 @@ describe('ReadingService', () => {
     },
     bookReview: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
@@ -73,7 +78,6 @@ describe('ReadingService', () => {
     }).compile();
 
     service = module.get<ReadingService>(ReadingService);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {
@@ -187,7 +191,6 @@ describe('ReadingService', () => {
 
   describe('sanitizeChapterContent', () => {
     it('应该清理广告噪声', () => {
-      const dirtyContent = '第一章 测试内容\nchapter_content();一些正文\n👉👉 当前浏览器转码失败，请访问原网页。后续内容';
       // 通过创建章节的 mock 来间接测试
       mockPrisma.bookChapter.create.mockResolvedValue({
         id: 1,
@@ -222,8 +225,8 @@ describe('ReadingService', () => {
 
   describe('addToBookshelf', () => {
     it('应该添加书籍到书架', async () => {
-      mockPrisma.book.findUnique.mockResolvedValue({ id: 1, tenantId: 1, status: 1 });
-      mockPrisma.userBookshelf.findUnique.mockResolvedValue(null);
+      mockPrisma.book.findFirst.mockResolvedValue({ id: 1, tenantId: 1, status: 1 });
+      mockPrisma.userBookshelf.findFirst.mockResolvedValue(null);
       mockPrisma.userBookshelf.create.mockResolvedValue({ id: 1, userId: 42, bookId: 1 });
 
       const result = await service.addToBookshelf(42, 1, { bookId: 1 });
@@ -234,14 +237,13 @@ describe('ReadingService', () => {
 
   describe('createReview', () => {
     it('应该创建评价并更新评分', async () => {
-      mockPrisma.bookReview.findUnique.mockResolvedValue(null);
-      mockPrisma.$transaction.mockImplementation(async (cb: any) => {
-        mockPrisma.bookReview.create.mockResolvedValue({
-          id: 1, userId: 42, bookId: 1, rating: 5, content: '好书',
-        });
-        mockPrisma.bookReview.aggregate.mockResolvedValue({ _avg: { rating: 4.5 }, _count: 10 });
-        return cb(mockPrisma);
+      mockPrisma.book.findFirst.mockResolvedValue({ id: 1, tenantId: 1, status: 1 });
+      mockPrisma.bookReview.findFirst.mockResolvedValue(null);
+      mockPrisma.bookReview.create.mockResolvedValue({
+        id: 1, userId: 42, bookId: 1, rating: 5, content: '好书',
       });
+      mockPrisma.bookReview.aggregate.mockResolvedValue({ _avg: { rating: 4.5 }, _count: 10 });
+      mockPrisma.book.update.mockResolvedValue({ id: 1, rating: 4.5, ratingCount: 10 });
 
       const result = await service.createReview(42, 1, {
         bookId: 1,

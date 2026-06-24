@@ -67,9 +67,7 @@ function hasTenantInWhere(where: Record<string, unknown> | undefined): boolean {
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private readonly _client: any  // PrismaClient. return type
 
   constructor() {

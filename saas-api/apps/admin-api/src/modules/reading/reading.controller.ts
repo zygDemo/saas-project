@@ -218,13 +218,13 @@ export class ReadingController {
 
   @Get('hot')
   @ApiOperation({ summary: '获取热门书籍' })
-  async getHotBooks(@Request() req: RequestUser, @Query('limit') limit?: number) {
-    return this.readingService.getHotBooks(req.tenantId, limit);
+  async getHotBooks(@Request() req: RequestUser, @Query('limit') limit?: string) {
+    return this.readingService.getHotBooks(req.tenantId, limit ? Number(limit) : undefined);
   }
 
   @Get('recommend')
   @ApiOperation({ summary: '获取推荐书籍' })
-  async getRecommendBooks(@Request() req: RequestUser, @Query('limit') limit?: number) {
-    return this.readingService.getRecommendBooks(req.tenantId, limit);
+  async getRecommendBooks(@Request() req: RequestUser, @Query('limit') limit?: string) {
+    return this.readingService.getRecommendBooks(req.tenantId, limit ? Number(limit) : undefined);
   }
 }

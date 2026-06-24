@@ -21,6 +21,7 @@ import {
   MobileCreditApplyDto,
   MobileCreditListQueryDto,
   MobileCreditUpdateDto,
+  MobileCustomerExtraDto,
   MobileIdCardInfoDto,
   MobileUserListQueryDto,
   MobileVehicleInfoDto,
@@ -87,7 +88,24 @@ const MOBILE_ENTRY_STORAGE_FIELDS = [
   'sealInfo',
   'engineNumber',
   'registerDate',
-  'vehicleImgUrl'
+  'vehicleImgUrl',
+  'dwellingCondition',
+  'liveProvince',
+  'liveCity',
+  'liveDistrict',
+  'liveDetailedAddress',
+  'maritalStatus',
+  'monthlyIncome',
+  'childrenNum',
+  'education',
+  'degree',
+  'occupation',
+  'companyName',
+  'workingProvince',
+  'workingCity',
+  'workingDistrict',
+  'workingDetailedAddress',
+  'workingTelephone'
 ]
 const MOBILE_ENTRY_STORAGE_ERROR =
   '移动端进件字段尚未初始化，请执行 admin-api Prisma 迁移并重新启动服务'
@@ -239,14 +257,14 @@ export class MobileBusinessService {
     return this.ocrService.recognizeVehicleByObjectKey(body)
   }
 
-  async addOrUpdateUserBasic(dto: MobileIdCardInfoDto, user: RequestUser, headerOrgId?: number) {
+  async addOrUpdateUserBasic(dto: MobileIdCardInfoDto & Partial<MobileCustomerExtraDto>, user: RequestUser, headerOrgId?: number) {
     return this.guardMobileEntryStorage(async () => {
       const org = await this.getDefaultOrg(headerOrgId)
       const customerByUuid = dto.uuid ? await this.findCustomerByUuid(dto.uuid) : null
       const customerByPhone = customerByUuid
         ? null
         : await this.prisma.customer.findFirst({ where: { orgId: org.id, phone: dto.telephone } })
-      const data = {
+      const data: Record<string, any> = {
         orgId: customerByUuid?.orgId ?? customerByPhone?.orgId ?? org.id,
         name: dto.personName,
         phone: dto.telephone,
@@ -263,6 +281,34 @@ export class MobileBusinessService {
         address: dto.personAddress,
         status: 'ACTIVE'
       }
+
+      // 客户补充信息字段映射
+      if (dto.dwellingCondition !== undefined) data.dwellingCondition = dto.dwellingCondition
+      if (dto.liveProvince !== undefined) data.liveProvince = dto.liveProvince
+      if (dto.liveCity !== undefined) data.liveCity = dto.liveCity
+      if (dto.liveDistrict !== undefined) data.liveDistrict = dto.liveDistrict
+      if (dto.liveDetailedAddress !== undefined) data.liveDetailedAddress = dto.liveDetailedAddress
+      if (
+        dto.liveAddress !== undefined &&
+        dto.liveDetailedAddress === undefined &&
+        !dto.liveProvince &&
+        !dto.liveCity &&
+        !dto.liveDistrict
+      ) {
+        data.liveDetailedAddress = dto.liveAddress
+      }
+      if (dto.marriage !== undefined) data.maritalStatus = dto.marriage
+      if (dto.personIncome !== undefined) data.monthlyIncome = dto.personIncome
+      if (dto.childrenNum !== undefined) data.childrenNum = dto.childrenNum
+      if (dto.education !== undefined) data.education = dto.education
+      if (dto.degree !== undefined) data.degree = dto.degree
+      if (dto.personOccupation !== undefined) data.occupation = dto.personOccupation
+      if (dto.workingName !== undefined) data.companyName = dto.workingName
+      if (dto.workingProvince !== undefined) data.workingProvince = dto.workingProvince
+      if (dto.workingCity !== undefined) data.workingCity = dto.workingCity
+      if (dto.workingDistrict !== undefined) data.workingDistrict = dto.workingDistrict
+      if (dto.workingDetailedAddress !== undefined) data.workingDetailedAddress = dto.workingDetailedAddress
+      if (dto.workingTelephone !== undefined) data.workingTelephone = dto.workingTelephone
 
       const customer =
         customerByUuid || customerByPhone
@@ -746,6 +792,14 @@ export class MobileBusinessService {
   }
 
   private mapCustomer(customer: any) {
+    // 组合省市区地址
+    const liveAddress = [customer.liveProvince, customer.liveCity, customer.liveDistrict]
+      .filter(Boolean)
+      .join("/");
+    const workingAddress = [customer.workingProvince, customer.workingCity, customer.workingDistrict]
+      .filter(Boolean)
+      .join("/");
+
     return {
       id: customer.id,
       uuid: String(customer.id),
@@ -762,7 +816,21 @@ export class MobileBusinessService {
       personValidDateEnd: customer.idCardValidTo,
       idcardFront: this.toFileUrl(customer.idCardFront),
       idcardBack: this.toFileUrl(customer.idCardBack),
-      updateTime: this.formatDateTime(customer.updatedAt)
+      updateTime: this.formatDateTime(customer.updatedAt),
+      // 客户补充信息
+      dwellingCondition: customer.dwellingCondition,
+      liveAddress,
+      liveDetailedAddress: customer.liveDetailedAddress,
+      marriage: customer.maritalStatus,
+      personIncome: customer.monthlyIncome ? Number(customer.monthlyIncome) : undefined,
+      childrenNum: customer.childrenNum,
+      education: customer.education,
+      degree: customer.degree,
+      personOccupation: customer.occupation,
+      workingName: customer.companyName,
+      workingAddress,
+      workingDetailedAddress: customer.workingDetailedAddress,
+      workingTelephone: customer.workingTelephone
     }
   }
 
@@ -1336,20 +1404,25 @@ export class MobileBusinessService {
 
     if (!lead) throw new NotFoundException('线索不存在')
 
+    const content = dto.content ?? dto.followContent
+    if (!content?.trim()) throw new BadRequestException('跟进内容不能为空')
+
+    const nextFollowAt = dto.nextFollowAt ?? dto.nextFollowTime
+
     const followUp = await this.prisma.leadFollowUp.create({
       data: {
         leadId: lead.id,
         followType: dto.followType || 'OTHER',
-        content: dto.content,
-        nextFollowAt: dto.nextFollowAt ? new Date(dto.nextFollowAt) : undefined,
+        content,
+        nextFollowAt: nextFollowAt ? new Date(nextFollowAt) : undefined,
         createdBy: user.sub
       }
     })
 
-    if (dto.nextFollowAt) {
+    if (nextFollowAt) {
       await this.prisma.lead.update({
         where: { id: lead.id },
-        data: { nextFollowAt: new Date(dto.nextFollowAt), status: 'FOLLOWING' }
+        data: { nextFollowAt: new Date(nextFollowAt), status: 'FOLLOWING' }
       })
     }
 

@@ -1,7 +1,6 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { PaginatedResponse } from '../../common/types/pagination'
-import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { getRequiredTenantId, formatDate } from '../../common/utils/helpers'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'

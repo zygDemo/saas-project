@@ -413,6 +413,7 @@ const NODE_DETAIL_ROUTE_MAP: Record<string, string> = {
   "2200": APP_ROUTES.carloan.precheck.applyDetail,
   "3100": APP_ROUTES.carloan.precheck.applyDetail,
   "4100": APP_ROUTES.carloan.signing.signCenter,
+  "1600": APP_ROUTES.carloan.precheck.applyDetail,
   "5100": APP_ROUTES.carloan.supplement.supplementDetail,
   "6100": APP_ROUTES.carloan.supplement.supplementDetail,
 };

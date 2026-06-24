@@ -650,6 +650,22 @@ async function saveCustomerInfo() {
       }
     }
 
+    // 拆分省市区地址，删除原始组合字段
+    if (form.liveAddress) {
+      const parts = form.liveAddress.split("/");
+      customerData.liveProvince = parts[0] || "";
+      customerData.liveCity = parts[1] || "";
+      customerData.liveDistrict = parts[2] || "";
+      delete customerData.liveAddress;
+    }
+    if (form.workingAddress) {
+      const parts = form.workingAddress.split("/");
+      customerData.workingProvince = parts[0] || "";
+      customerData.workingCity = parts[1] || "";
+      customerData.workingDistrict = parts[2] || "";
+      delete customerData.workingAddress;
+    }
+
     const customerRes = await businessApi.addOrUpdateUserBasic(customerData);
     if (!customerRes || customerRes.code !== 200) {
       $u.toast((customerRes && customerRes.msg) || "客户信息保存失败");

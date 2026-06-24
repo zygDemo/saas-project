@@ -48,12 +48,26 @@ export class MobileCreditListQueryDto {
   @Min(1)
   current?: number
 
+  @ApiPropertyOptional({ description: '兼容旧前端：pageNum' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  pageNum?: number
+
   @ApiPropertyOptional({ description: '每页数量', default: 20 })
   @IsOptional()
   @ToNumber()
   @IsInt()
   @Min(1)
   size?: number
+
+  @ApiPropertyOptional({ description: '兼容旧前端：pageSize' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  pageSize?: number
 
   @ApiPropertyOptional({ description: '业务员ID' })
   @IsOptional()
@@ -97,17 +111,20 @@ export class MobileIdCardInfoDto {
   @IsString()
   businessType?: string
 
-  @ApiProperty({ description: '姓名' })
+  @ApiPropertyOptional({ description: '姓名' })
+  @IsOptional()
   @IsString()
-  personName: string
+  personName?: string
 
-  @ApiProperty({ description: '手机号' })
+  @ApiPropertyOptional({ description: '手机号' })
+  @IsOptional()
   @IsString()
-  telephone: string
+  telephone?: string
 
-  @ApiProperty({ description: '身份证号' })
+  @ApiPropertyOptional({ description: '身份证号' })
+  @IsOptional()
   @IsString()
-  personIdcard: string
+  personIdcard?: string
 
   @ApiPropertyOptional({ description: '性别，1男 2女' })
   @IsOptional()
@@ -127,15 +144,30 @@ export class MobileIdCardInfoDto {
   @IsString()
   race?: string
 
+  @ApiPropertyOptional({ description: '民族（兼容旧前端字段）' })
+  @IsOptional()
+  @IsString()
+  nation?: string
+
   @ApiPropertyOptional({ description: '身份证地址' })
   @IsOptional()
   @IsString()
   personAddress?: string
 
+  @ApiPropertyOptional({ description: '户籍地址（兼容旧前端字段）' })
+  @IsOptional()
+  @IsString()
+  householdAddress?: string
+
   @ApiPropertyOptional({ description: '签发机关' })
   @IsOptional()
   @IsString()
   personIssuingAuthority?: string
+
+  @ApiPropertyOptional({ description: '签发机关（兼容旧前端字段）' })
+  @IsOptional()
+  @IsString()
+  issuingAuthority?: string
 
   @ApiPropertyOptional({ description: '有效期起' })
   @IsOptional()
@@ -156,6 +188,107 @@ export class MobileIdCardInfoDto {
   @IsOptional()
   @IsString()
   idcardBack?: string
+
+  // ========== 客户补充信息（可选） ==========
+
+  @ApiPropertyOptional({ description: '授信订单号' })
+  @IsOptional()
+  @IsString()
+  creditOrderId?: string
+
+  @ApiPropertyOptional({ description: '居住状况' })
+  @IsOptional()
+  @IsString()
+  dwellingCondition?: string
+
+  @ApiPropertyOptional({ description: '居住省' })
+  @IsOptional()
+  @IsString()
+  liveProvince?: string
+
+  @ApiPropertyOptional({ description: '居住市' })
+  @IsOptional()
+  @IsString()
+  liveCity?: string
+
+  @ApiPropertyOptional({ description: '居住区' })
+  @IsOptional()
+  @IsString()
+  liveDistrict?: string
+
+  @ApiPropertyOptional({ description: '居住详细地址' })
+  @IsOptional()
+  @IsString()
+  liveDetailedAddress?: string
+
+  @ApiPropertyOptional({ description: '居住地址（兼容旧前端字段）' })
+  @IsOptional()
+  @IsString()
+  liveAddress?: string
+
+  @ApiPropertyOptional({ description: '婚姻状况' })
+  @IsOptional()
+  @IsString()
+  marriage?: string
+
+  @ApiPropertyOptional({ description: '月收入' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  personIncome?: number
+
+  @ApiPropertyOptional({ description: '供养子女数' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(0)
+  childrenNum?: number
+
+  @ApiPropertyOptional({ description: '学历' })
+  @IsOptional()
+  @IsString()
+  education?: string
+
+  @ApiPropertyOptional({ description: '学位' })
+  @IsOptional()
+  @IsString()
+  degree?: string
+
+  @ApiPropertyOptional({ description: '职业' })
+  @IsOptional()
+  @IsString()
+  personOccupation?: string
+
+  @ApiPropertyOptional({ description: '单位名称' })
+  @IsOptional()
+  @IsString()
+  workingName?: string
+
+  @ApiPropertyOptional({ description: '单位省' })
+  @IsOptional()
+  @IsString()
+  workingProvince?: string
+
+  @ApiPropertyOptional({ description: '单位市' })
+  @IsOptional()
+  @IsString()
+  workingCity?: string
+
+  @ApiPropertyOptional({ description: '单位区' })
+  @IsOptional()
+  @IsString()
+  workingDistrict?: string
+
+  @ApiPropertyOptional({ description: '单位详细地址' })
+  @IsOptional()
+  @IsString()
+  workingDetailedAddress?: string
+
+  @ApiPropertyOptional({ description: '公司电话' })
+  @IsOptional()
+  @IsString()
+  workingTelephone?: string
 }
 
 export class MobileVehicleInfoDto {
@@ -185,35 +318,41 @@ export class MobileVehicleInfoDto {
   @IsString()
   vehicleOwner: string
 
-  @ApiProperty({ description: '住址' })
+  @ApiPropertyOptional({ description: '住址' })
+  @IsOptional()
   @IsString()
-  address: string
+  address?: string
 
-  @ApiProperty({ description: '使用性质' })
+  @ApiPropertyOptional({ description: '使用性质' })
+  @IsOptional()
   @IsString()
-  usageNature: string
+  usageNature?: string
 
-  @ApiProperty({ description: '印章信息' })
+  @ApiPropertyOptional({ description: '印章信息' })
+  @IsOptional()
   @IsString()
-  sealInfo: string
+  sealInfo?: string
 
-  @ApiProperty({ description: '发动机号' })
+  @ApiPropertyOptional({ description: '发动机号' })
+  @IsOptional()
   @IsString()
-  engineNumber: string
+  engineNumber?: string
 
-  @ApiProperty({ description: '注册日期' })
+  @ApiPropertyOptional({ description: '注册日期' })
+  @IsOptional()
   @IsString()
-  registerDate: string
+  registerDate?: string
 
   @ApiProperty({ description: '车辆识别代码' })
   @IsString()
   vehicleCode: string
 
-  @ApiProperty({ description: '行驶里程' })
+  @ApiPropertyOptional({ description: '行驶里程' })
+  @IsOptional()
   @ToNumber()
   @IsNumber()
   @Min(0)
-  mileage: number
+  mileage?: number
 
   @ApiPropertyOptional({ description: '购买方式' })
   @IsOptional()
@@ -232,6 +371,18 @@ export class MobileVehicleInfoDto {
   @IsNumber()
   @Min(0)
   purchasePrice?: number
+
+  @ApiPropertyOptional({ description: '估值金额（兼容旧前端字段）' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  valuationPrice?: number
+
+  @ApiPropertyOptional({ description: '授信订单号（兼容旧前端字段）' })
+  @IsOptional()
+  @IsString()
+  creditOrderId?: string
 
   @ApiPropertyOptional({ description: '贷款金额，分' })
   @IsOptional()
@@ -452,6 +603,11 @@ export class MobileSalesLeadDto {
   @IsOptional()
   @IsString()
   remark?: string
+
+  @ApiPropertyOptional({ description: '授信订单号（兼容旧前端透传字段）' })
+  @IsOptional()
+  @IsString()
+  creditOrderId?: string
 }
 
 // ==================== 跟进记录 DTO ====================
@@ -466,9 +622,20 @@ export class MobileFollowUpDto {
   @IsString()
   followType?: string
 
-  @ApiProperty({ description: '跟进内容' })
+  @ApiPropertyOptional({ description: '跟进内容（兼容旧前端字段）' })
+  @IsOptional()
   @IsString()
-  content: string
+  followContent?: string
+
+  @ApiPropertyOptional({ description: '跟进内容' })
+  @IsOptional()
+  @IsString()
+  content?: string
+
+  @ApiPropertyOptional({ description: '下次跟进时间（兼容旧前端字段）' })
+  @IsOptional()
+  @IsString()
+  nextFollowTime?: string
 
   @ApiPropertyOptional({ description: '下次跟进时间' })
   @IsOptional()
@@ -479,9 +646,10 @@ export class MobileFollowUpDto {
 // ==================== 签约 DTO ====================
 
 export class MobileSigningStartDto {
-  @ApiProperty({ description: '客户UUID' })
+  @ApiPropertyOptional({ description: '客户UUID' })
+  @IsOptional()
   @IsString()
-  uuid: string
+  uuid?: string
 
   @ApiPropertyOptional({ description: '回调URL' })
   @IsOptional()
@@ -492,4 +660,117 @@ export class MobileSigningStartDto {
   @IsOptional()
   @IsString()
   creditOrderId?: string
+
+  @ApiPropertyOptional({ description: '备注（兼容旧前端字段）' })
+  @IsOptional()
+  @IsString()
+  remark?: string
+}
+
+// ==================== 客户补充信息 DTO ====================
+
+export class MobileCustomerExtraDto {
+  @ApiPropertyOptional({ description: '客户UUID' })
+  @IsOptional()
+  @IsString()
+  uuid?: string
+
+  @ApiPropertyOptional({ description: '授信订单号' })
+  @IsOptional()
+  @IsString()
+  creditOrderId?: string
+
+  @ApiPropertyOptional({ description: '居住状况' })
+  @IsOptional()
+  @IsString()
+  dwellingCondition?: string
+
+  @ApiPropertyOptional({ description: '居住省' })
+  @IsOptional()
+  @IsString()
+  liveProvince?: string
+
+  @ApiPropertyOptional({ description: '居住市' })
+  @IsOptional()
+  @IsString()
+  liveCity?: string
+
+  @ApiPropertyOptional({ description: '居住区' })
+  @IsOptional()
+  @IsString()
+  liveDistrict?: string
+
+  @ApiPropertyOptional({ description: '居住详细地址' })
+  @IsOptional()
+  @IsString()
+  liveDetailedAddress?: string
+
+  @ApiPropertyOptional({ description: '居住地址（兼容旧前端字段）' })
+  @IsOptional()
+  @IsString()
+  liveAddress?: string
+
+  @ApiPropertyOptional({ description: '婚姻状况' })
+  @IsOptional()
+  @IsString()
+  marriage?: string
+
+  @ApiPropertyOptional({ description: '月收入' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  personIncome?: number
+
+  @ApiPropertyOptional({ description: '供养子女数' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(0)
+  childrenNum?: number
+
+  @ApiPropertyOptional({ description: '学历' })
+  @IsOptional()
+  @IsString()
+  education?: string
+
+  @ApiPropertyOptional({ description: '学位' })
+  @IsOptional()
+  @IsString()
+  degree?: string
+
+  @ApiPropertyOptional({ description: '职业' })
+  @IsOptional()
+  @IsString()
+  personOccupation?: string
+
+  @ApiPropertyOptional({ description: '单位名称' })
+  @IsOptional()
+  @IsString()
+  workingName?: string
+
+  @ApiPropertyOptional({ description: '单位省' })
+  @IsOptional()
+  @IsString()
+  workingProvince?: string
+
+  @ApiPropertyOptional({ description: '单位市' })
+  @IsOptional()
+  @IsString()
+  workingCity?: string
+
+  @ApiPropertyOptional({ description: '单位区' })
+  @IsOptional()
+  @IsString()
+  workingDistrict?: string
+
+  @ApiPropertyOptional({ description: '单位详细地址' })
+  @IsOptional()
+  @IsString()
+  workingDetailedAddress?: string
+
+  @ApiPropertyOptional({ description: '公司电话' })
+  @IsOptional()
+  @IsString()
+  workingTelephone?: string
 }

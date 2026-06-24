@@ -18,12 +18,22 @@ export interface AuditLogItem {
   userName?: string
   module: string
   action: string
+  statusCode?: number
   description?: string
   requestData?: unknown
   responseData?: unknown
   ip?: string
   userAgent?: string
   createdAt: string
+}
+
+export interface AuditLogStats {
+  total: number
+  successCount: number
+  failCount: number
+  successRate: number
+  modules: Array<{ module: string; count: number }>
+  actions: Array<{ action: string; count: number }>
 }
 
 export function fetchDataCenterStats(params: Record<string, unknown>) {
@@ -36,6 +46,13 @@ export function fetchDataCenterStats(params: Record<string, unknown>) {
 export function fetchAuditLogs(params: BusinessQuery) {
   return request.get<BusinessPage<AuditLogItem>>({
     url: '/data-center/audit-logs',
+    params
+  })
+}
+
+export function fetchAuditLogStats(params?: Record<string, unknown>) {
+  return request.get<AuditLogStats>({
+    url: '/data-center/audit-log/stats',
     params
   })
 }
