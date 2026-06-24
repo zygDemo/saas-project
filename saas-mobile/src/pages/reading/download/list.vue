@@ -129,123 +129,65 @@
 
 <script setup lang="ts">
 import layout from "@/pages/layout/layout.vue";
-import { computed, ref } from "vue";
+import { useReadingStore } from "@/stores/reading";
+import { computed } from "vue";
 
-interface DownloadItem {
-  id: string;
-  title: string;
-  author: string;
-  cover: string;
-  progress: number;
-  downloadedSize: string;
-  totalSize: string;
-  speed: string;
-  isPaused: boolean;
-  completedTime?: string;
-}
+const readingStore = useReadingStore();
 
-const downloadingList = ref<DownloadItem[]>([
-  {
-    id: "1",
-    title: "斗破苍穹",
-    author: "天蚕土豆",
-    cover: "/static/reading/covers/book1.svg",
-    progress: 65,
-    downloadedSize: "12.5MB",
-    totalSize: "19.2MB",
-    speed: "1.2MB/s",
-    isPaused: false,
-  },
-  {
-    id: "2",
-    title: "凡人修仙传",
-    author: "忘语",
-    cover: "/static/reading/covers/book2.svg",
-    progress: 32,
-    downloadedSize: "8.1MB",
-    totalSize: "25.3MB",
-    speed: "0KB/s",
-    isPaused: true,
-  },
-]);
-
-const completedList = ref<DownloadItem[]>([
-  {
-    id: "3",
-    title: "诡秘之主",
-    author: "爱潜水的乌贼",
-    cover: "/static/reading/covers/book3.svg",
-    progress: 100,
-    downloadedSize: "22.8MB",
-    totalSize: "22.8MB",
-    speed: "",
-    isPaused: false,
-    completedTime: "2024-01-15 14:30",
-  },
-  {
-    id: "4",
-    title: "大奉打更人",
-    author: "卖报小郎君",
-    cover: "/static/reading/covers/book4.svg",
-    progress: 100,
-    downloadedSize: "18.5MB",
-    totalSize: "18.5MB",
-    speed: "",
-    isPaused: false,
-    completedTime: "2024-01-14 09:15",
-  },
-]);
+const downloadingList = computed(() =>
+  readingStore.downloads.filter((d) => d.progress < 100),
+);
+const completedList = computed(() =>
+  readingStore.downloads.filter((d) => d.progress >= 100),
+);
 
 const downloadingCount = computed(() => downloadingList.value.length);
 const completedCount = computed(() => completedList.value.length);
 
 const totalSize = computed(() => {
-  const allItems = [...downloadingList.value, ...completedList.value];
   let totalMB = 0;
-  allItems.forEach((item) => {
+  readingStore.downloads.forEach((item) => {
     const size = parseFloat(item.totalSize);
     if (!isNaN(size)) totalMB += size;
   });
   return totalMB.toFixed(1) + "MB";
 });
 
-const pauseDownload = (item: DownloadItem) => {
-  item.isPaused = true;
-  item.speed = "0KB/s";
+const pauseDownload = (item: { id: string }) => {
+  readingStore.pauseDownload(item.id);
 };
 
-const resumeDownload = (item: DownloadItem) => {
-  item.isPaused = false;
-  item.speed = "1.2MB/s";
+const resumeDownload = (item: { id: string }) => {
+  readingStore.resumeDownload(item.id);
 };
 
-const cancelDownload = (item: DownloadItem) => {
+const cancelDownload = (item: { id: string; title: string }) => {
   uni.showModal({
     title: "提示",
     content: `确定取消下载《${item.title}》？`,
     success: (res) => {
       if (res.confirm) {
-        downloadingList.value = downloadingList.value.filter((d) => d.id !== item.id);
+        readingStore.removeDownload(item.id);
         uni.showToast({ title: "已取消下载", icon: "success" });
       }
     },
   });
 };
 
-const deleteDownload = (item: DownloadItem) => {
+const deleteDownload = (item: { id: string; title: string }) => {
   uni.showModal({
     title: "提示",
     content: `确定删除《${item.title}》的下载文件？`,
     success: (res) => {
       if (res.confirm) {
-        completedList.value = completedList.value.filter((d) => d.id !== item.id);
+        readingStore.removeDownload(item.id);
         uni.showToast({ title: "已删除", icon: "success" });
       }
     },
   });
 };
 
-const openBook = (item: DownloadItem) => {
+const openBook = (item: { id: string }) => {
   uni.navigateTo({
     url: `/pages/reading/reader/index?bookId=${item.id}`,
   });
@@ -253,8 +195,7 @@ const openBook = (item: DownloadItem) => {
 
 const pauseAll = () => {
   downloadingList.value.forEach((item) => {
-    item.isPaused = true;
-    item.speed = "0KB/s";
+    readingStore.pauseDownload(item.id);
   });
   uni.showToast({ title: "已全部暂停", icon: "success" });
 };
@@ -265,7 +206,7 @@ const clearAll = () => {
     content: "确定清空所有已完成的下载？",
     success: (res) => {
       if (res.confirm) {
-        completedList.value = [];
+        readingStore.clearCompletedDownloads();
         uni.showToast({ title: "已清空", icon: "success" });
       }
     },

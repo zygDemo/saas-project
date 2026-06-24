@@ -25,6 +25,7 @@
           <ElButton @click="$router.back()" icon="ri:arrow-left-line">返回书籍</ElButton>
         </template>
         <template #right>
+          <ElButton type="primary" @click="openAddDialog">新增章节</ElButton>
           <ElInput
             v-model="searchKeyword"
             placeholder="搜索章节标题"
@@ -92,6 +93,7 @@
     getBookById,
     getChapters,
     getChapterById,
+    createChapter,
     updateChapter,
     deleteChapter
   } from '@/api/reading'
@@ -231,11 +233,13 @@
     if (!bookId.value) return
     loading.value = true
     try {
-      const res = (await getChapters({
+      const params: any = {
         bookId: bookId.value,
         page: currentPage.value,
         pageSize: pageSize.value
-      })) as any
+      }
+      if (searchKeyword.value) params.keyword = searchKeyword.value
+      const res = (await getChapters(params)) as any
       const data = res?.items || res?.list || res?.data || res || []
       const list = Array.isArray(data) ? data : []
       chapterList.value = list
@@ -262,17 +266,33 @@
     }
   }
 
-  const handleEdit = (row: any) => {
+  const openAddDialog = () => {
+    isEdit.value = false
+    editId.value = 0
+    formData.title = ''
+    formData.sort = 0
+    formData.isVip = false
+    formData.price = 0
+    formData.content = ''
+    showEditDialog.value = true
+  }
+
+  const handleEdit = async (row: any) => {
     isEdit.value = true
     editId.value = row.id
-    Object.assign(formData, {
-      title: row.title,
-      sort: row.sort || 0,
-      isVip: row.isVip || false,
-      price: row.price || 0,
-      content: ''
-    })
+    formData.title = row.title || ''
+    formData.sort = row.sort || 0
+    formData.isVip = row.isVip || false
+    formData.price = row.price || 0
+    formData.content = ''
     showEditDialog.value = true
+    // 异步加载完整章节内容
+    try {
+      const res = (await getChapterById(row.id)) as any
+      formData.content = res?.content || ''
+    } catch {
+      // 加载内容失败不影响编辑其他字段
+    }
   }
 
   const handleSave = async () => {
@@ -282,19 +302,31 @@
     }
     saving.value = true
     try {
-      const data: any = {
-        title: formData.title,
-        sort: formData.sort,
-        isVip: formData.isVip,
-        price: formData.isVip ? formData.price : 0
+      if (isEdit.value) {
+        const data: any = {
+          title: formData.title,
+          sort: formData.sort,
+          isVip: formData.isVip,
+          price: formData.isVip ? formData.price : 0
+        }
+        if (formData.content) data.content = formData.content
+        await updateChapter(editId.value, data)
+        ElMessage.success('编辑成功')
+      } else {
+        await createChapter({
+          bookId: bookId.value,
+          title: formData.title,
+          content: formData.content,
+          sort: formData.sort,
+          isVip: formData.isVip,
+          price: formData.isVip ? formData.price : 0
+        })
+        ElMessage.success('新增成功')
       }
-      if (formData.content) data.content = formData.content
-      await updateChapter(editId.value, data)
-      ElMessage.success('编辑成功')
       showEditDialog.value = false
       loadChapters()
     } catch (error: any) {
-      ElMessage.error(error?.response?.data?.message || '编辑失败')
+      ElMessage.error(error?.response?.data?.message || (isEdit.value ? '编辑失败' : '新增失败'))
     } finally {
       saving.value = false
     }

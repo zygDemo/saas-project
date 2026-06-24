@@ -421,11 +421,12 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { onLoad, onUnload } from "@dcloudio/uni-app";
+import { onLoad, onShareAppMessage, onUnload } from "@dcloudio/uni-app";
 import { useReadingApi } from "@/api/reading";
 
 // 本地存储 key
 const STORAGE_KEY = "reader_settings";
+const BOOKMARK_STORAGE_KEY = "reader_bookmarks";
 
 interface Chapter {
   id: string;
@@ -499,16 +500,29 @@ const bgColorStyle = computed(() => {
 
 const chapterList = ref<Chapter[]>([]);
 
-const bookmarks = ref<Bookmark[]>([
-  {
-    id: "1",
-    chapterId: "1",
-    chapterTitle: "第一章 陨落的天才",
-    content: "三十年河东，三十年河西，莫欺少年穷！",
-    page: 0,
-    time: Date.now() - 3600000,
-  },
-]);
+// 从本地存储加载书签
+function loadBookmarks(): Bookmark[] {
+  try {
+    const saved = uni.getStorageSync(BOOKMARK_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
+const bookmarks = ref<Bookmark[]>(loadBookmarks());
+
+function saveBookmarks() {
+  try {
+    uni.setStorageSync(BOOKMARK_STORAGE_KEY, JSON.stringify(bookmarks.value));
+  } catch {
+    // ignore
+  }
+}
 
 const currentChapter = computed(() => {
   return (
@@ -526,76 +540,10 @@ const hasNextChapter = computed(
   () => currentChapterIndex.value < chapterList.value.length - 1,
 );
 
-// 模拟章节内容
-const chapterContent = ref(
-  `斗气大陆，加玛帝国，乌坦城。
+const isContentLoading = ref(false);
 
-萧家大厅之中，一位少年坐在角落，他的目光有些空洞，似乎在思考着什么。
-
-"萧炎，斗之气三段！"
-
-测试台上，一位老者大声宣布着测试结果，声音中带着一丝惋惜。
-
-大厅中顿时响起一片哗然之声。
-
-"三段？怎么可能！萧炎可是萧家百年来最年轻的斗者啊！"
-
-"是啊，三年前他可是九段斗之气，怎么会跌落到三段？"
-
-"唉，真是可惜了，本来还以为他能成为萧家的骄傲呢。"
-
-少年缓缓站起身，他的脸上没有太多的表情，似乎早已习惯了这样的议论。
-
-他叫萧炎，曾经是萧家最耀眼的天才，四岁修炼，十岁九段斗之气，十一岁成为斗者。
-
-然而三年前，他的修为突然停滞不前，甚至开始倒退，从九段跌落到三段。
-
-没有人知道原因，包括他自己。
-
-"萧炎哥哥。"
-
-一个清脆的声音响起，一位少女走了过来，她有着一双灵动的眼睛，脸上带着关切的神情。
-
-"没事，薰儿。"萧炎微微一笑，"我已经习惯了。"
-
-萧薰儿，萧家的养女，也是萧炎最亲近的人之一。
-
-"走吧，我们回去。"萧炎说着，向大厅外走去。
-
-夕阳西下，少年的背影显得有些落寞，但他的眼神中却闪烁着不屈的光芒。
-
-三十年河东，三十年河西，莫欺少年穷！
-
-回到自己的房间，萧炎坐在床边，从怀中取出一枚古朴的戒指。
-
-这枚戒指是他母亲留下的遗物，三年来他一直带在身上。
-
-"又失败了吗？"萧炎喃喃自语，手指轻轻摩挲着戒指。
-
-突然，戒指发出一丝微弱的光芒，萧炎的眼睛猛地睁大。
-
-"这是……"
-
-一个苍老的声音从戒指中传出："小子，你终于发现了吗？"
-
-萧炎吓了一跳，差点把戒指扔出去。
-
-"别怕，老夫不会害你。"那声音继续说道，"老夫名为药尘，你可以叫我药老。"
-
-"药尘？"萧炎愣住了，"你是……药尊者？"
-
-药尘，曾经的斗气大陆第一炼药师，号称药尊者，二十年前突然消失，没有人知道他去了哪里。
-
-"不错，正是老夫。"药尘的声音中带着一丝得意，"你的修为之所以倒退，是因为老夫在吸收你的斗之气。"
-
-萧炎的脸色一变："你说什么？"
-
-"别急，听老夫说完。"药尘说道，"你的体质很特殊，是天生的炼药师体质，老夫吸收你的斗之气，是为了帮你打下更好的基础。"
-
-"从今天开始，老夫会教你真正的修炼之法，让你重新成为天才。"
-
-萧炎的眼中闪过一丝光芒，他知道，自己的命运从这一刻开始改变了。`,
-);
+// 章节内容（从 API 获取，不再使用硬编码 mock）
+const chapterContent = ref("");
 
 const currentPages = computed(() => {
   // 模拟分页：每页约 500 字
@@ -807,11 +755,16 @@ onLoad(async (options) => {
       }
 
       if (chapterId.value) {
-        const detail = await readingApi.getChapterDetail(chapterId.value);
-        chapterContent.value = detail.data?.content || "";
-        // 恢复保存的页码
-        if (savedPage > 0) {
-          currentPage.value = savedPage;
+        isContentLoading.value = true;
+        try {
+          const detail = await readingApi.getChapterDetail(chapterId.value);
+          chapterContent.value = detail.data?.content || "";
+          // 恢复保存的页码
+          if (savedPage > 0) {
+            currentPage.value = savedPage;
+          }
+        } finally {
+          isContentLoading.value = false;
         }
       }
     } catch (e) {
@@ -845,11 +798,18 @@ const goBack = () => {
 };
 
 const shareBook = () => {
-  uni.showShareMenu({
-    withShareTicket: true,
-    menus: ["shareAppMessage", "shareTimeline"],
-  });
+  // uni.showShareMenu 在小程序环境中受限制，使用页面胶囊按钮触发分享
+  // onShareAppMessage 生命周期会自动处理分享
+  uni.showToast({ title: "请点击右上角分享", icon: "none" });
 };
+
+// 小程序分享配置（由页面右上角胶囊按钮触发）
+onShareAppMessage(() => {
+  return {
+    title: currentChapter.value?.title || '精彩好书',
+    path: `/pages/reading/reader/index?bookId=${bookId.value}&chapterId=${chapterId.value}`,
+  };
+});
 
 const isAutoLoading = ref(false);
 
@@ -973,6 +933,7 @@ const toggleBookmark = () => {
       bookmarks.value.splice(idx, 1);
     }
     isBookmarked.value = false;
+    saveBookmarks();
     uni.showToast({ title: "已取消书签", icon: "success" });
   } else {
     // 添加书签
@@ -986,6 +947,7 @@ const toggleBookmark = () => {
       time: Date.now(),
     });
     isBookmarked.value = true;
+    saveBookmarks();
     uni.showToast({ title: "已添加书签", icon: "success" });
   }
 };
@@ -1000,6 +962,7 @@ const deleteBookmark = (bookmark: Bookmark) => {
         if (idx > -1) {
           bookmarks.value.splice(idx, 1);
         }
+        saveBookmarks();
         checkBookmarkStatus();
         uni.showToast({ title: "已删除", icon: "success" });
       }

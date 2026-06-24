@@ -29,6 +29,7 @@ import {
   SaveReadingProgressDto,
   CreateReviewDto,
   ReviewQueryDto,
+  UpdateReviewStatusDto,
 } from './dto/reading.dto';
 
 @ApiTags('读书模块')
@@ -192,6 +193,18 @@ export class ReadingController {
   @ApiOperation({ summary: '创建书籍评价' })
   async createReview(@Request() req: RequestUser, @Body() dto: CreateReviewDto) {
     return this.readingService.createReview(req.sub, req.tenantId, dto);
+  }
+
+  @Put('reviews/status')
+  @ApiOperation({ summary: '审核评价（通过/驳回）' })
+  async updateReviewStatus(@Request() req: RequestUser, @Body() dto: UpdateReviewStatusDto) {
+    return this.readingService.updateReviewStatus(req.tenantId, dto);
+  }
+
+  @Delete('reviews/:id')
+  @ApiOperation({ summary: '删除评价（管理员）' })
+  async deleteReview(@Param('id') id: number, @Request() req: RequestUser) {
+    return this.readingService.deleteReview(req.tenantId, +id);
   }
 
   // ==================== 统计 ====================

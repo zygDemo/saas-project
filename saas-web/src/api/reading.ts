@@ -116,7 +116,7 @@ export function deleteBook(id: number) {
 // ==================== 章节管理 ====================
 
 /** 获取章节列表 */
-export function getChapters(params: { bookId: number; page?: number; pageSize?: number }) {
+export function getChapters(params: { bookId: number; page?: number; pageSize?: number; keyword?: string }) {
   return request.get({ url: '/reading/chapters', params })
 }
 
@@ -193,14 +193,24 @@ export function saveReadingProgress(data: {
 
 // ==================== 书籍评价 ====================
 
-/** 获取书籍评价 */
-export function getBookReviews(params: { bookId: number; page?: number; pageSize?: number }) {
+/** 获取书籍评价（管理员可查全部，不传bookId） */
+export function getBookReviews(params?: { bookId?: number; keyword?: string; status?: number; page?: number; pageSize?: number }) {
   return request.get({ url: '/reading/reviews', params })
 }
 
 /** 创建书籍评价 */
 export function createBookReview(data: { bookId: number; rating: number; content?: string }) {
   return request.post({ url: '/reading/reviews', data })
+}
+
+/** 审核评价（通过/驳回） */
+export function updateReviewStatus(data: { id: number; status: number }) {
+  return request.put({ url: '/reading/reviews/status', data, showSuccessMessage: true })
+}
+
+/** 删除评价（管理员） */
+export function deleteReview(id: number) {
+  return request.del({ url: `/reading/reviews/${id}`, showSuccessMessage: true })
 }
 
 // ==================== 统计 ====================

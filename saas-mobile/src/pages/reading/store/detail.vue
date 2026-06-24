@@ -228,7 +228,7 @@ import layout from "@/pages/layout/layout.vue";
 import { useReadingStore } from "@/stores/reading";
 import { computed, ref } from "vue";
 import { useReadingApi } from "@/api/reading";
-import { onLoad } from "@dcloudio/uni-app";
+import { onLoad, onShareAppMessage } from "@dcloudio/uni-app";
 
 interface Chapter {
   id: string;
@@ -486,11 +486,15 @@ const downloadBook = () => {
 };
 
 const shareBook = () => {
-  uni.showShareMenu({
-    withShareTicket: true,
-    menus: ["shareAppMessage", "shareTimeline"],
-  });
+  uni.showToast({ title: "请点击右上角分享", icon: "none" });
 };
+
+onShareAppMessage(() => {
+  return {
+    title: bookInfo.value?.title || '精彩好书',
+    path: `/pages/reading/store/detail?id=${bookId.value}`,
+  };
+});
 
 const readChapter = (chapter: Chapter) => {
   uni.navigateTo({
@@ -518,7 +522,7 @@ const likeReview = (review: Review) => {
 };
 
 const goDetail = (item: RecommendBook) => {
-  uni.redirectTo({
+  uni.navigateTo({
     url: `/pages/reading/store/detail?id=${item.id}`,
   });
 };

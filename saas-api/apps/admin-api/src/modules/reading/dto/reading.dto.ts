@@ -224,13 +224,42 @@ export class CreateChapterDto {
   price?: number;
 }
 
-export class UpdateChapterDto extends CreateChapterDto {}
+export class UpdateChapterDto {
+  @ApiPropertyOptional({ description: '章节标题' })
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @ApiPropertyOptional({ description: '章节内容' })
+  @IsOptional()
+  @IsString()
+  content?: string;
+
+  @ApiPropertyOptional({ description: '排序', default: 0 })
+  @IsOptional()
+  @IsNumber()
+  sort?: number;
+
+  @ApiPropertyOptional({ description: '是否VIP章节', default: false })
+  @IsOptional()
+  @IsBoolean()
+  isVip?: boolean;
+
+  @ApiPropertyOptional({ description: '章节价格', default: 0 })
+  @IsOptional()
+  price?: number;
+}
 
 export class ChapterQueryDto {
   @ApiProperty({ description: '书籍ID' })
   @IsNumber()
   @Type(() => Number)
   bookId: number;
+
+  @ApiPropertyOptional({ description: '章节标题关键词搜索' })
+  @IsOptional()
+  @IsString()
+  keyword?: string;
 
   @ApiPropertyOptional({ description: '页码', default: 1 })
   @IsOptional()
@@ -277,6 +306,7 @@ export class SaveReadingProgressDto {
 
   @ApiPropertyOptional({ description: '进度百分比', default: 0 })
   @IsOptional()
+  @IsNumber()
   @Type(() => Number)
   progress?: number;
 
@@ -307,10 +337,22 @@ export class CreateReviewDto {
 }
 
 export class ReviewQueryDto {
-  @ApiProperty({ description: '书籍ID' })
+  @ApiPropertyOptional({ description: '书籍ID（管理员查询所有评价时可不传）' })
+  @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  bookId: number;
+  bookId?: number;
+
+  @ApiPropertyOptional({ description: '评价内容关键词' })
+  @IsOptional()
+  @IsString()
+  keyword?: string;
+
+  @ApiPropertyOptional({ description: '审核状态 0:待审核 1:已通过 2:已驳回' })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  status?: number;
 
   @ApiPropertyOptional({ description: '页码', default: 1 })
   @IsOptional()
@@ -323,4 +365,14 @@ export class ReviewQueryDto {
   @IsNumber()
   @Type(() => Number)
   pageSize?: number;
+}
+
+export class UpdateReviewStatusDto {
+  @ApiProperty({ description: '评价ID' })
+  @IsNumber()
+  id: number;
+
+  @ApiProperty({ description: '审核状态 1:通过 2:驳回' })
+  @IsNumber()
+  status: number;
 }

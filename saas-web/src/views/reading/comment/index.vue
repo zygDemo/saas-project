@@ -17,9 +17,9 @@
       </ElCol>
       <ElCol :lg="4" :md="6" :sm="12" :xs="24">
         <ElSelect v-model="statusFilter" placeholder="审核状态" clearable class="w-full">
-          <ElOption label="待审核" value="pending" />
-          <ElOption label="已通过" value="approved" />
-          <ElOption label="已驳回" value="rejected" />
+          <ElOption label="待审核" :value="0" />
+          <ElOption label="已通过" :value="1" />
+          <ElOption label="已驳回" :value="2" />
         </ElSelect>
       </ElCol>
     </ElRow>
@@ -110,6 +110,7 @@
 
 <script setup lang="ts">
 import { Search } from '@element-plus/icons-vue'
+import { getBookReviews, updateReviewStatus, deleteReview } from '@/api/reading'
 
 defineOptions({ name: 'ReadingComment' })
 
@@ -123,38 +124,68 @@ interface CommentItem {
 }
 
 const searchVal = ref('')
-const statusFilter = ref('')
+const statusFilter = ref<number | undefined>(undefined)
 const isLoading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
 const showDetail = ref(false)
 const currentComment = ref<CommentItem | null>(null)
+const commentList = ref<CommentItem[]>([])
 
-const commentList = ref<CommentItem[]>([
-  { id: 1, bookName: '红楼梦', content: '非常经典的文学作品，值得反复阅读', username: '张三', createTime: '2025-06-01 10:30', status: 'approved' },
-  { id: 2, bookName: '三体', content: '科幻巨作，想象力惊人', username: '李四', createTime: '2025-06-02 14:20', status: 'pending' },
-  { id: 3, bookName: '人类简史', content: '从宏观角度解读人类发展历程', username: '王五', createTime: '2025-06-03 09:15', status: 'approved' },
-  { id: 4, bookName: '国富论', content: '经济学的奠基之作，需要仔细研读', username: '赵六', createTime: '2025-06-04 16:45', status: 'rejected' },
-  { id: 5, bookName: '百年孤独', content: '魔幻现实主义的巅峰之作', username: '钱七', createTime: '2025-06-05 11:00', status: 'pending' }
-])
+const statusMap: Record<number, string> = { 0: 'pending', 1: 'approved', 2: 'rejected' }
+
+const loadReviews = async () => {
+  isLoading.value = true
+  try {
+    const params: any = { page: currentPage.value, pageSize: pageSize.value }
+    if (searchVal.value) params.keyword = searchVal.value
+    if (statusFilter.value !== undefined) params.status = statusFilter.value
+    const res = (await getBookReviews(params)) as any
+    commentList.value = (res?.items || []).map((item: any) => ({
+      id: item.id,
+      bookName: item.book?.title || '未知',
+      content: item.content || '',
+      username: item.user?.nickname || item.user?.username || '匿名',
+      createTime: item.createdAt || '',
+      status: statusMap[item.status] || 'pending',
+    }))
+    total.value = res?.total || 0
+  } catch {
+    ElMessage.error('加载评论失败')
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const handleSearch = () => {
   currentPage.value = 1
+  loadReviews()
 }
 
 const handlePageChange = (val: number) => {
   currentPage.value = val
+  loadReviews()
 }
 
-const handleApprove = (row: CommentItem) => {
-  row.status = 'approved'
-  ElMessage.success('评论已通过审核')
+const handleApprove = async (row: CommentItem) => {
+  try {
+    await updateReviewStatus({ id: row.id, status: 1 })
+    ElMessage.success('评论已通过审核')
+    loadReviews()
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.message || '操作失败')
+  }
 }
 
-const handleReject = (row: CommentItem) => {
-  row.status = 'rejected'
-  ElMessage.success('评论已驳回')
+const handleReject = async (row: CommentItem) => {
+  try {
+    await updateReviewStatus({ id: row.id, status: 2 })
+    ElMessage.success('评论已驳回')
+    loadReviews()
+  } catch (error: any) {
+    ElMessage.error(error?.response?.data?.message || '操作失败')
+  }
 }
 
 const handleView = (row: CommentItem) => {
@@ -167,9 +198,24 @@ const handleDelete = (row: CommentItem) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    commentList.value = commentList.value.filter(item => item.id !== row.id)
-    ElMessage.success('删除成功')
+  }).then(async () => {
+    try {
+      await deleteReview(row.id)
+      ElMessage.success('删除成功')
+      loadReviews()
+    } catch (error: any) {
+      ElMessage.error(error?.response?.data?.message || '删除失败')
+    }
   }).catch(() => {})
 }
+
+// 监听筛选条件变化
+watch(statusFilter, () => {
+  currentPage.value = 1
+  loadReviews()
+})
+
+onMounted(() => {
+  loadReviews()
+})
 </script>

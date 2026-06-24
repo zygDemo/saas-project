@@ -319,7 +319,7 @@
 
 <script setup lang="ts">
 import layout from "@/pages/layout/layout.vue";
-import { computed, ref, onMounted, onUnmounted } from "vue";
+import { computed, ref, onMounted, onUnmounted, watch } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useReadingApi } from "@/api/reading";
 
@@ -595,9 +595,11 @@ const formatWordCount = (count?: number) => {
 };
 
 // 从API获取图书列表
-const fetchBooks = async () => {
+const fetchBooks = async (kw?: string) => {
   try {
-    const res = await readingApi.getBooks({ page: 1, pageSize: 20 });
+    const params: any = { page: 1, pageSize: 20 };
+    if (kw) params.keyword = kw;
+    const res = await readingApi.getBooks(params);
     if (res?.code === 200 && res.data?.items) {
       bookList.value = res.data.items.map((item) => ({
         id: String(item.id),
@@ -810,8 +812,26 @@ const switchRankTab = (idx: number) => {
 };
 
 const onSearch = () => {
-  // 触发搜索
+  // 用户主动搜索：切换到全部tab，用关键词发起服务端搜索
+  currentMainTab.value = 0;
+  currentSubTab.value = 0;
+  fetchBooks(keyword.value.trim() || undefined);
 };
+
+// 输入框实时搜索防抖
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+watch(keyword, (newVal) => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    if (newVal.trim()) {
+      currentMainTab.value = 0;
+      currentSubTab.value = 0;
+      fetchBooks(newVal.trim());
+    } else {
+      fetchBooks();
+    }
+  }, 500);
+});
 
 const onBannerClick = (banner: BannerItem) => {
   if (banner.link) {

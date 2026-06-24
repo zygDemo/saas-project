@@ -15,6 +15,7 @@ import {
   SaveReadingProgressDto,
   CreateReviewDto,
   ReviewQueryDto,
+  UpdateReviewStatusDto,
 } from './dto/reading.dto';
 
 @Injectable()
@@ -38,7 +39,7 @@ export class ReadingService {
   // ==================== 书籍分类 ====================
 
   async getCategories(tenantId: number, query?: CategoryQueryDto) {
-    const where: Record<string, unknown> = { tenantId };
+    const where: Record<string, unknown> = { tenantId, deletedAt: null };
 
     if (query?.keyword) {
       where.name = { contains: query.keyword, mode: 'insensitive' };
@@ -61,7 +62,7 @@ export class ReadingService {
 
   async getCategoryById(id: number, tenantId: number) {
     const category = await this.prisma.bookCategory.findFirst({
-      where: { id, tenantId },
+      where: { id, tenantId, deletedAt: null },
       include: {
         _count: { select: { books: true } },
       },
@@ -105,7 +106,7 @@ export class ReadingService {
 
   async updateCategory(id: number, tenantId: number, dto: UpdateBookCategoryDto) {
     const category = await this.prisma.bookCategory.findFirst({
-      where: { id, tenantId },
+      where: { id, tenantId, deletedAt: null },
     });
     if (!category) {
       throw new NotFoundException('分类不存在');
@@ -118,7 +119,7 @@ export class ReadingService {
 
   async deleteCategory(id: number, tenantId: number) {
     const category = await this.prisma.bookCategory.findFirst({
-      where: { id, tenantId },
+      where: { id, tenantId, deletedAt: null },
     });
     if (!category) {
       throw new NotFoundException('分类不存在');
@@ -142,7 +143,7 @@ export class ReadingService {
 
   async batchUpdateCategoryStatus(tenantId: number, dto: BatchCategoryStatusDto) {
     const categories = await this.prisma.bookCategory.findMany({
-      where: { id: { in: dto.ids }, tenantId },
+      where: { id: { in: dto.ids }, tenantId, deletedAt: null },
     });
     if (categories.length !== dto.ids.length) {
       throw new NotFoundException('部分分类不存在');
@@ -158,7 +159,7 @@ export class ReadingService {
 
   async getBooks(tenantId: number, query: BookQueryDto) {
     const { keyword, categoryId, status, isHot, isRecommend, isFinished, page = 1, pageSize = 20 } = query;
-    const where: Record<string, unknown> = { tenantId };
+    const where: Record<string, unknown> = { tenantId, deletedAt: null };
 
     if (keyword) {
       where.OR = [
@@ -188,7 +189,7 @@ export class ReadingService {
 
   async getBookById(id: number, tenantId: number) {
     const book = await this.prisma.book.findFirst({
-      where: { id, tenantId },
+      where: { id, tenantId, deletedAt: null },
       include: { category: true, _count: { select: { chapters: true, reviews: true } } },
     });
     if (!book) {
@@ -221,7 +222,7 @@ export class ReadingService {
 
   async updateBook(id: number, tenantId: number, dto: UpdateBookDto) {
     const book = await this.prisma.book.findFirst({
-      where: { id, tenantId },
+      where: { id, tenantId, deletedAt: null },
     });
     if (!book) {
       throw new NotFoundException('书籍不存在');
@@ -237,7 +238,7 @@ export class ReadingService {
 
   async deleteBook(id: number, tenantId: number) {
     const book = await this.prisma.book.findFirst({
-      where: { id, tenantId },
+      where: { id, tenantId, deletedAt: null },
     });
     if (!book) {
       throw new NotFoundException('书籍不存在');
@@ -249,7 +250,7 @@ export class ReadingService {
 
   async getChaptersLite(tenantId: number, bookId: number) {
     const chapters = await this.prisma.bookChapter.findMany({
-      where: { tenantId, bookId },
+      where: { tenantId, bookId, deletedAt: null },
       orderBy: { sort: 'asc' },
       select: {
         id: true,
@@ -262,8 +263,12 @@ export class ReadingService {
   }
 
   async getChapters(tenantId: number, query: ChapterQueryDto) {
-    const { bookId, page = 1, pageSize = 100 } = query;
-    const where = { tenantId, bookId };
+    const { bookId, keyword, page = 1, pageSize = 100 } = query;
+    const where: Record<string, unknown> = { tenantId, bookId, deletedAt: null };
+
+    if (keyword) {
+      where.title = { contains: keyword, mode: 'insensitive' };
+    }
 
     const [rows, total] = await Promise.all([
       this.prisma.bookChapter.findMany({
@@ -293,7 +298,7 @@ export class ReadingService {
 
   async getChapterById(id: number, tenantId: number) {
     const chapter = await this.prisma.bookChapter.findFirst({
-      where: { id, tenantId },
+      where: { id, tenantId, deletedAt: null },
     });
     if (!chapter) {
       throw new NotFoundException('章节不存在');
@@ -306,37 +311,38 @@ export class ReadingService {
 
   async createChapter(tenantId: number, dto: CreateChapterDto) {
     const book = await this.prisma.book.findFirst({
-      where: { id: dto.bookId, tenantId },
+      where: { id: dto.bookId, tenantId, deletedAt: null },
     });
     if (!book) {
       throw new NotFoundException('书籍不存在');
     }
 
-    const chapter = await this.prisma.bookChapter.create({
-      data: {
-        tenantId,
-        bookId: dto.bookId,
-        title: dto.title,
-        content: dto.content,
-        wordCount: dto.content?.length || 0,
-        sort: dto.sort || 0,
-        isVip: dto.isVip || false,
-        price: dto.price || 0,
-      },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const chapter = await tx.bookChapter.create({
+        data: {
+          tenantId,
+          bookId: dto.bookId,
+          title: dto.title,
+          content: dto.content,
+          wordCount: dto.content?.length || 0,
+          sort: dto.sort || 0,
+          isVip: dto.isVip || false,
+          price: dto.price || 0,
+        },
+      });
 
-    // 更新书籍章节数
-    await this.prisma.book.update({
-      where: { id: dto.bookId },
-      data: { chapterCount: { increment: 1 } },
-    });
+      await tx.book.update({
+        where: { id: dto.bookId },
+        data: { chapterCount: { increment: 1 } },
+      });
 
-    return chapter;
+      return chapter;
+    });
   }
 
   async updateChapter(id: number, tenantId: number, dto: UpdateChapterDto) {
     const chapter = await this.prisma.bookChapter.findFirst({
-      where: { id, tenantId },
+      where: { id, tenantId, deletedAt: null },
     });
     if (!chapter) {
       throw new NotFoundException('章节不存在');
@@ -352,26 +358,27 @@ export class ReadingService {
 
   async deleteChapter(id: number, tenantId: number) {
     const chapter = await this.prisma.bookChapter.findFirst({
-      where: { id, tenantId },
+      where: { id, tenantId, deletedAt: null },
     });
     if (!chapter) {
       throw new NotFoundException('章节不存在');
     }
 
-    // 更新书籍章节数
-    await this.prisma.book.update({
-      where: { id: chapter.bookId },
-      data: { chapterCount: { decrement: 1 } },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      await tx.book.update({
+        where: { id: chapter.bookId },
+        data: { chapterCount: { decrement: 1 } },
+      });
 
-    return this.prisma.bookChapter.update({ where: { id }, data: { deletedAt: new Date() } });
+      return tx.bookChapter.update({ where: { id }, data: { deletedAt: new Date() } });
+    });
   }
 
   // ==================== 用户书架 ====================
 
   async getBookshelf(userId: number, tenantId: number) {
     return this.prisma.userBookshelf.findMany({
-      where: { userId, tenantId },
+      where: { userId, tenantId, deletedAt: null },
       include: {
         book: {
           include: {
@@ -385,14 +392,14 @@ export class ReadingService {
 
   async addToBookshelf(userId: number, tenantId: number, dto: AddBookshelfDto) {
     const book = await this.prisma.book.findFirst({
-      where: { id: dto.bookId, tenantId, status: 1 },
+      where: { id: dto.bookId, tenantId, status: 1, deletedAt: null },
     });
     if (!book) {
       throw new NotFoundException('书籍不存在');
     }
 
     const existing = await this.prisma.userBookshelf.findFirst({
-      where: { userId, bookId: dto.bookId },
+      where: { userId, bookId: dto.bookId, deletedAt: null },
     });
     if (existing) {
       return existing;
@@ -410,7 +417,7 @@ export class ReadingService {
 
   async removeFromBookshelf(userId: number, tenantId: number, bookId: number) {
     const record = await this.prisma.userBookshelf.findFirst({
-      where: { userId, bookId, tenantId },
+      where: { userId, bookId, tenantId, deletedAt: null },
     });
     if (!record) {
       throw new NotFoundException('书架记录不存在');
@@ -422,13 +429,13 @@ export class ReadingService {
 
   async getReadingProgress(userId: number, tenantId: number, bookId: number) {
     return this.prisma.readingProgress.findFirst({
-      where: { userId, bookId, tenantId },
+      where: { userId, bookId, tenantId, deletedAt: null },
     });
   }
 
   async saveReadingProgress(userId: number, tenantId: number, dto: SaveReadingProgressDto) {
     const book = await this.prisma.book.findFirst({
-      where: { id: dto.bookId, tenantId },
+      where: { id: dto.bookId, tenantId, deletedAt: null },
     });
     if (!book) {
       throw new NotFoundException('书籍不存在');
@@ -436,7 +443,7 @@ export class ReadingService {
 
     // 更新书架的最后阅读时间
     await this.prisma.userBookshelf.updateMany({
-      where: { userId, bookId: dto.bookId },
+      where: { userId, bookId: dto.bookId, deletedAt: null },
       data: { lastReadAt: new Date() },
     });
 
@@ -464,12 +471,22 @@ export class ReadingService {
   // ==================== 书籍评价 ====================
 
   async getReviews(tenantId: number, query: ReviewQueryDto) {
-    const { bookId, page = 1, pageSize = 20 } = query;
-    const where = { tenantId, bookId, status: 1 };
+    const { bookId, keyword, status, page = 1, pageSize = 20 } = query;
+    const where: Record<string, unknown> = { tenantId, deletedAt: null };
+
+    if (bookId) where.bookId = bookId;
+    if (status !== undefined) where.status = status;
+    if (keyword) {
+      where.content = { contains: keyword, mode: 'insensitive' };
+    }
 
     const [items, total] = await Promise.all([
       this.prisma.bookReview.findMany({
         where,
+        include: {
+          book: { select: { id: true, title: true } },
+          user: { select: { id: true, username: true, nickname: true } },
+        },
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { createdAt: 'desc' },
@@ -480,9 +497,53 @@ export class ReadingService {
     return { items, total, page, pageSize };
   }
 
+  async updateReviewStatus(tenantId: number, dto: UpdateReviewStatusDto) {
+    const review = await this.prisma.bookReview.findFirst({
+      where: { id: dto.id, tenantId, deletedAt: null },
+    });
+    if (!review) {
+      throw new NotFoundException('评价不存在');
+    }
+    return this.prisma.bookReview.update({
+      where: { id: dto.id },
+      data: { status: dto.status },
+    });
+  }
+
+  async deleteReview(tenantId: number, id: number) {
+    const review = await this.prisma.bookReview.findFirst({
+      where: { id, tenantId, deletedAt: null },
+    });
+    if (!review) {
+      throw new NotFoundException('评价不存在');
+    }
+    // 删除后需重新计算书籍评分
+    await this.prisma.bookReview.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    const agg = await this.prisma.bookReview.aggregate({
+      where: { bookId: review.bookId, status: 1, deletedAt: null },
+      _avg: { rating: true },
+      _count: true,
+    });
+    const avgRating = agg._avg.rating ?? 0;
+
+    await this.prisma.book.update({
+      where: { id: review.bookId },
+      data: {
+        rating: Math.round(avgRating * 10) / 10,
+        ratingCount: agg._count,
+      },
+    });
+
+    return { success: true };
+  }
+
   async createReview(userId: number, tenantId: number, dto: CreateReviewDto) {
     const book = await this.prisma.book.findFirst({
-      where: { id: dto.bookId, tenantId },
+      where: { id: dto.bookId, tenantId, deletedAt: null },
     });
     if (!book) {
       throw new NotFoundException('书籍不存在');
@@ -528,15 +589,15 @@ export class ReadingService {
 
   async getStatistics(tenantId: number) {
     const [bookCount, categoryCount, userCount, totalReads] = await Promise.all([
-      this.prisma.book.count({ where: { tenantId } }),
-      this.prisma.bookCategory.count({ where: { tenantId } }),
+      this.prisma.book.count({ where: { tenantId, deletedAt: null } }),
+      this.prisma.bookCategory.count({ where: { tenantId, deletedAt: null } }),
       this.prisma.userBookshelf.groupBy({
         by: ['userId'],
         where: { tenantId },
         _count: true,
       }),
       this.prisma.book.aggregate({
-        where: { tenantId },
+        where: { tenantId, deletedAt: null },
         _sum: { readCount: true },
       }),
     ]);
@@ -551,7 +612,7 @@ export class ReadingService {
 
   async getHotBooks(tenantId: number, limit = 10) {
     return this.prisma.book.findMany({
-      where: { tenantId, status: 1 },
+      where: { tenantId, status: 1, deletedAt: null },
       orderBy: { readCount: 'desc' },
       take: limit,
       include: { category: true },
@@ -560,7 +621,7 @@ export class ReadingService {
 
   async getRecommendBooks(tenantId: number, limit = 10) {
     return this.prisma.book.findMany({
-      where: { tenantId, status: 1, isRecommend: true },
+      where: { tenantId, status: 1, isRecommend: true, deletedAt: null },
       orderBy: { rating: 'desc' },
       take: limit,
       include: { category: true },
