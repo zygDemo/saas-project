@@ -51,7 +51,7 @@
           size="large"
           shape="circle"
           :loading="submitting"
-          :disabled="!form.confirmed"
+          :disabled="Array.isArray(form.confirmed) ? form.confirmed.length === 0 : !form.confirmed"
           @click="handleConfirm"
         >
           确认额度并继续
@@ -115,7 +115,7 @@ const formItems = computed(() => [
     key: "confirmRate",
     label: "确认利率(%)",
     placeholder: "请输入确认利率，默认为批复利率",
-    type: "digit",
+    type: "number",
     required: true,
   },
   {
@@ -130,6 +130,7 @@ const formItems = computed(() => [
     label: "我已确认以上信息无误",
     type: "checkbox",
     required: true,
+    options: [{ name: "我已确认以上信息无误", value: true, checked: false }],
   },
 ]);
 
@@ -182,7 +183,10 @@ function formatMoney(value) {
 }
 
 async function handleConfirm() {
-  if (!form.confirmed) {
+  const isChecked = Array.isArray(form.confirmed)
+    ? form.confirmed.length > 0
+    : !!form.confirmed;
+  if (!isChecked) {
     $u.toast("请先勾选确认选项", "error");
     return;
   }
