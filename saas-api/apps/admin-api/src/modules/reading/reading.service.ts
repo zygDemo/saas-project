@@ -242,7 +242,7 @@ export class ReadingService {
     if (!book) {
       throw new NotFoundException('书籍不存在');
     }
-    return this.prisma.book.delete({ where: { id } });
+    return this.prisma.book.update({ where: { id }, data: { deletedAt: new Date() } });
   }
 
   // ==================== 章节管理 ====================
@@ -364,7 +364,7 @@ export class ReadingService {
       data: { chapterCount: { decrement: 1 } },
     });
 
-    return this.prisma.bookChapter.delete({ where: { id } });
+    return this.prisma.bookChapter.update({ where: { id }, data: { deletedAt: new Date() } });
   }
 
   // ==================== 用户书架 ====================
@@ -415,7 +415,7 @@ export class ReadingService {
     if (!record) {
       throw new NotFoundException('书架记录不存在');
     }
-    return this.prisma.userBookshelf.delete({ where: { id: record.id } });
+    return this.prisma.userBookshelf.update({ where: { id: record.id }, data: { deletedAt: new Date() } });
   }
 
   // ==================== 阅读进度 ====================

@@ -32,8 +32,9 @@ function isTenantModel(model: string | undefined): boolean {
 const SOFT_DELETE_MODELS = new Set([
   'user', 'role', 'menu', 'organization', 'department',
   'product', 'funder', 'lead', 'customer', 'application',
-  'flowconfig', 'fileasset', 'dicttype', 'bookcategory',
-  'customercontact', 'repaymentplan', 'signrecord', 'disbursement'
+  'flowconfig', 'fileasset', 'dicttype', 'dictdata',
+  'bookcategory', 'book', 'bookchapter', 'userbookshelf',
+  'customercontact', 'permission', 'repaymentplan', 'signrecord', 'disbursement'
 ])
 
 function isSoftDeleteModel(model: string | undefined): boolean {

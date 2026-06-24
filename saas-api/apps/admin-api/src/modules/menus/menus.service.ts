@@ -165,7 +165,7 @@ export class MenusService {
     const permission = await this.prisma.permission.findFirst({ where: { id } })
     if (!permission) throw new NotFoundException('权限不存在')
 
-    await this.prisma.permission.delete({ where: { id } })
+    await this.prisma.permission.update({ where: { id }, data: { deletedAt: new Date() } })
     return { id }
   }
 

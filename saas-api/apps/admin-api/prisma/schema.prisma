@@ -937,6 +937,7 @@ model Book {
   @@index([status])
   @@index([isHot])
   @@index([isRecommend])
+  deletedAt    DateTime?
 }
 
 model BookChapter {
@@ -958,6 +959,7 @@ model BookChapter {
   @@unique([bookId, sort])
   @@index([tenantId])
   @@index([bookId])
+  deletedAt    DateTime?
 }
 
 model UserBookshelf {

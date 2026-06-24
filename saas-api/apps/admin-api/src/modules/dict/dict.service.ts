@@ -179,7 +179,7 @@ export class DictService {
   async deleteData(id: number) {
     const tenantId = getRequiredTenantId()
     await this.findDataOrThrow(tenantId, id)
-    await this.prisma.dictData.delete({ where: { id } })
+    await this.prisma.dictData.update({ where: { id }, data: { deletedAt: new Date() } })
     return { id }
   }
 
