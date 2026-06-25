@@ -16,16 +16,26 @@
       <!-- 搜索栏 -->
       <ElForm :model="searchForm" class="search-form" inline>
         <ElFormItem label="分组">
-          <ElInput v-model="searchForm.group" clearable placeholder="参数分组" style="width:140px" />
+          <ElInput
+            v-model="searchForm.group"
+            clearable
+            placeholder="参数分组"
+            style="width: 140px"
+          />
         </ElFormItem>
         <ElFormItem label="名称">
-          <ElInput v-model="searchForm.name" clearable placeholder="参数名称" style="width:160px" />
+          <ElInput
+            v-model="searchForm.name"
+            clearable
+            placeholder="参数名称"
+            style="width: 160px"
+          />
         </ElFormItem>
         <ElFormItem label="键">
-          <ElInput v-model="searchForm.key" clearable placeholder="参数键" style="width:160px" />
+          <ElInput v-model="searchForm.key" clearable placeholder="参数键" style="width: 160px" />
         </ElFormItem>
         <ElFormItem label="状态">
-          <ElSelect v-model="searchForm.status" clearable placeholder="全部" style="width:110px">
+          <ElSelect v-model="searchForm.status" clearable placeholder="全部" style="width: 110px">
             <ElOption label="启用" value="ACTIVE" />
             <ElOption label="停用" value="INACTIVE" />
           </ElSelect>
@@ -95,7 +105,8 @@
     fetchUpdateSystemParam,
     fetchDeleteSystemParam
   } from '@/api/system-manage'
-  import { ElMessage, ElMessageBox, ElTag, ElButton, Plus } from 'element-plus'
+  import { ElMessageBox, ElTag, ElButton } from 'element-plus'
+  import { Plus } from '@element-plus/icons-vue'
   import type { FormInstance, FormRules } from 'element-plus'
 
   defineOptions({ name: 'SystemParam' })
@@ -127,14 +138,20 @@
     key: [{ required: true, message: '请输入参数键', trigger: 'blur' }]
   }
 
-  const typeLabel = (t: string) => ({ STRING: '字符串', NUMBER: '数字', BOOLEAN: '布尔', JSON: 'JSON' }[t] || t)
+  const typeLabel = (t: string) =>
+    ({ STRING: '字符串', NUMBER: '数字', BOOLEAN: '布尔', JSON: 'JSON' })[t] || t
 
   const columns = computed(() => [
     { prop: 'group', label: '分组', width: 100, showOverflowTooltip: true },
     { prop: 'name', label: '名称', minWidth: 140, showOverflowTooltip: true },
     { prop: 'key', label: '参数键', minWidth: 160, showOverflowTooltip: true },
     { prop: 'value', label: '值', minWidth: 180, showOverflowTooltip: true },
-    { prop: 'type', label: '类型', width: 80, formatter: (row: ParamItem) => h('span', typeLabel(row.type)) },
+    {
+      prop: 'type',
+      label: '类型',
+      width: 80,
+      formatter: (row: ParamItem) => h('span', typeLabel(row.type))
+    },
     {
       prop: 'status',
       label: '状态',
@@ -152,8 +169,16 @@
       fixed: 'right' as const,
       formatter: (row: ParamItem) =>
         h('div', [
-          h(ElButton, { link: true, type: 'primary', onClick: () => openDialog(row) }, () => '编辑'),
-          h(ElButton, { link: true, type: 'danger', onClick: () => handleDelete(row) }, () => '删除')
+          h(
+            ElButton,
+            { link: true, type: 'primary', onClick: () => openDialog(row) },
+            () => '编辑'
+          ),
+          h(
+            ElButton,
+            { link: true, type: 'danger', onClick: () => handleDelete(row) },
+            () => '删除'
+          )
         ])
     }
   ])
@@ -203,7 +228,16 @@
         remark: row.remark || ''
       })
     } else {
-      Object.assign(form, { id: 0, group: '', name: '', key: '', value: '', type: 'STRING', status: 'ACTIVE', remark: '' })
+      Object.assign(form, {
+        id: 0,
+        group: '',
+        name: '',
+        key: '',
+        value: '',
+        type: 'STRING',
+        status: 'ACTIVE',
+        remark: ''
+      })
     }
     dialogVisible.value = true
   }

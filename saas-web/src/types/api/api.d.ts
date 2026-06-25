@@ -322,7 +322,6 @@ declare namespace Api {
         | 'remark'
       >
     >
-  }
     // ===== 系统参数管理 =====
     interface SystemParamItem {
       id: number
@@ -338,8 +337,12 @@ declare namespace Api {
     }
 
     type SystemParamList = Api.Common.PaginatedResponse<SystemParamItem>
-    type SystemParamSearchParams = Partial<Pick<SystemParamItem, 'group' | 'name' | 'key' | 'status'> & Api.Common.CommonSearchParams>
-    type SaveSystemParamParams = Partial<Pick<SystemParamItem, 'group' | 'name' | 'key' | 'value' | 'type' | 'status' | 'remark'>>
+    type SystemParamSearchParams = Partial<
+      Pick<SystemParamItem, 'group' | 'name' | 'key' | 'status'> & Api.Common.CommonSearchParams
+    >
+    type SaveSystemParamParams = Partial<
+      Pick<SystemParamItem, 'group' | 'name' | 'key' | 'value' | 'type' | 'status' | 'remark'>
+    >
 
     // ===== 公告管理 =====
     interface AnnouncementItem {
@@ -359,8 +362,23 @@ declare namespace Api {
     }
 
     type AnnouncementList = Api.Common.PaginatedResponse<AnnouncementItem>
-    type AnnouncementSearchParams = Partial<Pick<AnnouncementItem, 'title' | 'type' | 'level' | 'status'> & Api.Common.CommonSearchParams>
-    type SaveAnnouncementParams = Partial<Pick<AnnouncementItem, 'title' | 'content' | 'type' | 'level' | 'status' | 'publishAt' | 'expireAt' | 'topFlag' | 'remark'>>
+    type AnnouncementSearchParams = Partial<
+      Pick<AnnouncementItem, 'title' | 'type' | 'level' | 'status'> & Api.Common.CommonSearchParams
+    >
+    type SaveAnnouncementParams = Partial<
+      Pick<
+        AnnouncementItem,
+        | 'title'
+        | 'content'
+        | 'type'
+        | 'level'
+        | 'status'
+        | 'publishAt'
+        | 'expireAt'
+        | 'topFlag'
+        | 'remark'
+      >
+    >
 
     // ===== 移动端模块配置 =====
     interface MobileModuleItem {
@@ -398,5 +416,5 @@ declare namespace Api {
       mobileMultiModule?: boolean
       defaultMobileModule?: string
     }
-
+  }
 }
