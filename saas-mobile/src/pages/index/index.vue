@@ -26,7 +26,7 @@
       <!-- 业务服务 2×2 网格 -->
       <view class="service-section">
         <view class="section-label">
-          <text class="section-label-bar" />
+          <text class="section-icon">🔹</text>
           <text class="section-label-text">业务服务</text>
         </view>
         <view class="service-grid">
@@ -48,7 +48,7 @@
       <!-- 快捷功能 -->
       <view class="shortcut-section">
         <view class="section-label">
-          <text class="section-label-bar" />
+          <text class="section-icon">⚡</text>
           <text class="section-label-text">快捷功能</text>
         </view>
         <view class="shortcut-grid">
@@ -394,12 +394,9 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   margin-bottom: 20rpx;
 }
 
-.section-label-bar {
-  width: 6rpx;
-  height: 26rpx;
-  border-radius: 3rpx;
-  background: linear-gradient(180deg, var(--u-type-primary), var(--u-type-primary-disabled));
-  margin-right: 12rpx;
+.section-icon {
+  font-size: 32rpx;
+  margin-right: 8rpx;
 }
 
 .section-label-text {

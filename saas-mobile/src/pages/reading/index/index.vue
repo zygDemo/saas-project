@@ -883,12 +883,13 @@ const refreshRecommend = () => {
 .section-title-wrap {
   display: flex;
   align-items: center;
-  gap: 12rpx;
 }
 
 .section-icon {
   font-size: 36rpx;
+  margin-right: 12rpx;
 }
+
 
 .section-title {
   font-size: 32rpx;
@@ -1476,4 +1477,9 @@ const refreshRecommend = () => {
   }
 }
 
+</style>
+<style>
+/* 覆盖全局竖线 */
+.section-title::before { display: none !important; }
+.section-title { padding-left: 0 !important; }
 </style>

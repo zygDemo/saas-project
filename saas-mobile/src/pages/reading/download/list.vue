@@ -399,3 +399,8 @@ const goBookStore = () => {
   margin: 20rpx 0 30rpx;
 }
 </style>
+<style>
+/* 覆盖全局竖线 */
+.section-title::before { display: none !important; }
+.section-title { padding-left: 0 !important; }
+</style>

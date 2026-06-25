@@ -1868,4 +1868,10 @@ const viewMore = (type: string) => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+</style>
+<style>
+/* 覆盖全局竖线 */
+.section-title::before { display: none !important; }
+.section-title { padding-left: 0 !important; }
 </style>

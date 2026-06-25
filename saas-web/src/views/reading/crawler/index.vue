@@ -449,6 +449,8 @@
   const handlePause = async () => {
     try {
       await pauseCrawlTask(taskId.value)
+      stopPolling()
+      loading.value = false
       ElMessage.success('任务已暂停')
     } catch (error: any) {
       ElMessage.error(error?.response?.data?.message || '暂停失败')
@@ -458,6 +460,7 @@
   const handleResume = async () => {
     try {
       await resumeCrawlTask(taskId.value)
+      startPolling(taskId.value)
       ElMessage.success('任务已恢复')
     } catch (error: any) {
       ElMessage.error(error?.response?.data?.message || '恢复失败')
@@ -472,6 +475,8 @@
         type: 'warning'
       })
       await cancelCrawlTask(taskId.value)
+      stopPolling()
+      loading.value = false
       ElMessage.success('取消指令已发送')
     } catch (error: any) {
       if (error !== 'cancel') {
