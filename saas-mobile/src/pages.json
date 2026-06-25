@@ -241,6 +241,7 @@
     "autoscan": true
   },
   "tabBar": {
+    "custom": true,
     "color": "#7A7E83",
     "selectedColor": "#3cc51f",
     "borderStyle": "black",

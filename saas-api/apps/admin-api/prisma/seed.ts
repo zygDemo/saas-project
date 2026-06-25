@@ -549,33 +549,37 @@ async function main() {
     'ProductTemplate',
     'PlatformSupervision',
     'ThirdPartyService',
-    'WorkOrder',
-    'FlowConfig',
+    'WorkOrder'
+  )
+  const orgConfigIds = filterIds(
+    'OrgConfigRoot',
     'Org',
     'Dept',
     'Product',
-    'Funder'
+    'Funder',
+    'FlowConfig'
   )
   // 数据中心相关菜单
   const dataCenterIds = filterIds('DataCenter', 'DataStats', 'AuditLog')
   // 系统管理相关菜单
-  const systemFullIds = filterIds(
+  const systemIds = filterIds(
     'System',
     'User',
     'Role',
     'Menus',
     'DictMgmt',
     'RegionMgmt',
+    'SysParam',
+    'UserCenter'
+  )
+  const operationCenterIds = filterIds(
+    'OperationCenter',
     'FileManage',
     'FileConfig',
     'MsgTemplate',
-    'SystemParam',
-    'Announcement',
-    'UserCenter',
-    'WorkOrder',
+    'Notice',
     'SystemWorkOrder'
   )
-  const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter', 'SystemWorkOrder')
   const bizStageIds = filterIds(
     'Business',
     'Lead',
@@ -640,8 +644,6 @@ async function main() {
     'Reports'
   )
   const bizManagerIds = filterIds(
-    'Platform',
-    'FlowConfig',
     'Business',
     'Lead',
     'BusinessPrecheck',
@@ -655,8 +657,6 @@ async function main() {
     'Reports'
   )
   const bizAdminIds = filterIds(
-    'Platform',
-    'FlowConfig',
     'Business',
     'Lead',
     'BusinessPrecheck',
@@ -676,10 +676,10 @@ async function main() {
   await connectRoleMenus(roleByCode.R_OPERATION.id, [
     ...dashIds,
     ...platformIds,
+    ...orgConfigIds,
+    ...operationCenterIds,
     ...dataCenterIds,
-    ...filterIds('Announcement'),
-    ...bizStageIds,
-    ...filterIds('WorkOrder')
+    ...bizStageIds
   ])
   // 读书管理相关菜单
   const readingIds = filterIds(
@@ -695,15 +695,15 @@ async function main() {
   // R_ADMIN：仪表盘 + 系统基础 + 流程配置 + 全流程业务菜单 + 读书管理
   await connectRoleMenus(roleByCode.R_ADMIN.id, [
     ...dashIds,
-    ...filterIds('Platform', 'FlowConfig'),
-    ...systemBasicIds,
+    ...orgConfigIds,
+    ...systemIds,
+    ...operationCenterIds,
     ...bizAdminIds,
     ...readingIds
   ])
   // R_SALES_MANAGER：仪表盘 + 业务菜单
   await connectRoleMenus(roleByCode.R_SALES_MANAGER.id, [
     ...dashIds,
-    ...filterIds('Platform', 'FlowConfig'),
     ...bizManagerIds
   ])
   // R_SALES：仪表盘 + 业务菜单
@@ -763,6 +763,14 @@ async function seedAllMenus(tenantId: number) {
     title: '平台管理',
     icon: 'ri:global-line',
     sort: 20
+  })
+  const orgConfigRoot = await upsertMenu(tenantId, {
+    path: '/org-config',
+    name: 'OrgConfigRoot',
+    component: '/index/index',
+    title: '机构配置',
+    icon: 'ri:building-4-line',
+    sort: 25
   })
   const tenantMgmt = await upsertMenu(tenantId, {
     parentId: platform.id,
@@ -825,13 +833,13 @@ async function seedAllMenus(tenantId: number) {
     keepAlive: true
   })
   const flowConfig = await upsertMenu(tenantId, {
-    parentId: platform.id,
+    parentId: orgConfigRoot.id,
     path: 'flow-config',
     name: 'FlowConfig',
     component: '/business/flow-config',
     title: '流程与规则',
     icon: 'ri:git-branch-line',
-    sort: 71,
+    sort: 255,
     keepAlive: true
   })
 
@@ -873,6 +881,14 @@ async function seedAllMenus(tenantId: number) {
     title: '系统管理',
     icon: 'ri:settings-3-line',
     sort: 40
+  })
+  const operationCenter = await upsertMenu(tenantId, {
+    path: '/operation-center',
+    name: 'OperationCenter',
+    component: '/index/index',
+    title: '运营中心',
+    icon: 'ri:service-line',
+    sort: 45
   })
   const user = await upsertMenu(tenantId, {
     parentId: system.id,
@@ -925,33 +941,33 @@ async function seedAllMenus(tenantId: number) {
     keepAlive: true
   })
   const fileManage = await upsertMenu(tenantId, {
-    parentId: system.id,
+    parentId: operationCenter.id,
     path: 'file',
     name: 'FileManage',
     component: '/system/file',
     title: '文件管理',
     icon: 'ri:file-list-3-line',
-    sort: 46,
+    sort: 451,
     keepAlive: true
   })
   const fileConfig = await upsertMenu(tenantId, {
-    parentId: system.id,
+    parentId: operationCenter.id,
     path: 'file-config',
     name: 'FileConfig',
     component: '/system/file-config',
     title: '文件存储配置',
     icon: 'ri:hard-drive-2-line',
-    sort: 47,
+    sort: 452,
     keepAlive: true
   })
   const msgTemplate = await upsertMenu(tenantId, {
-    parentId: system.id,
+    parentId: operationCenter.id,
     path: 'msg-template',
     name: 'MsgTemplate',
     component: bp,
     title: '消息模板',
     icon: 'ri:mail-send-line',
-    sort: 48,
+    sort: 453,
     keepAlive: true
   })
   const sysParam = await upsertMenu(tenantId, {
@@ -965,13 +981,13 @@ async function seedAllMenus(tenantId: number) {
     keepAlive: true
   })
   const notice = await upsertMenu(tenantId, {
-    parentId: system.id,
+    parentId: operationCenter.id,
     path: 'notice',
     name: 'Notice',
     component: bp,
     title: '公告管理',
     icon: 'ri:notification-line',
-    sort: 50,
+    sort: 454,
     keepAlive: true
   })
   const userCenter = await upsertMenu(tenantId, {
@@ -987,13 +1003,13 @@ async function seedAllMenus(tenantId: number) {
     hiddenTab: true
   })
   const systemWorkOrder = await upsertMenu(tenantId, {
-    parentId: system.id,
+    parentId: operationCenter.id,
     path: 'work-order',
     name: 'SystemWorkOrder',
     component: '/system/work-order',
-    title: '工单管理',
+    title: '系统工单管理',
     icon: 'ri:customer-service-2-line',
-    sort: 52,
+    sort: 455,
     keepAlive: true
   })
 
@@ -1083,7 +1099,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '预审阶段',
     icon: 'ri:file-search-line',
-    sort: 62,
+    sort: 28,
     keepAlive: true
   })
   const businessSupplement = await upsertMenu(tenantId, {
@@ -1093,7 +1109,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '补件阶段',
     icon: 'ri:folder-upload-line',
-    sort: 63,
+    sort: 29,
     keepAlive: true
   })
   const businessRiskApproval = await upsertMenu(tenantId, {
@@ -1103,7 +1119,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '风控审批',
     icon: 'ri:shield-check-line',
-    sort: 64,
+    sort: 30,
     keepAlive: true
   })
   const businessFunderFinal = await upsertMenu(tenantId, {
@@ -1147,43 +1163,43 @@ async function seedAllMenus(tenantId: number) {
     keepAlive: true
   })
   const org = await upsertMenu(tenantId, {
-    parentId: business.id,
+    parentId: orgConfigRoot.id,
     path: 'org',
     name: 'Org',
     component: bp,
-    title: '机构管理',
+    title: '业务机构管理',
     icon: 'ri:building-line',
-    sort: 61,
+    sort: 251,
     keepAlive: true
   })
   const dept = await upsertMenu(tenantId, {
-    parentId: business.id,
+    parentId: orgConfigRoot.id,
     path: 'dept',
     name: 'Dept',
     component: bp,
     title: '部门管理',
     icon: 'ri:organization-chart',
-    sort: 62,
+    sort: 252,
     keepAlive: true
   })
   const product = await upsertMenu(tenantId, {
-    parentId: business.id,
+    parentId: orgConfigRoot.id,
     path: 'product',
     name: 'Product',
     component: bp,
     title: '产品配置',
     icon: 'ri:file-list-line',
-    sort: 63,
+    sort: 253,
     keepAlive: true
   })
   const funder = await upsertMenu(tenantId, {
-    parentId: business.id,
+    parentId: orgConfigRoot.id,
     path: 'funder',
     name: 'Funder',
     component: bp,
     title: '资方配置',
     icon: 'ri:bank-line',
-    sort: 64,
+    sort: 254,
     keepAlive: true
   })
   const lead = await upsertMenu(tenantId, {
@@ -1400,13 +1416,26 @@ async function seedAllMenus(tenantId: number) {
               'ProductTemplate',
               'PlatformSupervision',
               'ThirdPartyService',
-              'WorkOrder',
-              'Org',
-              'Dept',
-              'Product',
-              'Funder',
-              'FlowConfig'
+              'WorkOrder'
             ]
+          }
+        },
+        {
+          parentId: orgConfigRoot.id,
+          name: {
+            notIn: ['Org', 'Dept', 'Product', 'Funder', 'FlowConfig']
+          }
+        },
+        {
+          parentId: system.id,
+          name: {
+            notIn: ['User', 'Role', 'Menus', 'DictMgmt', 'RegionMgmt', 'SysParam']
+          }
+        },
+        {
+          parentId: operationCenter.id,
+          name: {
+            notIn: ['FileManage', 'FileConfig', 'MsgTemplate', 'Notice', 'SystemWorkOrder']
           }
         },
         {
@@ -1444,13 +1473,26 @@ async function seedAllMenus(tenantId: number) {
               'ProductTemplate',
               'PlatformSupervision',
               'ThirdPartyService',
-              'WorkOrder',
-              'Org',
-              'Dept',
-              'Product',
-              'Funder',
-              'FlowConfig'
+              'WorkOrder'
             ]
+          }
+        },
+        {
+          parentId: orgConfigRoot.id,
+          name: {
+            in: ['Org', 'Dept', 'Product', 'Funder', 'FlowConfig']
+          }
+        },
+        {
+          parentId: system.id,
+          name: {
+            in: ['User', 'Role', 'Menus', 'DictMgmt', 'RegionMgmt', 'SysParam']
+          }
+        },
+        {
+          parentId: operationCenter.id,
+          name: {
+            in: ['FileManage', 'FileConfig', 'MsgTemplate', 'Notice', 'SystemWorkOrder']
           }
         },
         {
@@ -1484,6 +1526,11 @@ async function seedAllMenus(tenantId: number) {
     readingComment,
     readingCrawler,
     tenantMgmt,
+    org,
+    dept,
+    product,
+    funder,
+    flowConfig,
     packageBilling,
     productTemplate,
     platformSupervision,
@@ -1527,8 +1574,11 @@ async function seedAllMenus(tenantId: number) {
     dictMgmt,
     regionMgmt,
     fileManage,
+    fileConfig,
     msgTemplate,
-    notice
+    sysParam,
+    notice,
+    systemWorkOrder
   ]
   for (const m of bizMenus) {
     for (const authMark of ['add', 'edit', 'delete']) {
@@ -1551,6 +1601,12 @@ async function seedAllMenus(tenantId: number) {
     platformSupervision,
     thirdPartyService,
     workOrder,
+    orgConfigRoot,
+    org,
+    dept,
+    product,
+    funder,
+    flowConfig,
     dataCenter,
     dataStats,
     auditLog,
@@ -1560,12 +1616,13 @@ async function seedAllMenus(tenantId: number) {
     menu,
     dictMgmt,
     regionMgmt,
+    sysParam,
+    userCenter,
+    operationCenter,
     fileManage,
     fileConfig,
     msgTemplate,
-    sysParam,
     notice,
-    userCenter,
     systemWorkOrder,
     reading,
     readingBookshelf,
@@ -1582,11 +1639,6 @@ async function seedAllMenus(tenantId: number) {
     businessSigning,
     businessDisbursement,
     businessPostLoan,
-    org,
-    dept,
-    product,
-    funder,
-    flowConfig,
     lead,
     preEntry,
     riskPre,

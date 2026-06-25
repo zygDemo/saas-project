@@ -311,29 +311,8 @@ export function fetchDeleteAnnouncement(id: number) {
   })
 }
 
-
-// ─── 移动端模块配置 ───
-export interface MobileModuleItem {
-  key: string
-  name: string
-  icon: string
-  desc: string
-}
-
-export interface MobileConfigData {
-  available: MobileModuleItem[]
-  enabled: string[]
-  defaultModule: string | null
-  isMultiModule: boolean
-}
-
-export interface UpdateMobileConfigParams {
-  mobileModules: string[]
-  defaultMobileModule?: string
-}
-
-// ─── 移动端模块配置 API ───
-export function fetchMobileConfig() {
+// ─── 租户级移动端模块配置 ───
+export function fetchGetMobileConfig() {
   return request.get<Api.SystemManage.MobileConfigData>({
     url: '/mobile-config'
   })
@@ -346,3 +325,52 @@ export function fetchUpdateMobileConfig(params: Api.SystemManage.UpdateMobileCon
     showSuccessMessage: true
   })
 }
+
+// ─── 角色级移动端模块配置 ───
+export function fetchGetRoleMobileConfig(roleId: number) {
+  return request.get<Api.SystemManage.EntityMobileConfigData>({
+    url: `/mobile-config/role/${roleId}`
+  })
+}
+
+export function fetchUpdateRoleMobileConfig(roleId: number, params: Api.SystemManage.SaveEntityMobileConfigParams) {
+  return request.put<Api.SystemManage.EntityMobileConfigData>({
+    url: `/mobile-config/role/${roleId}`,
+    params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchResetRoleMobileConfig(roleId: number) {
+  return request.put<Api.SystemManage.EntityMobileConfigData>({
+    url: `/mobile-config/role/${roleId}/reset`,
+    showSuccessMessage: true
+  })
+}
+
+// ─── 用户级移动端模块配置 ───
+export function fetchGetUserMobileConfig(userId: number) {
+  return request.get<Api.SystemManage.EntityMobileConfigData>({
+    url: `/mobile-config/user/${userId}`
+  })
+}
+
+export function fetchUpdateUserMobileConfig(userId: number, params: Api.SystemManage.SaveEntityMobileConfigParams) {
+  return request.put<Api.SystemManage.EntityMobileConfigData>({
+    url: `/mobile-config/user/${userId}`,
+    params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchResetUserMobileConfig(userId: number) {
+  return request.put<Api.SystemManage.EntityMobileConfigData>({
+    url: `/mobile-config/user/${userId}/reset`,
+    showSuccessMessage: true
+  })
+}
+
+
+
+
+

@@ -1,6 +1,8 @@
 import {
   CallHandler,
   ExecutionContext,
+  HttpException,
+  HttpStatus,
   Injectable,
   Logger,
   NestInterceptor
@@ -35,7 +37,11 @@ export class RequestLoggerInterceptor implements NestInterceptor {
         this.logRequest(request, apiCode, Date.now() - startedAt, data)
       }),
       catchError((error) => {
-        const statusCode = error?.response?.code ?? error?.status ?? response.statusCode
+        // 正确识别非 HttpException 的错误状态码
+        const statusCode =
+          error?.response?.code ??
+          error?.status ??
+          (error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR)
         this.logRequest(request, statusCode, Date.now() - startedAt, error?.response)
         return throwError(() => error)
       })

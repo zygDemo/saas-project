@@ -122,9 +122,11 @@
 import type { ColorType } from "uview-pro/types/global";
 import { $u } from "uview-pro";
 import layout from "@/pages/layout/layout.vue";
+import { useBusinessApi, type StatisticsOverview } from "@/api/business";
 import { useLocalStore } from "@/stores";
 import { storeToRefs } from "pinia";
-import { computed } from "vue";
+import { computed, ref } from "vue";
+import { onShow } from "@dcloudio/uni-app";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
@@ -150,13 +152,29 @@ const userRoleText = computed(() => {
   return roleMap[(userInfo.value?.role as string) || "sales"] || "业务员";
 });
 
+const businessApi = useBusinessApi();
+
 // 业务统计信息
-const businessStats = {
-  todayLeads: 5,
-  pendingApproval: 3,
-  monthlyDeals: 12,
-  completionRate: "85%",
-};
+const businessStats = ref({
+  todayLeads: 0,
+  pendingApproval: 0,
+  monthlyDeals: 0,
+});
+
+async function loadBusinessStats() {
+  if (!localStore.token) return;
+  try {
+    const res = await businessApi.getStatisticsOverview();
+    const d = ((res?.data ?? res ?? {}) as StatisticsOverview);
+    businessStats.value = {
+      todayLeads: Number(d.todayLeads ?? d.leadCount ?? 0),
+      pendingApproval: Number(d.pendingApproval ?? 0),
+      monthlyDeals: Number(d.todayApplications ?? d.entryCount ?? 0),
+    };
+  } catch (e) {
+    console.error("loadBusinessStats failed", e);
+  }
+}
 
 // 业务快捷入口
 const businessCards = [
@@ -228,6 +246,10 @@ const businessFeatures = [
     color: "success" as ColorType,
   },
 ];
+
+onShow(() => {
+  loadBusinessStats();
+});
 
 // 跳转到功能页面
 function navigateToFeature(url: string, _title: string) {

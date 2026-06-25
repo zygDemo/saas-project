@@ -362,21 +362,41 @@ declare namespace Api {
     type AnnouncementSearchParams = Partial<Pick<AnnouncementItem, 'title' | 'type' | 'level' | 'status'> & Api.Common.CommonSearchParams>
     type SaveAnnouncementParams = Partial<Pick<AnnouncementItem, 'title' | 'content' | 'type' | 'level' | 'status' | 'publishAt' | 'expireAt' | 'topFlag' | 'remark'>>
 
-    // ─── 移动端模块配置 ───
+    // ===== 移动端模块配置 =====
     interface MobileModuleItem {
       key: string
       name: string
       icon: string
       desc: string
     }
+
     interface MobileConfigData {
       available: MobileModuleItem[]
       enabled: string[]
       defaultModule: string | null
       isMultiModule: boolean
     }
+
     interface UpdateMobileConfigParams {
       mobileModules: string[]
       defaultMobileModule?: string
     }
+
+    /** 角色/用户级移动端模块配置 */
+    interface EntityMobileConfigData {
+      available: MobileModuleItem[]
+      enabled: string[]
+      defaultModule: string | null
+      mobileMultiModule: boolean
+      isMultiModule: boolean
+      roleName?: string
+      roles?: { roleId: number; roleName: string }[]
+    }
+
+    interface SaveEntityMobileConfigParams {
+      mobileModules?: string[]
+      mobileMultiModule?: boolean
+      defaultMobileModule?: string
+    }
+
 }

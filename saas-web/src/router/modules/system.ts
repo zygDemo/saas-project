@@ -114,17 +114,7 @@ export const systemRoutes: AppRouteRecord = {
         ]
       }
     },
-    {
-      path: 'mobile-config',
-      name: 'MobileConfig',
-      component: '/system/mobile-config',
-      meta: {
-        title: '移动端模块配置',
-        icon: 'ri:smartphone-line',
-        keepAlive: true,
-        roles: ['R_SUPER', 'R_ADMIN']
-      }
-    },
+
     {
       path: 'work-order',
       name: 'WorkOrder',

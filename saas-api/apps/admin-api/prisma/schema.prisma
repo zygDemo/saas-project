@@ -171,6 +171,10 @@ model User {
   dept         Department? @relation(fields: [deptId], references: [id])
   roles        UserRole[]
 
+  // 移动端模块配置（用户级，最高优先级）
+  mobileModules       Json?    // ["carloan"] 用户可访问的移动端模块
+  mobileMultiModule   Boolean  @default(false) // 是否支持多业务模块
+
   // 业务关联
   leads        Lead[]
   applications Application[]    @relation("ApplicationCreator")
@@ -197,6 +201,10 @@ model Role {
   users       UserRole[]
   menus       RoleMenu[]
   permissions RolePermission[]
+
+  // 移动端模块配置（角色级，覆盖租户配置）
+  mobileModules       Json?    // ["carloan","food"] 角色可访问的移动端模块
+  mobileMultiModule   Boolean  @default(false) // 是否支持多业务模块
 
   @@unique([tenantId, code])
   @@index([tenantId])

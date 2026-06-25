@@ -133,8 +133,8 @@ onLoad(async () => {
       const { data } = await fetchMobileConfig();
       localStore.setMobileConfig(data);
 
-      // 单模块模式 → 直接进入该模块
-      if (data.enabled.length === 1) {
+      // 单模块模式 → 直接进入该模块（不用 data.enabled.length，用 isMultiModule 语义更准确）
+      if (!data.isMultiModule && data.enabled.length > 0) {
         const target = getModuleRoute(data.enabled[0]);
         if (target) {
           localStore.setCurrentSystem(getSystemByRoute(target) as any);
@@ -143,17 +143,7 @@ onLoad(async () => {
         }
       }
 
-      // 多模块 + 有默认模块 → 进入默认模块
-      if (data.enabled.length > 1 && data.defaultModule) {
-        const target = getModuleRoute(data.defaultModule);
-        if (target) {
-          localStore.setCurrentSystem(getSystemByRoute(target) as any);
-          uni.reLaunch({ url: target });
-          return;
-        }
-      }
-
-      // 更新服务卡片：只保留已启用的模块
+      // 多模块模式：始终显示门户页，用户可自由选择
       filterServiceCards(data.enabled);
     } catch {
       // 接口失败时降级使用缓存
@@ -252,13 +242,7 @@ const shortcutItems = ref([
     bgColor: "rgba(var(--u-type-info-rgb, 144, 147, 153), 0.85)",
     handler: () => uni.makePhoneCall({ phoneNumber: "13818821494" }),
   },
-  {
-    key: "reading",
-    label: "读书",
-    icon: "book",
-    bgColor: "rgba(61, 193, 211, 0.85)",
-    handler: () => uni.navigateTo({ url: APP_ROUTES.reading.home }),
-  },
+
 ]);
 
 
@@ -289,12 +273,14 @@ function filterServiceCards(enabled: string[]) {
     if (item.key === 'service' || item.key === 'notice') return true;
     if (item.key === 'apply') return enabledSet.has('carloan');
     if (item.key === 'order') return enabledSet.has('food');
-    if (item.key === 'reading') return enabledSet.has('reading');
     return true;
   });
 }
 
-const goProfile = () => uni.switchTab({ url: APP_ROUTES.my.home });
+const goProfile = () => {
+  if (!hasLogin.value) return goLogin();
+  uni.switchTab({ url: APP_ROUTES.my.home });
+};
 const goLogin = () => uni.navigateTo({ url: APP_ROUTES.auth.login });
 const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "none" });
 </script>

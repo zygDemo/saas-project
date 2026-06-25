@@ -37,6 +37,13 @@
         :user-data="currentUserData"
         @submit="handleDialogSubmit"
       />
+
+      <!-- 移动端模块弹窗 -->
+      <UserMobileDialog
+        v-model="mobileDialog"
+        :user-data="currentUserData"
+        @success="refreshData"
+      />
     </ElCard>
   </div>
 </template>
@@ -53,6 +60,7 @@
   } from '@/api/system-manage'
   import UserSearch from './modules/user-search.vue'
   import UserDialog from './modules/user-dialog.vue'
+  import UserMobileDialog from './modules/user-mobile-dialog.vue'
   import { ElTag, ElMessageBox, ElImage } from 'element-plus'
   import { DialogType } from '@/types'
 
@@ -63,6 +71,7 @@
   // 弹窗相关
   const dialogType = ref<DialogType>('add')
   const dialogVisible = ref(false)
+  const mobileDialog = ref(false)
   const currentUserData = ref<Partial<UserListItem>>({})
 
   // 选中行
@@ -184,13 +193,18 @@
         {
           prop: 'operation',
           label: '操作',
-          width: 120,
+          width: 160,
           fixed: 'right', // 固定列
           formatter: (row) =>
             h('div', [
               h(ArtButtonTable, {
                 type: 'edit',
                 onClick: () => showDialog('edit', row)
+              }),
+              h(ArtButtonTable, {
+                label: '移动端',
+                type: 'default',
+                onClick: () => showMobileDialog(row)
               }),
               h(ArtButtonTable, {
                 type: 'delete',
@@ -240,6 +254,14 @@
     nextTick(() => {
       dialogVisible.value = true
     })
+  }
+
+  /**
+   * 显示移动端模块弹窗
+   */
+  const showMobileDialog = (row: UserListItem): void => {
+    currentUserData.value = row
+    mobileDialog.value = true
   }
 
   /**

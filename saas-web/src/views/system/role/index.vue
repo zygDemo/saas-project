@@ -48,6 +48,13 @@
       :role-data="currentRoleData"
       @success="refreshData"
     />
+
+    <!-- 移动端模块弹窗 -->
+    <RoleMobileDialog
+      v-model="mobileDialog"
+      :role-data="currentRoleData"
+      @success="refreshData"
+    />
   </div>
 </template>
 
@@ -59,6 +66,7 @@
   import RoleSearch from './modules/role-search.vue'
   import RoleEditDialog from './modules/role-edit-dialog.vue'
   import RolePermissionDialog from './modules/role-permission-dialog.vue'
+  import RoleMobileDialog from './modules/role-mobile-dialog.vue'
   import { ElTag, ElMessageBox } from 'element-plus'
 
   defineOptions({ name: 'Role' })
@@ -81,6 +89,7 @@
 
   const dialogVisible = ref(false)
   const permissionDialog = ref(false)
+  const mobileDialog = ref(false)
   const currentRoleData = ref<RoleListItem | undefined>(undefined)
 
   const {
@@ -163,6 +172,11 @@
                     icon: 'ri:user-3-line'
                   },
                   {
+                    key: 'mobile',
+                    label: '移动端模块',
+                    icon: 'ri:smartphone-line'
+                  },
+                  {
                     key: 'edit',
                     label: '编辑角色',
                     icon: 'ri:edit-2-line'
@@ -208,6 +222,9 @@
       case 'permission':
         showPermissionDialog(row)
         break
+      case 'mobile':
+        showMobileDialog(row)
+        break
       case 'edit':
         showDialog('edit', row)
         break
@@ -219,6 +236,11 @@
 
   const showPermissionDialog = (row?: RoleListItem) => {
     permissionDialog.value = true
+    currentRoleData.value = row
+  }
+
+  const showMobileDialog = (row?: RoleListItem) => {
+    mobileDialog.value = true
     currentRoleData.value = row
   }
 
