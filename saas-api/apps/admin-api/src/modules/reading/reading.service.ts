@@ -221,6 +221,222 @@ export class ReadingService {
     });
   }
 
+  /**
+   * 上传 TXT 文件创建图书（自动分章）
+   */
+  async createBookFromTxt(
+    tenantId: number,
+    file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
+    dto: {
+      title?: string;
+      author?: string;
+      categoryId?: number;
+      desc?: string;
+      tags?: string;
+      chapterRegex?: string;
+    },
+  ) {
+    if (!file) {
+      throw new BadRequestException('请上传 TXT 文件');
+    }
+
+    // 检测编码：尝试 UTF-8，如果出现大量替换字符则尝试 GBK
+    let content = file.buffer.toString('utf-8');
+    if (content.includes('\ufffd') && content.indexOf('\ufffd') < 100) {
+      try {
+        const iconv = require('iconv-lite');
+        content = iconv.decode(file.buffer, 'gbk');
+      } catch {
+        // iconv-lite 不可用，继续用 UTF-8
+      }
+    }
+
+    // 清理 BOM
+    if (content.charCodeAt(0) === 0xfeff) {
+      content = content.slice(1);
+    }
+
+    // 书名：优先用传入的 title，否则用文件名去掉扩展名
+    const bookTitle = dto.title || file.originalname.replace(/\.txt$/i, '').trim() || '未命名图书';
+    const bookAuthor = dto.author || '未知';
+
+    // 分章
+    const chapters = this.splitTxtToChapters(content, dto.chapterRegex);
+
+    if (chapters.length === 0) {
+      throw new BadRequestException('TXT 文件内容为空或无法解析章节');
+    }
+
+    // 计算总字数
+    const totalWordCount = chapters.reduce((sum, ch) => sum + ch.wordCount, 0);
+
+    // 创建图书和章节（事务）
+    const book = await this.prisma.$transaction(async (tx: any) => {
+      const created = await tx.book.create({
+        data: {
+          tenantId,
+          title: bookTitle,
+          author: bookAuthor,
+          desc: dto.desc || null,
+          categoryId: dto.categoryId || null,
+          tags: dto.tags || null,
+          wordCount: totalWordCount,
+          chapterCount: chapters.length,
+          isSerial: true,
+          isFinished: false,
+          status: 1,
+        },
+      });
+
+      // 批量创建章节
+      const chapterData = chapters.map((ch, idx) => ({
+        tenantId,
+        bookId: created.id,
+        title: ch.title,
+        content: ch.content,
+        wordCount: ch.wordCount,
+        sort: idx + 1,
+      }));
+
+      // 分批插入，每批 100 条
+      for (let i = 0; i < chapterData.length; i += 100) {
+        await tx.bookChapter.createMany({
+          data: chapterData.slice(i, i + 100),
+        });
+      }
+
+      return created;
+    });
+
+    return {
+      bookId: book.id,
+      title: book.title,
+      chapterCount: chapters.length,
+      totalWordCount,
+    };
+  }
+
+  /**
+   * 将 TXT 内容按章节标题拆分
+   */
+  private splitTxtToChapters(
+    content: string,
+    customRegex?: string,
+  ): Array<{ title: string; content: string; wordCount: number }> {
+    // 默认章节匹配模式
+    const defaultPatterns = [
+      // 第X章/回/节/卷/篇 + 可选标题
+      '^\s*(第[零一二三四五六七八九十百千万\d]+[章回节卷篇幕]\s*.*)$',
+      // Chapter X / CHAPTER X
+      '^\s*(chapter\s+\d+.*)$',
+      // 数字序号标题，如 "001 标题" 或 "1. 标题"
+      '^\s*(\d{1,4}[\.、\s]\s*.{2,30})$',
+      // 卷标题
+      '^\s*(第[零一二三四五六七八九十百千万\d]+[卷部]\s*.*)$',
+    ];
+
+    let regex: RegExp;
+    if (customRegex) {
+      try {
+        regex = new RegExp(customRegex, 'gmi');
+      } catch {
+        regex = new RegExp(defaultPatterns.join('|'), 'gmi');
+      }
+    } else {
+      regex = new RegExp(defaultPatterns.join('|'), 'gmi');
+    }
+
+    // 查找所有章节标题位置
+    const matches: Array<{ index: number; title: string }> = [];
+    let m: RegExpExecArray | null;
+    while ((m = regex.exec(content)) !== null) {
+      matches.push({
+        index: m.index,
+        title: m[1]?.trim() || m[0].trim(),
+      });
+    }
+
+    // 如果没找到章节标题，按固定字数分章
+    if (matches.length === 0) {
+      return this.splitByLength(content, 3000);
+    }
+
+    const chapters: Array<{ title: string; content: string; wordCount: number }> = [];
+
+    // 第一个章节标题之前的内容作为"序章/前言"
+    if (matches[0].index > 0) {
+      const preface = content.slice(0, matches[0].index).trim();
+      if (preface.length > 100) {
+        chapters.push({
+          title: '前言',
+          content: preface,
+          wordCount: this.countWords(preface),
+        });
+      }
+    }
+
+    // 按章节标题拆分
+    for (let i = 0; i < matches.length; i++) {
+      const start = matches[i].index;
+      const end = i + 1 < matches.length ? matches[i + 1].index : content.length;
+      const raw = content.slice(start, end).trim();
+
+      // 提取标题（第一行）和正文（剩余部分）
+      const newlineIdx = raw.indexOf('\n');
+      const title = matches[i].title;
+      const body = newlineIdx >= 0 ? raw.slice(newlineIdx + 1).trim() : '';
+
+      if (body.length > 0 || i === 0) {
+        chapters.push({
+          title: title.length > 50 ? title.slice(0, 50) + '...' : title,
+          content: body || raw,
+          wordCount: this.countWords(body || raw),
+        });
+      }
+    }
+
+    return chapters;
+  }
+
+  private splitByLength(content: string, maxLen: number): Array<{ title: string; content: string; wordCount: number }> {
+    const chapters: Array<{ title: string; content: string; wordCount: number }> = [];
+    // 先按双换行分段
+    const paragraphs = content.split(/\n\s*\n/);
+    let current = '';
+    let chapterIdx = 1;
+
+    for (const para of paragraphs) {
+      if (current.length + para.length > maxLen && current.length > 0) {
+        chapters.push({
+          title: `第${chapterIdx}节`,
+          content: current.trim(),
+          wordCount: this.countWords(current),
+        });
+        chapterIdx++;
+        current = para;
+      } else {
+        current += (current ? '\n\n' : '') + para;
+      }
+    }
+
+    if (current.trim()) {
+      chapters.push({
+        title: chapters.length > 0 ? `第${chapterIdx}节` : '正文',
+        content: current.trim(),
+        wordCount: this.countWords(current),
+      });
+    }
+
+    return chapters;
+  }
+
+  private countWords(text: string): number {
+    if (!text) return 0;
+    // 去除空白后计算字符数
+    return text.replace(/\s/g, '').length;
+  }
+
+
   async updateBook(id: number, tenantId: number, dto: UpdateBookDto) {
     const book = await this.prisma.book.findFirst({
       where: { id, tenantId, deletedAt: null },

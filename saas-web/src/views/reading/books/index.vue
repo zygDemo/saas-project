@@ -20,6 +20,7 @@
           :disabled="isLoading"
           :columns="exportColumns"
         />
+        <ElButton @click="openUploadDialog" v-auth="'add'">上传 TXT</ElButton>
         <ElButton type="primary" @click="openAddDialog" v-auth="'add'">新增图书</ElButton>
       </div>
     </div>
@@ -263,12 +264,59 @@
         <ElButton type="primary" @click="handleSave" :loading="saving">保存</ElButton>
       </template>
     </ElDialog>
+
+    <!-- 上传 TXT 弹窗 -->
+    <ElDialog v-model="showUploadDialog" title="上传 TXT 创建图书" width="600px">
+      <ElForm :model="uploadForm" label-width="100px">
+        <ElFormItem label="选择文件" required>
+          <ElUpload
+            ref="txtUploadRef"
+            :auto-upload="false"
+            :limit="1"
+            accept=".txt"
+            :on-change="handleTxtFileChange"
+            :on-remove="handleTxtFileRemove"
+            :file-list="txtFileList"
+          >
+            <ElButton>选择 TXT 文件</ElButton>
+            <template #tip>
+              <div class="text-xs text-gray-400 mt-1">仅支持 .txt 文件，最大 20MB</div>
+            </template>
+          </ElUpload>
+        </ElFormItem>
+        <ElFormItem label="书名">
+          <ElInput v-model="uploadForm.title" placeholder="不填则使用文件名" />
+        </ElFormItem>
+        <ElFormItem label="作者">
+          <ElInput v-model="uploadForm.author" placeholder="默认：未知" />
+        </ElFormItem>
+        <ElFormItem label="分类">
+          <ElSelect v-model="uploadForm.categoryId" placeholder="请选择分类" class="w-full" clearable>
+            <ElOption v-for="cat in categoryList" :key="cat.id" :label="cat.name" :value="cat.id" />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="简介">
+          <ElInput v-model="uploadForm.desc" type="textarea" :rows="2" placeholder="图书简介（可选）" />
+        </ElFormItem>
+        <ElFormItem label="标签">
+          <ElInput v-model="uploadForm.tags" placeholder="多个标签用逗号分隔" />
+        </ElFormItem>
+        <ElFormItem label="章节正则">
+          <ElInput v-model="uploadForm.chapterRegex" placeholder="留空使用默认规则（第X章/回/节等）" />
+          <div class="text-xs text-gray-400 mt-1">自定义正则表达式匹配章节标题，如 ^CHAPTER \d+</div>
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="showUploadDialog = false">取消</ElButton>
+        <ElButton type="primary" @click="handleUploadTxt" :loading="uploading">上传并创建</ElButton>
+      </template>
+    </ElDialog>
   </div>
 </template>
 
 <script setup lang="ts">
   import { Search } from '@element-plus/icons-vue'
-  import { getBooks, createBook, updateBook, deleteBook, getBookCategories } from '@/api/reading'
+  import { getBooks, createBook, updateBook, deleteBook, getBookCategories, uploadTxtBook } from '@/api/reading'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useRouter } from 'vue-router'
   import ArtExcelExport from '@/components/core/forms/art-excel-export/index.vue'
@@ -293,6 +341,21 @@
 
   const categoryList = ref<any[]>([])
   const bookList = ref<any[]>([])
+
+  // TXT 上传
+  const showUploadDialog = ref(false)
+  const uploading = ref(false)
+  const txtUploadRef = ref()
+  const txtFileList = ref<any[]>([])
+  const txtFile = ref<File | null>(null)
+  const uploadForm = reactive({
+    title: '',
+    author: '',
+    categoryId: null as number | null,
+    desc: '',
+    tags: '',
+    chapterRegex: ''
+  })
 
   // 批量操作
   const selectedIds = ref<number[]>([])
@@ -535,6 +598,56 @@
         loadBooks()
       })
       .catch(() => {})
+  }
+
+  // TXT 上传相关
+  const openUploadDialog = () => {
+    txtFile.value = null
+    txtFileList.value = []
+    uploadForm.title = ''
+    uploadForm.author = ''
+    uploadForm.categoryId = null
+    uploadForm.desc = ''
+    uploadForm.tags = ''
+    uploadForm.chapterRegex = ''
+    showUploadDialog.value = true
+  }
+
+  const handleTxtFileChange = (file: any) => {
+    txtFile.value = file.raw
+    txtFileList.value = [file]
+  }
+
+  const handleTxtFileRemove = () => {
+    txtFile.value = null
+    txtFileList.value = []
+  }
+
+  const handleUploadTxt = async () => {
+    if (!txtFile.value) {
+      ElMessage.warning('请选择 TXT 文件')
+      return
+    }
+    uploading.value = true
+    try {
+      const fd = new FormData()
+      fd.append('file', txtFile.value)
+      if (uploadForm.title) fd.append('title', uploadForm.title)
+      if (uploadForm.author) fd.append('author', uploadForm.author)
+      if (uploadForm.categoryId) fd.append('categoryId', String(uploadForm.categoryId))
+      if (uploadForm.desc) fd.append('desc', uploadForm.desc)
+      if (uploadForm.tags) fd.append('tags', uploadForm.tags)
+      if (uploadForm.chapterRegex) fd.append('chapterRegex', uploadForm.chapterRegex)
+
+      const res = await uploadTxtBook(fd) as any
+      ElMessage.success(`创建成功：${res?.title}，共 ${res?.chapterCount} 章，${formatWordCount(res?.totalWordCount || 0)}`)
+      showUploadDialog.value = false
+      loadBooks()
+    } catch (error: any) {
+      ElMessage.error(error?.message || '上传失败')
+    } finally {
+      uploading.value = false
+    }
   }
 
   onMounted(() => {

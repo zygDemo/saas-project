@@ -10,8 +10,11 @@ import {
   Query,
   Request,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ReadingService } from './reading.service';
 import {
@@ -30,6 +33,7 @@ import {
   CreateReviewDto,
   ReviewQueryDto,
   UpdateReviewStatusDto,
+  UploadTxtBookDto,
 } from './dto/reading.dto';
 
 @ApiTags('读书模块')
@@ -95,6 +99,29 @@ export class ReadingController {
   @ApiOperation({ summary: '创建书籍' })
   async createBook(@Request() req: RequestUser, @Body() dto: CreateBookDto) {
     return this.readingService.createBook(req.tenantId, dto);
+  }
+
+  @Post('books/upload-txt')
+  @ApiOperation({ summary: '上传 TXT 文件创建图书（自动分章）' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+      fileFilter: (_req, file, cb) => {
+        if (file.mimetype === 'text/plain' || file.originalname.endsWith('.txt')) {
+          cb(null, true);
+        } else {
+          cb(new Error('仅支持 TXT 文件'), false);
+        }
+      },
+    }),
+  )
+  async uploadTxtBook(
+    @Request() req: RequestUser,
+    @UploadedFile() file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
+    @Body() dto: UploadTxtBookDto,
+  ) {
+    return this.readingService.createBookFromTxt(req.tenantId, file, dto);
   }
 
   @Put('books/:id')

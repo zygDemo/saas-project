@@ -74,6 +74,16 @@
 
         <el-form-item>
           <el-button
+            v-if="loading && !taskId"
+            type="danger"
+            :loading="loading"
+            @click="handleCancelSubmit"
+            icon="ri-close-line"
+          >
+            取消下载
+          </el-button>
+          <el-button
+            v-else
             type="primary"
             :loading="loading"
             @click="handleSubmit"
@@ -323,6 +333,8 @@
   const showLogDetail = ref(true)
   const chapterLogs = ref<Array<{ text: string; type: string }>>([])
   let pollTimer: ReturnType<typeof setInterval> | null = null
+  let submitAbortController: AbortController | null = null
+  let isSubmitCancelled = false
 
   const formData = reactive({
     url: '',
@@ -417,22 +429,42 @@
       progress.value = null
       taskId.value = ''
       chapterLogs.value = []
+      isSubmitCancelled = false
+      submitAbortController = new AbortController()
       try {
-        const res = (await crawlNovelAsync({
-          url: formData.url,
-          name: formData.name || undefined,
-          startChapter: formData.startChapter || undefined,
-          endChapter: formData.endChapter || undefined,
-          categoryId: formData.categoryId || undefined
-        })) as any
+        const res = (await crawlNovelAsync(
+          {
+            url: formData.url,
+            name: formData.name || undefined,
+            startChapter: formData.startChapter || undefined,
+            endChapter: formData.endChapter || undefined,
+            categoryId: formData.categoryId || undefined
+          },
+          { signal: submitAbortController.signal }
+        )) as any
         taskId.value = res.taskId
         chapterLogs.value.push({ text: '任务已创建，开始下载...', type: 'info' })
         startPolling(res.taskId)
       } catch (error: any) {
-        loading.value = false
-        ElMessage.error(error?.response?.data?.message || '下载失败，请检查地址是否正确')
+        if (isSubmitCancelled) {
+          ElMessage.warning('已取消下载')
+        } else {
+          loading.value = false
+          ElMessage.error(error?.response?.data?.message || '下载失败，请检查地址是否正确')
+        }
+      } finally {
+        submitAbortController = null
       }
     })
+  }
+
+  const handleCancelSubmit = () => {
+    isSubmitCancelled = true
+    if (submitAbortController) {
+      submitAbortController.abort()
+    }
+    loading.value = false
+    ElMessage.warning('已取消下载')
   }
 
   const resetForm = () => {

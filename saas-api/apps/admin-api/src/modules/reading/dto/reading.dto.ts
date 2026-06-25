@@ -376,3 +376,36 @@ export class UpdateReviewStatusDto {
   @IsNumber()
   status: number;
 }
+
+export class UploadTxtBookDto {
+  @ApiPropertyOptional({ description: '书名（不传则用文件名）' })
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @ApiPropertyOptional({ description: '作者', default: '未知' })
+  @IsOptional()
+  @IsString()
+  author?: string;
+
+  @ApiPropertyOptional({ description: '分类ID' })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  categoryId?: number;
+
+  @ApiPropertyOptional({ description: '简介' })
+  @IsOptional()
+  @IsString()
+  desc?: string;
+
+  @ApiPropertyOptional({ description: '标签，逗号分隔' })
+  @IsOptional()
+  @IsString()
+  tags?: string;
+
+  @ApiPropertyOptional({ description: '章节识别正则（默认匹配"第X章/回/节"等）' })
+  @IsOptional()
+  @IsString()
+  chapterRegex?: string;
+}

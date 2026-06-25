@@ -81,6 +81,16 @@ export function createBook(data: {
   return request.post({ url: '/reading/books', data })
 }
 
+/** 上传 TXT 文件创建图书（自动分章） */
+export function uploadTxtBook(formData: FormData) {
+  return request.post({
+    url: '/reading/books/upload-txt',
+    data: formData,
+    headers: { 'Content-Type': 'multipart/form-data' },
+    showSuccessMessage: true
+  })
+}
+
 /** 更新书籍 */
 export function updateBook(
   id: number,
@@ -250,8 +260,8 @@ export function crawlNovelAsync(data: {
   startChapter?: number
   endChapter?: number
   categoryId?: number
-}) {
-  return request.post({ url: '/crawler/download-async', data })
+}, config?: { signal?: AbortSignal }) {
+  return request.post({ url: '/crawler/download-async', data, ...config })
 }
 
 /** 获取爬取进度 */

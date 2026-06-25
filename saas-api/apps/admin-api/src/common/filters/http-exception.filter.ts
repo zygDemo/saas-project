@@ -10,7 +10,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status = getStatus(exception)
     const body = exception instanceof HttpException ? exception.getResponse() : null
 
-    response.status(status).json({
+    response.status(200).json({
       code: statusToApiCode(status),
       msg: extractMessage(body) ?? extractPrismaMessage(exception) ?? '服务器内部错误',
       data: null

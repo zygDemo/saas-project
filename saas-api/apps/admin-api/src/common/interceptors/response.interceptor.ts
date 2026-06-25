@@ -9,7 +9,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, { code: number
 
     return next.handle().pipe(
       map((value) => {
-        if (response?.statusCode === 201) {
+        if (response?.statusCode !== 200) {
           response.status(200)
         }
 

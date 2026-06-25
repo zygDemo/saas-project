@@ -49,4 +49,21 @@ export class DownloadNovelDto {
   @Type(() => Number)
   @IsNumber()
   categoryId?: number
+
+  @ApiProperty({
+    description: '浏览器 Cookie（可选，用于已通过 Cloudflare 验证的网站）',
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  cookie?: string
+
+  @ApiProperty({
+    description: '浏览器 User-Agent（可选，和 Cookie 配套使用）',
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  userAgent?: string
+
 }
