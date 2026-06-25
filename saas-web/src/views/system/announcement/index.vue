@@ -149,7 +149,8 @@
     fetchPublishAnnouncement,
     fetchDeleteAnnouncement
   } from '@/api/system-manage'
-  import { ElMessage, ElMessageBox, ElTag, ElButton, Plus } from 'element-plus'
+  import { ElMessage, ElMessageBox, ElTag, ElButton } from 'element-plus'
+  import { Plus } from '@element-plus/icons-vue'
   import type { FormInstance, FormRules } from 'element-plus'
 
   defineOptions({ name: 'Announcement' })
