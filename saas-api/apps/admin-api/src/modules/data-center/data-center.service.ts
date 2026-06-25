@@ -280,7 +280,7 @@ export class DataCenterService {
       ? { ...baseWhere, module: { contains: query.module, mode: 'insensitive' as const } }
       : baseWhere
 
-    const [total, successCount, failCount, moduleStats, actionStats] = await this.prisma.$transaction([
+    const [total, successCount, failCount, moduleStats, actionStats] = await Promise.all([
       this.prisma.operationLog.count({ where: baseWhere }),
       this.prisma.operationLog.count({ where: { ...baseWhere, statusCode: { gte: 200, lt: 300 } } }),
       this.prisma.operationLog.count({ where: { ...baseWhere, statusCode: { gte: 400 } } }),
@@ -288,13 +288,13 @@ export class DataCenterService {
         by: ['module'],
         where: moduleWhere,
         _count: { _all: true },
-        orderBy: { _count: { module: 'desc' } }
+        orderBy: { _count: { id: 'desc' } }
       }),
       this.prisma.operationLog.groupBy({
         by: ['action'],
         where: moduleWhere,
         _count: { _all: true },
-        orderBy: { _count: { action: 'desc' } }
+        orderBy: { _count: { id: 'desc' } }
       })
     ])
 

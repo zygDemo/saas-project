@@ -40,6 +40,7 @@ import {
   type LayoutTabbarItem,
   type TabbarScope,
 } from "@/common/navigation";
+import { onShow } from "@dcloudio/uni-app";
 import { useTheme } from "uview-pro";
 import { computed, ref, watch } from "vue";
 
@@ -114,13 +115,11 @@ function onTabChange(index: number) {
     return;
   }
 
-  const previousTab = currentTab.value;
-  currentTab.value = index;
   switchingTab.value = true;
 
   navigateFromTabbar(targetItem)
     .catch(() => {
-      currentTab.value = previousTab;
+      // 导航失败不跳转，syncTabbar 会在 onShow 中恢复
     })
     .finally(() => {
       setTimeout(() => {
@@ -151,6 +150,11 @@ watch(
   },
   { immediate: true },
 );
+
+// 页面重新显示时同步 tabbar（switchTab 页面缓存场景）
+onShow(() => {
+  syncTabbar();
+});
 </script>
 
 <style lang="scss">

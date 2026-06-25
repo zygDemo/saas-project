@@ -20,7 +20,7 @@
       <view class="notice-bar" @click="goNotice">
         <u-icon name="bell-fill" color="var(--u-type-warning)" size="28" />
         <text class="notice-text">欢迎使用予艺助手，聚合多种服务一站式体验</text>
-        <u-icon name="arrow-right" color="#c0c4cc" size="24" />
+        <u-icon name="arrow-right" color="var(--u-tips-color)" size="24" />
       </view>
 
       <!-- 业务服务 2×2 网格 -->
@@ -70,7 +70,7 @@
       <view v-if="!hasLogin" class="login-hint" role="button" tabindex="0" @click="goLogin" @keyup.enter="goLogin">
         <u-icon name="account-fill" color="var(--u-type-primary)" size="32" />
         <text class="login-hint-text">登录后查看进件、订单、征信等</text>
-        <u-icon name="arrow-right" color="#c0c4cc" size="24" />
+        <u-icon name="arrow-right" color="var(--u-tips-color)" size="24" />
       </view>
 
       <!-- 底部安全区 -->
@@ -231,7 +231,7 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   background: linear-gradient(
     180deg,
     rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.06) 0%,
-    #f5f6fa 30%
+    var(--u-bg-color, #f5f6fa) 30%
   );
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -304,61 +304,6 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   }
 }
 
-/* 深色模式适配 */
-@media (prefers-color-scheme: dark) {
-  .index-page {
-    background: linear-gradient(
-      180deg,
-      rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08) 0%,
-      #1a1a2e 30%
-    );
-  }
-
-  .notice-bar {
-    background: #2a2a3e;
-    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.2);
-  }
-
-  .notice-text {
-    color: #b0b3b8;
-  }
-
-  .section-label-text {
-    color: #e5e6eb;
-  }
-
-  .service-card {
-    background: #2a2a3e;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
-  }
-
-  .service-card-title {
-    color: #e5e6eb;
-  }
-
-  .service-card-desc {
-    color: #8b8c91;
-  }
-
-  .shortcut-section {
-    background: #2a2a3e;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
-  }
-
-  .shortcut-label {
-    color: #b0b3b8;
-  }
-
-  .login-hint {
-    background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
-    border-color: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.2);
-  }
-
-  .login-hint-text {
-    color: var(--u-type-primary-light);
-  }
-}
-
 /* ===== Notice bar ===== */
 .notice-bar {
   position: relative;
@@ -367,7 +312,7 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   display: flex;
   align-items: center;
   gap: 12rpx;
-  background: #fff;
+  background: var(--u-bg-white, #fff);
   border-radius: 14rpx;
   padding: 18rpx 24rpx;
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
@@ -376,7 +321,7 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 .notice-text {
   flex: 1;
   font-size: 24rpx;
-  color: #606266;
+  color: var(--u-content-color, #606266);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -400,7 +345,7 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 .section-label-text {
   font-size: 30rpx;
   font-weight: 600;
-  color: #303133;
+  color: var(--u-main-color, #303133);
 }
 
 /* ===== Service 2×2 grid ===== */
@@ -415,7 +360,7 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 }
 
 .service-card {
-  background: #fff;
+  background: var(--u-bg-white, #fff);
   border-radius: 20rpx;
   padding: 32rpx 24rpx;
   display: flex;
@@ -467,20 +412,20 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 .service-card-title {
   font-size: 30rpx;
   font-weight: 600;
-  color: #303133;
+  color: var(--u-main-color, #303133);
   margin-bottom: 6rpx;
 }
 
 .service-card-desc {
   font-size: 22rpx;
-  color: #909399;
+  color: var(--u-tips-color, #909399);
   text-align: center;
 }
 
 /* ===== Shortcut section ===== */
 .shortcut-section {
   margin: 28rpx 28rpx 0;
-  background: #fff;
+  background: var(--u-bg-white, #fff);
   border-radius: 20rpx;
   padding: 24rpx;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
@@ -515,7 +460,7 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 
 .shortcut-label {
   font-size: 22rpx;
-  color: #606266;
+  color: var(--u-content-color, #606266);
 }
 
 /* ===== Login hint ===== */
