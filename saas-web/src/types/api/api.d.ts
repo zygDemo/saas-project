@@ -323,4 +323,60 @@ declare namespace Api {
       >
     >
   }
+    // ===== 系统参数管理 =====
+    interface SystemParamItem {
+      id: number
+      group?: string
+      name: string
+      key: string
+      value?: string
+      type: string
+      status: string
+      remark?: string
+      createTime: string
+      updateTime: string
+    }
+
+    type SystemParamList = Api.Common.PaginatedResponse<SystemParamItem>
+    type SystemParamSearchParams = Partial<Pick<SystemParamItem, 'group' | 'name' | 'key' | 'status'> & Api.Common.CommonSearchParams>
+    type SaveSystemParamParams = Partial<Pick<SystemParamItem, 'group' | 'name' | 'key' | 'value' | 'type' | 'status' | 'remark'>>
+
+    // ===== 公告管理 =====
+    interface AnnouncementItem {
+      id: number
+      title: string
+      content?: string
+      type: string
+      level: string
+      status: string
+      publishAt?: string
+      expireAt?: string
+      topFlag: boolean
+      viewCount: number
+      remark?: string
+      createTime: string
+      updateTime: string
+    }
+
+    type AnnouncementList = Api.Common.PaginatedResponse<AnnouncementItem>
+    type AnnouncementSearchParams = Partial<Pick<AnnouncementItem, 'title' | 'type' | 'level' | 'status'> & Api.Common.CommonSearchParams>
+    type SaveAnnouncementParams = Partial<Pick<AnnouncementItem, 'title' | 'content' | 'type' | 'level' | 'status' | 'publishAt' | 'expireAt' | 'topFlag' | 'remark'>>
+
+    // ─── 移动端模块配置 ───
+    interface MobileModuleItem {
+      key: string
+      name: string
+      icon: string
+      desc: string
+    }
+    interface MobileConfigData {
+      available: MobileModuleItem[]
+      enabled: string[]
+      defaultModule: string | null
+      isMultiModule: boolean
+    }
+    interface UpdateMobileConfigParams {
+      mobileModules: string[]
+      defaultMobileModule?: string
+    }
 }

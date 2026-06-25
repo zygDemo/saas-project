@@ -364,6 +364,36 @@ async function main() {
       sort: 52,
       keepAlive: true
     },
+    {
+      parentKey: 'System',
+      path: 'sys-param',
+      name: 'SystemParam',
+      component: '/system/sys-param',
+      title: '系统参数',
+      icon: 'ri:settings-3-line',
+      sort: 53,
+      keepAlive: true
+    },
+    {
+      parentKey: 'System',
+      path: 'announcement',
+      name: 'Announcement',
+      component: '/system/announcement',
+      title: '公告管理',
+      icon: 'ri:notification-3-line',
+      sort: 54,
+      keepAlive: true
+    },
+    {
+      parentKey: 'System',
+      path: 'mobile-config',
+      name: 'MobileConfig',
+      component: '/system/mobile-config',
+      title: '移动端模块配置',
+      icon: 'ri:smartphone-line',
+      sort: 55,
+      keepAlive: true
+    },
 
     // 车贷业务
     { path: '/business', name: 'Business', title: '车贷业务', icon: 'ri:briefcase-line', sort: 60 },
@@ -561,7 +591,7 @@ async function main() {
     'Funder'
   )
   const dataCenterIds = filterIds('DataCenter', 'DataStats', 'AuditLog')
-  const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter', 'SystemWorkOrder')
+  const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter', 'SystemWorkOrder', 'SystemParam', 'Announcement', 'MobileConfig')
   const bizCoreIds = filterIds(
     'Business',
     'Lead',
@@ -700,14 +730,18 @@ async function main() {
     'FileManage',
     'MsgTemplate',
     'Notice',
-    'SystemWorkOrder'
+    'SystemWorkOrder',
+    'SystemParam',
+    'Announcement',
+    'MobileConfig'
   ]
 
   let permCount = 0
   for (const menuName of bizMenuNames) {
     const menu = menuMap[menuName]
     if (!menu) continue
-    for (const authMark of ['add', 'edit', 'delete']) {
+    const marks = menuName === 'Announcement' ? ['add', 'edit', 'delete', 'publish'] : ['add', 'edit', 'delete']
+    for (const authMark of marks) {
       await prisma.permission.upsert({
         where: { tenantId_menuId_authMark: { tenantId: tenant.id, menuId: menu.id, authMark } },
         update: { title: authMark.charAt(0).toUpperCase() + authMark.slice(1) },

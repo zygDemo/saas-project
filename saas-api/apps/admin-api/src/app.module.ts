@@ -33,6 +33,9 @@ import { DataCenterModule } from './modules/data-center/data-center.module'
 import { ReadingModule } from './modules/reading/reading.module'
 import { CrawlerModule } from './modules/crawler/crawler.module'
 import { DbOpsModule } from './modules/db-ops/db-ops.module'
+import { SystemParamModule } from './modules/system-param/system-param.module'
+import { MobileConfigModule } from './modules/mobile-config/mobile-config.module'
+import { AnnouncementModule } from './modules/announcement/announcement.module'
 
 const appEnv = process.env.NODE_ENV || 'development'
 const envFilePaths = [
@@ -88,7 +91,10 @@ const envFilePaths = [
     DataCenterModule,
     ReadingModule,
     CrawlerModule,
-    DbOpsModule
+    DbOpsModule,
+    SystemParamModule,
+    MobileConfigModule,
+    AnnouncementModule
   ]
 })
 export class AppModule implements NestModule {

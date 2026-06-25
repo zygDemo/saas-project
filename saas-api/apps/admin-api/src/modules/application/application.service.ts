@@ -705,7 +705,7 @@ export class ApplicationService extends BaseBusinessCrudService<
   async completeGpsInstall(id: number, dto: GpsInstalledDto) {
     await this.findAndAssertStatus(
       id,
-      [ApplicationStatus.PENDING_DISBURSEMENT, ApplicationStatus.LOAN_REQUEST_APPROVED],
+      [ApplicationStatus.PENDING_DISBURSEMENT],
       '当前状态不允许登记GPS安装'
     )
     return this.prisma.disbursement.upsert({
@@ -730,7 +730,7 @@ export class ApplicationService extends BaseBusinessCrudService<
   async completeMortgage(id: number, dto: MortgageDoneDto) {
     await this.findAndAssertStatus(
       id,
-      [ApplicationStatus.PENDING_DISBURSEMENT, ApplicationStatus.LOAN_REQUEST_APPROVED],
+      [ApplicationStatus.PENDING_DISBURSEMENT],
       '当前状态不允许登记抵押'
     )
     return this.prisma.disbursement.upsert({
@@ -760,10 +760,16 @@ export class ApplicationService extends BaseBusinessCrudService<
     )
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const tenantId = getCurrentTenantId()!
+      const existedDisbursement = await tx.disbursement.findFirst({ where: { applicationId: id } })
+      const nextDisbursementStatus =
+        existedDisbursement?.status === DisbursementStatus.GPS_INSTALLED ||
+        existedDisbursement?.status === DisbursementStatus.MORTGAGE_DONE
+          ? existedDisbursement.status
+          : DisbursementStatus.PENDING_APPROVAL
       await tx.disbursement.upsert({
         where: { applicationId: id },
-        update: { status: DisbursementStatus.PENDING_APPROVAL, remark: dto.remark },
-        create: { tenantId, applicationId: id, status: DisbursementStatus.PENDING_APPROVAL, remark: dto.remark }
+        update: { status: nextDisbursementStatus, remark: dto.remark },
+        create: { tenantId, applicationId: id, status: nextDisbursementStatus, remark: dto.remark }
       })
       return tx.application.update({
         where: { id },

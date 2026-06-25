@@ -569,8 +569,8 @@ async function main() {
     'FileManage',
     'FileConfig',
     'MsgTemplate',
-    'SysParam',
-    'Notice',
+    'SystemParam',
+    'Announcement',
     'UserCenter',
     'WorkOrder',
     'SystemWorkOrder'
@@ -578,75 +578,96 @@ async function main() {
   const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter', 'SystemWorkOrder')
   const bizStageIds = filterIds(
     'Business',
+    'Lead',
     'BusinessPrecheck',
     'BusinessSupplement',
     'BusinessRiskApproval',
     'BusinessFunderFinal',
     'BusinessSigning',
     'BusinessDisbursement',
-    'BusinessOrderQuery'
+    'BusinessPostLoan',
+    'BusinessOrderQuery',
+    'Reports'
   )
   const bizCoreIds = filterIds(
     'Business',
+    'Lead',
     'BusinessPrecheck',
     'BusinessSupplement',
     'BusinessRiskApproval',
     'BusinessFunderFinal',
     'BusinessSigning',
     'BusinessDisbursement',
-    'BusinessOrderQuery'
+    'BusinessPostLoan',
+    'BusinessOrderQuery',
+    'Reports'
   )
   const bizApprovalIds = filterIds(
     'Business',
+    'Lead',
     'BusinessPrecheck',
     'BusinessSupplement',
     'BusinessRiskApproval',
     'BusinessFunderFinal',
-    'BusinessOrderQuery'
+    'BusinessPostLoan',
+    'BusinessOrderQuery',
+    'Reports'
   )
   const bizFinanceIds = filterIds(
     'Business',
+    'Lead',
     'BusinessPrecheck',
     'BusinessSupplement',
     'BusinessRiskApproval',
     'BusinessFunderFinal',
     'BusinessSigning',
     'BusinessDisbursement',
-    'BusinessOrderQuery'
+    'BusinessPostLoan',
+    'BusinessOrderQuery',
+    'Reports'
   )
   const bizCsIds = filterIds(
     'Business',
+    'Lead',
     'BusinessPrecheck',
     'BusinessSupplement',
     'BusinessRiskApproval',
     'BusinessFunderFinal',
     'BusinessSigning',
     'BusinessDisbursement',
-    'BusinessOrderQuery'
+    'BusinessPostLoan',
+    'BusinessOrderQuery',
+    'Reports'
   )
   const bizManagerIds = filterIds(
     'Platform',
     'FlowConfig',
     'Business',
+    'Lead',
     'BusinessPrecheck',
     'BusinessSupplement',
     'BusinessRiskApproval',
     'BusinessFunderFinal',
     'BusinessSigning',
     'BusinessDisbursement',
-    'BusinessOrderQuery'
+    'BusinessPostLoan',
+    'BusinessOrderQuery',
+    'Reports'
   )
   const bizAdminIds = filterIds(
     'Platform',
     'FlowConfig',
     'Business',
+    'Lead',
     'BusinessPrecheck',
     'BusinessSupplement',
     'BusinessRiskApproval',
     'BusinessFunderFinal',
     'BusinessSigning',
     'BusinessDisbursement',
-    'BusinessOrderQuery'
+    'BusinessPostLoan',
+    'BusinessOrderQuery',
+    'Reports'
   )
 
   // R_SUPER：全部菜单
@@ -656,7 +677,7 @@ async function main() {
     ...dashIds,
     ...platformIds,
     ...dataCenterIds,
-    ...filterIds('Notice'),
+    ...filterIds('Announcement'),
     ...bizStageIds,
     ...filterIds('WorkOrder')
   ])
@@ -1051,7 +1072,7 @@ async function seedAllMenus(tenantId: number) {
     path: '/business',
     name: 'Business',
     component: '/index/index',
-    title: '业务管理',
+    title: '车贷业务',
     icon: 'ri:briefcase-line',
     sort: 60
   })
@@ -1062,7 +1083,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '预审阶段',
     icon: 'ri:file-search-line',
-    sort: 61,
+    sort: 62,
     keepAlive: true
   })
   const businessSupplement = await upsertMenu(tenantId, {
@@ -1072,7 +1093,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '补件阶段',
     icon: 'ri:folder-upload-line',
-    sort: 62,
+    sort: 63,
     keepAlive: true
   })
   const businessRiskApproval = await upsertMenu(tenantId, {
@@ -1082,7 +1103,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '风控审批',
     icon: 'ri:shield-check-line',
-    sort: 63,
+    sort: 64,
     keepAlive: true
   })
   const businessFunderFinal = await upsertMenu(tenantId, {
@@ -1092,7 +1113,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '资方终审',
     icon: 'ri:bank-line',
-    sort: 64,
+    sort: 65,
     keepAlive: true
   })
   const businessSigning = await upsertMenu(tenantId, {
@@ -1102,7 +1123,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '客户签约',
     icon: 'ri:contract-line',
-    sort: 65,
+    sort: 66,
     keepAlive: true
   })
   const businessDisbursement = await upsertMenu(tenantId, {
@@ -1112,7 +1133,17 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '请款放款',
     icon: 'ri:money-cny-circle-line',
-    sort: 66,
+    sort: 69,
+    keepAlive: true
+  })
+  const businessPostLoan = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'post-loan',
+    name: 'BusinessPostLoan',
+    component: bp,
+    title: '贷后阶段',
+    icon: 'ri:refund-line',
+    sort: 68,
     keepAlive: true
   })
   const org = await upsertMenu(tenantId, {
@@ -1162,7 +1193,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '线索管理',
     icon: 'ri:customer-service-line',
-    sort: 66,
+    sort: 61,
     keepAlive: true
   })
   const preEntry = await upsertMenu(tenantId, {
@@ -1342,7 +1373,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '报表统计',
     icon: 'ri:pie-chart-line',
-    sort: 84,
+    sort: 70,
     keepAlive: true
   })
   const orgConfig = await upsertMenu(tenantId, {
@@ -1359,18 +1390,43 @@ async function seedAllMenus(tenantId: number) {
   await prisma.menu.updateMany({
     where: {
       tenantId,
-      parentId: business.id,
-      name: {
-        notIn: [
-          'BusinessPrecheck',
-          'BusinessSupplement',
-          'BusinessRiskApproval',
-          'BusinessFunderFinal',
-          'BusinessSigning',
-          'BusinessDisbursement',
-          'BusinessOrderQuery'
-        ]
-      }
+      OR: [
+        {
+          parentId: platform.id,
+          name: {
+            notIn: [
+              'TenantMgmt',
+              'PackageBilling',
+              'ProductTemplate',
+              'PlatformSupervision',
+              'ThirdPartyService',
+              'WorkOrder',
+              'Org',
+              'Dept',
+              'Product',
+              'Funder',
+              'FlowConfig'
+            ]
+          }
+        },
+        {
+          parentId: business.id,
+          name: {
+            notIn: [
+              'Lead',
+              'BusinessPrecheck',
+              'BusinessSupplement',
+              'BusinessRiskApproval',
+              'BusinessFunderFinal',
+              'BusinessSigning',
+              'BusinessDisbursement',
+              'BusinessPostLoan',
+              'BusinessOrderQuery',
+              'Reports'
+            ]
+          }
+        }
+      ]
     },
     data: { hidden: true, hiddenTab: true }
   })
@@ -1378,18 +1434,43 @@ async function seedAllMenus(tenantId: number) {
   await prisma.menu.updateMany({
     where: {
       tenantId,
-      parentId: business.id,
-      name: {
-        in: [
-          'BusinessPrecheck',
-          'BusinessSupplement',
-          'BusinessRiskApproval',
-          'BusinessFunderFinal',
-          'BusinessSigning',
-          'BusinessDisbursement',
-          'BusinessOrderQuery'
-        ]
-      }
+      OR: [
+        {
+          parentId: platform.id,
+          name: {
+            in: [
+              'TenantMgmt',
+              'PackageBilling',
+              'ProductTemplate',
+              'PlatformSupervision',
+              'ThirdPartyService',
+              'WorkOrder',
+              'Org',
+              'Dept',
+              'Product',
+              'Funder',
+              'FlowConfig'
+            ]
+          }
+        },
+        {
+          parentId: business.id,
+          name: {
+            in: [
+              'Lead',
+              'BusinessPrecheck',
+              'BusinessSupplement',
+              'BusinessRiskApproval',
+              'BusinessFunderFinal',
+              'BusinessSigning',
+              'BusinessDisbursement',
+              'BusinessPostLoan',
+              'BusinessOrderQuery',
+              'Reports'
+            ]
+          }
+        }
+      ]
     },
     data: { hidden: false, hiddenTab: false }
   })
@@ -1416,6 +1497,7 @@ async function seedAllMenus(tenantId: number) {
     businessFunderFinal,
     businessSigning,
     businessDisbursement,
+    businessPostLoan,
     orderQuery,
     org,
     dept,
@@ -1499,6 +1581,7 @@ async function seedAllMenus(tenantId: number) {
     businessFunderFinal,
     businessSigning,
     businessDisbursement,
+    businessPostLoan,
     org,
     dept,
     product,
@@ -1554,8 +1637,9 @@ async function upsertMenu(
 }
 
 async function connectRoleMenus(roleId: number, menuIds: number[]) {
+  const uniqueIds = [...new Set(menuIds)]
   await Promise.all(
-    menuIds.map((menuId) =>
+    uniqueIds.map((menuId) =>
       prisma.roleMenu.upsert({
         where: { roleId_menuId: { roleId, menuId } },
         update: {},
@@ -1925,7 +2009,7 @@ async function seedBusinessData(tenantId: number) {
       repaymentMethod: '等额本息',
       purpose: '经营周转',
       status: 'PENDING_DISBURSEMENT',
-      currentNode: 6100,
+      currentNode: 1800,
       currentStatus: 10,
       creatorId: sales.id,
       sourceLeadId: lead.id,
@@ -1947,7 +2031,7 @@ async function seedBusinessData(tenantId: number) {
       repaymentMethod: '等额本息',
       purpose: '经营周转',
       status: 'PENDING_DISBURSEMENT',
-      currentNode: 6100,
+      currentNode: 1800,
       currentStatus: 10,
       creatorId: sales.id,
       sourceLeadId: lead.id,
@@ -2053,7 +2137,7 @@ async function seedBusinessData(tenantId: number) {
     where: { applicationId: application.id },
     update: {
       tenantId,
-      status: 'MORTGAGE_DONE',
+      status: 'PENDING_APPROVAL',
       gpsDeviceNo: 'GPS-DEMO-001',
       gpsInstallImg: 'https://example.com/gps/APP-DEMO-0001.jpg',
       gpsInstallAt: new Date('2026-05-29T10:00:00+08:00'),
@@ -2063,12 +2147,12 @@ async function seedBusinessData(tenantId: number) {
       disburseAmount: 115000,
       disburseAccount: '6222000000000000000',
       transactionNo: 'TX-DEMO-0001',
-      remark: '待财务确认放款。'
+      remark: '已提交资方放款申请，待审批确认。'
     },
     create: {
       tenantId,
       applicationId: application.id,
-      status: 'MORTGAGE_DONE',
+      status: 'PENDING_APPROVAL',
       gpsDeviceNo: 'GPS-DEMO-001',
       gpsInstallImg: 'https://example.com/gps/APP-DEMO-0001.jpg',
       gpsInstallAt: new Date('2026-05-29T10:00:00+08:00'),
@@ -2078,7 +2162,7 @@ async function seedBusinessData(tenantId: number) {
       disburseAmount: 115000,
       disburseAccount: '6222000000000000000',
       transactionNo: 'TX-DEMO-0001',
-      remark: '待财务确认放款。'
+      remark: '已提交资方放款申请，待审批确认。'
     }
   })
 

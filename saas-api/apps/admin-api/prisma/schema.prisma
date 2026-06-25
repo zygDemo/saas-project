@@ -143,6 +143,12 @@ model Tenant {
   userBookshelves   UserBookshelf[]
   readingProgresses ReadingProgress[]
   bookReviews       BookReview[]
+  systemParams      SystemParam[]
+  announcements     Announcement[]
+
+  // 移动端模块配置
+  mobileModules       Json?    // ["carloan","food","credit"] 已启用的移动端模块
+  defaultMobileModule String?  // 单模块模式下的默认模块 key
 }
 
 model User {
@@ -1036,4 +1042,52 @@ model BookReview {
   @@index([tenantId])
   @@index([userId])
   @@index([bookId])
+}
+// ========== 系统参数管理 ==========
+model SystemParam {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  group     String?  @db.VarChar(50)   // 参数分组：basic, security, sms 等
+  name      String   @db.VarChar(100)  // 参数名称
+  key       String   @db.VarChar(100)  // 参数键（英文唯一标识）
+  value     String?  @db.Text          // 参数值
+  type      String   @default("STRING") @db.VarChar(20) // STRING, NUMBER, BOOLEAN, JSON
+  status    String   @default("ACTIVE") @db.VarChar(20)
+  remark    String?  @db.VarChar(500)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@index([group])
+  @@index([status])
+}
+
+// ========== 公告管理 ==========
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  title     String   @db.VarChar(200)  // 公告标题
+  content   String?  @db.Text          // 公告内容（富文本）
+  type      String   @default("NOTICE") @db.VarChar(20) // NOTICE, ANNOUNCEMENT, ALERT
+  level     String   @default("NORMAL") @db.VarChar(20) // NORMAL, IMPORTANT, URGENT
+  status    String   @default("DRAFT") @db.VarChar(20)  // DRAFT, PUBLISHED, EXPIRED
+  publishAt DateTime?                  // 发布时间
+  expireAt  DateTime?                  // 过期时间
+  topFlag   Boolean  @default(false)   // 是否置顶
+  viewCount Int      @default(0)       // 查看次数
+  remark    String?  @db.VarChar(500)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([type])
+  @@index([publishAt])
 }

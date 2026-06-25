@@ -526,10 +526,10 @@ export class FlowConfigService extends BaseBusinessCrudService<
       }
     })
 
-    // 批量 upsert：所有节点在同一个事务中并行执行
-    const results = await this.prisma.$transaction(
-      DEFAULT_FLOW_NODES.map((node) =>
-        this.prisma.flowConfig.upsert({
+    const results = await this.prisma.$transaction(async (tx: PrismaService) => {
+      const items: any[] = []
+      for (const node of DEFAULT_FLOW_NODES) {
+        const item = await tx.flowConfig.upsert({
           where: {
             orgId_businessType_nodeCode: {
               orgId: dto.orgId,
@@ -538,9 +538,11 @@ export class FlowConfigService extends BaseBusinessCrudService<
             }
           },
           update: {
-            name: `${node.phaseName}-${node.name}`,
+            tenantId,
+            name: node.phaseName + '-' + node.name,
             nodeName: node.name,
             approveLevel: node.approveLevel || 1,
+            amountLimit: node.amountLimit,
             requireMaterials: Boolean(node.requireMaterials),
             requireApproval: node.requireApproval ?? true,
             autoPass: Boolean(node.autoPass),
@@ -550,7 +552,7 @@ export class FlowConfigService extends BaseBusinessCrudService<
           create: {
             tenantId,
             orgId: dto.orgId,
-            name: `${node.phaseName}-${node.name}`,
+            name: node.phaseName + '-' + node.name,
             businessType,
             nodeCode: String(node.code),
             nodeName: node.name,
@@ -563,8 +565,10 @@ export class FlowConfigService extends BaseBusinessCrudService<
             status: 'ACTIVE'
           }
         })
-      )
-    )
+        items.push(item)
+      }
+      return items
+    })
     return {
       count: results.length,
       records: results

@@ -80,7 +80,8 @@
 </template>
 
 <script setup lang="ts">
-import { APP_ROUTES } from "@/common/navigation";
+import { APP_ROUTES, getSystemByRoute } from "@/common/navigation";
+import { fetchMobileConfig, type MobileModuleItem } from "@/api/mobile-config";
 import { computed, ref } from "vue";
 import { onLoad, onShow } from "@dcloudio/uni-app";
 import layout from "@/pages/layout/layout.vue";
@@ -121,18 +122,58 @@ const syncUserInfo = () => {
   avatar.value = "";
 };
 
-onLoad(() => {
+onLoad(async () => {
   localStore.setCurrentSystem(CurrentSystem.PORTAL);
   currentDate.value = formatCurrentDate(new Date());
   syncUserInfo();
+
+  // 已登录用户：获取租户移动端模块配置
+  if (localStore.token) {
+    try {
+      const { data } = await fetchMobileConfig();
+      localStore.setMobileConfig(data);
+
+      // 单模块模式 → 直接进入该模块
+      if (data.enabled.length === 1) {
+        const target = getModuleRoute(data.enabled[0]);
+        if (target) {
+          localStore.setCurrentSystem(getSystemByRoute(target) as any);
+          uni.reLaunch({ url: target });
+          return;
+        }
+      }
+
+      // 多模块 + 有默认模块 → 进入默认模块
+      if (data.enabled.length > 1 && data.defaultModule) {
+        const target = getModuleRoute(data.defaultModule);
+        if (target) {
+          localStore.setCurrentSystem(getSystemByRoute(target) as any);
+          uni.reLaunch({ url: target });
+          return;
+        }
+      }
+
+      // 更新服务卡片：只保留已启用的模块
+      filterServiceCards(data.enabled);
+    } catch {
+      // 接口失败时降级使用缓存
+      if (localStore.mobileConfig) {
+        filterServiceCards(localStore.mobileConfig.enabled);
+      }
+    }
+  }
 });
 
 onShow(() => {
   localStore.setCurrentSystem(CurrentSystem.PORTAL);
   syncUserInfo();
+  // 使用缓存的配置过滤模块
+  if (localStore.mobileConfig) {
+    filterServiceCards(localStore.mobileConfig.enabled);
+  }
 });
 
-const serviceCards = [
+const serviceCards = ref([
   {
     key: "carloan",
     title: "车抵贷",
@@ -176,9 +217,9 @@ const serviceCards = [
       uni.navigateTo({ url: APP_ROUTES.reading.home });
     },
   },
-];
+]);
 
-const shortcutItems = [
+const shortcutItems = ref([
   {
     key: "apply",
     label: "我的进件",
@@ -218,7 +259,40 @@ const shortcutItems = [
     bgColor: "rgba(61, 193, 211, 0.85)",
     handler: () => uni.navigateTo({ url: APP_ROUTES.reading.home }),
   },
-];
+]);
+
+
+
+/** 模块 key → 首页路由 */
+function getModuleRoute(key: string): string | null {
+  const map: Record<string, string> = {
+    carloan: APP_ROUTES.carloan.home,
+    food: APP_ROUTES.food.home,
+    credit: APP_ROUTES.credit.home,
+    reading: APP_ROUTES.reading.home,
+  };
+  return map[key] ?? null;
+}
+
+/** 原始完整服务卡片列表 */
+const allServiceCards = [...serviceCards.value];
+
+/** 原始完整快捷功能列表 */
+const allShortcutItems = [...shortcutItems.value];
+
+/** 根据已启用模块过滤服务卡片 + 快捷功能 */
+function filterServiceCards(enabled: string[]) {
+  const enabledSet = new Set(enabled);
+  serviceCards.value = allServiceCards.filter((c) => enabledSet.has(c.key));
+  // 快捷功能：保留不依赖特定模块的项(联系客服) + 匹配已启用模块的项
+  shortcutItems.value = allShortcutItems.filter((item) => {
+    if (item.key === 'service' || item.key === 'notice') return true;
+    if (item.key === 'apply') return enabledSet.has('carloan');
+    if (item.key === 'order') return enabledSet.has('food');
+    if (item.key === 'reading') return enabledSet.has('reading');
+    return true;
+  });
+}
 
 const goProfile = () => uni.switchTab({ url: APP_ROUTES.my.home });
 const goLogin = () => uni.navigateTo({ url: APP_ROUTES.auth.login });

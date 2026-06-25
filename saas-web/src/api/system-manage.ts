@@ -235,3 +235,114 @@ export function fetchBatchDeleteFileAssets(ids: number[]) {
     showSuccessMessage: true
   })
 }
+
+// ===== 系统参数管理 =====
+export function fetchGetSystemParamList(params: Api.SystemManage.SystemParamSearchParams) {
+  return request.get<Api.SystemManage.SystemParamList>({
+    url: '/system-param/list',
+    params
+  })
+}
+
+export function fetchCreateSystemParam(params: Api.SystemManage.SaveSystemParamParams) {
+  return request.post<Api.SystemManage.SystemParamItem>({
+    url: '/system-param/create',
+    params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchUpdateSystemParam(id: number, params: Partial<Api.SystemManage.SaveSystemParamParams>) {
+  return request.post<Api.SystemManage.SystemParamItem>({
+    url: `/system-param/${id}`,
+    params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchDeleteSystemParam(id: number) {
+  return request.post<{ id: number }>({
+    url: `/system-param/${id}/delete`,
+    showSuccessMessage: true
+  })
+}
+
+// ===== 公告管理 =====
+export function fetchGetAnnouncementList(params: Api.SystemManage.AnnouncementSearchParams) {
+  return request.get<Api.SystemManage.AnnouncementList>({
+    url: '/announcement/list',
+    params
+  })
+}
+
+export function fetchGetAnnouncementById(id: number) {
+  return request.get<Api.SystemManage.AnnouncementItem>({
+    url: `/announcement/${id}`
+  })
+}
+
+export function fetchCreateAnnouncement(params: Api.SystemManage.SaveAnnouncementParams) {
+  return request.post<Api.SystemManage.AnnouncementItem>({
+    url: '/announcement/create',
+    params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchUpdateAnnouncement(id: number, params: Partial<Api.SystemManage.SaveAnnouncementParams>) {
+  return request.post<Api.SystemManage.AnnouncementItem>({
+    url: `/announcement/${id}`,
+    params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchPublishAnnouncement(id: number) {
+  return request.post<Api.SystemManage.AnnouncementItem>({
+    url: `/announcement/${id}/publish`,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchDeleteAnnouncement(id: number) {
+  return request.post<{ id: number }>({
+    url: `/announcement/${id}/delete`,
+    showSuccessMessage: true
+  })
+}
+
+
+// ─── 移动端模块配置 ───
+export interface MobileModuleItem {
+  key: string
+  name: string
+  icon: string
+  desc: string
+}
+
+export interface MobileConfigData {
+  available: MobileModuleItem[]
+  enabled: string[]
+  defaultModule: string | null
+  isMultiModule: boolean
+}
+
+export interface UpdateMobileConfigParams {
+  mobileModules: string[]
+  defaultMobileModule?: string
+}
+
+// ─── 移动端模块配置 API ───
+export function fetchMobileConfig() {
+  return request.get<Api.SystemManage.MobileConfigData>({
+    url: '/mobile-config'
+  })
+}
+
+export function fetchUpdateMobileConfig(params: Api.SystemManage.UpdateMobileConfigParams) {
+  return request.put<Api.SystemManage.MobileConfigData>({
+    url: '/mobile-config',
+    params,
+    showSuccessMessage: true
+  })
+}

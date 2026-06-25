@@ -144,6 +144,7 @@ export const useLocalStore = defineStore("local", {
     roleKeys: [] as string[],
     permissions: [] as string[],
     currentSystem: CurrentSystem.PORTAL as CurrentSystemValue,
+    mobileConfig: null as { enabled: string[]; defaultModule: string | null; isMultiModule: boolean } | null,
     loginTime: 0,
     expireTime: 0,
   }),
@@ -199,6 +200,9 @@ export const useLocalStore = defineStore("local", {
       }
       this.loginTime = Date.now();
     },
+    setMobileConfig(config: { enabled: string[]; defaultModule: string | null; isMultiModule: boolean } | null) {
+      this.mobileConfig = config;
+    },
     setCurrentSystem(system: CurrentSystemValue) {
       this.currentSystem = system;
     },
@@ -236,6 +240,7 @@ export const useLocalStore = defineStore("local", {
       "roleKeys",
       "permissions",
       "currentSystem",
+      "mobileConfig",
       "loginTime",
       "expireTime",
     ],

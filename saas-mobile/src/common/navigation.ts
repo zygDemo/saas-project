@@ -84,6 +84,41 @@ export const TABBAR_SCOPES = {
 } as const;
 
 export type TabbarScope = (typeof TABBAR_SCOPES)[keyof typeof TABBAR_SCOPES];
+
+// ─── 角色 → 默认模块映射 ───
+// key = roleKey，value = 跳转目标模块的首页路由
+// 未命中任何角色的用户留在 portal 门户页
+const ROLE_MODULE_MAP: Record<string, string> = {
+  R_USER: APP_ROUTES.carloan.home,
+  R_SALES_MANAGER: APP_ROUTES.carloan.home,
+  // 按需扩展：
+  // R_FOOD_USER: APP_ROUTES.food.home,
+  // R_CREDIT_USER: APP_ROUTES.credit.home,
+};
+
+/** 路由前缀 → CurrentSystem 映射 */
+const ROUTE_SYSTEM_MAP: Record<string, string> = {
+  "/pages/carloan/": "carloan",
+  "/pages/food/": "food",
+  "/pages/credit/": "credit",
+  "/pages/reading/": "reading",
+};
+
+/** 根据路由路径推断所属模块系统 */
+export function getSystemByRoute(route: string): string {
+  for (const [prefix, system] of Object.entries(ROUTE_SYSTEM_MAP)) {
+    if (route.startsWith(prefix)) return system;
+  }
+  return "portal";
+}
+
+/** 根据用户角色返回应进入的模块首页路由，null 表示留在门户 */
+export function getDefaultModuleRoute(roleKeys: string[]): string | null {
+  for (const key of roleKeys) {
+    if (ROLE_MODULE_MAP[key]) return ROLE_MODULE_MAP[key];
+  }
+  return null;
+}
 type NavigationMode = "switchTab" | "redirectTo" | "reLaunch";
 
 export interface LayoutTabbarItem extends TabbarItem {

@@ -9,3 +9,4 @@ export * from "./food";
 export * from "./credit";
 export * from "./reading";
 export * from "./business";
+export * from "./mobile-config";

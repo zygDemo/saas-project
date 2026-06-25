@@ -141,14 +141,18 @@ const sessionStore = useSessionStore();
 const { userInfo } = storeToRefs(localStore);
 
 const menuList = computed<MenuItem[]>(() => {
-  const items: MenuItem[] = [
-    {
+  const items: MenuItem[] = [];
+  // 多模块模式下才显示切换项目入口
+  if (localStore.mobileConfig && localStore.mobileConfig.isMultiModule) {
+    items.push({
       icon: "grid",
       title: "切换项目",
       desc: currentProjectLabel.value,
       path: "__switch_project__",
       iconClass: "menu-item__icon--setting",
-    },
+    });
+  }
+  items.push(
     {
       icon: "setting",
       title: "个人设置",
@@ -176,8 +180,8 @@ const menuList = computed<MenuItem[]>(() => {
       desc: "查看平台服务条款",
       path: "/pages/my/agreement",
       iconClass: "menu-item__icon--agreement",
-    },
-  ];
+    }
+  );
   return items;
 });
 

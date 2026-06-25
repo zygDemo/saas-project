@@ -82,6 +82,50 @@ export const systemRoutes: AppRouteRecord = {
       }
     },
     {
+      path: 'sys-param',
+      name: 'SystemParam',
+      component: '/system/sys-param',
+      meta: {
+        title: '系统参数',
+        icon: 'ri:settings-3-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN'],
+        authList: [
+          { title: '新增', authMark: 'add' },
+          { title: '编辑', authMark: 'edit' },
+          { title: '删除', authMark: 'delete' }
+        ]
+      }
+    },
+    {
+      path: 'announcement',
+      name: 'Announcement',
+      component: '/system/announcement',
+      meta: {
+        title: '公告管理',
+        icon: 'ri:notification-3-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN'],
+        authList: [
+          { title: '新增', authMark: 'add' },
+          { title: '编辑', authMark: 'edit' },
+          { title: '发布', authMark: 'publish' },
+          { title: '删除', authMark: 'delete' }
+        ]
+      }
+    },
+    {
+      path: 'mobile-config',
+      name: 'MobileConfig',
+      component: '/system/mobile-config',
+      meta: {
+        title: '移动端模块配置',
+        icon: 'ri:smartphone-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
+    },
+    {
       path: 'work-order',
       name: 'WorkOrder',
       component: '/system/work-order',
