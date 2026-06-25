@@ -227,7 +227,7 @@
   }
 
   async function handleDelete(row: ParamItem) {
-    await ElMessageBox.confirm(, '提示', { type: 'warning' })
+    await ElMessageBox.confirm('确认删除该参数吗？', '提示', { type: 'warning' })
     await fetchDeleteSystemParam(row.id)
     loadData()
   }

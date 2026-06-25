@@ -316,13 +316,13 @@
   }
 
   async function handlePublish(row: AnnItem) {
-    await ElMessageBox.confirm(, '提示', { type: 'warning' })
+    await ElMessageBox.confirm('确认发布该公告吗？', '提示', { type: 'warning' })
     await fetchPublishAnnouncement(row.id)
     loadData()
   }
 
   async function handleDelete(row: AnnItem) {
-    await ElMessageBox.confirm(, '提示', { type: 'warning' })
+    await ElMessageBox.confirm('确认删除该公告吗？', '提示', { type: 'warning' })
     await fetchDeleteAnnouncement(row.id)
     loadData()
   }

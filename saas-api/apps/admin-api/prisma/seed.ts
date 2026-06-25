@@ -598,32 +598,17 @@ async function main() {
     'Lead',
     'BusinessPrecheck',
     'BusinessSupplement',
-    'BusinessRiskApproval',
-    'BusinessFunderFinal',
     'BusinessSigning',
-    'BusinessDisbursement',
-    'BusinessPostLoan',
-    'BusinessOrderQuery',
-    'Reports'
+    'BusinessOrderQuery'
   )
   const bizApprovalIds = filterIds(
     'Business',
-    'Lead',
-    'BusinessPrecheck',
-    'BusinessSupplement',
     'BusinessRiskApproval',
     'BusinessFunderFinal',
-    'BusinessPostLoan',
-    'BusinessOrderQuery',
-    'Reports'
+    'BusinessOrderQuery'
   )
   const bizFinanceIds = filterIds(
     'Business',
-    'Lead',
-    'BusinessPrecheck',
-    'BusinessSupplement',
-    'BusinessRiskApproval',
-    'BusinessFunderFinal',
     'BusinessSigning',
     'BusinessDisbursement',
     'BusinessPostLoan',
@@ -632,16 +617,8 @@ async function main() {
   )
   const bizCsIds = filterIds(
     'Business',
-    'Lead',
-    'BusinessPrecheck',
-    'BusinessSupplement',
-    'BusinessRiskApproval',
-    'BusinessFunderFinal',
-    'BusinessSigning',
-    'BusinessDisbursement',
     'BusinessPostLoan',
-    'BusinessOrderQuery',
-    'Reports'
+    'BusinessOrderQuery'
   )
   const bizManagerIds = filterIds(
     'Business',
@@ -672,14 +649,13 @@ async function main() {
 
   // R_SUPER：全部菜单
   await connectRoleMenus(roleByCode.R_SUPER.id, superMenuIds)
-  // R_OPERATION：仪表盘 + 平台管理 + 数据中心 + 车贷业务 + 公告
+  // R_OPERATION：仪表盘 + 平台管理 + 机构配置 + 运营中心 + 数据中心
   await connectRoleMenus(roleByCode.R_OPERATION.id, [
     ...dashIds,
     ...platformIds,
     ...orgConfigIds,
     ...operationCenterIds,
-    ...dataCenterIds,
-    ...bizStageIds
+    ...dataCenterIds
   ])
   // 读书管理相关菜单
   const readingIds = filterIds(
@@ -984,7 +960,7 @@ async function seedAllMenus(tenantId: number) {
     parentId: operationCenter.id,
     path: 'notice',
     name: 'Notice',
-    component: bp,
+    component: '/system/announcement',
     title: '公告管理',
     icon: 'ri:notification-line',
     sort: 454,

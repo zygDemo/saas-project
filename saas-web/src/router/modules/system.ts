@@ -60,30 +60,20 @@ export const systemRoutes: AppRouteRecord = {
       }
     },
     {
-      path: 'file',
-      name: 'FileManage',
-      component: '/system/file',
+      path: 'region',
+      name: 'RegionMgmt',
+      component: '/business/common-list',
       meta: {
-        title: '文件管理',
-        icon: 'ri:file-list-3-line',
+        title: '地区管理',
+        icon: 'ri:map-pin-line',
         keepAlive: true,
-        roles: ['R_SUPER', 'R_ADMIN']
-      }
-    },
-    {
-      path: 'file-config',
-      name: 'FileConfig',
-      component: '/system/file-config',
-      meta: {
-        title: '文件存储配置',
-        icon: 'ri:hard-drive-2-line',
-        keepAlive: true,
-        roles: ['R_SUPER', 'R_ADMIN']
+        roles: ['R_SUPER', 'R_ADMIN'],
+        businessModule: 'region'
       }
     },
     {
       path: 'sys-param',
-      name: 'SystemParam',
+      name: 'SysParam',
       component: '/system/sys-param',
       meta: {
         title: '系统参数',
@@ -93,41 +83,6 @@ export const systemRoutes: AppRouteRecord = {
         authList: [
           { title: '新增', authMark: 'add' },
           { title: '编辑', authMark: 'edit' },
-          { title: '删除', authMark: 'delete' }
-        ]
-      }
-    },
-    {
-      path: 'announcement',
-      name: 'Announcement',
-      component: '/system/announcement',
-      meta: {
-        title: '公告管理',
-        icon: 'ri:notification-3-line',
-        keepAlive: true,
-        roles: ['R_SUPER', 'R_ADMIN'],
-        authList: [
-          { title: '新增', authMark: 'add' },
-          { title: '编辑', authMark: 'edit' },
-          { title: '发布', authMark: 'publish' },
-          { title: '删除', authMark: 'delete' }
-        ]
-      }
-    },
-
-    {
-      path: 'work-order',
-      name: 'WorkOrder',
-      component: '/system/work-order',
-      meta: {
-        title: '执行工单',
-        icon: 'ri:customer-service-2-line',
-        keepAlive: true,
-        roles: ['R_SUPER'],
-        authList: [
-          { title: '新增', authMark: 'add' },
-          { title: '指派', authMark: 'assign' },
-          { title: '处理', authMark: 'process' },
           { title: '删除', authMark: 'delete' }
         ]
       }
