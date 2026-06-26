@@ -156,7 +156,8 @@ export function showError(error: HttpError, showMessage: boolean = true): void {
     ElMessage.error(error.message)
   }
   // 记录错误日志
-  console.error('[HTTP Error]', error.toLogData())
+  const { code, message, url, method } = error.toLogData()
+  console.error(`[HTTP Error] ${method || '?'} ${url || '?'} → ${code} ${message}`)
 }
 
 /**

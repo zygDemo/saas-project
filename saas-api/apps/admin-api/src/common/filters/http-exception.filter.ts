@@ -1,4 +1,11 @@
-﻿import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common'
+﻿import {
+  ArgumentsHost,
+  BadRequestException,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { Response } from 'express'
 import { ApiStatus } from '../constants/api-status'
@@ -9,11 +16,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = host.switchToHttp().getResponse<Response>()
     const status = getStatus(exception)
     const body = exception instanceof HttpException ? exception.getResponse() : null
+    const message =
+      extractMessage(body) ??
+      extractPrismaMessage(exception) ??
+      extractMulterMessage(exception) ??
+      '服务器内部错误'
 
     response.status(200).json({
       code: statusToApiCode(status),
-      msg: extractMessage(body) ?? extractPrismaMessage(exception) ?? '服务器内部错误',
-      data: null
+      msg: message,
+      data: null,
     })
   }
 }
@@ -25,7 +37,40 @@ function getStatus(exception: unknown) {
     if (exception.code === 'P2003') return HttpStatus.BAD_REQUEST
     if (exception.code === 'P2025') return HttpStatus.NOT_FOUND
   }
+  if (isMulterError(exception)) return HttpStatus.BAD_REQUEST
   return HttpStatus.INTERNAL_SERVER_ERROR
+}
+
+/** 检测 Multer 相关错误（包括 NestJS 包装后的 BadRequestException） */
+function isMulterError(exception: unknown) {
+  if (exception instanceof BadRequestException) {
+    const res = exception.getResponse()
+    const msg = typeof res === 'string' ? res : (res as { message?: string })?.message
+    if (typeof msg === 'string' && /Multer|file|upload|multipart|boundary/i.test(msg)) {
+      return true
+    }
+  }
+  // 也检测原生 MulterError（MulterError 有 code 和 field 属性）
+  const err = exception as { code?: string; field?: string; message?: string }
+  if (err?.code && err?.field && err?.message) {
+    return true
+  }
+  return false
+}
+
+function extractMulterMessage(exception: unknown) {
+  if (exception instanceof BadRequestException) {
+    const res = exception.getResponse()
+    const msg = typeof res === 'string' ? res : (res as { message?: string })?.message
+    if (typeof msg === 'string' && /Multer|file|upload|multipart|boundary/i.test(msg)) {
+      return `文件上传失败：${msg}`
+    }
+  }
+  const err = exception as { code?: string; field?: string; message?: string }
+  if (err?.code && err?.field && err?.message) {
+    return `文件上传失败 [${err.code}]: ${err.message}`
+  }
+  return undefined
 }
 
 function extractPrismaMessage(exception: unknown) {

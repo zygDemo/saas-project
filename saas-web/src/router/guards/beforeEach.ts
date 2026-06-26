@@ -373,8 +373,6 @@ async function handleDynamicRoutes(
       })
     }
   } catch (error) {
-    console.error('[RouteGuard] 动态路由注册失败:', error)
-
     // 关闭 loading
     closeLoading()
 
@@ -385,6 +383,8 @@ async function handleDynamicRoutes(
       next(false)
       return
     }
+
+    console.error('[RouteGuard] 动态路由注册失败:', error)
 
     // 标记初始化失败，防止死循环
     routeInitFailed = true

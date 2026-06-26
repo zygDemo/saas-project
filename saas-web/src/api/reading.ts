@@ -1,4 +1,9 @@
-import request from '@/utils/http'
+import request, { API_BASE_URL } from '@/utils/http'
+import { useUserStore } from '@/store/modules/user'
+
+// 租户ID（与 http/index.ts 保持一致）
+const TENANT_ID = import.meta.env.VITE_TENANT_ID || '1'
+const WITH_CREDENTIALS = import.meta.env.VITE_WITH_CREDENTIALS === 'true'
 
 // ==================== 书籍分类 ====================
 
@@ -81,14 +86,31 @@ export function createBook(data: {
   return request.post({ url: '/reading/books', data })
 }
 
-/** 上传 TXT 文件创建图书（自动分章） */
-export function uploadTxtBook(formData: FormData) {
-  return request.post({
-    url: '/reading/books/upload-txt',
-    data: formData,
-    headers: { 'Content-Type': 'multipart/form-data' },
-    showSuccessMessage: true
+/** 上传 TXT 文件创建图书（自动分章） — 使用原生 fetch 绕过 axios 拦截器，确保 FormData 正确发送 */
+export async function uploadTxtBook(formData: FormData) {
+  const token = useUserStore().accessToken
+  const url = `${API_BASE_URL}/reading/books/upload-txt`
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: token || '',
+      'x-tenant-id': TENANT_ID,
+    },
+    body: formData,
+    credentials: WITH_CREDENTIALS ? 'include' : 'same-origin',
   })
+
+  // 后端异常过滤器始终返回 200，需通过 JSON code 字段判断成功/失败
+  const json = await res.json().catch(() => {
+    throw new Error(`服务器响应异常 (HTTP ${res.status})`)
+  })
+
+  if (json.code !== 0) {
+    throw new Error(json.msg || '上传失败')
+  }
+
+  return json.data
 }
 
 /** 更新书籍 */

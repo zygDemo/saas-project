@@ -21,7 +21,14 @@ const TENANT_MODELS = [
   'repaymentrecord',
   'flowconfig',
   'fileasset',
-  'operationlog'
+  'operationlog',
+  // 读书模块
+  'bookcategory',
+  'book',
+  'bookchapter',
+  'userbookshelf',
+  'readingprogress',
+  'bookreview',
 ]
 
 function isTenantModel(model: string | undefined): boolean {

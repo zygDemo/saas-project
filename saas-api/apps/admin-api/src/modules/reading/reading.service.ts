@@ -256,8 +256,22 @@ export class ReadingService {
       content = content.slice(1);
     }
 
+    // 修复文件名编码：Windows 文件名是 GBK，Multer 按 Latin-1 解析会导致乱码
+    let originalname = file.originalname
+    try {
+      const iconv = require('iconv-lite')
+      const buffer = Buffer.from(originalname, 'latin1')
+      const decoded = iconv.decode(buffer, 'gbk')
+      // 如果解码后包含中文字符，说明 GBK 解码成功
+      if (/[\u4e00-\u9fff]/.test(decoded)) {
+        originalname = decoded
+      }
+    } catch {
+      // iconv-lite 不可用，使用原始名称
+    }
+
     // 书名：优先用传入的 title，否则用文件名去掉扩展名
-    const bookTitle = dto.title || file.originalname.replace(/\.txt$/i, '').trim() || '未命名图书';
+    const bookTitle = dto.title || originalname.replace(/\.txt$/i, '').trim() || '未命名图书';
     const bookAuthor = dto.author || '未知';
 
     // 分章

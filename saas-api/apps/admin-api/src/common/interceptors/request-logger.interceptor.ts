@@ -38,10 +38,7 @@ export class RequestLoggerInterceptor implements NestInterceptor {
       }),
       catchError((error) => {
         // 正确识别非 HttpException 的错误状态码
-        const statusCode =
-          error?.response?.code ??
-          error?.status ??
-          (error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR)
+        const statusCode = resolveErrorStatus(error)
         this.logRequest(request, statusCode, Date.now() - startedAt, error?.response)
         return throwError(() => error)
       })
@@ -172,4 +169,27 @@ export class RequestLoggerInterceptor implements NestInterceptor {
     const normalizedKey = key.toLowerCase()
     return SENSITIVE_KEYS.some((sensitiveKey) => normalizedKey.includes(sensitiveKey.toLowerCase()))
   }
+}
+
+/** 解析错误的 HTTP 状态码 */
+function resolveErrorStatus(error: unknown): number {
+  // API 业务状态码
+  if ((error as { response?: { code?: number } })?.response?.code) {
+    return (error as { response: { code: number } }).response.code
+  }
+  // Multer 错误（原生 MulterError 有 code/field 属性）
+  const multerErr = error as { code?: string; field?: string }
+  if (multerErr?.code && multerErr?.field) {
+    return HttpStatus.BAD_REQUEST
+  }
+  // 验证错误（class-validator）
+  if (Array.isArray((error as { response?: { message?: unknown } })?.response?.message)) {
+    return HttpStatus.BAD_REQUEST
+  }
+  // HttpException
+  if (error instanceof HttpException) {
+    return error.getStatus()
+  }
+  // 其他未识别错误
+  return HttpStatus.INTERNAL_SERVER_ERROR
 }

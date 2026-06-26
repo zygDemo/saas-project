@@ -12,6 +12,8 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -41,6 +43,8 @@ import {
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class ReadingController {
+  private readonly logger = new Logger(ReadingController.name)
+
   constructor(private readonly readingService: ReadingService) {}
 
   // ==================== 书籍分类 ====================
@@ -121,7 +125,25 @@ export class ReadingController {
     @UploadedFile() file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
     @Body() dto: UploadTxtBookDto,
   ) {
-    return this.readingService.createBookFromTxt(req.tenantId, file, dto);
+    this.logger.log(
+      `upload-txt: file=${file?.originalname || 'NONE'} size=${file?.size || 0} mime=${file?.mimetype || '-'}`,
+    )
+
+    if (!file) {
+      throw new BadRequestException('未接收到文件，请确认选择了 .txt 文件')
+    }
+
+    try {
+      const result = await this.readingService.createBookFromTxt(req.tenantId, file, dto)
+      this.logger.log(`upload-txt 成功: bookId=${result.bookId} chapters=${result.chapterCount}`)
+      return result
+    } catch (error) {
+      this.logger.error(
+        `upload-txt 失败: ${(error as Error)?.message || error}`,
+        (error as Error)?.stack?.slice(0, 300),
+      )
+      throw error
+    }
   }
 
   @Put('books/:id')

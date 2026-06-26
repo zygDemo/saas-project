@@ -86,6 +86,17 @@ export const systemRoutes: AppRouteRecord = {
           { title: '删除', authMark: 'delete' }
         ]
       }
+    },
+    {
+      path: 'mobile-config',
+      name: 'MobileConfig',
+      component: '/system/mobile-config',
+      meta: {
+        title: '移动端配置',
+        icon: 'ri:smartphone-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
     }
   ]
 }
