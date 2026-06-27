@@ -90,18 +90,24 @@
         <template v-if="currentRow">
           <ElDescriptions :column="1" border class="mb-4">
             <ElDescriptionsItem label="ID">{{ currentRow.id }}</ElDescriptionsItem>
-            <ElDescriptionsItem label="时间">{{ formatDateTime(currentRow.createdAt) }}</ElDescriptionsItem>
+            <ElDescriptionsItem label="时间">{{
+              formatDateTime(currentRow.createdAt)
+            }}</ElDescriptionsItem>
             <ElDescriptionsItem label="用户">{{ currentRow.userName || '-' }}</ElDescriptionsItem>
             <ElDescriptionsItem label="模块">{{ currentRow.module }}</ElDescriptionsItem>
             <ElDescriptionsItem label="方法">
-              <ElTag :type="methodTag(currentRow.action)" effect="dark" size="small">{{ currentRow.action }}</ElTag>
+              <ElTag :type="methodTag(currentRow.action)" effect="dark" size="small">{{
+                currentRow.action
+              }}</ElTag>
             </ElDescriptionsItem>
             <ElDescriptionsItem label="状态码">
               <ElTag :type="statusTagType(currentRow.statusCode)" effect="dark" size="small">
                 {{ currentRow.statusCode || '-' }}
               </ElTag>
             </ElDescriptionsItem>
-            <ElDescriptionsItem label="描述">{{ currentRow.description || '-' }}</ElDescriptionsItem>
+            <ElDescriptionsItem label="描述">{{
+              currentRow.description || '-'
+            }}</ElDescriptionsItem>
             <ElDescriptionsItem label="IP">{{ currentRow.ip || '-' }}</ElDescriptionsItem>
             <ElDescriptionsItem label="User Agent">
               <div class="ua-text">{{ currentRow.userAgent || '-' }}</div>
@@ -122,7 +128,12 @@
 <script setup lang="ts">
   import { ref, h, onMounted, reactive } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchAuditLogs, fetchAuditLogStats, type AuditLogItem, type AuditLogStats } from '@/api/data-center'
+  import {
+    fetchAuditLogs,
+    fetchAuditLogStats,
+    type AuditLogItem,
+    type AuditLogStats
+  } from '@/api/data-center'
   import { ElTag, ElButton } from 'element-plus'
   import { Document, CircleCheck, CircleClose, TrendCharts } from '@element-plus/icons-vue'
   import AuditLogSearch from './modules/audit-log-search.vue'
@@ -277,7 +288,11 @@
           label: '方法',
           width: 90,
           formatter: (row: AuditLogItem) =>
-            h(ElTag, { type: methodTag(row.action), effect: 'dark', size: 'small' }, () => row.action)
+            h(
+              ElTag,
+              { type: methodTag(row.action), effect: 'dark', size: 'small' },
+              () => row.action
+            )
         },
         {
           prop: 'statusCode',

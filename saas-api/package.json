@@ -2,7 +2,6 @@
   "name": "saas-api-monorepo",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "dev": "pnpm --filter @saas/admin-api start:dev",
     "dev:sit": "pnpm --filter @saas/admin-api start:sit",
@@ -24,7 +23,5 @@
     "prettier": "^3.5.3",
     "typescript": "^5.8.3"
   },
-  "dependencies": {
-    "playwright": "^1.61.1"
-  }
+  "packageManager": "pnpm@9.15.0"
 }

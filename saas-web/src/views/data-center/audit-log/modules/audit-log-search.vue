@@ -85,6 +85,16 @@
       clearable: true
     },
     {
+      label: '状态',
+      key: 'status',
+      type: 'select',
+      props: {
+        placeholder: '请选择状态',
+        clearable: true,
+        options: statusOptions
+      }
+    },
+    {
       label: '模块',
       key: 'module',
       type: 'select',
@@ -103,16 +113,6 @@
         placeholder: '请选择方法',
         clearable: true,
         options: methodOptions
-      }
-    },
-    {
-      label: '状态',
-      key: 'status',
-      type: 'select',
-      props: {
-        placeholder: '请选择状态',
-        clearable: true,
-        options: statusOptions
       }
     },
     {

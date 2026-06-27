@@ -69,75 +69,27 @@
     </ElRow>
 
     <!-- 图书列表 -->
-    <ElTable :data="bookList" stripe border v-loading="isLoading" element-loading-text="加载中..." @selection-change="(rows: any[]) => selectedIds = rows.map((r: any) => r.id)">
-      <ElTableColumn type="selection" width="45" align="center" />
-      <ElTableColumn type="index" label="序号" width="60" align="center" />
-      <ElTableColumn prop="title" label="图书名称" min-width="180" />
-      <ElTableColumn prop="author" label="作者" width="120" />
-      <ElTableColumn prop="category.name" label="分类" width="100">
-        <template #default="{ row }">
-          {{ row.category?.name || '-' }}
+    <ElCard class="art-table-card">
+      <ArtTableHeader :loading="isLoading" @refresh="loadBooks">
+        <template #left>
+          <ElSpace wrap>
+            <ElButton @click="openUploadDialog" v-auth="'add'">上传 TXT</ElButton>
+            <ElButton type="primary" @click="openAddDialog" v-auth="'add'">新增图书</ElButton>
+          </ElSpace>
         </template>
-      </ElTableColumn>
-      <ElTableColumn prop="wordCount" label="字数" width="100" align="center">
-        <template #default="{ row }">
-          {{ formatWordCount(row.wordCount) }}
-        </template>
-      </ElTableColumn>
-      <ElTableColumn prop="chapterCount" label="章节" width="80" align="center" />
-      <ElTableColumn prop="rating" label="评分" width="80" align="center">
-        <template #default="{ row }">
-          <span class="text-orange-500">{{ row.rating }}</span>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn prop="readCount" label="阅读量" width="100" align="center">
-        <template #default="{ row }">
-          {{ formatNumber(row.readCount) }}
-        </template>
-      </ElTableColumn>
-      <ElTableColumn prop="status" label="状态" width="80" align="center">
-        <template #default="{ row }">
-          <ElTag :type="row.status === 1 ? 'success' : 'info'">
-            {{ row.status === 1 ? '上架' : '下架' }}
-          </ElTag>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn prop="isHot" label="热门" width="70" align="center">
-        <template #default="{ row }">
-          <ElTag v-if="row.isHot" type="danger" size="small">热</ElTag>
-          <span v-else>-</span>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn prop="isRecommend" label="推荐" width="70" align="center">
-        <template #default="{ row }">
-          <ElTag v-if="row.isRecommend" type="warning" size="small">荐</ElTag>
-          <span v-else>-</span>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn label="操作" width="200" fixed="right" align="center">
-        <template #default="{ row }">
-          <ElButton size="small" type="primary" link @click="handleEdit(row)" v-auth="'edit'"
-            >编辑</ElButton
-          >
-          <ElButton size="small" type="success" link @click="handleChapters(row)">章节</ElButton>
-          <ElButton size="small" type="danger" link @click="handleDelete(row)" v-auth="'delete'"
-            >删除</ElButton
-          >
-        </template>
-      </ElTableColumn>
-    </ElTable>
+      </ArtTableHeader>
 
-    <div class="flex justify-center mt-5">
-      <ElPagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :total="total"
-        background
-        layout="prev, pager, next, total, jumper"
-        @current-change="handlePageChange"
-        @size-change="handleSizeChange"
+      <ArtTable
+        :loading="isLoading"
+        :data="bookList"
+        :columns="columns"
+        :pagination="pagination"
+        :pagination-options="paginationOptions"
+        @pagination:size-change="handleSizeChange"
+        @pagination:current-change="handlePageChange"
+        @selection-change="(rows: any[]) => selectedIds = rows.map((r: any) => r.id)"
       />
-    </div>
+    </ElCard>
 
     <!-- 新增/编辑图书弹窗 -->
     <ElDialog v-model="showDialog" :title="isEdit ? '编辑图书' : '新增图书'" width="700px">
@@ -315,9 +267,10 @@
 </template>
 
 <script setup lang="ts">
+  import { h } from 'vue'
   import { Search } from '@element-plus/icons-vue'
   import { getBooks, createBook, updateBook, deleteBook, getBookCategories, uploadTxtBook } from '@/api/reading'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage, ElMessageBox, ElTag, ElButton, ElSwitch } from 'element-plus'
   import { useRouter } from 'vue-router'
   import ArtExcelExport from '@/components/core/forms/art-excel-export/index.vue'
   import { useUserStore } from '@/store/modules/user'
@@ -341,6 +294,17 @@
 
   const categoryList = ref<any[]>([])
   const bookList = ref<any[]>([])
+
+  // 分页配置
+  const pagination = computed(() => ({
+    total: total.value,
+    current: currentPage.value,
+    size: pageSize.value
+  }))
+
+  const paginationOptions = {
+    pageSizes: [10, 20, 50, 100]
+  }
 
   // TXT 上传
   const showUploadDialog = ref(false)
@@ -395,6 +359,97 @@
       loadAllDataForExport()
     }, 300)
   })
+
+  // ArtTable 列配置
+  const columns = computed(() => [
+    { type: 'selection' as const, width: 45, align: 'center' as const },
+    { type: 'index' as const, width: 60, label: '序号', align: 'center' as const },
+    { prop: 'title', label: '图书名称', minWidth: 180, showOverflowTooltip: true },
+    { prop: 'author', label: '作者', width: 120 },
+    {
+      prop: 'category.name',
+      label: '分类',
+      width: 100,
+      formatter: (row: any) => row.category?.name || '-'
+    },
+    {
+      prop: 'wordCount',
+      label: '字数',
+      width: 100,
+      align: 'center' as const,
+      formatter: (row: any) => formatWordCount(row.wordCount)
+    },
+    { prop: 'chapterCount', label: '章节', width: 80, align: 'center' as const },
+    {
+      prop: 'rating',
+      label: '评分',
+      width: 80,
+      align: 'center' as const,
+      formatter: (row: any) => h('span', { class: 'text-orange-500' }, row.rating || '-')
+    },
+    {
+      prop: 'readCount',
+      label: '阅读量',
+      width: 100,
+      align: 'center' as const,
+      formatter: (row: any) => formatNumber(row.readCount)
+    },
+    {
+      prop: 'status',
+      label: '状态',
+      width: 80,
+      align: 'center' as const,
+      formatter: (row: any) =>
+        h(ElTag, { type: row.status === 1 ? 'success' : 'info' }, () =>
+          row.status === 1 ? '上架' : '下架'
+        )
+    },
+    {
+      prop: 'isHot',
+      label: '热门',
+      width: 70,
+      align: 'center' as const,
+      formatter: (row: any) =>
+        row.isHot
+          ? h(ElTag, { type: 'danger', size: 'small' }, () => '热')
+          : h('span', null, '-')
+    },
+    {
+      prop: 'isRecommend',
+      label: '推荐',
+      width: 70,
+      align: 'center' as const,
+      formatter: (row: any) =>
+        row.isRecommend
+          ? h(ElTag, { type: 'warning', size: 'small' }, () => '荐')
+          : h('span', null, '-')
+    },
+    {
+      prop: 'operation',
+      label: '操作',
+      width: 200,
+      fixed: 'right' as const,
+      align: 'center' as const,
+      formatter: (row: any) =>
+        h('div', [
+          h(
+            ElButton,
+            { size: 'small', type: 'primary', link: true, onClick: () => handleEdit(row) },
+            () => '编辑'
+          ),
+          h(
+            ElButton,
+            { size: 'small', type: 'success', link: true, onClick: () => handleChapters(row) },
+            () => '章节'
+          ),
+          h(
+            ElButton,
+            { size: 'small', type: 'danger', link: true, onClick: () => handleDelete(row) },
+            () => '删除'
+          )
+        ])
+    }
+  ])
 
   const formData = reactive({
     title: '',

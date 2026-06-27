@@ -37,47 +37,38 @@
     </div>
 
     <!-- 表格 -->
-    <ElTable
-      :data="displayList"
-      stripe
-      border
-      v-loading="isLoading"
-      row-key="id"
-      :default-expand-all="isTree"
-      :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
-      @selection-change="handleSelectionChange"
-    >
-      <ElTableColumn type="selection" width="50" align="center" />
-      <ElTableColumn prop="name" label="分类名称" min-width="200" />
-      <ElTableColumn prop="sort" label="排序" width="100" align="center" />
-      <ElTableColumn label="书籍数量" width="100" align="center">
-        <template #default="{ row }">
-          <ElTag type="primary" effect="plain">{{ row._count?.books ?? 0 }}</ElTag>
+    <ElCard class="art-table-card">
+      <ArtTableHeader :loading="isLoading" @refresh="loadCategories">
+        <template #left>
+          <ElSpace wrap>
+            <ElButton
+              type="success"
+              @click="toggleTree"
+              :icon="isTree ? 'ri:list-check' : 'ri:git-branch-line'"
+            >
+              {{ isTree ? '列表视图' : '树形视图' }}
+            </ElButton>
+            <ElButton v-if="selectedIds.length > 0" type="warning" @click="handleBatchStatus(1)">
+              批量启用 ({{ selectedIds.length }})
+            </ElButton>
+            <ElButton v-if="selectedIds.length > 0" type="info" @click="handleBatchStatus(0)">
+              批量禁用 ({{ selectedIds.length }})
+            </ElButton>
+            <ElButton type="primary" @click="openAddDialog" v-auth="'add'">新增分类</ElButton>
+          </ElSpace>
         </template>
-      </ElTableColumn>
-      <ElTableColumn prop="status" label="状态" width="100" align="center">
-        <template #default="{ row }">
-          <ElTag :type="row.status === 1 ? 'success' : 'info'">
-            {{ row.status === 1 ? '启用' : '禁用' }}
-          </ElTag>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn prop="createdAt" label="创建时间" width="180">
-        <template #default="{ row }">
-          {{ formatDate(row.createdAt) }}
-        </template>
-      </ElTableColumn>
-      <ElTableColumn label="操作" width="200" fixed="right" align="center">
-        <template #default="{ row }">
-          <ElButton size="small" type="primary" link @click="handleEdit(row)" v-auth="'edit'"
-            >编辑</ElButton
-          >
-          <ElButton size="small" type="danger" link @click="handleDelete(row)" v-auth="'delete'"
-            >删除</ElButton
-          >
-        </template>
-      </ElTableColumn>
-    </ElTable>
+      </ArtTableHeader>
+
+      <ArtTable
+        :loading="isLoading"
+        :data="displayList"
+        :columns="columns"
+        row-key="id"
+        :default-expand-all="isTree"
+        :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
+        @selection-change="handleSelectionChange"
+      />
+    </ElCard>
 
     <div class="flex justify-center mt-5">
       <ElEmpty v-if="displayList.length === 0 && !isLoading" description="暂无分类数据" />
@@ -119,6 +110,7 @@
 </template>
 
 <script setup lang="ts">
+  import { h } from 'vue'
   import {
     getBookCategories,
     createBookCategory,
@@ -126,7 +118,7 @@
     deleteBookCategory,
     batchUpdateCategoryStatus
   } from '@/api/reading'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage, ElMessageBox, ElTag, ElButton } from 'element-plus'
 
   defineOptions({ name: 'ReadingCategory' })
 
@@ -148,6 +140,57 @@
     sort: 0,
     status: 1
   })
+
+  // ArtTable 列配置
+  const columns = computed(() => [
+    { type: 'selection' as const, width: 50, align: 'center' as const },
+    { prop: 'name', label: '分类名称', minWidth: 200 },
+    { prop: 'sort', label: '排序', width: 100, align: 'center' as const },
+    {
+      prop: '_count.books',
+      label: '书籍数量',
+      width: 100,
+      align: 'center' as const,
+      formatter: (row: any) =>
+        h(ElTag, { type: 'primary', effect: 'plain' }, () => row._count?.books ?? 0)
+    },
+    {
+      prop: 'status',
+      label: '状态',
+      width: 100,
+      align: 'center' as const,
+      formatter: (row: any) =>
+        h(ElTag, { type: row.status === 1 ? 'success' : 'info' }, () =>
+          row.status === 1 ? '启用' : '禁用'
+        )
+    },
+    {
+      prop: 'createdAt',
+      label: '创建时间',
+      width: 180,
+      formatter: (row: any) => formatDate(row.createdAt)
+    },
+    {
+      prop: 'operation',
+      label: '操作',
+      width: 200,
+      fixed: 'right' as const,
+      align: 'center' as const,
+      formatter: (row: any) =>
+        h('div', [
+          h(
+            ElButton,
+            { size: 'small', type: 'primary', link: true, onClick: () => handleEdit(row) },
+            () => '编辑'
+          ),
+          h(
+            ElButton,
+            { size: 'small', type: 'danger', link: true, onClick: () => handleDelete(row) },
+            () => '删除'
+          )
+        ])
+    }
+  ])
 
   // 树形选择数据（排除当前编辑项的子节点）
   const treeSelectData = computed(() => {

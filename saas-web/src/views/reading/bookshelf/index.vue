@@ -17,84 +17,175 @@
       </ElCol>
     </ElRow>
 
-    <div class="grid grid-cols-4 gap-5 max-2xl:grid-cols-3 max-xl:grid-cols-2 max-sm:grid-cols-1" v-loading="isLoading">
-      <ElCard
-        v-for="item in bookshelfList"
-        :key="item.id"
-        shadow="hover"
-        class="cursor-pointer"
-        @click="$router.push(`/reading/chapters/${item.id}`)"
-      >
-        <div class="flex flex-col items-center py-4">
-          <img
-            v-if="item.cover"
-            :src="item.cover"
-            class="w-20 h-28 object-cover rounded shadow mb-3"
-          />
-          <ArtSvgIcon v-else icon="ri:book-2-line" class="text-5xl text-primary mb-3" />
-          <h3 class="text-base font-medium text-g-800 text-center line-clamp-1">{{ item.title }}</h3>
-          <p class="text-sm text-g-500 mt-1">{{ item.author }}</p>
-          <p class="text-xs text-g-400 mt-1">
-            {{ item.chapterCount || 0 }} 章 · {{ (item.wordCount || 0).toLocaleString() }} 字
-          </p>
-        </div>
-      </ElCard>
-    </div>
+    <!-- 表格 -->
+    <ElCard class="art-table-card">
+      <ArtTableHeader :loading="isLoading" @refresh="loadBooks">
+        <template #left>
+          <ElSpace wrap>
+            <ElButton type="primary" @click="$router.push('/reading/books')">管理图书</ElButton>
+          </ElSpace>
+        </template>
+      </ArtTableHeader>
 
-    <div class="flex justify-center mt-5">
-      <ElEmpty v-if="!isLoading && bookshelfList.length === 0" description="暂无图书数据" />
-      <ElPagination
-        v-if="total > pageSize"
-        v-model:current-page="currentPage"
-        :page-size="pageSize"
-        :total="total"
-        background
-        layout="prev, pager, next, total"
-        @current-change="handlePageChange"
+      <ArtTable
+        :loading="isLoading"
+        :data="bookshelfList"
+        :columns="columns"
+        :pagination="pagination"
+        :pagination-options="paginationOptions"
+        @pagination:size-change="handleSizeChange"
+        @pagination:current-change="handlePageChange"
       />
-    </div>
+    </ElCard>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Search } from '@element-plus/icons-vue'
-import { getBooks } from '@/api/reading'
+  import { h } from 'vue'
+  import { Search } from '@element-plus/icons-vue'
+  import { getBooks } from '@/api/reading'
+  import { ElMessage, ElTag, ElButton, ElImage } from 'element-plus'
+  import { useRouter } from 'vue-router'
 
-defineOptions({ name: 'ReadingBookshelf' })
+  defineOptions({ name: 'ReadingBookshelf' })
 
-const searchVal = ref('')
-const isLoading = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(12)
-const total = ref(0)
-const bookshelfList = ref<any[]>([])
+  const router = useRouter()
+  const searchVal = ref('')
+  const isLoading = ref(false)
+  const currentPage = ref(1)
+  const pageSize = ref(20)
+  const total = ref(0)
+  const bookshelfList = ref<any[]>([])
 
-const loadBooks = async () => {
-  isLoading.value = true
-  try {
-    const params: any = { page: currentPage.value, pageSize: pageSize.value }
-    if (searchVal.value) params.keyword = searchVal.value
-    const res = (await getBooks(params)) as any
-    bookshelfList.value = res?.items || []
-    total.value = res?.total || 0
-  } catch {
-    ElMessage.error('加载图书失败')
-  } finally {
-    isLoading.value = false
+  // 分页配置
+  const pagination = computed(() => ({
+    total: total.value,
+    current: currentPage.value,
+    size: pageSize.value
+  }))
+
+  const paginationOptions = {
+    pageSizes: [10, 20, 50, 100]
   }
-}
 
-const handleSearch = () => {
-  currentPage.value = 1
-  loadBooks()
-}
+  // ArtTable 列配置
+  const columns = computed(() => [
+    { type: 'index' as const, width: 60, label: '序号', align: 'center' as const },
+    {
+      prop: 'cover',
+      label: '封面',
+      width: 80,
+      align: 'center' as const,
+      formatter: (row: any) =>
+        row.cover
+          ? h(ElImage, {
+              src: row.cover,
+              style: 'width: 40px; height: 56px; object-fit: cover; border-radius: 4px;',
+              previewSrcList: [row.cover],
+              previewTeleported: true
+            })
+          : h('span', { class: 'text-gray-400' }, '无图')
+    },
+    { prop: 'title', label: '书名', minWidth: 200, showOverflowTooltip: true },
+    { prop: 'author', label: '作者', width: 120 },
+    {
+      prop: 'category.name',
+      label: '分类',
+      width: 100,
+      formatter: (row: any) => row.category?.name || '-'
+    },
+    {
+      prop: 'wordCount',
+      label: '字数',
+      width: 100,
+      align: 'center' as const,
+      formatter: (row: any) => {
+        const count = row.wordCount || 0
+        return count >= 10000 ? (count / 10000).toFixed(1) + '万' : count.toLocaleString()
+      }
+    },
+    { prop: 'chapterCount', label: '章节', width: 80, align: 'center' as const },
+    {
+      prop: 'rating',
+      label: '评分',
+      width: 80,
+      align: 'center' as const,
+      formatter: (row: any) => h('span', { class: 'text-orange-500' }, row.rating || '-')
+    },
+    {
+      prop: 'readCount',
+      label: '阅读量',
+      width: 100,
+      align: 'center' as const,
+      formatter: (row: any) => {
+        const count = row.readCount || 0
+        return count >= 10000 ? (count / 10000).toFixed(1) + '万' : count.toLocaleString()
+      }
+    },
+    {
+      prop: 'status',
+      label: '状态',
+      width: 80,
+      align: 'center' as const,
+      formatter: (row: any) =>
+        h(ElTag, { type: row.status === 1 ? 'success' : 'info' }, () =>
+          row.status === 1 ? '上架' : '下架'
+        )
+    },
+    {
+      prop: 'operation',
+      label: '操作',
+      width: 120,
+      fixed: 'right' as const,
+      align: 'center' as const,
+      formatter: (row: any) =>
+        h('div', [
+          h(
+            ElButton,
+            {
+              size: 'small',
+              type: 'primary',
+              link: true,
+              onClick: () => router.push(`/reading/chapters/${row.id}`)
+            },
+            () => '查看章节'
+          )
+        ])
+    }
+  ])
 
-const handlePageChange = (val: number) => {
-  currentPage.value = val
-  loadBooks()
-}
+  const loadBooks = async () => {
+    isLoading.value = true
+    try {
+      const params: any = { page: currentPage.value, pageSize: pageSize.value }
+      if (searchVal.value) params.keyword = searchVal.value
+      const res = (await getBooks(params)) as any
+      bookshelfList.value = res?.items || []
+      total.value = res?.total || 0
+    } catch {
+      ElMessage.error('加载图书失败')
+    } finally {
+      isLoading.value = false
+    }
+  }
 
-onMounted(() => {
-  loadBooks()
-})
+  const handleSearch = () => {
+    currentPage.value = 1
+    loadBooks()
+  }
+
+  const handlePageChange = (val: number) => {
+    currentPage.value = val
+    loadBooks()
+  }
+
+  const handleSizeChange = (val: number) => {
+    pageSize.value = val
+    currentPage.value = 1
+    loadBooks()
+  }
+
+  onMounted(() => {
+    loadBooks()
+  })
 </script>
