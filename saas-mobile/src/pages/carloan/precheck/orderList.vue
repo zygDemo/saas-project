@@ -739,26 +739,33 @@
       <u-popup v-model="flowRecordVisible" mode="bottom" :round="16" :closeable="true">
         <view class="flow-record-popup">
           <view class="flow-record-header">
+            <view class="flow-record-header__bar" />
             <text class="flow-record-title">流程记录</text>
+            <text v-if="flowRecordList.length > 0" class="flow-record-header__count">{{ flowRecordList.length }} 条记录</text>
           </view>
           <view v-if="flowRecordLoading" class="flow-record-loading">
             <u-loading mode="circle" />
-            <text class="ml-2">加载中...</text>
+            <text class="flow-record-loading__text">加载中...</text>
           </view>
           <view v-else-if="flowRecordList.length === 0" class="flow-record-empty">
             <u-empty mode="list" text="暂无流程记录" />
           </view>
           <view v-else class="flow-record-container">
-            <view v-for="(item, idx) in flowRecordList" :key="idx" class="flow-record-item">
-              <view class="flow-record__dot" :class="dotClass(item)" />
+            <view v-for="(item, idx) in flowRecordList" :key="idx" class="flow-record-item"
+              :class="{ 'flow-record-item--first': idx === 0, 'flow-record-item--last': idx === flowRecordList.length - 1 }">
+              <view class="flow-record__timeline">
+                <view class="flow-record__line flow-record__line--before" />
+                <view class="flow-record__dot" :class="dotClass(item)" />
+                <view class="flow-record__line flow-record__line--after" />
+              </view>
               <view class="flow-record__content">
                 <view class="flow-record__header">
-                  <text class="flow-record__node">{{ item.currentNode }}</text>
+                  <text class="flow-record__node">{{ getFlowNodeLabel(item.currentNode) }}</text>
                   <text class="flow-record__status" :class="statusClass(item)">
                     {{ item.approvalStatus }}
                   </text>
                 </view>
-                <view class="flow-record__meta">
+                <view v-if="item.approveName || item.approvalTime" class="flow-record__meta">
                   <text v-if="item.approveName" class="flow-record__approver">
                     {{ item.approveName }}
                   </text>
@@ -3278,6 +3285,44 @@ function dotClass(item: any) {
 
 
 
+
+/** 流程节点 key → 中文标签映射 */
+const FLOW_NODE_LABEL_MAP: Record<string, string> = {
+  '1100': '预审进件',
+  '1200': '风控预审',
+  '1250': '资方预审',
+  '1300': '资方预审',
+  '1400': '资料补充',
+  '1600': '资料补充',
+  '2100': '风控初审',
+  '2200': '风控终审',
+  '3100': '资方终审',
+  '4100': '客户签约',
+  '5100': '请款资料',
+  '6100': '资方放款',
+  // 英文枚举兼容
+  INITIAL_AUDIT: '预审进件',
+  PRE_AUDIT: '风控预审',
+  FUNDER_PRE_AUDIT: '资方预审',
+  SUPPLEMENT: '资料补充',
+  SUPPLEMENT_MATERIALS: '资料补充',
+  FIRST_REVIEW: '风控初审',
+  FINAL_REVIEW: '风控终审',
+  FUNDER_REVIEW: '资方终审',
+  SIGN_CONTRACT: '客户签约',
+  LOAN_REQUEST: '请款资料',
+  LOAN_DISBURSEMENT: '资方放款',
+}
+
+function getFlowNodeLabel(key: unknown): string {
+  if (key === undefined || key === null || String(key).trim() === '') return '未知节点'
+  const code = String(key).trim()
+  if (FLOW_NODE_LABEL_MAP[code]) return FLOW_NODE_LABEL_MAP[code]
+  // 数字编码模糊匹配：1250 → 1300，1200/1299 → 1200
+  if (code.startsWith('125')) return FLOW_NODE_LABEL_MAP['1300']
+  const normalized = code.length >= 3 ? `${code.slice(0, 2)}00` : code
+  return FLOW_NODE_LABEL_MAP[normalized] || code
+}
 
 function statusClass(item: any) {
 
