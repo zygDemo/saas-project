@@ -179,24 +179,111 @@
     </ElDialog>
 
     <!-- 详情抽屉 -->
-    <ElDrawer v-model="detailVisible" :title="`${displayTitle}详情`" size="640px">
-      <ElDescriptions v-if="currentRow" :column="1" border>
-        <ElDescriptionsItem
-          v-for="column in detailColumns"
-          :key="column.prop"
-          :label="column.label"
-        >
-          {{ formatCell(currentRow, column.prop) }}
-        </ElDescriptionsItem>
-      </ElDescriptions>
-      <ElDivider>原始数据</ElDivider>
-      <pre class="detail-json">{{ JSON.stringify(currentRow, null, 2) }}</pre>
+    <ElDrawer
+      v-model="detailVisible"
+      :title="`${displayTitle}详情`"
+      :size="hasPhaseTabs ? '85%' : '640px'"
+      :with-header="true"
+    >
+      <!-- 阶段模块：增强视图，带标签页 -->
+      <template v-if="hasPhaseTabs && currentRow">
+        <div class="detail-drawer__header-info">
+          <ElDescriptions :column="4" border size="small">
+            <ElDescriptionsItem
+              v-for="col in summaryFields"
+              :key="col.prop"
+              :label="col.label"
+            >
+              {{ formatCell(currentRow, col.prop) }}
+            </ElDescriptionsItem>
+          </ElDescriptions>
+        </div>
+        <ElTabs v-model="activeMainTab" class="detail-drawer__main-tabs">
+          <ElTabPane label="申请信息" name="application">
+            <div class="detail-drawer__body">
+              <div class="detail-drawer__sidebar">
+                <div
+                  v-for="node in phaseNodeTabs"
+                  :key="node.value"
+                  class="detail-drawer__sidebar-item"
+                  :class="{ 'is-active': activeSideTab === String(node.value) }"
+                  @click="activeSideTab = String(node.value)"
+                >
+                  {{ node.label }}
+                </div>
+              </div>
+              <div class="detail-drawer__side-content">
+                <ElDescriptions
+                  :column="2"
+                  border
+                  :content-style="{ paddingBottom: '12px' }"
+                >
+                  <ElDescriptionsItem
+                    v-for="field in currentSideFields"
+                    :key="field.prop"
+                    :label="field.label"
+                  >
+                    {{ formatCell(currentRow, field.prop) }}
+                  </ElDescriptionsItem>
+                </ElDescriptions>
+                <div v-if="!currentSideFields.length" class="detail-drawer__empty">
+                  暂无此节点数据
+                </div>
+              </div>
+            </div>
+          </ElTabPane>
+          <ElTabPane label="关联订单" name="related">
+            <div class="detail-drawer__tab-content">
+              <ElDescriptions
+                v-if="currentRow"
+                :column="2"
+                border
+                :content-style="{ paddingBottom: '12px' }"
+              >
+                <ElDescriptionsItem
+                  v-for="column in detailColumns"
+                  :key="column.prop"
+                  :label="column.label"
+                >
+                  {{ formatCell(currentRow, column.prop) }}
+                </ElDescriptionsItem>
+              </ElDescriptions>
+            </div>
+          </ElTabPane>
+          <ElTabPane label="流程信息" name="flow">
+            <div class="detail-drawer__tab-content">
+              <ElEmpty description="暂无流程信息" />
+            </div>
+          </ElTabPane>
+        </ElTabs>
+      </template>
+      <!-- 非阶段模块：基础视图 -->
+      <template v-else>
+        <div class="detail-drawer__content">
+          <ElDescriptions
+            v-if="currentRow"
+            :column="{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2 }"
+            border
+            :content-style="{ paddingBottom: '12px' }"
+          >
+            <ElDescriptionsItem
+              v-for="column in detailColumns"
+              :key="column.prop"
+              :label="column.label"
+            >
+              {{ formatCell(currentRow, column.prop) }}
+            </ElDescriptionsItem>
+          </ElDescriptions>
+          <ElDivider>原始数据</ElDivider>
+          <pre class="detail-json">{{ JSON.stringify(currentRow, null, 2) }}</pre>
+        </div>
+      </template>
     </ElDrawer>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { computed, h, onActivated, onMounted, watch } from 'vue'
+  import { computed, h, onActivated, onMounted, ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import { ElTag, ElButton, ElSpace } from 'element-plus'
   import { useBusinessList } from './common/useBusinessList'
@@ -220,6 +307,37 @@
   } = useBusinessList()
 
   const route = useRoute()
+
+  // ==================== 详情增强 ====================
+  const activeMainTab = ref('application')
+  const activeSideTab = ref('')
+
+  const hasPhaseTabs = computed(() => phaseNodeTabs.value.length > 0)
+
+  // 摘要字段：取 detailColumns 前4项作为抽屉顶部摘要
+  const summaryFields = computed(() => detailColumns.value.slice(0, 4))
+
+  // 子节点 → 字段关键词映射，用于按节点筛选字段
+  const sideTabFieldKeywords: Record<number, string[]> = {
+    1100: ['customer', 'name', 'phone', 'idCard', 'gender', 'birth', 'address', 'emergency', 'contact'],
+    1110: ['plate', 'vin', 'car', 'vehicle', 'engine', 'brand', 'model', 'mileage', 'color'],
+    1120: ['application', 'order', 'amount', 'term', 'rate', 'purpose', 'product', 'repayment', 'method'],
+    1130: ['contract', 'sign', 'video', 'auth', 'signed'],
+    1140: ['status', 'current', 'node'],
+    1200: ['risk', 'credit', 'score', 'review'],
+    1250: ['funder', 'approve', 'approval']
+  }
+
+  // 当前选中子节点对应的字段列表
+  const currentSideFields = computed(() => {
+    const nodeValue = Number(activeSideTab.value)
+    const keywords = sideTabFieldKeywords[nodeValue]
+    if (!keywords || !keywords.length) return detailColumns.value
+    return detailColumns.value.filter(col =>
+      keywords.some(kw => col.prop.toLowerCase().includes(kw.toLowerCase()))
+    )
+  })
+
 
   // ArtTable columns 配置（依赖 render function，保留在 .vue 中）
   const tableColumns = computed(() => {
@@ -323,10 +441,22 @@
   onMounted(() => loadData())
   onActivated(() => loadData())
 
+  // 打开详情抽屉时重置标签页状态
+  watch(detailVisible, (visible) => {
+    if (visible) {
+      activeMainTab.value = 'application'
+      activeSideTab.value = phaseNodeTabs.value.length > 0
+        ? String(phaseNodeTabs.value[0].value)
+        : ''
+    }
+  })
+
   // 路由变化时重新加载
   watch(
     () => route.path,
     () => {
+      activeMainTab.value = 'application'
+      activeSideTab.value = ''
       resetRuntimeState()
       loadData()
     }
@@ -501,5 +631,100 @@
     .org-summary {
       grid-template-columns: 1fr;
     }
+  }
+
+  .detail-drawer__content {
+    padding: 8px 0 24px 0;
+  }
+
+  .detail-drawer__content .el-descriptions__label {
+    width: 100px !important;
+  }
+
+  .detail-json {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 12px;
+    background-color: var(--el-fill-color-lighter);
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  /* ========== 增强详情抽屉样式 ========== */
+  .detail-drawer__header-info {
+    padding: 0 0 12px 0;
+  }
+
+  .detail-drawer__main-tabs {
+    height: 100%;
+  }
+
+  .detail-drawer__main-tabs :deep(.el-tabs__header) {
+    margin-bottom: 12px;
+  }
+
+  .detail-drawer__main-tabs :deep(.el-tabs__content) {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .detail-drawer__main-tabs :deep(.el-tab-pane) {
+    height: 100%;
+  }
+
+  .detail-drawer__body {
+    display: flex;
+    gap: 0;
+    min-height: 400px;
+    max-height: calc(100vh - 260px);
+  }
+
+  .detail-drawer__sidebar {
+    flex: 0 0 150px;
+    border-right: 1px solid var(--el-border-color-lighter);
+    overflow-y: auto;
+  }
+
+  .detail-drawer__sidebar-item {
+    padding: 10px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--el-text-color-regular);
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+    white-space: nowrap;
+  }
+
+  .detail-drawer__sidebar-item:hover {
+    background: var(--el-fill-color-light);
+    color: var(--el-text-color-primary);
+  }
+
+  .detail-drawer__sidebar-item.is-active {
+    background: var(--el-fill-color-light);
+    color: var(--el-color-primary);
+    border-left-color: var(--el-color-primary);
+    font-weight: 600;
+  }
+
+  .detail-drawer__side-content {
+    flex: 1;
+    min-width: 0;
+    padding: 0 16px;
+    overflow-y: auto;
+  }
+
+  .detail-drawer__tab-content {
+    padding: 16px 0;
+    overflow-y: auto;
+    max-height: calc(100vh - 300px);
+  }
+
+  .detail-drawer__empty {
+    padding: 40px 0;
+    text-align: center;
+    color: var(--el-text-color-secondary);
+    font-size: 13px;
   }
 </style>

@@ -216,4 +216,10 @@ export class ApplicationController {
   settle(@Param('id') id: string, @Body() dto: SettleApplicationDto) {
     return this.service.settle(Number(id), dto)
   }
+
+  @Get('lifecycle/:id')
+  @ApiOperation({ summary: '获取订单生命周期节点列表，用于时间轴展示' })
+  getLifecycle(@Param('id') id: string) {
+    return this.service.getLifecycle(Number(id))
+  }
 }

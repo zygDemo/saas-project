@@ -1707,4 +1707,91 @@ export class ApplicationService extends BaseBusinessCrudService<
 
     await tx.repaymentPlan.createMany({ data: plans })
   }
+
+  /**
+   * 获取订单生命周期节点列表，用于前端时间轴展示
+   * 返回扁平化的每个处理步骤，包含审批/提交/完成记录
+   */
+  async getLifecycle(id: number) {
+    const tenantId = getCurrentTenantId();
+    const where = { id, tenantId };
+
+    // 获取订单基本信息 + 所有审批记录
+    const application = await this.prisma.application.findFirst({
+      where,
+      include: {
+        approvals: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            approver: { select: { id: true, userName: true, nickName: true } },
+          },
+        },
+        // TODO: 未来可以补充节点提交记录（用户提交每个节点信息）
+        // 目前只有审批记录，足够展示核心生命周期
+      },
+    });
+
+    if (!application) throw new NotFoundException('订单不存在');
+
+    // 将审批记录转换为要求的格式
+    // 按时间倒序排列，最新的在前面
+    const lifecycle = application.approvals.map((approval) => ({
+      id: approval.id,
+      currentNode: approval.stage,
+      nextNode: null, // TODO: 根据流程配置获取下一节点
+      approveName: approval.approver.nickName || approval.approver.userName,
+      approvalTime: this.formatDatetime(approval.createdAt),
+      approvalReason: approval.opinion || null,
+      reasonExternal: null,
+      rejectReason: approval.action === 'REJECT' ? (approval.opinion || null) : null,
+      rejectReasonSecond: null,
+      approvalStatus: this.mapApprovalActionToStatus(approval.action),
+      approvalCost: approval.amount || null,
+      aiReporTime: null,
+      aiReportStatus: null,
+      auditResults: null,
+    }));
+
+    // 如果当前还有待处理节点，在开头添加一个待处理条目
+    // （因为它还没有审批记录）
+    if (application.currentNode && application.currentStatus === 10) {
+      lifecycle.unshift({
+        id: null,
+        currentNode: String(application.currentNode),
+        nextNode: null,
+        approveName: null,
+        approvalTime: null,
+        approvalReason: null,
+        reasonExternal: null,
+        rejectReason: null,
+        rejectReasonSecond: null,
+        approvalStatus: '待处理',
+        approvalCost: null,
+        aiReporTime: null,
+        aiReportStatus: null,
+        auditResults: null,
+      });
+    }
+
+    return lifecycle;
+  }
+
+  private formatDatetime(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
+
+  private mapApprovalActionToStatus(action: string): string {
+    const map: Record<string, string> = {
+      PASS: '通过',
+      REJECT: '拒绝',
+      SUPPLEMENT: '要求补件',
+    };
+    return map[action] || action;
+  }
 }

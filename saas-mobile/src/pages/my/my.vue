@@ -8,7 +8,7 @@
               :text="avatarText"
               size="128"
               bg-color="#ffffff"
-              color="#2563eb"
+              color="var(--u-type-primary)"
             />
 
             <view class="profile-panel__info">
@@ -41,7 +41,7 @@
               <text class="section-subtitle">同步查看线索、进件和放款数据</text>
             </view>
             <view class="refresh-chip" @click="loadBusinessStats">
-              <u-icon name="reload" size="24" color="#2563eb" />
+              <u-icon name="reload" size="24" color="var(--u-type-primary)" />
               <text>刷新</text>
             </view>
           </view>
@@ -460,7 +460,7 @@ onShow(() => {
 .profile-panel {
   padding: 30rpx;
   color: #ffffff;
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 48%, #14b8a6 100%);
+  background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 48%, var(--u-type-primary-light) 100%);
 }
 
 .profile-panel__header {
@@ -618,7 +618,7 @@ onShow(() => {
 
 .stat-item__icon--lead,
 .menu-item__icon--setting {
-  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-disabled));
 }
 
 .stat-item__icon--entry,
