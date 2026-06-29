@@ -589,7 +589,6 @@ async function main() {
     'BusinessFunderFinal',
     'BusinessSigning',
     'BusinessDisbursement',
-    'BusinessPostLoan',
     'BusinessOrderQuery',
     'Reports'
   )
@@ -611,13 +610,11 @@ async function main() {
     'Business',
     'BusinessSigning',
     'BusinessDisbursement',
-    'BusinessPostLoan',
     'BusinessOrderQuery',
     'Reports'
   )
   const bizCsIds = filterIds(
     'Business',
-    'BusinessPostLoan',
     'BusinessOrderQuery'
   )
   const bizManagerIds = filterIds(
@@ -629,7 +626,6 @@ async function main() {
     'BusinessFunderFinal',
     'BusinessSigning',
     'BusinessDisbursement',
-    'BusinessPostLoan',
     'BusinessOrderQuery',
     'Reports'
   )
@@ -642,7 +638,6 @@ async function main() {
     'BusinessFunderFinal',
     'BusinessSigning',
     'BusinessDisbursement',
-    'BusinessPostLoan',
     'BusinessOrderQuery',
     'Reports'
   )
@@ -1128,16 +1123,6 @@ async function seedAllMenus(tenantId: number) {
     sort: 69,
     keepAlive: true
   })
-  const businessPostLoan = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'post-loan',
-    name: 'BusinessPostLoan',
-    component: bp,
-    title: '贷后阶段',
-    icon: 'ri:refund-line',
-    sort: 68,
-    keepAlive: true
-  })
   const org = await upsertMenu(tenantId, {
     parentId: orgConfigRoot.id,
     path: 'org',
@@ -1188,116 +1173,6 @@ async function seedAllMenus(tenantId: number) {
     sort: 61,
     keepAlive: true
   })
-  const preEntry = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'pre-entry',
-    name: 'PreEntry',
-    component: bp,
-    title: '预审进件',
-    icon: 'ri:file-edit-line',
-    sort: 67,
-    keepAlive: true
-  })
-  const riskPre = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'risk-pre',
-    name: 'RiskPre',
-    component: bp,
-    title: '风控预审',
-    icon: 'ri:robot-2-line',
-    sort: 68,
-    keepAlive: true
-  })
-  const funderPre = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'funder-pre',
-    name: 'FunderPre',
-    component: bp,
-    title: '资方预审',
-    icon: 'ri:bank-card-line',
-    sort: 69,
-    keepAlive: true
-  })
-  const supplement = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'supplement',
-    name: 'Supplement',
-    component: bp,
-    title: '资料补充',
-    icon: 'ri:folder-upload-line',
-    sort: 70,
-    keepAlive: true
-  })
-  const firstReview = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'first-review',
-    name: 'FirstReview',
-    component: bp,
-    title: '风控初审',
-    icon: 'ri:shield-check-line',
-    sort: 71,
-    keepAlive: true
-  })
-  const finalReview = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'final-review',
-    name: 'FinalReview',
-    component: bp,
-    title: '风控终审',
-    icon: 'ri:verified-badge-line',
-    sort: 72,
-    keepAlive: true
-  })
-  const loanRequest = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'loan-request',
-    name: 'LoanRequest',
-    component: bp,
-    title: '请款资料',
-    icon: 'ri:file-paper-2-line',
-    sort: 73,
-    keepAlive: true
-  })
-  const funderFinal = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'funder-final',
-    name: 'FunderFinal',
-    component: bp,
-    title: '资方终审',
-    icon: 'ri:bank-line',
-    sort: 74,
-    keepAlive: true
-  })
-  const disbursementNode = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'disbursement-node',
-    name: 'DisbursementNode',
-    component: bp,
-    title: '资方放款',
-    icon: 'ri:money-cny-circle-line',
-    sort: 75,
-    keepAlive: true
-  })
-  const customer = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'customer',
-    name: 'Customer',
-    component: bp,
-    title: '客户管理',
-    icon: 'ri:contacts-line',
-    sort: 76,
-    keepAlive: true
-  })
-  const application = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'application',
-    name: 'Application',
-    component: bp,
-    title: '全部进件',
-    icon: 'ri:file-edit-line',
-    sort: 77,
-    keepAlive: true
-  })
   const orderQuery = await upsertMenu(tenantId, {
     parentId: business.id,
     path: 'order-query',
@@ -1308,56 +1183,6 @@ async function seedAllMenus(tenantId: number) {
     sort: 67,
     keepAlive: true
   })
-  const approval = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'approval',
-    name: 'Approval',
-    component: bp,
-    title: '审批记录',
-    icon: 'ri:shield-check-line',
-    sort: 79,
-    keepAlive: true
-  })
-  const signing = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'signing',
-    name: 'Signing',
-    component: bp,
-    title: '签约管理',
-    icon: 'ri:pen-nib-line',
-    sort: 80,
-    keepAlive: true
-  })
-  const disbursement = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'disbursement',
-    name: 'Disbursement',
-    component: bp,
-    title: '放款管理',
-    icon: 'ri:money-cny-circle-line',
-    sort: 81,
-    keepAlive: true
-  })
-  const orderMgmt = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'order',
-    name: 'OrderMgmt',
-    component: bp,
-    title: '订单管理',
-    icon: 'ri:file-list-2-line',
-    sort: 82,
-    keepAlive: true
-  })
-  const repayment = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'repayment',
-    name: 'Repayment',
-    component: bp,
-    title: '还款管理',
-    icon: 'ri:refund-line',
-    sort: 83,
-    keepAlive: true
-  })
   const reports = await upsertMenu(tenantId, {
     parentId: business.id,
     path: 'reports',
@@ -1366,16 +1191,6 @@ async function seedAllMenus(tenantId: number) {
     title: '报表统计',
     icon: 'ri:pie-chart-line',
     sort: 70,
-    keepAlive: true
-  })
-  const orgConfig = await upsertMenu(tenantId, {
-    parentId: business.id,
-    path: 'org-config',
-    name: 'OrgConfig',
-    component: bp,
-    title: '机构配置',
-    icon: 'ri:tools-line',
-    sort: 85,
     keepAlive: true
   })
 
@@ -1425,8 +1240,7 @@ async function seedAllMenus(tenantId: number) {
               'BusinessFunderFinal',
               'BusinessSigning',
               'BusinessDisbursement',
-              'BusinessPostLoan',
-              'BusinessOrderQuery',
+                        'BusinessOrderQuery',
               'Reports'
             ]
           }
@@ -1482,8 +1296,7 @@ async function seedAllMenus(tenantId: number) {
               'BusinessFunderFinal',
               'BusinessSigning',
               'BusinessDisbursement',
-              'BusinessPostLoan',
-              'BusinessOrderQuery',
+                        'BusinessOrderQuery',
               'Reports'
             ]
           }
@@ -1520,7 +1333,6 @@ async function seedAllMenus(tenantId: number) {
     businessFunderFinal,
     businessSigning,
     businessDisbursement,
-    businessPostLoan,
     orderQuery,
     org,
     dept,
@@ -1528,24 +1340,7 @@ async function seedAllMenus(tenantId: number) {
     funder,
     flowConfig,
     lead,
-    preEntry,
-    riskPre,
-    funderPre,
-    supplement,
-    firstReview,
-    finalReview,
-    loanRequest,
-    funderFinal,
-    disbursementNode,
-    customer,
-    application,
-    approval,
-    signing,
-    disbursement,
-    orderMgmt,
-    repayment,
     reports,
-    orgConfig,
     menu,
     dictMgmt,
     regionMgmt,
@@ -1614,27 +1409,9 @@ async function seedAllMenus(tenantId: number) {
     businessFunderFinal,
     businessSigning,
     businessDisbursement,
-    businessPostLoan,
     lead,
-    preEntry,
-    riskPre,
-    funderPre,
-    supplement,
-    firstReview,
-    finalReview,
-    loanRequest,
-    funderFinal,
-    disbursementNode,
-    customer,
-    application,
     orderQuery,
-    approval,
-    signing,
-    disbursement,
-    orderMgmt,
-    repayment,
     reports,
-    orgConfig
   ]
 }
 
