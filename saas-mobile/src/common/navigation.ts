@@ -1,4 +1,5 @@
 import type { TabbarItem } from "uview-pro/types/global";
+import type { RouteQueryRecord } from "./carloan-route-query";
 
 export const APP_ROUTES = {
   portal: {
@@ -126,7 +127,6 @@ export interface LayoutTabbarItem extends TabbarItem {
   navMode: NavigationMode;
 }
 
-
 export {
   buildDetailRouteQuery,
   buildEntryRouteQuery,
@@ -143,19 +143,26 @@ export type {
   RouteQueryValue,
 } from "./carloan-route-query";
 
-export function buildRoute(route: string, query?: string | RouteQueryRecord): string {
+export function buildRoute(
+  route: string,
+  query?: string | RouteQueryRecord,
+): string {
   const normalizedRoute = normalizeRoute(route);
   const queryString = toRouteQueryString(query);
   return queryString ? `${normalizedRoute}?${queryString}` : normalizedRoute;
 }
 
-export function buildHashRoute(route: string, query?: string | RouteQueryRecord): string {
+export function buildHashRoute(
+  route: string,
+  query?: string | RouteQueryRecord,
+): string {
   return `#${buildRoute(route, query)}`;
 }
 
-const SYSTEM_TABBAR_ROUTES = new Set([
+const SYSTEM_TABBAR_ROUTES: Set<string> = new Set([
   APP_ROUTES.portal.home,
   APP_ROUTES.carloan.home,
+  APP_ROUTES.carloan.orders,
   APP_ROUTES.reading.home,
   APP_ROUTES.my.home,
 ]);
@@ -193,10 +200,10 @@ const CARLOAN_TABBAR_ITEMS: LayoutTabbarItem[] = [
   },
   {
     text: "订单",
-    iconPath: "list",
-    selectedIconPath: "list-fill",
+    iconPath: "order",
+    selectedIconPath: "order",
     route: APP_ROUTES.carloan.orders,
-    navMode: "redirectTo",
+    navMode: "switchTab",
     customIcon: false,
     count: 0,
   },
@@ -224,7 +231,7 @@ const FOOD_TABBAR_ITEMS: LayoutTabbarItem[] = [
   {
     text: "订单",
     iconPath: "list",
-    selectedIconPath: "list-fill",
+    selectedIconPath: "list",
     route: APP_ROUTES.food.orders,
     navMode: "redirectTo",
     customIcon: false,
@@ -271,15 +278,17 @@ const READING_TABBAR_ITEMS: LayoutTabbarItem[] = [
   },
 ];
 
-export function getLayoutTabbar(scope: TabbarScope = TABBAR_SCOPES.portal): LayoutTabbarItem[] {
+export function getLayoutTabbar(
+  scope: TabbarScope = TABBAR_SCOPES.portal,
+): LayoutTabbarItem[] {
   const source =
     scope === TABBAR_SCOPES.carloan
       ? CARLOAN_TABBAR_ITEMS
       : scope === TABBAR_SCOPES.reading
         ? READING_TABBAR_ITEMS
         : scope === TABBAR_SCOPES.food
-        ? FOOD_TABBAR_ITEMS
-        : PORTAL_TABBAR_ITEMS;
+          ? FOOD_TABBAR_ITEMS
+          : PORTAL_TABBAR_ITEMS;
 
   return source.map((item) => ({ ...item }));
 }
@@ -380,7 +389,12 @@ function toRouteQueryString(query?: string | RouteQueryRecord): string {
   }
 
   return Object.entries(query)
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+    .filter(
+      ([, value]) => value !== undefined && value !== null && value !== "",
+    )
+    .map(
+      ([key, value]) =>
+        `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
+    )
     .join("&");
 }

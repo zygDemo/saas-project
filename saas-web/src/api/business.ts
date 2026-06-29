@@ -66,22 +66,22 @@ export function fetchBusinessDetail<T = Record<string, unknown>>(module: string,
 
 export function fetchBusinessCreate<T = Record<string, unknown>>(
   module: string,
-  params: Record<string, unknown>
+  data: Record<string, unknown>
 ) {
   return request.post<T>({
     url: `/${module}`,
-    params
+    data
   })
 }
 
 export function fetchBusinessUpdate<T = Record<string, unknown>>(
   module: string,
   id: number,
-  params: Record<string, unknown>
+  data: Record<string, unknown>
 ) {
   return request.post<T>({
     url: `/${module}/${id}`,
-    params
+    data
   })
 }
 
@@ -93,11 +93,11 @@ export function fetchBusinessDelete(module: string, id: number) {
 
 export function fetchBusinessAction<T = Record<string, unknown>>(
   url: string,
-  params?: Record<string, unknown>
+  data?: Record<string, unknown>
 ) {
   return request.post<T>({
     url,
-    params: params || {}
+    data: data || {}
   })
 }
 

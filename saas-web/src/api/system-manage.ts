@@ -11,7 +11,7 @@ export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
 export function fetchCreateUser(params: Api.SystemManage.CreateUserParams) {
   return request.post<Api.SystemManage.UserListItem>({
     url: '/user/create',
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -19,7 +19,7 @@ export function fetchCreateUser(params: Api.SystemManage.CreateUserParams) {
 export function fetchUpdateUser(id: number, params: Api.SystemManage.UpdateUserParams) {
   return request.post<Api.SystemManage.UserListItem>({
     url: `/user/${id}`,
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -41,7 +41,7 @@ export function fetchGetRoleList(params: Api.SystemManage.RoleSearchParams) {
 export function fetchCreateRole(params: Api.SystemManage.CreateRoleParams) {
   return request.post<Api.SystemManage.RoleListItem>({
     url: '/role/create',
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -49,7 +49,7 @@ export function fetchCreateRole(params: Api.SystemManage.CreateRoleParams) {
 export function fetchUpdateRole(id: number, params: Api.SystemManage.UpdateRoleParams) {
   return request.post<Api.SystemManage.RoleListItem>({
     url: `/role/${id}`,
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -73,7 +73,7 @@ export function fetchSaveRolePermissions(
 ) {
   return request.post<Api.SystemManage.RolePermission>({
     url: `/role/${id}/permissions`,
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -87,14 +87,14 @@ export function fetchGetMenuList() {
 export function fetchCreateMenu(params: Api.SystemManage.SaveMenuParams) {
   return request.post<AppRouteRecord>({
     url: '/v3/system/menus',
-    params
+    data: params
   })
 }
 
 export function fetchUpdateMenu(id: number, params: Api.SystemManage.SaveMenuParams) {
   return request.post<AppRouteRecord>({
     url: `/v3/system/menus/${id}`,
-    params
+    data: params
   })
 }
 
@@ -110,14 +110,14 @@ export function fetchCreatePermission(
 ) {
   return request.post<Api.SystemManage.PermissionItem>({
     url: `/v3/system/menus/${menuId}/permissions`,
-    params
+    data: params
   })
 }
 
 export function fetchUpdatePermission(id: number, params: Api.SystemManage.SavePermissionParams) {
   return request.post<Api.SystemManage.PermissionItem>({
     url: `/v3/system/menus/permissions/${id}`,
-    params
+    data: params
   })
 }
 
@@ -137,7 +137,7 @@ export function fetchGetDictTypeList(params: Api.SystemManage.DictTypeSearchPara
 export function fetchCreateDictType(params: Api.SystemManage.SaveDictTypeParams) {
   return request.post<Api.SystemManage.DictTypeItem>({
     url: '/dict/type/create',
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -145,7 +145,7 @@ export function fetchCreateDictType(params: Api.SystemManage.SaveDictTypeParams)
 export function fetchUpdateDictType(id: number, params: Partial<Api.SystemManage.SaveDictTypeParams>) {
   return request.post<Api.SystemManage.DictTypeItem>({
     url: `/dict/type/${id}`,
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -167,7 +167,7 @@ export function fetchGetDictDataList(params: Api.SystemManage.DictDataSearchPara
 export function fetchCreateDictData(params: Api.SystemManage.SaveDictDataParams) {
   return request.post<Api.SystemManage.DictDataItem>({
     url: '/dict/data/create',
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -175,7 +175,7 @@ export function fetchCreateDictData(params: Api.SystemManage.SaveDictDataParams)
 export function fetchUpdateDictData(id: number, params: Partial<Api.SystemManage.SaveDictDataParams>) {
   return request.post<Api.SystemManage.DictDataItem>({
     url: `/dict/data/${id}`,
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -205,7 +205,7 @@ export function fetchUploadImage(data: FormData) {
 export function fetchCreateFileAsset(params: Api.SystemManage.SaveFileAssetParams) {
   return request.post<Api.SystemManage.FileAssetItem>({
     url: '/file/create',
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -216,7 +216,18 @@ export function fetchUpdateFileAsset(
 ) {
   return request.post<Api.SystemManage.FileAssetItem>({
     url: `/file/${id}`,
-    params,
+    data: params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchUpdateUserMobileConfig(
+  userId: number,
+  data: Api.SystemManage.SaveEntityMobileConfigParams
+) {
+  return request.put<Api.SystemManage.EntityMobileConfigData>({
+    url: `/mobile-config/user/${userId}`,
+    data,
     showSuccessMessage: true
   })
 }
@@ -247,7 +258,7 @@ export function fetchGetSystemParamList(params: Api.SystemManage.SystemParamSear
 export function fetchCreateSystemParam(params: Api.SystemManage.SaveSystemParamParams) {
   return request.post<Api.SystemManage.SystemParamItem>({
     url: '/system-param/create',
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -255,7 +266,7 @@ export function fetchCreateSystemParam(params: Api.SystemManage.SaveSystemParamP
 export function fetchUpdateSystemParam(id: number, params: Partial<Api.SystemManage.SaveSystemParamParams>) {
   return request.post<Api.SystemManage.SystemParamItem>({
     url: `/system-param/${id}`,
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -284,7 +295,7 @@ export function fetchGetAnnouncementById(id: number) {
 export function fetchCreateAnnouncement(params: Api.SystemManage.SaveAnnouncementParams) {
   return request.post<Api.SystemManage.AnnouncementItem>({
     url: '/announcement/create',
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -292,7 +303,7 @@ export function fetchCreateAnnouncement(params: Api.SystemManage.SaveAnnouncemen
 export function fetchUpdateAnnouncement(id: number, params: Partial<Api.SystemManage.SaveAnnouncementParams>) {
   return request.post<Api.SystemManage.AnnouncementItem>({
     url: `/announcement/${id}`,
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -321,7 +332,7 @@ export function fetchGetMobileConfig() {
 export function fetchUpdateMobileConfig(params: Api.SystemManage.UpdateMobileConfigParams) {
   return request.put<Api.SystemManage.MobileConfigData>({
     url: '/mobile-config',
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -336,7 +347,7 @@ export function fetchGetRoleMobileConfig(roleId: number) {
 export function fetchUpdateRoleMobileConfig(roleId: number, params: Api.SystemManage.SaveEntityMobileConfigParams) {
   return request.put<Api.SystemManage.EntityMobileConfigData>({
     url: `/mobile-config/role/${roleId}`,
-    params,
+    data: params,
     showSuccessMessage: true
   })
 }
@@ -352,14 +363,6 @@ export function fetchResetRoleMobileConfig(roleId: number) {
 export function fetchGetUserMobileConfig(userId: number) {
   return request.get<Api.SystemManage.EntityMobileConfigData>({
     url: `/mobile-config/user/${userId}`
-  })
-}
-
-export function fetchUpdateUserMobileConfig(userId: number, params: Api.SystemManage.SaveEntityMobileConfigParams) {
-  return request.put<Api.SystemManage.EntityMobileConfigData>({
-    url: `/mobile-config/user/${userId}`,
-    params,
-    showSuccessMessage: true
   })
 }
 

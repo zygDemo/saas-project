@@ -256,6 +256,10 @@
         "text": "车贷首页"
       },
       {
+        "pagePath": "pages/carloan/precheck/orderList",
+        "text": "订单"
+      },
+      {
         "pagePath": "pages/my/my",
         "text": "我的"
       }

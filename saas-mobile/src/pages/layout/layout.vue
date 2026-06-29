@@ -9,11 +9,14 @@
       :is-fixed="true"
       :immersive="false"
       :border-bottom="false"
-      @left-click="handleBack"
       :z-index="980"
+      @left-click="handleBack"
     />
 
-    <view class="layout-content" :class="{ 'layout-content--with-tabbar': showTabbar }">
+    <view
+      class="layout-content"
+      :class="{ 'layout-content--with-tabbar': showTabbar }"
+    >
       <view class="content-page"><slot /></view>
     </view>
 
@@ -37,11 +40,9 @@ import {
   isSystemTabbarRoute,
   navigateFromTabbar,
   TABBAR_SCOPES,
-  type LayoutTabbarItem,
-  type TabbarScope,
 } from "@/common/navigation";
+import type { LayoutTabbarItem, TabbarScope } from "@/common/navigation";
 import { onShow } from "@dcloudio/uni-app";
-import { useTheme } from "uview-pro";
 import { computed, ref, watch } from "vue";
 
 const props = defineProps<{
@@ -53,12 +54,13 @@ const props = defineProps<{
   backUrl?: string;
 }>();
 
-const { currentTheme } = useTheme();
 const currentTab = ref(props.activeTab ?? 0);
 const tabConfig = ref<LayoutTabbarItem[]>([]);
 const switchingTab = ref(false);
 
-const currentScope = computed<TabbarScope>(() => props.tabbarScope || TABBAR_SCOPES.portal);
+const currentScope = computed<TabbarScope>(
+  () => props.tabbarScope || TABBAR_SCOPES.portal,
+);
 const showBack = computed(() => Boolean(props.back));
 
 function handleBack() {
@@ -75,8 +77,7 @@ function handleBack() {
   uni.reLaunch({ url: "/pages/index/index" });
 }
 
-
-const themeColor = computed(() => currentTheme.value?.color?.primary || "#409EFF");
+const themeColor = "#4f7cff";
 
 const navBackground = computed(() => ({
   backgroundImage:
@@ -99,10 +100,12 @@ const currentNavTitle = computed(() => {
 const syncTabbar = () => {
   const nextConfig = getLayoutTabbar(currentScope.value);
   const currentRoute = getCurrentPageRoute();
-  const matchedIndex = nextConfig.findIndex((item) => item.route === currentRoute);
+  const matchedIndex = nextConfig.findIndex(
+    (item) => item.route === currentRoute,
+  );
 
   tabConfig.value = nextConfig;
-  currentTab.value = matchedIndex >= 0 ? matchedIndex : props.activeTab ?? 0;
+  currentTab.value = matchedIndex >= 0 ? matchedIndex : (props.activeTab ?? 0);
 };
 
 function beforeSwitch(index: number): boolean {

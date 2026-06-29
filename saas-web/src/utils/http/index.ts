@@ -170,16 +170,6 @@ function delay(ms: number) {
 
 /** 请求函数 */
 async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> {
-  // POST | PUT 参数自动填充
-  if (
-    ['POST', 'PUT'].includes(config.method?.toUpperCase() || '') &&
-    config.params &&
-    !config.data
-  ) {
-    config.data = config.params
-    config.params = undefined
-  }
-
   try {
     const res = await axiosInstance.request<BaseResponse<T>>(config)
 
@@ -211,6 +201,9 @@ const api = {
   },
   del<T>(config: ExtendedAxiosRequestConfig) {
     return retryRequest<T>({ ...config, method: 'DELETE' })
+  },
+  upload<T>(config: ExtendedAxiosRequestConfig) {
+    return retryRequest<T>({ ...config, method: 'POST' })
   },
   request<T>(config: ExtendedAxiosRequestConfig) {
     return retryRequest<T>(config)

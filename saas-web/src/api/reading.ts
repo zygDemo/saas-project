@@ -88,29 +88,11 @@ export function createBook(data: {
 
 /** 上传 TXT 文件创建图书（自动分章） — 使用原生 fetch 绕过 axios 拦截器，确保 FormData 正确发送 */
 export async function uploadTxtBook(formData: FormData) {
-  const token = useUserStore().accessToken
-  const url = `${API_BASE_URL}/reading/books/upload-txt`
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: token || '',
-      'x-tenant-id': TENANT_ID,
-    },
-    body: formData,
-    credentials: WITH_CREDENTIALS ? 'include' : 'same-origin',
+  return request.upload<unknown>({
+    url: '/reading/books/upload-txt',
+    data: formData,
+    showErrorMessage: true
   })
-
-  // 后端异常过滤器始终返回 200，需通过 JSON code 字段判断成功/失败
-  const json = await res.json().catch(() => {
-    throw new Error(`服务器响应异常 (HTTP ${res.status})`)
-  })
-
-  if (json.code !== 0) {
-    throw new Error(json.msg || '上传失败')
-  }
-
-  return json.data
 }
 
 /** 更新书籍 */

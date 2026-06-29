@@ -124,47 +124,13 @@
 
               <!-- 订单操作 -->
               <view class="order-footer">
-                <view class="order-tags">
+              <view class="order-tags">
                   <u-tag
-                    v-if="order.phaseName"
-                    :text="order.phaseName"
+                    v-for="tag in getOrderTags(order)"
+                    :key="tag.text"
+                    :text="tag.text"
                     size="mini"
-                    type="primary"
-                    plain
-                  />
-                  <u-tag
-                    v-if="order.nodeStatusLabel"
-                    :text="order.nodeStatusLabel"
-                    size="mini"
-                    type="info"
-                    plain
-                  />
-                  <u-tag
-                    v-if="order.isSignContract === 1"
-                    text="已签约"
-                    size="mini"
-                    type="success"
-                    plain
-                  />
-                  <u-tag
-                    v-if="order.isSignContract === 2"
-                    text="未签约"
-                    size="mini"
-                    type="warning"
-                    plain
-                  />
-                  <u-tag
-                    v-if="order.isFaceRecognition === 2"
-                    text="人脸认证通过"
-                    size="mini"
-                    type="success"
-                    plain
-                  />
-                  <u-tag
-                    v-if="order.isFaceRecognition === 3"
-                    text="人脸认证失败"
-                    size="mini"
-                    type="error"
+                    :type="tag.type"
                     plain
                   />
                 </view>
@@ -316,27 +282,27 @@ const APPLICATION_STATUS_CLASS: Record<string, string> = {
 const APPLICATION_STATUS_LABELS: Record<string, string> = {
   DRAFT: "草稿",
   SUBMITTED: "已提交",
-  PENDING_RISK_PRE: "风控预审中",
-  RISK_PRE_PASSED: "风控预审通过",
-  RISK_PRE_REJECTED: "风控预审拒绝",
-  PENDING_FUNDER_PRE: "资方预审中",
-  FUNDER_PRE_PASSED: "资方预审通过",
-  FUNDER_PRE_REJECTED: "资方预审拒绝",
-  PENDING_FIRST_REVIEW: "待初审",
-  FIRST_REVIEW_PASSED: "初审通过",
-  FIRST_REVIEW_REJECTED: "初审拒绝",
+  PENDING_RISK_PRE: "预审中",
+  RISK_PRE_PASSED: "预审通过",
+  RISK_PRE_REJECTED: "预审拒绝",
+  PENDING_FUNDER_PRE: "预审中",
+  FUNDER_PRE_PASSED: "预审通过",
+  FUNDER_PRE_REJECTED: "预审拒绝",
+  PENDING_FIRST_REVIEW: "审核中",
+  FIRST_REVIEW_PASSED: "审核通过",
+  FIRST_REVIEW_REJECTED: "审核拒绝",
   PENDING_SUPPLEMENT: "待补件",
-  PENDING_FINAL_REVIEW: "待终审",
-  FINAL_REVIEW_PASSED: "终审通过",
-  FINAL_REVIEW_REJECTED: "终审拒绝",
-  PENDING_FUNDER_REVIEW: "待资方审核",
+  PENDING_FINAL_REVIEW: "审核中",
+  FINAL_REVIEW_PASSED: "审核通过",
+  FINAL_REVIEW_REJECTED: "审核拒绝",
+  PENDING_FUNDER_REVIEW: "资方审核中",
   FUNDER_REVIEW_PASSED: "资方通过",
   FUNDER_REVIEW_REJECTED: "资方拒绝",
   PENDING_SIGN: "待签约",
   SIGNING_PROGRESS: "签约中",
   SIGNED: "已签约",
   PENDING_LOAN_REQUEST: "待请款",
-  LOAN_REQUEST_REVIEWING: "请款审核中",
+  LOAN_REQUEST_REVIEWING: "请款中",
   LOAN_REQUEST_APPROVED: "请款通过",
   LOAN_REQUEST_REJECTED: "请款拒绝",
   PENDING_DISBURSEMENT: "待放款",
@@ -561,6 +527,15 @@ function firstValue<T>(...values: Array<T | undefined | null>) {
   return undefined;
 }
 
+function getOrderTags(order: OrderListViewItem) {
+  const tags: Array<{ text: string; type: "primary" | "success" | "error" }> = [];
+  if (order.phaseName) tags.push({ text: order.phaseName, type: "primary" });
+  if (order.isSignContract === 1) tags.push({ text: "已签约", type: "success" });
+  if (order.isFaceRecognition === 2) tags.push({ text: "已认证", type: "success" });
+  if (order.isFaceRecognition === 3) tags.push({ text: "认证失败", type: "error" });
+  return tags;
+}
+
 function formatMoney(value: unknown) {
   if (value === undefined || value === null || String(value).trim() === "") {
     return "";
@@ -741,14 +716,6 @@ function handleNodeStatusChange(status: NodeStatusFilterValue) {
   if (currentNodeStatus.value === status) return;
   currentNodeStatus.value = status;
   fetchList(true);
-}
-
-// 处理订单（统一订单详情入口兜底）
-function handleApprove(order: OrderListViewItem) {
-  const detailRouteQuery = buildOrderQuery(order);
-  uni.navigateTo({
-    url: buildRoute(APP_ROUTES.carloan.precheck.applyDetail, detailRouteQuery),
-  });
 }
 
 function applyWorkbenchFilter() {
@@ -1100,16 +1067,6 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   font-weight: 500;
 }
 
-/* 订单号 */
-.order-no {
-  display: block;
-  margin-top: 12rpx;
-  font-size: 22rpx;
-  color: $text-light;
-  font-family: "SF Mono", "Fira Code", Consolas, monospace;
-  letter-spacing: 0.2rpx;
-}
-
 /* 底部：时间 + 按钮 */
 .order-footer {
   display: flex;
@@ -1199,37 +1156,5 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     opacity: 1;
     transform: scale(1);
   }
-}
-
-/* 深色模式适配 */
-@media (prefers-color-scheme: dark) {
-  .page-container { background-color: #121212; }
-  .card { background-color: #1e1e1e; }
-  .card-item { background-color: #1e1e1e; }
-  .list-item { background-color: #1e1e1e; }
-  .section { background-color: #1e1e1e; }
-  .header { background-color: #1e1e1e; }
-  .title { color: #e5e6eb; }
-  .subtitle { color: #8b8c91; }
-  .desc { color: #8b8c91; }
-  .label { color: #b0b3b8; }
-  .value { color: #e5e6eb; }
-  .name { color: #e5e6eb; }
-  .info { color: #b0b3b8; }
-  .text { color: #e5e6eb; }
-  .tip { color: #8b8c91; }
-  .empty-text { color: #666; }
-  .divider { background-color: #2a2a2a; }
-  .border { border-color: #2a2a2a; }
-  .input { background-color: #2a2a2a; color: #e5e6eb; }
-  .search-bar { background-color: #2a2a2a; }
-  .tab-bar { background-color: #1e1e1e; border-color: #2a2a2a; }
-  .tab-item { color: #b0b3b8; }
-  .tab-item.active { color: var(--u-type-primary); }
-  .status-bar { background-color: #1e1e1e; }
-  .footer { background-color: #1e1e1e; }
-  .modal { background-color: #1e1e1e; }
-  .popup { background-color: #1e1e1e; }
-  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
 }
 </style>

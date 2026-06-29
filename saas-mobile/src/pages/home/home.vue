@@ -75,14 +75,26 @@
               class="feature-item"
               @click="navigateToFeature(card.url, card.title)"
             >
-              <view class="feature-icon-bg" :class="`feature-icon-bg--${card.color}`">
-                <u-icon :name="card.icon" size="28" :color="$u.getColor(card.color)" />
+              <view
+                class="feature-icon-bg"
+                :class="`feature-icon-bg--${card.color}`"
+              >
+                <u-icon
+                  :name="card.icon"
+                  size="28"
+                  :color="$u.getColor(card.color)"
+                />
               </view>
               <view class="feature-body">
                 <text class="feature-title">{{ card.title }}</text>
                 <text class="feature-desc">{{ card.desc }}</text>
               </view>
-              <u-icon name="arrow-right" size="24" color="#d9d9d9" class="feature-arrow" />
+              <u-icon
+                name="arrow-right"
+                size="24"
+                color="#d9d9d9"
+                class="feature-arrow"
+              />
             </view>
           </view>
         </view>
@@ -102,14 +114,26 @@
               class="feature-item"
               @click="navigateToFeature(feature.url, feature.title)"
             >
-              <view class="feature-icon-bg" :class="`feature-icon-bg--${feature.color}`">
-                <u-icon :name="feature.icon" size="28" :color="$u.getColor(feature.color)" />
+              <view
+                class="feature-icon-bg"
+                :class="`feature-icon-bg--${feature.color}`"
+              >
+                <u-icon
+                  :name="feature.icon"
+                  size="28"
+                  :color="$u.getColor(feature.color)"
+                />
               </view>
               <view class="feature-body">
                 <text class="feature-title">{{ feature.title }}</text>
                 <text class="feature-desc">{{ feature.desc }}</text>
               </view>
-              <u-icon name="arrow-right" size="24" color="#d9d9d9" class="feature-arrow" />
+              <u-icon
+                name="arrow-right"
+                size="24"
+                color="#d9d9d9"
+                class="feature-arrow"
+              />
             </view>
           </view>
         </view>
@@ -165,7 +189,7 @@ async function loadBusinessStats() {
   if (!localStore.token) return;
   try {
     const res = await businessApi.getStatisticsOverview();
-    const d = ((res?.data ?? res ?? {}) as StatisticsOverview);
+    const d = (res?.data ?? res ?? {}) as StatisticsOverview;
     businessStats.value = {
       todayLeads: Number(d.todayLeads ?? d.leadCount ?? 0),
       pendingApproval: Number(d.pendingApproval ?? 0),
