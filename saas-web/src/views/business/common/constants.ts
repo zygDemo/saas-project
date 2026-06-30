@@ -121,15 +121,44 @@ export const flowNodeOptions: OptionConfig[] = [
   { label: '1200 风控预审', value: '1200' },
   { label: '1250 资方预审', value: '1250' },
   { label: '1300 资料补充', value: '1300' },
+  { label: '1310 客户资料', value: '1310' },
+  { label: '1320 车辆资料', value: '1320' },
+  { label: '1330 订单资料', value: '1330' },
+  { label: '1340 文件资料', value: '1340' },
   { label: '1350 待提交', value: '1350' },
   { label: '1400 风控初审', value: '1400' },
   { label: '1450 风控终审', value: '1450' },
   { label: '1500 资方终审', value: '1500' },
   { label: '1600 签约办理', value: '1600' },
+  { label: '1610 额度确认', value: '1610' },
+  { label: '1620 绑银行卡', value: '1620' },
+  { label: '1630 合同签署', value: '1630' },
+  { label: '1640 GPS安装', value: '1640' },
+  { label: '1650 抵押办理', value: '1650' },
   { label: '1660 待请款', value: '1660' },
   { label: '1700 请款资料', value: '1700' },
   { label: '1800 资方放款', value: '1800' },
   { label: '1900 贷后还款', value: '1900' }
+]
+
+export const flowPhaseOptions: OptionConfig[] = [
+  { label: '预审阶段', value: 1000 },
+  { label: '补件阶段', value: 1300 },
+  { label: '风控审批', value: 1400 },
+  { label: '资方终审', value: 1500 },
+  { label: '签约阶段', value: 1600 },
+  { label: '请款放款', value: 1700 },
+  { label: '贷后阶段', value: 1900 }
+]
+
+export const flowNodeStatusOptions: OptionConfig[] = [
+  { label: '未开始', value: 0 },
+  { label: '处理中', value: 10 },
+  { label: '已通过', value: 20 },
+  { label: '已拒绝', value: 30 },
+  { label: '已退回', value: 40 },
+  { label: '待补充', value: 50 },
+  { label: '已完成', value: 90 }
 ]
 
 export const applicationStatusOptions = [

@@ -851,18 +851,16 @@ export const configs: Record<string, PageConfig> = {
     keywordPlaceholder: '订单号/姓名/手机号/车牌号',
     statusMap: commonStatusMap,
     columns: [
-      { prop: 'orderNo', label: '订单号', width: 200 },
+      { prop: 'orderNo', label: '申请编号', width: 200 },
       { prop: 'customerName', label: '客户姓名', width: 120 },
-      { prop: 'phone', label: '手机号', width: 140 },
-      { prop: 'plateNumber', label: '车牌号', width: 120 },
       { prop: 'productName', label: '产品', width: 140 },
       { prop: 'funderName', label: '资方', width: 140 },
       { prop: 'amount', label: '申请金额', width: 120 },
-      { prop: 'approvedAmount', label: '审批金额', width: 120 },
-      { prop: 'currentNodeName', label: '当前节点', width: 140 },
+      { prop: 'term', label: '期限(月)', width: 100 },
       { prop: 'status', label: '状态', width: 160 }
     ],
     detailColumns: [
+      { prop: 'applicationNo', label: '申请编号' },
       { prop: 'orderNo', label: '订单号' },
       { prop: 'creditOrderId', label: '授信订单号' },
       { prop: 'customerName', label: '客户姓名' },
@@ -876,7 +874,9 @@ export const configs: Record<string, PageConfig> = {
       { prop: 'term', label: '期限(月)' },
       { prop: 'currentNodeName', label: '当前节点' },
       { prop: 'currentStatusName', label: '节点状态' },
-      { prop: 'status', label: '订单状态' }
+      { prop: 'status', label: '订单状态' },
+      { prop: 'createdAt', label: '创建时间' },
+      { prop: 'updatedAt', label: '更新时间' }
     ],
     formFields: [],
     actions: []

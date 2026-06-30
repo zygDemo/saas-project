@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <layout :active-tab="1" nav-title="订单" show-tabbar tabbar-scope="carloan">
     <view class="order-list-page">
       <!-- 搜索栏 -->
@@ -12,57 +12,46 @@
         />
       </view>
 
-      <!-- 业务节点筛选 -->
+      <!-- 筛选区 -->
       <view class="filter-card">
-        <view class="filter-title-row">
-          <text class="filter-title">业务节点</text>
-          <text class="filter-subtitle">按流程节点快速定位订单</text>
-        </view>
-        <view class="filter-bar">
-          <scroll-view scroll-x class="filter-scroll">
-            <view class="filter-list">
-              <view
-                v-for="(node, index) in businessNodeFilterList"
-                :key="index"
-                class="filter-item"
-                :class="{
-                  'filter-item--active': currentBusinessNode === node.value,
-                }"
-                role="button"
-                tabindex="0"
-                @click="handleBusinessNodeChange(node.value)"
-              >
-                {{ node.label }}
-                <view v-if="node.count > 0" class="filter-badge">{{
-                  node.count
-                }}</view>
-              </view>
+        <!-- 业务节点 tabs -->
+        <scroll-view scroll-x class="filter-scroll" :show-scrollbar="false">
+          <view class="filter-tabs">
+            <view
+              v-for="(node, index) in businessNodeFilterList"
+              :key="index"
+              class="filter-tab"
+              :class="{ 'filter-tab--on': currentBusinessNode === node.value }"
+              @click="handleBusinessNodeChange(node.value)"
+            >
+              <text class="filter-tab__label">{{ node.label }}</text>
+              <text v-if="node.count > 0" class="filter-tab__badge">{{
+                node.count
+              }}</text>
             </view>
-          </scroll-view>
-        </view>
-        <!-- 节点状态筛选 -->
-        <view class="filter-bar filter-bar--status">
-          <scroll-view scroll-x class="filter-scroll">
-            <view class="filter-list filter-list--status">
-              <view
-                v-for="(status, index) in nodeStatusFilterList"
-                :key="index"
-                class="filter-item filter-item--status"
-                :class="{
-                  'filter-item--active': currentNodeStatus === status.value,
-                }"
-                role="button"
-                tabindex="0"
-                @click="handleNodeStatusChange(status.value)"
-              >
-                {{ status.label }}
-              </view>
+          </view>
+        </scroll-view>
+        <!-- 节点状态 tabs -->
+        <scroll-view
+          scroll-x
+          class="filter-scroll filter-scroll--sub"
+          :show-scrollbar="false"
+        >
+          <view class="filter-tabs filter-tabs--sub">
+            <view
+              v-for="(status, index) in nodeStatusFilterList"
+              :key="index"
+              class="filter-tab filter-tab--sub"
+              :class="{ 'filter-tab--on': currentNodeStatus === status.value }"
+              @click="handleNodeStatusChange(status.value)"
+            >
+              <text class="filter-tab__label">{{ status.label }}</text>
             </view>
-          </scroll-view>
-        </view>
+          </view>
+        </scroll-view>
       </view>
 
-      <!-- 订单列表（带下拉刷新） -->
+      <!-- 订单列表 -->
       <scroll-view
         scroll-y
         class="order-list-scroll"
@@ -72,39 +61,35 @@
         @refresherrefresh="onRefresh"
         @scroll="onScroll"
       >
-        <OrderCard
-          v-for="order in orderList"
-          :key="order.id"
-          :order="order"
-          :can-go-sign="canGoSign(order)"
-          @detail="handleDetailButton"
-          @sign="handleSignButton"
-          @flow-record="handleFlowRecord"
-        />
-        <!-- 加载状态 -->
-        <view v-if="loading && orderList.length > 0" class="load-more">
-          <u-loading mode="circle" />
-        </view>
-        <view v-if="!hasMore && orderList.length > 0" class="no-more"
-          >没有更多了</view
-        >
-        <!-- 空状态 -->
-        <view v-if="!loading && orderList.length === 0" class="empty-state">
-          <u-empty mode="list" text="暂无订单数据" />
-        </view>
-        <!-- 返回顶部按钮 -->
-        <view
-          v-if="showBackToTop"
-          class="back-to-top"
-          role="button"
-          tabindex="0"
-          @click="handleBackToTop"
-        >
-          <u-icon name="arrow-up" color="#fff" size="40" />
+        <view class="list__inner">
+          <OrderCard
+            v-for="order in orderList"
+            :key="order.id"
+            :order="order"
+            :can-go-sign="canGoSign(order)"
+            @detail="handleDetailButton"
+            @sign="handleSignButton"
+            @flow-record="handleFlowRecord"
+          />
+          <view v-if="loading && orderList.length > 0" class="load-more">
+            <u-loading mode="circle" />
+          </view>
+          <view v-if="!hasMore && orderList.length > 0" class="no-more"
+            >没有更多了</view
+          >
+          <view v-if="!loading && orderList.length === 0" class="empty-state">
+            <u-empty mode="list" text="暂无订单数据" />
+          </view>
+          <view
+            v-if="showBackToTop"
+            class="back-to-top"
+            @click="handleBackToTop"
+          >
+            <u-icon name="arrow-up" color="#fff" size="40" />
+          </view>
         </view>
       </scroll-view>
     </view>
-    <!-- 流程记录弹窗 -->
     <FlowRecordPopup
       v-model:visible="flowRecordVisible"
       :loading="flowRecordLoading"
@@ -620,9 +605,8 @@ async function handleFlowRecord(order: OrderListViewItem) {
   }
 }
 </script>
-
+\n\n
 <style lang="scss" scoped>
-/* ===== 变量 ===== */
 $bg-page: #f2f4f7;
 $bg-surface: #ffffff;
 $border-subtle: #ebedf2;
@@ -630,135 +614,119 @@ $text-main: #1a1d29;
 $text-body: #4e5566;
 $text-hint: #8b93a7;
 $text-light: #b0b8cc;
-$primary: #4f7cff;
+$primary: #437cff;
 $primary-light: #eef1ff;
 $accent-red: #ff6b6b;
 $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
-/* ===== 页面 ===== */
 .order-list-page {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #eef4ff 0%, #f6f8fb 260rpx, #f6f8fb 100%);
+  background: $bg-page;
 }
 
 .order-list-scroll {
   flex: 1;
   min-height: 0;
-  padding: 0 24rpx calc(24rpx + env(safe-area-inset-bottom));
+  overflow: hidden;
 }
 
+.list__inner {
+  padding: 24rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* ===== 搜索栏 ===== */
 .search-bar {
-  padding: 20rpx 24rpx 16rpx;
+  padding: 16rpx 24rpx 12rpx;
   background: $bg-page;
 }
 
 /* ===== 筛选区 ===== */
 .filter-card {
   margin: 0 24rpx 20rpx;
-  padding: 16rpx 0 14rpx;
+  padding: 0;
   background: $bg-surface;
-  border-radius: 20rpx;
+  border-radius: 16rpx;
   box-shadow: 0 1rpx 4rpx rgba(26, 29, 41, 0.04);
-}
-
-.filter-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24rpx 10rpx;
-}
-
-.filter-title {
-  position: relative;
-  padding-left: 16rpx;
-  font-size: 28rpx;
-  font-weight: 700;
-  color: $text-main;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 4rpx;
-    height: 24rpx;
-    background: $primary;
-    border-radius: 999rpx;
-    transform: translateY(-50%);
-  }
-}
-
-.filter-subtitle {
-  font-size: 22rpx;
-  color: $text-light;
-}
-
-.filter-bar--status {
-  margin-top: 6rpx;
-  padding-top: 10rpx;
-  border-top: 1rpx dashed rgba($border-subtle, 0.8);
+  overflow: hidden;
 }
 
 .filter-scroll {
   white-space: nowrap;
+
+  &--sub {
+    border-top: 1rpx solid rgba($border-subtle, 0.6);
+  }
 }
 
-.filter-list {
+.filter-tabs {
   display: inline-flex;
-  gap: 10rpx;
-  padding: 6rpx 24rpx;
+  padding: 16rpx 20rpx;
+  gap: 12rpx;
+
+  &--sub {
+    padding: 14rpx 20rpx 16rpx;
+  }
 }
 
-.filter-item {
+.filter-tab {
   position: relative;
-  height: 52rpx;
-  padding: 0 22rpx;
-  border: 1rpx solid $border-subtle;
-  border-radius: 999rpx;
-  background: #f7f8fc;
-  box-sizing: border-box;
-  font-size: 24rpx;
-  font-weight: 500;
-  line-height: 50rpx;
-  color: $text-body;
-  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  height: 56rpx;
+  padding: 0 24rpx;
+  border-radius: 28rpx;
+  background: #f2f4f7;
   transition: all 0.2s $ease-out;
 
-  &--active {
-    background: $primary;
-    border-color: $primary;
-    color: #fff;
-    box-shadow: 0 2rpx 10rpx rgba(79, 124, 255, 0.3);
-    font-weight: 600;
+  &__label {
+    font-size: 26rpx;
+    font-weight: 500;
+    color: $text-body;
+    white-space: nowrap;
   }
+
+  &__badge {
+    min-width: 28rpx;
+    height: 28rpx;
+    padding: 0 8rpx;
+    border-radius: 14rpx;
+    background: rgba($primary, 0.15);
+    font-size: 20rpx;
+    font-weight: 600;
+    color: $primary;
+    text-align: center;
+    line-height: 28rpx;
+  }
+
+  &--on {
+    background: $primary;
+
+    .filter-tab__label {
+      color: #fff;
+    }
+    .filter-tab__badge {
+      background: rgba(255, 255, 255, 0.3);
+      color: #fff;
+    }
+  }
+
+  &--sub {
+    height: 48rpx;
+    padding: 0 20rpx;
+
+    .filter-tab__label {
+      font-size: 24rpx;
+    }
+  }
+
   &:active {
     transform: scale(0.95);
   }
-}
-
-.filter-item--status {
-  height: 44rpx;
-  padding: 0 18rpx;
-  font-size: 22rpx;
-  line-height: 42rpx;
-}
-
-.filter-badge {
-  position: absolute;
-  top: -6rpx;
-  right: -6rpx;
-  min-width: 28rpx;
-  height: 28rpx;
-  padding: 0 6rpx;
-  background: $accent-red;
-  border-radius: 14rpx;
-  font-size: 19rpx;
-  font-weight: 600;
-  color: #fff;
-  text-align: center;
-  line-height: 28rpx;
 }
 
 /* ===== 空状态 / 加载 ===== */
@@ -766,7 +734,7 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   margin: 40rpx 0;
   padding: 100rpx 40rpx;
   background: $bg-surface;
-  border-radius: 24rpx;
+  border-radius: 16rpx;
   box-shadow: 0 1rpx 6rpx rgba(26, 29, 41, 0.04);
 
   :deep(.u-empty__text) {
@@ -786,7 +754,6 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12rpx;
   padding: 40rpx 0;
   font-size: 24rpx;
   color: $text-light;
@@ -800,31 +767,16 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   width: 88rpx;
   height: 88rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--u-type-primary-dark), #14b8a6);
+  background: $primary;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.35);
+  box-shadow: 0 8rpx 24rpx rgba(67, 124, 255, 0.35);
   z-index: 999;
-  transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
-  animation: fadeInScale 0.3s ease-out;
 
   &:active {
     transform: scale(0.92);
     opacity: 0.9;
-  }
-}
-
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.6);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
   }
 }
 </style>

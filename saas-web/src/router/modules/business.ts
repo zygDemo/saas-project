@@ -97,6 +97,19 @@ export const businessRoutes: AppRouteRecord = {
       'R_ADMIN',
       'R_FINANCE',
       'R_SALES_MANAGER'
-    ])
+    ]),
+    {
+      path: 'order-query',
+      name: 'BusinessOrderQuery',
+      component: businessPage,
+      meta: {
+        title: '综合查询',
+        icon: 'ri:search-eye-line',
+        keepAlive: true,
+        roles,
+        businessModule: 'order-query',
+        defaultQuery: { phaseCode: 1000 }
+      }
+    }
   ]
 }

@@ -346,32 +346,11 @@ export class ApplicationService extends BaseBusinessCrudService<
         take: pagination.take,
         orderBy: { id: 'desc' },
         include: {
-          org: {
-            select: {
-              name: true,
-              flowConfigs: {
-                select: {
-                  businessType: true,
-                  nodeCode: true,
-                  nodeName: true,
-                  ruleConfig: true
-                }
-              }
-            }
-          },
-          customer: {
-            select: {
-              name: true,
-              phone: true,
-              vehicles: {
-                select: { plateNumber: true, brand: true, model: true },
-                take: 1
-              }
-            }
-          },
-          product: { select: { name: true } },
-          funder: { select: { name: true } },
-          creator: { select: { userName: true, nickName: true } }
+          org: { include: { flowConfigs: true } },
+          customer: true,
+          product: true,
+          funder: true,
+          creator: { select: { id: true, userName: true, nickName: true } }
         }
       }),
       this.prisma.application.count({ where })
@@ -1224,7 +1203,9 @@ export class ApplicationService extends BaseBusinessCrudService<
     const nodeStatusName = FLOW_STATUS_LABELS[currentStatus] || String(application.currentStatus)
 
     return {
-      id: application.id,
+      ...application,
+      customer,
+      vehicle,
       orgName: application.org?.name,
       customerName: customer?.name || '',
       name: customer?.name || '',

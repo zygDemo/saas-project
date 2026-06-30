@@ -1,43 +1,51 @@
 <template>
-  <view class="order-card" :class="`status-${order.statusClass}`" @click="$emit('detail', order)">
-    <view class="order-main">
-      <view class="order-header">
-        <view class="order-header__left">
-          <text class="customer-name">{{ order.name }}</text>
-          <view v-if="order.nodeStatusLabel" class="status-tag">
-            <view class="status-tag__dot" />
-            <text class="status-tag__text">{{ order.nodeStatusLabel }}</text>
-          </view>
+  <view class="card" @click="$emit('detail', order)">
+    <view class="card__header">
+      <view class="card__name-wrap">
+        <text class="card__name">{{ order.name }}</text>
+        <view v-if="order.phone" class="card__phone">{{ order.phone }}</view>
+      </view>
+      <view v-if="order.nodeStatusLabel" class="card__status" :class="'card__status--' + order.statusClass">
+        {{ order.nodeStatusLabel }}
+      </view>
+    </view>
+
+    <view class="card__body">
+      <view class="card__row">
+        <view class="card__field">
+          <text class="card__label">订单编号</text>
+          <text class="card__value">{{ order.creditOrderId || order.orderNo || '-' }}</text>
         </view>
-        <text v-if="order.pushQuota" class="amount-value">¥{{ order.pushQuota }}</text>
-      </view>
-
-      <view class="order-subheader">
-        <text class="customer-phone">{{ order.phone }}</text>
-        <text v-if="order.businessNodeLabel" class="business-node">{{ order.businessNodeLabel }}</text>
-      </view>
-
-      <view v-if="order.plateNumber || order.productName || order.vehicleDisplay" class="order-meta">
-        <text v-if="order.plateNumber" class="plate-number">{{ order.plateNumber }}</text>
-        <text v-if="order.productName" class="product-text">{{ order.productName }}</text>
-        <text v-if="!order.plateNumber && order.vehicleDisplay" class="vehicle-text">{{ order.vehicleDisplay }}</text>
-      </view>
-
-      <view class="order-footer">
-        <view class="order-tags">
-          <u-tag
-            v-for="tag in getOrderTags(order)"
-            :key="tag.text"
-            :text="tag.text"
-            size="mini"
-            :type="tag.type"
-            plain
-          />
+        <view class="card__field">
+          <text class="card__label">申请金额</text>
+          <text class="card__value card__value--primary">{{ order.pushQuota || '-' }}</text>
         </view>
-        <view class="order-actions">
-          <u-button v-if="canGoSign" size="mini" type="success" @click.stop="$emit('sign', order)">签约</u-button>
-          <u-button size="mini" type="primary" @click.stop="$emit('detail', order)">详情</u-button>
-          <u-button size="mini" type="info" @click.stop="$emit('flow-record', order)">流程</u-button>
+      </view>
+      <view class="card__row">
+        <view class="card__field">
+          <text class="card__label">业务节点</text>
+          <text class="card__value">{{ order.businessNodeLabel || '-' }}</text>
+        </view>
+        <view class="card__field">
+          <text class="card__label">车辆信息</text>
+          <text class="card__value">{{ order.plateNumber || order.vehicleDisplay || '-' }}</text>
+        </view>
+      </view>
+    </view>
+
+    <view v-if="tags.length" class="card__tags">
+      <text v-for="tag in tags" :key="tag.text" class="card__tag" :class="'card__tag--' + tag.type">{{ tag.text }}</text>
+    </view>
+
+    <view class="card__footer">
+      <text class="card__time">{{ order.createTime || '' }}</text>
+      <view class="card__actions">
+        <text class="card__link" @click.stop="$emit('flow-record', order)">查看进展</text>
+        <view class="card__btn" @click.stop="$emit('detail', order)">
+          <text class="card__btn-text">详情</text>
+        </view>
+        <view v-if="canGoSign" class="card__btn card__btn--primary" @click.stop="$emit('sign', order)">
+          <text class="card__btn-text">签单</text>
         </view>
       </view>
     </view>
@@ -45,9 +53,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import type { OrderListViewItem } from "../types";
 
-defineProps<{
+const props = defineProps<{
   order: OrderListViewItem;
   canGoSign: boolean;
 }>();
@@ -58,190 +67,190 @@ defineEmits<{
   (e: "flow-record", order: OrderListViewItem): void;
 }>();
 
-function getOrderTags(order: OrderListViewItem) {
-  const tags: Array<{ text: string; type: "primary" | "success" | "error" }> = [];
-  if (order.phaseName) tags.push({ text: order.phaseName, type: "primary" });
-  if (order.isSignContract === 1) tags.push({ text: "已签约", type: "success" });
-  if (order.isFaceRecognition === 2) tags.push({ text: "已认证", type: "success" });
-  if (order.isFaceRecognition === 3) tags.push({ text: "认证失败", type: "error" });
-  return tags;
-}
+const tags = computed(() => {
+  const list: Array<{ text: string; type: "primary" | "success" | "error" | "warning" }> = [];
+  if (props.order.phaseName) list.push({ text: props.order.phaseName, type: "primary" });
+  if (props.order.isSignContract === 1) list.push({ text: "已签约", type: "success" });
+  if (props.order.isFaceRecognition === 2) list.push({ text: "已认证", type: "success" });
+  if (props.order.isFaceRecognition === 3) list.push({ text: "认证失败", type: "error" });
+  return list;
+});
 </script>
 
 <style lang="scss" scoped>
-/* SCSS 变量 — 子组件 scoped 样式无法继承父级变量，需重复声明 */
-$bg-surface: #ffffff;
-$border-subtle: #ebedf2;
+$bg: #ffffff;
+$border: #eef0f4;
 $text-main: #1a1d29;
 $text-body: #4e5566;
-$text-hint: #8b93a7;
-$text-light: #b0b8cc;
-$primary: #4f7cff;
-$primary-light: #eef1ff;
-$accent-green: #3dd598;
-$accent-red: #ff6b6b;
-$accent-orange: #ff9f43;
-$accent-blue: #4f7cff;
-$ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+$text-hint: #9699a6;
+$text-light: #b4b9c6;
+$primary: #437cff;
+$green: #3ecf8e;
+$red: #f56c6c;
+$orange: #ff9f43;
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20rpx); }
-  to { opacity: 1; transform: translateY(0); }
-}
+.card {
+  margin-bottom: 20rpx;
+  padding: 28rpx 28rpx 0;
+  background: $bg;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 
-.order-card {
- margin-bottom: 16rpx;
- background: $bg-surface;
- border-radius: 20rpx;
-  border-left: 6rpx solid transparent;
-  box-shadow: 0 2rpx 16rpx rgba(26, 29, 41, 0.06);
-  transition: all 0.2s $ease-out;
-  animation: slideUp 0.35s $ease-out both;
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
 
-  /* 用 nth-child 代替内联 animationDelay */
-  @for $i from 0 through 19 {
-    &:nth-child(#{$i + 1}) {
-      animation-delay: #{$i * 0.05}s;
+  &__name-wrap {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__name {
+    font-size: 30rpx;
+    font-weight: 700;
+    color: $text-main;
+    line-height: 1.4;
+  }
+
+  &__phone {
+    margin-top: 4rpx;
+    font-size: 24rpx;
+    color: $text-hint;
+    line-height: 1.4;
+  }
+
+  &__status {
+    flex-shrink: 0;
+    margin-left: 16rpx;
+    margin-top: 4rpx;
+    padding: 4rpx 16rpx;
+    border-radius: 8rpx;
+    font-size: 22rpx;
+    font-weight: 600;
+    line-height: 1.4;
+
+    &--1 { background: rgba($green, 0.1); color: $green; }
+    &--2 { background: rgba($red, 0.1); color: $red; }
+    &--3 { background: rgba($orange, 0.1); color: $orange; }
+    &--4 { background: rgba($primary, 0.1); color: $primary; }
+  }
+
+  &__body {
+    margin-top: 20rpx;
+    padding: 20rpx 0;
+    border-top: 1rpx solid $border;
+    border-bottom: 1rpx solid $border;
+  }
+
+  &__row {
+    display: flex;
+    gap: 16rpx;
+
+    & + & {
+      margin-top: 18rpx;
     }
   }
 
-  &:active {
-    transform: scale(0.985);
-    box-shadow: 0 2rpx 12rpx rgba(79, 124, 255, 0.1);
+  &__field {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
   }
-}
 
-.order-main { padding: 24rpx; }
+  &__label {
+    font-size: 22rpx;
+    color: $text-light;
+    line-height: 1.4;
+    margin-bottom: 4rpx;
+  }
 
-.order-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16rpx;
-}
+  &__value {
+    font-size: 26rpx;
+    font-weight: 500;
+    color: $text-body;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 
-.order-header__left {
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-  min-width: 0;
-}
+    &--primary {
+      font-weight: 700;
+      color: $primary;
+    }
+  }
 
-.customer-name {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: $text-main;
-}
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12rpx;
+    padding: 16rpx 0 0;
+  }
 
-.status-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 8rpx;
-  align-self: flex-start;
-}
+  &__tag {
+    padding: 4rpx 14rpx;
+    border-radius: 6rpx;
+    font-size: 20rpx;
+    font-weight: 500;
 
-.status-tag__dot {
-  width: 10rpx;
-  height: 10rpx;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
+    &--primary { color: $primary; background: rgba($primary, 0.08); }
+    &--success { color: $green; background: rgba($green, 0.08); }
+    &--error { color: $red; background: rgba($red, 0.08); }
+    &--warning { color: $orange; background: rgba($orange, 0.08); }
+  }
 
-.status-tag__text {
-  font-size: 22rpx;
-  font-weight: 500;
-  color: $text-hint;
-}
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16rpx;
+    padding: 18rpx 0;
+    border-top: 1rpx solid $border;
+  }
 
-.amount-value {
-  color: #e8453c;
-  font-weight: 700;
-  font-size: 32rpx;
-  flex-shrink: 0;
-  letter-spacing: -0.5rpx;
-}
+  &__time {
+    font-size: 22rpx;
+    color: $text-light;
+  }
 
-.order-card.status-1 .status-tag__dot { background: $accent-green; }
-.order-card.status-2 .status-tag__dot { background: $accent-red; }
-.order-card.status-3 .status-tag__dot { background: $accent-orange; }
-.order-card.status-4 .status-tag__dot { background: $accent-blue; }
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+  }
 
-/* Left border accent per status */
-.order-card.status-1 { border-left-color: $accent-green; }
-.order-card.status-2 { border-left-color: $accent-red; }
-.order-card.status-3 { border-left-color: $accent-orange; }
-.order-card.status-4 { border-left-color: $accent-blue; }
+  &__link {
+    font-size: 24rpx;
+    color: $primary;
+    font-weight: 500;
+    &:active { opacity: 0.6; }
+  }
 
-.order-subheader {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  margin-top: 10rpx;
-}
+  &__btn {
+    padding: 10rpx 28rpx;
+    border-radius: 8rpx;
+    border: 1rpx solid $border;
+    background: $bg;
 
-.customer-phone { font-size: 24rpx; color: $text-hint; }
+    &--primary {
+      background: $primary;
+      border-color: $primary;
+      .card__btn-text { color: #fff; }
+    }
 
-.business-node {
-  font-size: 22rpx;
-  font-weight: 500;
-  color: $primary;
-  background: $primary-light;
-  padding: 2rpx 12rpx;
-  border-radius: 8rpx;
-}
+    &:active { opacity: 0.7; }
+  }
 
-.order-meta {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  margin-top: 16rpx;
-  min-width: 0;
-}
-
-.plate-number {
-  flex-shrink: 0;
-  padding: 4rpx 12rpx;
-  background: $text-main;
-  border-radius: 6rpx;
-  color: #fff;
-  font-size: 22rpx;
-  font-weight: 700;
-  line-height: 1.4;
-  letter-spacing: 1rpx;
-}
-
-.product-text,
-.vehicle-text {
-  overflow: hidden;
-  font-size: 24rpx;
-  color: $text-body;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 500;
-}
-
-.order-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16rpx;
-  margin-top: 16rpx;
-  padding-top: 16rpx;
-  border-top: 1rpx solid #f4f5f9;
-}
-
-.order-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8rpx;
-  flex: 1;
-  min-width: 0;
-}
-
-.order-actions {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  flex-shrink: 0;
+  &__btn-text {
+    font-size: 24rpx;
+    font-weight: 500;
+    color: $text-body;
+  }
 }
 </style>

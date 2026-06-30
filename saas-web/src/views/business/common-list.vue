@@ -368,7 +368,7 @@
     formModel, actionModel, activeAction,
     pagination, selectLoading,
     config, displayTitle, isOrgModule, showActionOverview,
-    formFields, actionFields, detailColumns, phaseNodeTabs, phaseTabs, defaultPhaseCode,
+    formFields, actionFields, detailColumns, phaseNodeTabs, phaseTabs, defaultPhaseCode, activeMainTab,
     searchFormItems, orgSummaryItems, moduleName,
     loadData, handleSizeChange, handleCurrentChange,
     handleArtSearch, handleArtReset,
@@ -382,8 +382,6 @@
   const route = useRoute()
 
   // ==================== 详情增强 ====================
-  const activeMainTab = ref('1000')
-
   const hasPhaseTabs = computed(() => phaseNodeTabs.value.length > 0)
 
   // 摘要字段：取 detailColumns 前4项作为抽屉顶部摘要

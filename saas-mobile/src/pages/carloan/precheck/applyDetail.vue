@@ -17,6 +17,27 @@
         </view>
       </view>
 
+      <view class="pre-progress-card" @click="handleProgress">
+        <view class="pre-progress-card__left">
+          <u-icon name="map" size="30" color="var(--u-type-primary)" />
+          <text class="pre-progress-card__text">查看进展</text>
+        </view>
+        <text class="pre-progress-card__arrow">›</text>
+      </view>
+
+      <view class="pre-flow-tabs">
+        <view
+          v-for="tab in flowTabList"
+          :key="tab.value"
+          class="pre-flow-tab"
+          :class="{ 'pre-flow-tab--active': activeFlowTab === tab.value }"
+          @click="activeFlowTab = tab.value"
+        >
+          <text class="pre-flow-tab__label">{{ tab.label }}</text>
+          <view v-if="activeFlowTab === tab.value" class="pre-flow-tab__indicator" />
+        </view>
+      </view>
+
       <view class="pre-section-title">子步骤</view>
 
       <view class="pre-supplement-list">
@@ -354,6 +375,12 @@ const businessApi = useCarloanApi();
 const detail = ref(null);
 const loading = ref(true);
 const submitting = ref(false);
+const activeFlowTab = ref("precheck");
+const flowTabList = [
+  { label: "预审", value: "precheck" },
+  { label: "补件", value: "supplement" },
+  { label: "签约", value: "signing" },
+];
 let detailId = null;
 onLoad((query) => {
     carloanStore.syncFromRouteQuery(query);
@@ -381,6 +408,7 @@ async function fetchDetail() {
       // 详情接口返回结构可能是 res.data 或 res 本身
       detail.value = res.data || {};
       carloanStore.pageContext.uuid = res.data?.uuid || carloanStore.pageContext.uuid;
+      activeFlowTab.value = resolveFlowTabByNode(currentNodeCode.value);
     }
   } catch (e) {
     console.error("获取详情失败", e);
@@ -458,6 +486,19 @@ const currentNodeCode = computed(() =>
   ),
 );
 
+function resolveFlowTabByNode(code) {
+  const text = String(code || "");
+  const numericCode = Number(text);
+  if (Number.isFinite(numericCode)) {
+    if (numericCode >= 1300 && numericCode <= 1350) return "supplement";
+    if (numericCode >= 1600 && numericCode <= 1660) return "signing";
+    return "precheck";
+  }
+  if (text === "SUPPLEMENT_MATERIALS") return "supplement";
+  if (["SIGN_CONTRACT", "PENDING_SIGN", "SIGNING_PROGRESS"].includes(text)) return "signing";
+  return "precheck";
+}
+
 const isPreAuditDetail = computed(() =>
   ["1100", "1200", "PRE_AUDIT", "INITIAL_AUDIT"].includes(
     currentNodeCode.value,
@@ -518,7 +559,7 @@ const pageTitle = computed(() => {
 });
 
 const preAuditEntryItems = computed(() => {
-  if (isSigningDetail.value) {
+  if (activeFlowTab.value === "signing") {
     return [
       {
         type: "signConfirmAmount",
@@ -563,7 +604,7 @@ const preAuditEntryItems = computed(() => {
     ];
   }
 
-  if (isSupplementDetail.value) {
+  if (activeFlowTab.value === "supplement") {
     return [
       {
         type: "idInfoSupplement",
@@ -749,6 +790,19 @@ function goPreAuditStep(item) {
   }
 }
 
+function handleProgress() {
+  uni.navigateTo({
+    url: buildRoute(APP_ROUTES.carloan.precheck.applyProgress, {
+      id: detailId || detail.value?.id || "",
+      creditOrderId: orderNo.value,
+      uuid: carloanStore.pageContext.uuid,
+      customerName: customerDisplayName.value,
+      customerPhone: customerDisplayPhone.value,
+      nodeCode: currentNodeCode.value,
+    }),
+  });
+}
+
 async function handlePreAuditSubmit() {
   if (!allPreAuditStepsDone.value) return;
   if (!orderNo.value) {
@@ -890,6 +944,79 @@ const copyText = (text) => {
   font-size: 28rpx;
   color: #2f3747;
   word-break: break-all;
+}
+
+.pre-progress-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+  padding: 24rpx 28rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  box-shadow: 0 10rpx 28rpx rgba(52, 92, 140, 0.06);
+
+  &:active {
+    transform: scale(0.99);
+    background: #fbfdff;
+  }
+}
+
+.pre-progress-card__left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.pre-progress-card__text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--u-type-primary);
+}
+
+.pre-progress-card__arrow {
+  font-size: 36rpx;
+  line-height: 1;
+  color: var(--u-type-primary);
+}
+
+.pre-flow-tabs {
+  display: flex;
+  align-items: center;
+  margin-bottom: 28rpx;
+  padding: 0 24rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  box-shadow: 0 10rpx 28rpx rgba(52, 92, 140, 0.06);
+}
+
+.pre-flow-tab {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 26rpx 0 24rpx;
+}
+
+.pre-flow-tab__label {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.pre-flow-tab--active .pre-flow-tab__label {
+  color: var(--u-type-primary);
+}
+
+.pre-flow-tab__indicator {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 52rpx;
+  height: 6rpx;
+  border-radius: 8rpx;
+  background: var(--u-type-primary);
+  transform: translateX(-50%);
 }
 
 .pre-section-title {

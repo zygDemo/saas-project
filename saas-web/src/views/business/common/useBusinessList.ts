@@ -18,7 +18,7 @@ import {
   applicationStatusOptions, signingStatusOptions,
   disbursementStatusOptions, repaymentStatusOptions,
   orgPackageOptions, apiEnabledOptions, orgExpireStateOptions,
-  flowNodeOptions, flowBusinessTypeOptions, funderTypeOptions,
+  flowNodeOptions, flowPhaseOptions, flowNodeStatusOptions, flowBusinessTypeOptions, funderTypeOptions,
   approvalActionOptions, toOption
 } from './constants'
 import { configs } from './configs'
@@ -278,11 +278,13 @@ export function useBusinessList() {
       filters.push({ prop: 'creatorId', label: '创建人ID', type: 'number' })
     }
     if (m === 'order-query') {
+      filters.push({ prop: 'phaseCode', label: '流程阶段', type: 'select', options: flowPhaseOptions })
+      filters.push({ prop: 'nodeCode', label: '当前节点', type: 'select', options: flowNodeOptions })
+      filters.push({ prop: 'nodeStatus', label: '节点状态', type: 'select', options: flowNodeStatusOptions })
       filters.push({ prop: 'orderNo', label: '订单号', type: 'text' })
       filters.push({ prop: 'customerName', label: '客户姓名', type: 'text' })
       filters.push({ prop: 'phone', label: '手机号', type: 'text' })
       filters.push({ prop: 'plateNumber', label: '车牌号', type: 'text' })
-      filters.push({ prop: 'nodeCode', label: '流程节点', type: 'select', options: flowNodeOptions })
     }
     if (['approval', 'signing', 'disbursement', 'repayment'].includes(m)) {
       filters.push({ prop: 'applicationId', label: '进件ID', type: 'number' })
@@ -316,7 +318,7 @@ export function useBusinessList() {
     if (cfg.keywordField) {
       items.push({ key: cfg.keywordField, label: '关键词', type: 'input', placeholder: cfg.keywordPlaceholder || '请输入关键词', clearable: true })
     }
-    if (phaseNodeTabs.value.length) {
+    if (phaseNodeTabs.value.length && moduleName.value !== 'order-query') {
       items.push({ key: 'currentNode', label: '流程节点', type: 'select', props: { placeholder: '全部节点', clearable: true, filterable: true, options: phaseNodeTabs.value.map((tab) => ({ label: tab.label, value: tab.value })) } })
     }
     if (statusFilterOptions.value.length) {
@@ -338,6 +340,8 @@ export function useBusinessList() {
 
   // ==================== 数据操作 ====================
   function resolveDefaultQuery(): Record<string, unknown> {
+    // 综合查询使用 defaultQuery 只为启用/默认详情阶段 Tab，不限制列表默认查询范围
+    if (moduleName.value === 'order-query') return {}
     if (routeMeta.value.defaultQuery) return routeMeta.value.defaultQuery
     const pathModule = getRoutePathModule()
     const phaseCode = applicationPhaseByPath[pathModule]
@@ -430,7 +434,13 @@ export function useBusinessList() {
     currentRow.value = row
     detailVisible.value = true
     try {
-      currentRow.value = { ...row, ...flattenRelations(await fetchBusinessDetail(config.value.api, Number(row.id))) }
+      const detail = await fetchBusinessDetail(config.value.api, Number(row.id))
+      const flat = flattenRelations(detail)
+      // 显式保留 customer 等嵌套对象，避免被展开后丢失
+      if (detail.customer) flat.customer = detail.customer
+      if (detail.vehicle) flat.vehicle = detail.vehicle
+      if (Array.isArray(detail.vehicles) && detail.vehicles.length) flat.vehicles = detail.vehicles
+      currentRow.value = { ...row, ...flat }
     } catch {
       currentRow.value = row
     }
