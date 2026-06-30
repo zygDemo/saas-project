@@ -1,5 +1,10 @@
 <template>
-  <layout :active-tab="activeTabIndex" navTitle="我的" show-tabbar :tabbar-scope="currentTabbarScope">
+  <layout
+    :active-tab="activeTabIndex"
+    navTitle="我的"
+    show-tabbar
+    :tabbar-scope="currentTabbarScope"
+  >
     <scroll-view class="my-scroll" scroll-y>
       <view class="my-page">
         <view class="profile-panel" @click="handleProfileClick">
@@ -140,6 +145,21 @@ const localStore = useLocalStore();
 const sessionStore = useSessionStore();
 const { userInfo } = storeToRefs(localStore);
 
+const currentProjectLabel = computed(() => {
+  switch (localStore.currentSystem) {
+    case CurrentSystem.CARLOAN:
+      return "当前：车贷业务，点击返回项目选择";
+    case CurrentSystem.FOOD:
+      return "当前：点餐业务，点击返回项目选择";
+    case CurrentSystem.CREDIT:
+      return "当前：征信查询，点击返回项目选择";
+    case CurrentSystem.READING:
+      return "当前：读书模块，点击返回项目选择";
+    default:
+      return "当前：项目选择首页";
+  }
+});
+
 const menuList = computed<MenuItem[]>(() => {
   const items: MenuItem[] = [];
   // 多模块模式下才显示切换项目入口
@@ -160,27 +180,27 @@ const menuList = computed<MenuItem[]>(() => {
       path: "/pages/my/settings",
       iconClass: "menu-item__icon--setting",
     },
-  {
-    icon: "question-circle",
-    title: "帮助中心",
-    desc: "查看常见问题和使用说明",
-    path: "/pages/my/faq",
-    iconClass: "menu-item__icon--help",
-  },
-  {
-    icon: "file-text",
-    title: "隐私政策",
-    desc: "了解数据安全和隐私说明",
-    path: "/pages/my/privacy",
-    iconClass: "menu-item__icon--privacy",
-  },
+    {
+      icon: "question-circle",
+      title: "帮助中心",
+      desc: "查看常见问题和使用说明",
+      path: "/pages/my/faq",
+      iconClass: "menu-item__icon--help",
+    },
+    {
+      icon: "file-text",
+      title: "隐私政策",
+      desc: "了解数据安全和隐私说明",
+      path: "/pages/my/privacy",
+      iconClass: "menu-item__icon--privacy",
+    },
     {
       icon: "file-text",
       title: "用户协议",
       desc: "查看平台服务条款",
       path: "/pages/my/agreement",
       iconClass: "menu-item__icon--agreement",
-    }
+    },
   );
   return items;
 });
@@ -194,12 +214,17 @@ const stats = ref<StatState>({
 
 const currentUser = computed<UserInfo | null>(() => userInfo.value);
 
-const isLoggedIn = computed(() => Boolean(localStore.token && currentUser.value));
+const isLoggedIn = computed(() =>
+  Boolean(localStore.token && currentUser.value),
+);
 
 const currentTabbarScope = computed(() => {
-  if (localStore.currentSystem === CurrentSystem.CARLOAN) return TABBAR_SCOPES.carloan;
-  if (localStore.currentSystem === CurrentSystem.FOOD) return TABBAR_SCOPES.food;
-  if (localStore.currentSystem === CurrentSystem.READING) return TABBAR_SCOPES.reading;
+  if (localStore.currentSystem === CurrentSystem.CARLOAN)
+    return TABBAR_SCOPES.carloan;
+  if (localStore.currentSystem === CurrentSystem.FOOD)
+    return TABBAR_SCOPES.food;
+  if (localStore.currentSystem === CurrentSystem.READING)
+    return TABBAR_SCOPES.reading;
   return TABBAR_SCOPES.portal;
 });
 
@@ -208,23 +233,23 @@ const activeTabIndex = computed(() => {
   return 2;
 });
 
-const currentProjectLabel = computed(() => {
-  if (localStore.currentSystem === CurrentSystem.CARLOAN) return '当前：车贷业务，点击返回项目选择';
-  if (localStore.currentSystem === CurrentSystem.FOOD) return '当前：点餐业务，点击返回项目选择';
-  if (localStore.currentSystem === CurrentSystem.CREDIT) return '当前：征信查询，点击返回项目选择';
-  if (localStore.currentSystem === CurrentSystem.READING) return '当前：读书模块，点击返回项目选择';
-  return '当前：项目选择首页';
-});
-
 const displayName = computed(() => {
   const info = currentUser.value;
-  return info?.nickName || info?.realName || info?.userName || info?.username || "未登录";
+  return (
+    info?.nickName ||
+    info?.realName ||
+    info?.userName ||
+    info?.username ||
+    "未登录"
+  );
 });
 
 const avatarText = computed(() => displayName.value.slice(0, 1) || "我");
 
 const phoneText = computed(() => {
-  const phone = String(currentUser.value?.phonenumber || currentUser.value?.phone || "");
+  const phone = String(
+    currentUser.value?.phonenumber || currentUser.value?.phone || "",
+  );
 
   if (!phone) {
     return isLoggedIn.value ? "暂未绑定手机号" : "点击登录后查看手机号";
@@ -334,12 +359,17 @@ async function loadBusinessStats() {
 
   try {
     const res = await businessApi.getStatisticsOverview();
-    const payload = ((res?.data ?? res ?? {}) as StatisticsOverview & Record<string, unknown>);
+    const payload = (res?.data ?? res ?? {}) as StatisticsOverview &
+      Record<string, unknown>;
 
     stats.value = {
       totalLeads: Number(payload.leadCount ?? payload.todayLeads ?? 0),
-      totalEntries: Number(payload.entryCount ?? payload.todayApplications ?? 0),
-      pendingApproval: Number(payload.pendingApproval ?? payload.loanCount ?? 0),
+      totalEntries: Number(
+        payload.entryCount ?? payload.todayApplications ?? 0,
+      ),
+      pendingApproval: Number(
+        payload.pendingApproval ?? payload.loanCount ?? 0,
+      ),
       totalLoanAmount: payload.loanAmount ?? payload.monthLoanAmount ?? 0,
     };
   } catch (error) {
@@ -460,7 +490,12 @@ onShow(() => {
 .profile-panel {
   padding: 30rpx;
   color: #ffffff;
-  background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 48%, var(--u-type-primary-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--u-type-primary-dark) 0%,
+    var(--u-type-primary) 48%,
+    var(--u-type-primary-light) 100%
+  );
 }
 
 .profile-panel__header {
@@ -618,7 +653,11 @@ onShow(() => {
 
 .stat-item__icon--lead,
 .menu-item__icon--setting {
-  background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-disabled));
+  background: linear-gradient(
+    135deg,
+    var(--u-type-primary),
+    var(--u-type-primary-disabled)
+  );
 }
 
 .stat-item__icon--entry,

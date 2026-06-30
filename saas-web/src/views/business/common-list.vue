@@ -199,60 +199,69 @@
           </ElDescriptions>
         </div>
         <ElTabs v-model="activeMainTab" class="detail-drawer__main-tabs">
-          <ElTabPane label="申请信息" name="application">
-            <div class="detail-drawer__body">
-              <div class="detail-drawer__sidebar">
-                <div
-                  v-for="node in phaseNodeTabs"
-                  :key="node.value"
-                  class="detail-drawer__sidebar-item"
-                  :class="{ 'is-active': activeSideTab === String(node.value) }"
-                  @click="activeSideTab = String(node.value)"
-                >
-                  {{ node.label }}
-                </div>
-              </div>
-              <div class="detail-drawer__side-content">
-                <ElDescriptions
-                  :column="2"
-                  border
-                  :content-style="{ paddingBottom: '12px' }"
-                >
+          <ElTabPane
+            v-for="phase in phaseTabs"
+            :key="phase.code"
+            :label="phase.name"
+            :name="String(phase.code)"
+          >
+            <div v-if="!phase.groups.length" class="detail-drawer__phase-empty">
+              暂无此阶段数据
+            </div>
+            <div v-else class="phase-fields">
+              <div
+                v-for="group in phase.groups"
+                :key="group.nodeCode"
+                class="phase-fields__group"
+              >
+                <div class="phase-fields__group-title">{{ group.nodeName }}</div>
+                <!-- 文件节点：图片/PDF/音视频回显 -->
+                <template v-if="group.fields.length === 1 && group.fields[0].prop === '_files'">
+                  <div class="file-gallery">
+                    <div
+                      v-for="file in group.fields[0].value"
+                      :key="file.id"
+                      class="file-gallery__item"
+                      @click="previewFile(file)"
+                    >
+                      <!-- 图片 -->
+                      <img
+                        v-if="file.displayType === 'image'"
+                        :src="file.fileUrl"
+                        :alt="file.fileTypeName"
+                        class="file-gallery__img"
+                      />
+                      <!-- PDF -->
+                      <div v-else-if="file.displayType === 'pdf'" class="file-gallery__icon file-gallery__icon--pdf">
+                        <ArtSvgIcon icon="ri:file-pdf-2-line" class="file-gallery__icon-svg" />
+                      </div>
+                      <!-- 视频 -->
+                      <div v-else-if="file.displayType === 'video'" class="file-gallery__icon file-gallery__icon--video">
+                        <ArtSvgIcon icon="ri:video-line" class="file-gallery__icon-svg" />
+                      </div>
+                      <!-- 音频 -->
+                      <div v-else-if="file.displayType === 'audio'" class="file-gallery__icon file-gallery__icon--audio">
+                        <ArtSvgIcon icon="ri:music-line" class="file-gallery__icon-svg" />
+                      </div>
+                      <!-- 其他 -->
+                      <div v-else class="file-gallery__icon file-gallery__icon--other">
+                        <ArtSvgIcon icon="ri:file-3-line" class="file-gallery__icon-svg" />
+                      </div>
+                      <div class="file-gallery__name">{{ file.fileTypeName || file.fileName }}</div>
+                    </div>
+                  </div>
+                </template>
+                <!-- 普通字段 -->
+                <ElDescriptions v-else :column="2" border size="small">
                   <ElDescriptionsItem
-                    v-for="field in currentSideFields"
+                    v-for="field in group.fields"
                     :key="field.prop"
                     :label="field.label"
                   >
-                    {{ formatCell(currentRow, field.prop) }}
+                    {{ field.value }}
                   </ElDescriptionsItem>
                 </ElDescriptions>
-                <div v-if="!currentSideFields.length" class="detail-drawer__empty">
-                  暂无此节点数据
-                </div>
               </div>
-            </div>
-          </ElTabPane>
-          <ElTabPane label="关联订单" name="related">
-            <div class="detail-drawer__tab-content">
-              <ElDescriptions
-                v-if="currentRow"
-                :column="2"
-                border
-                :content-style="{ paddingBottom: '12px' }"
-              >
-                <ElDescriptionsItem
-                  v-for="column in detailColumns"
-                  :key="column.prop"
-                  :label="column.label"
-                >
-                  {{ formatCell(currentRow, column.prop) }}
-                </ElDescriptionsItem>
-              </ElDescriptions>
-            </div>
-          </ElTabPane>
-          <ElTabPane label="流程信息" name="flow">
-            <div class="detail-drawer__tab-content">
-              <ElEmpty description="暂无流程信息" />
             </div>
           </ElTabPane>
         </ElTabs>
@@ -278,6 +287,25 @@
           <pre class="detail-json">{{ JSON.stringify(currentRow, null, 2) }}</pre>
         </div>
       </template>
+
+    <!-- 文件预览弹窗 -->
+    <ElDialog v-model="filePreviewVisible" title="文件预览" width="720px">
+      <video
+        v-if="filePreviewType === 'video'"
+        :src="filePreviewUrl"
+        controls
+        style="width: 100%; max-height: 480px"
+      />
+      <audio
+        v-else-if="filePreviewType === 'audio'"
+        :src="filePreviewUrl"
+        controls
+        style="width: 100%"
+      />
+      <template #footer>
+        <ElButton @click="filePreviewVisible = false">关闭</ElButton>
+      </template>
+    </ElDialog>
     </ElDrawer>
   </div>
 </template>
@@ -295,7 +323,7 @@
     formModel, actionModel, activeAction,
     pagination, selectLoading,
     config, displayTitle, isOrgModule, showActionOverview,
-    formFields, actionFields, detailColumns, phaseNodeTabs,
+    formFields, actionFields, detailColumns, phaseNodeTabs, phaseTabs,
     searchFormItems, orgSummaryItems, moduleName,
     loadData, handleSizeChange, handleCurrentChange,
     handleArtSearch, handleArtReset,
@@ -309,34 +337,12 @@
   const route = useRoute()
 
   // ==================== 详情增强 ====================
-  const activeMainTab = ref('application')
-  const activeSideTab = ref('')
+  const activeMainTab = ref('1000')
 
   const hasPhaseTabs = computed(() => phaseNodeTabs.value.length > 0)
 
   // 摘要字段：取 detailColumns 前4项作为抽屉顶部摘要
   const summaryFields = computed(() => detailColumns.value.slice(0, 4))
-
-  // 子节点 → 字段关键词映射，用于按节点筛选字段
-  const sideTabFieldKeywords: Record<number, string[]> = {
-    1100: ['customer', 'name', 'phone', 'idCard', 'gender', 'birth', 'address', 'emergency', 'contact'],
-    1110: ['plate', 'vin', 'car', 'vehicle', 'engine', 'brand', 'model', 'mileage', 'color'],
-    1120: ['application', 'order', 'amount', 'term', 'rate', 'purpose', 'product', 'repayment', 'method'],
-    1130: ['contract', 'sign', 'video', 'auth', 'signed'],
-    1140: ['status', 'current', 'node'],
-    1200: ['risk', 'credit', 'score', 'review'],
-    1250: ['funder', 'approve', 'approval']
-  }
-
-  // 当前选中子节点对应的字段列表
-  const currentSideFields = computed(() => {
-    const nodeValue = Number(activeSideTab.value)
-    const keywords = sideTabFieldKeywords[nodeValue]
-    if (!keywords || !keywords.length) return detailColumns.value
-    return detailColumns.value.filter(col =>
-      keywords.some(kw => col.prop.toLowerCase().includes(kw.toLowerCase()))
-    )
-  })
 
 
   // ArtTable columns 配置（依赖 render function，保留在 .vue 中）
@@ -444,10 +450,7 @@
   // 打开详情抽屉时重置标签页状态
   watch(detailVisible, (visible) => {
     if (visible) {
-      activeMainTab.value = 'application'
-      activeSideTab.value = phaseNodeTabs.value.length > 0
-        ? String(phaseNodeTabs.value[0].value)
-        : ''
+      activeMainTab.value = phaseTabs.value.length > 0 ? String(phaseTabs.value[0].code) : '1000'
     }
   })
 
@@ -455,12 +458,28 @@
   watch(
     () => route.path,
     () => {
-      activeMainTab.value = 'application'
-      activeSideTab.value = ''
+      activeMainTab.value = phaseTabs.value.length > 0 ? String(phaseTabs.value[0].code) : '1000'
       resetRuntimeState()
       loadData()
     }
   )
+
+  // 文件预览
+  const filePreviewVisible = ref(false)
+  const filePreviewUrl = ref('')
+  const filePreviewType = ref<'image' | 'pdf' | 'video' | 'audio' | 'other'>('other')
+
+  function previewFile(file: any) {
+    filePreviewUrl.value = file.fileUrl
+    filePreviewType.value = file.displayType
+    if (file.displayType === 'image' || file.displayType === 'pdf') {
+      window.open(file.fileUrl, '_blank')
+    } else if (file.displayType === 'video' || file.displayType === 'audio') {
+      filePreviewVisible.value = true
+    } else {
+      window.open(file.fileUrl, '_blank')
+    }
+  }
 </script>
 
 <style scoped>
@@ -726,5 +745,129 @@
     text-align: center;
     color: var(--el-text-color-secondary);
     font-size: 13px;
+  }
+
+  /* ==================== 阶段字段分组 ==================== */
+  .detail-drawer__phase-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .phase-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 4px 0;
+  }
+
+  .phase-fields__group {
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .phase-fields__group-title {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    background: var(--el-fill-color-extra-light);
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+
+  .phase-fields__group :deep(.el-descriptions) {
+    border: none;
+    border-radius: 0;
+  }
+
+  .phase-fields__group :deep(.el-descriptions__body) {
+    border: none;
+  }
+
+  /* ==================== 文件回显 ==================== */
+  .file-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 8px 0;
+  }
+
+  .file-gallery__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px;
+    cursor: pointer;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .file-gallery__item:hover {
+    border-color: var(--el-color-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .file-gallery__img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+
+  .file-gallery__icon {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100px;
+    border-radius: 4px;
+  }
+
+  .file-gallery__icon--pdf {
+    background: #fef0f0;
+  }
+
+  .file-gallery__icon--video {
+    background: #f0f5ff;
+  }
+
+  .file-gallery__icon--audio {
+    background: #f0fef0;
+  }
+
+  .file-gallery__icon--other {
+    background: var(--el-fill-color-light);
+  }
+
+  .file-gallery__icon-svg {
+    font-size: 36px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .file-gallery__icon--pdf .file-gallery__icon-svg {
+    color: #f56c6c;
+  }
+
+  .file-gallery__icon--video .file-gallery__icon-svg {
+    color: #409eff;
+  }
+
+  .file-gallery__icon--audio .file-gallery__icon-svg {
+    color: #67c23a;
+  }
+
+  .file-gallery__name {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
   }
 </style>

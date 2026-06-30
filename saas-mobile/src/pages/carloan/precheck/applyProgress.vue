@@ -4,21 +4,18 @@
       <!-- 客户信息卡片 -->
       <view class="customer-card">
         <view class="customer-header">
-          <view class="avatar">{{ (info.customerName || '?').charAt(0) }}</view>
+          <view class="avatar">{{ (info.customerName || "?").charAt(0) }}</view>
           <view class="customer-meta">
-            <text class="customer-name">{{ info.customerName || '未知客户' }}</text>
-            <text class="customer-phone">{{ info.phone || '-' }}</text>
+            <text class="customer-name">{{
+              info.customerName || "未知客户"
+            }}</text>
+            <text class="customer-phone">{{ info.phone || "-" }}</text>
           </view>
-          <u-tag
-            :text="statusText"
-            :type="statusType"
-            size="mini"
-            plain
-          />
+          <u-tag :text="statusText" :type="statusType" size="mini" plain />
         </view>
-        <view v-if="info.applicationNo || info.creditOrderId" class="order-row">
+        <view v-if="info.applicationNo" class="order-row">
           <text class="order-label">申请编号</text>
-          <text class="order-value">{{ info.applicationNo || info.creditOrderId }}</text>
+          <text class="order-value">{{ info.applicationNo }}</text>
         </view>
         <view v-if="info.productName" class="order-row">
           <text class="order-label">贷款产品</text>
@@ -26,7 +23,9 @@
         </view>
         <view v-if="info.amount" class="order-row">
           <text class="order-label">申请金额</text>
-          <text class="order-value amount">¥{{ formatMoney(info.amount) }}</text>
+          <text class="order-value amount"
+            >¥{{ formatMoney(info.amount) }}</text
+          >
         </view>
       </view>
 
@@ -34,22 +33,17 @@
       <view class="timeline-card">
         <view class="timeline-header">
           <text class="timeline-title">审批进度</text>
-          <text class="timeline-sub">{{ completedSteps }}/{{ steps.length }} 已完成</text>
+          <text class="timeline-sub"
+            >{{ completedCount }}/{{ steps.length }} 已完成</text
+          >
         </view>
-
         <view class="timeline-track">
           <view
-            v-for="(step, index) in steps"
+            v-for="(step, idx) in steps"
             :key="step.key"
             class="step-item"
-            :class="{
-              'step-done': step.status === 'done',
-              'step-current': step.status === 'current',
-              'step-pending': step.status === 'pending',
-              'step-rejected': step.status === 'rejected',
-            }"
+            :class="`step-${step.status}`"
           >
-            <!-- 步骤图标 -->
             <view class="step-dot-wrap">
               <view class="step-dot">
                 <u-icon
@@ -64,36 +58,31 @@
                   size="22"
                   color="#fff"
                 />
-                <text v-else class="dot-num">{{ index + 1 }}</text>
+                <text v-else class="dot-num">{{ idx + 1 }}</text>
               </view>
-              <view v-if="index < steps.length - 1" class="step-line" />
+              <view v-if="idx < steps.length - 1" class="step-line" />
             </view>
-
-            <!-- 步骤内容 -->
             <view class="step-content">
               <view class="step-title-row">
                 <text class="step-title">{{ step.title }}</text>
                 <u-tag
-                  v-if="step.statusLabel"
-                  :text="step.statusLabel"
-                  :type="step.status === 'done' ? 'success' : step.status === 'rejected' ? 'error' : step.status === 'current' ? 'primary' : 'info'"
+                  v-if="step.tag"
+                  :text="step.tag"
+                  :type="tagType(step.status)"
                   size="mini"
                   plain
                 />
               </view>
               <text class="step-desc">{{ step.desc }}</text>
               <text v-if="step.time" class="step-time">{{ step.time }}</text>
-              <text v-if="step.remark" class="step-remark">{{ step.remark }}</text>
             </view>
           </view>
         </view>
       </view>
 
-      <!-- 产品信息 -->
+      <!-- 审批详情 -->
       <view v-if="info.funderName || info.approvedAmount" class="info-card">
-        <view class="info-header">
-          <text class="info-title">审批详情</text>
-        </view>
+        <text class="info-title">审批详情</text>
         <view class="info-grid">
           <view v-if="info.funderName" class="info-item">
             <text class="info-label">资方</text>
@@ -101,7 +90,9 @@
           </view>
           <view v-if="info.approvedAmount" class="info-item">
             <text class="info-label">审批金额</text>
-            <text class="info-value highlight">¥{{ formatMoney(info.approvedAmount) }}</text>
+            <text class="info-value highlight"
+              >¥{{ formatMoney(info.approvedAmount) }}</text
+            >
           </view>
           <view v-if="info.approvedTerm" class="info-item">
             <text class="info-label">审批期限</text>
@@ -120,25 +111,24 @@
 
       <!-- 操作按钮 -->
       <view v-if="showActions" class="action-bar">
-        <u-button
-          v-if="canSign"
-          type="primary"
-          shape="circle"
-          @click="goToSign"
+        <u-button v-if="canSign" type="primary" shape="circle" @click="goToSign"
+          >去签约</u-button
         >
-          去签约
-        </u-button>
         <u-button
           v-if="canSupplement"
           type="warning"
           shape="circle"
           @click="goToSupplement"
+          >去补件</u-button
         >
-          去补件
-        </u-button>
       </view>
 
-      <!-- 加载状态 -->
+      <view class="back-to-list">
+        <u-button type="info" shape="circle" plain @click="goToList"
+          >返回列表页</u-button
+        >
+      </view>
+
       <view v-if="loading" class="loading-wrap">
         <u-loading mode="circle" size="48" />
       </view>
@@ -147,18 +137,140 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
-import { buildSignRouteQuery, buildSupplementRouteQuery } from "@/common/carloan-route-query";
+import {
+  buildSignRouteQuery,
+  buildSupplementRouteQuery,
+} from "@/common/carloan-route-query";
 
 const businessApi = useCarloanApi();
-
 const loading = ref(false);
 const creditOrderId = ref("");
-const applicationId = ref("");
 
+// ── 状态常量 ──
+const STATUS_TEXT = {
+  DRAFT: "草稿",
+  SUBMITTED: "已提交",
+  PENDING_RISK_PRE: "风控预审中",
+  RISK_PRE_PASSED: "预审通过",
+  RISK_PRE_REJECTED: "预审拒绝",
+  PENDING_FUNDER_PRE: "资方预审中",
+  FUNDER_PRE_PASSED: "资方预审通过",
+  FUNDER_PRE_REJECTED: "资方预审拒绝",
+  PENDING_SUPPLEMENT: "待补件",
+  PENDING_FIRST_REVIEW: "待初审",
+  FIRST_REVIEW_PASSED: "初审通过",
+  FIRST_REVIEW_REJECTED: "初审拒绝",
+  PENDING_FINAL_REVIEW: "待终审",
+  FINAL_REVIEW_PASSED: "终审通过",
+  FINAL_REVIEW_REJECTED: "终审拒绝",
+  PENDING_FUNDER_REVIEW: "待资方审批",
+  FUNDER_REVIEW_PASSED: "资方通过",
+  FUNDER_REVIEW_REJECTED: "资方拒绝",
+  PENDING_SIGN: "待签约",
+  SIGNING_PROGRESS: "签约中",
+  SIGNED: "已签约",
+  PENDING_LOAN_REQUEST: "待请款",
+  LOAN_REQUEST_REVIEWING: "请款审核中",
+  LOAN_REQUEST_APPROVED: "请款通过",
+  LOAN_REQUEST_REJECTED: "请款拒绝",
+  PENDING_DISBURSEMENT: "待放款",
+  DISBURSED: "已放款",
+  CANCELLED: "已取消",
+};
+
+const STATUS_TYPE = {
+  DRAFT: "info",
+  RISK_PRE_REJECTED: "error",
+  FUNDER_PRE_REJECTED: "error",
+  FIRST_REVIEW_REJECTED: "error",
+  FINAL_REVIEW_REJECTED: "error",
+  FUNDER_REVIEW_REJECTED: "error",
+  LOAN_REQUEST_REJECTED: "error",
+  CANCELLED: "info",
+};
+
+// 统一的顺序数组，用于判断步骤进度
+const ORDER = [
+  "DRAFT",
+  "SUBMITTED",
+  "PENDING_RISK_PRE",
+  "RISK_PRE_PASSED",
+  "PENDING_SUPPLEMENT",
+  "PENDING_FIRST_REVIEW",
+  "FIRST_REVIEW_PASSED",
+  "PENDING_FINAL_REVIEW",
+  "FINAL_REVIEW_PASSED",
+  "PENDING_FUNDER_REVIEW",
+  "FUNDER_REVIEW_PASSED",
+  "PENDING_SIGN",
+  "SIGNED",
+  "PENDING_LOAN_REQUEST",
+  "LOAN_REQUEST_APPROVED",
+  "PENDING_DISBURSEMENT",
+  "DISBURSED",
+];
+
+// 拒绝状态 → 对应的步骤状态
+const REJECT_AT = {
+  RISK_PRE_REJECTED: "PENDING_RISK_PRE",
+  FIRST_REVIEW_REJECTED: "PENDING_FIRST_REVIEW",
+  FINAL_REVIEW_REJECTED: "PENDING_FINAL_REVIEW",
+  FUNDER_REVIEW_REJECTED: "PENDING_FUNDER_REVIEW",
+  LOAN_REQUEST_REJECTED: "PENDING_LOAN_REQUEST",
+};
+
+// 时间线步骤定义
+const STEP_DEFS = [
+  {
+    key: "submit",
+    title: "提交进件",
+    desc: "资料已提交，等待审核",
+    at: "SUBMITTED",
+    timeKey: "submittedAt",
+  },
+  {
+    key: "risk_pre",
+    title: "风控预审",
+    desc: "系统自动校验客户资质",
+    at: "PENDING_RISK_PRE",
+  },
+  {
+    key: "first_review",
+    title: "初审",
+    desc: "风控人员审核资料真实性",
+    at: "PENDING_FIRST_REVIEW",
+  },
+  {
+    key: "final_review",
+    title: "终审",
+    desc: "核定额度、期限和利率",
+    at: "PENDING_FINAL_REVIEW",
+  },
+  {
+    key: "funder_review",
+    title: "资方审批",
+    desc: "提交资方系统审批",
+    at: "PENDING_FUNDER_REVIEW",
+  },
+  {
+    key: "signing",
+    title: "合同签约",
+    desc: "客户确认额度并签署合同",
+    at: "PENDING_SIGN",
+  },
+  {
+    key: "disbursement",
+    title: "放款",
+    desc: "GPS安装、抵押办理后放款",
+    at: "PENDING_DISBURSEMENT",
+  },
+];
+
+// ── 响应式数据 ──
 const info = ref({
   customerName: "",
   phone: "",
@@ -168,203 +280,86 @@ const info = ref({
   funderName: "",
   amount: 0,
   approvedAmount: 0,
-  term: 0,
   approvedTerm: 0,
-  rate: 0,
   approvedRate: 0,
   repaymentMethod: "",
   status: "",
-  phaseCode: 0,
-  currentNode: 0,
-  currentNodeName: "",
-  currentStatus: "",
-  currentStatusName: "",
+  submittedAt: "",
 });
 
-// 状态映射
-const STATUS_MAP = {
-  DRAFT: { text: "草稿", type: "info" },
-  SUBMITTED: { text: "已提交", type: "primary" },
-  PENDING_RISK_PRE: { text: "风控预审中", type: "warning" },
-  RISK_PRE_PASSED: { text: "预审通过", type: "success" },
-  RISK_PRE_REJECTED: { text: "预审拒绝", type: "error" },
-  PENDING_FUNDER_PRE: { text: "资方预审中", type: "warning" },
-  FUNDER_PRE_PASSED: { text: "资方预审通过", type: "success" },
-  FUNDER_PRE_REJECTED: { text: "资方预审拒绝", type: "error" },
-  PENDING_SUPPLEMENT: { text: "待补件", type: "warning" },
-  PENDING_FIRST_REVIEW: { text: "待初审", type: "warning" },
-  FIRST_REVIEW_PASSED: { text: "初审通过", type: "success" },
-  FIRST_REVIEW_REJECTED: { text: "初审拒绝", type: "error" },
-  PENDING_FINAL_REVIEW: { text: "待终审", type: "warning" },
-  FINAL_REVIEW_PASSED: { text: "终审通过", type: "success" },
-  FINAL_REVIEW_REJECTED: { text: "终审拒绝", type: "error" },
-  PENDING_FUNDER_REVIEW: { text: "待资方审批", type: "warning" },
-  FUNDER_REVIEW_PASSED: { text: "资方通过", type: "success" },
-  FUNDER_REVIEW_REJECTED: { text: "资方拒绝", type: "error" },
-  PENDING_SIGN: { text: "待签约", type: "warning" },
-  SIGNING_PROGRESS: { text: "签约中", type: "primary" },
-  SIGNED: { text: "已签约", type: "success" },
-  PENDING_LOAN_REQUEST: { text: "待请款", type: "warning" },
-  LOAN_REQUEST_REVIEWING: { text: "请款审核中", type: "warning" },
-  LOAN_REQUEST_APPROVED: { text: "请款通过", type: "success" },
-  LOAN_REQUEST_REJECTED: { text: "请款拒绝", type: "error" },
-  PENDING_DISBURSEMENT: { text: "待放款", type: "warning" },
-  DISBURSED: { text: "已放款", type: "success" },
-  CANCELLED: { text: "已取消", type: "info" },
-};
+// ── 计算属性 ──
+const statusText = computed(
+  () => STATUS_TEXT[info.value.status] || info.value.status || "未知",
+);
+const statusType = computed(() => STATUS_TYPE[info.value.status] || "primary");
+const statusIdx = computed(() => ORDER.indexOf(info.value.status));
 
-const statusText = computed(() => {
-  const s = STATUS_MAP[info.value.status];
-  return s?.text || info.value.currentStatusName || info.value.status || "未知";
-});
-
-const statusType = computed(() => {
-  const s = STATUS_MAP[info.value.status];
-  return s?.type || "info";
-});
-
-// 构建进度步骤
 const steps = computed(() => {
   const s = info.value.status;
-  const statusOrder = [
-    "DRAFT", "SUBMITTED", "PENDING_RISK_PRE", "RISK_PRE_PASSED",
-    "PENDING_SUPPLEMENT", "PENDING_FIRST_REVIEW", "FIRST_REVIEW_PASSED",
-    "PENDING_FINAL_REVIEW", "FINAL_REVIEW_PASSED",
-    "PENDING_FUNDER_REVIEW", "FUNDER_REVIEW_PASSED",
-    "PENDING_SIGN", "SIGNED",
-    "PENDING_LOAN_REQUEST", "LOAN_REQUEST_APPROVED",
-    "PENDING_DISBURSEMENT", "DISBURSED",
-  ];
-  const currentIdx = statusOrder.indexOf(s);
+  const curIdx = statusIdx.value;
 
-  return [
-    {
-      key: "submit",
-      title: "提交进件",
-      desc: "资料已提交，等待审核",
-      status: getStatus("SUBMITTED", s, currentIdx, 1),
-      statusLabel: getStatusLabel("SUBMITTED", s),
-      time: info.value.submittedAt || "",
-    },
-    {
-      key: "risk_pre",
-      title: "风控预审",
-      desc: "系统自动校验客户资质",
-      status: getStatus("PENDING_RISK_PRE", s, currentIdx, 2),
-      statusLabel: getStatusLabel("PENDING_RISK_PRE", s),
-    },
-    {
-      key: "first_review",
-      title: "初审",
-      desc: "风控人员审核资料真实性",
-      status: getStatus("PENDING_FIRST_REVIEW", s, currentIdx, 4),
-      statusLabel: getStatusLabel("PENDING_FIRST_REVIEW", s),
-    },
-    {
-      key: "final_review",
-      title: "终审",
-      desc: "核定额度、期限和利率",
-      status: getStatus("PENDING_FINAL_REVIEW", s, currentIdx, 6),
-      statusLabel: getStatusLabel("PENDING_FINAL_REVIEW", s),
-    },
-    {
-      key: "funder_review",
-      title: "资方审批",
-      desc: "提交资方系统审批",
-      status: getStatus("PENDING_FUNDER_REVIEW", s, currentIdx, 8),
-      statusLabel: getStatusLabel("PENDING_FUNDER_REVIEW", s),
-    },
-    {
-      key: "signing",
-      title: "合同签约",
-      desc: "客户确认额度并签署合同",
-      status: getStatus("PENDING_SIGN", s, currentIdx, 10),
-      statusLabel: getStatusLabel("PENDING_SIGN", s),
-    },
-    {
-      key: "disbursement",
-      title: "放款",
-      desc: "GPS安装、抵押办理后放款",
-      status: getStatus("PENDING_DISBURSEMENT", s, currentIdx, 14),
-      statusLabel: getStatusLabel("PENDING_DISBURSEMENT", s),
-    },
-  ];
+  return STEP_DEFS.map((def) => {
+    const defIdx = ORDER.indexOf(def.at);
+    let status = "pending";
+
+    if (s === def.at) {
+      status = "current";
+    } else if (REJECT_AT[s] === def.at) {
+      status = "rejected";
+    } else if (REJECT_AT[s] && defIdx < ORDER.indexOf(REJECT_AT[s])) {
+      status = "done";
+    } else if (curIdx > defIdx) {
+      status = "done";
+    }
+
+    const tag =
+      status === "current"
+        ? "进行中"
+        : status === "done"
+          ? "已完成"
+          : status === "rejected"
+            ? "已拒绝"
+            : "";
+
+    return {
+      key: def.key,
+      title: def.title,
+      desc: def.desc,
+      status,
+      tag,
+      time: def.timeKey ? info.value[def.timeKey] || "" : "",
+    };
+  });
 });
 
-// 补件特殊处理
-const supplementStatus = computed(() => {
-  const s = info.value.status;
-  if (s === "PENDING_SUPPLEMENT") return "current";
-  const order = ["DRAFT", "SUBMITTED", "PENDING_RISK_PRE", "PENDING_SUPPLEMENT"];
-  if (order.indexOf(s) > order.indexOf("PENDING_SUPPLEMENT")) return "done";
-  return "pending";
-});
-
-const completedSteps = computed(() =>
-  steps.value.filter((s) => s.status === "done").length
+const completedCount = computed(
+  () => steps.value.filter((s) => s.status === "done").length,
 );
 
-const showActions = computed(() => {
-  const s = info.value.status;
-  return s === "PENDING_SUPPLEMENT" || s === "PENDING_SIGN" || s === "SIGNING_PROGRESS";
-});
+const showActions = computed(() =>
+  ["PENDING_SUPPLEMENT", "PENDING_SIGN", "SIGNING_PROGRESS"].includes(
+    info.value.status,
+  ),
+);
 
-const canSign = computed(() => {
-  const s = info.value.status;
-  return ["PENDING_SIGN", "SIGNING_PROGRESS", "FUNDER_REVIEW_PASSED", "FINAL_REVIEW_PASSED"].includes(s);
-});
+const canSign = computed(() =>
+  [
+    "PENDING_SIGN",
+    "SIGNING_PROGRESS",
+    "FUNDER_REVIEW_PASSED",
+    "FINAL_REVIEW_PASSED",
+  ].includes(info.value.status),
+);
 
-const canSupplement = computed(() => {
-  return info.value.status === "PENDING_SUPPLEMENT";
-});
+const canSupplement = computed(
+  () => info.value.status === "PENDING_SUPPLEMENT",
+);
 
-function getStatus(stepStatus, currentStatus, currentIdx, stepIdx) {
-  if (currentStatus === stepStatus) return "current";
-  if (currentStatus.includes("REJECTED")) {
-    // 拒绝状态 - 判断是哪个阶段被拒绝
-    const rejectMap = {
-      "RISK_PRE_REJECTED": 2,
-      "FUNDER_PRE_REJECTED": 3,
-      "FIRST_REVIEW_REJECTED": 5,
-      "FINAL_REVIEW_REJECTED": 7,
-      "FUNDER_REVIEW_REJECTED": 9,
-      "LOAN_REQUEST_REJECTED": 13,
-    };
-    const rejectIdx = rejectMap[currentStatus];
-    if (rejectIdx !== undefined) {
-      if (stepIdx === rejectIdx) return "rejected";
-      if (stepIdx < rejectIdx) return "done";
-    }
-  }
-  if (currentIdx >= stepIdx) return "done";
-  return "pending";
-}
-
-function getStatusLabel(stepStatus, currentStatus) {
-  if (currentStatus === stepStatus) return "进行中";
-  const order = [
-    "DRAFT", "SUBMITTED", "PENDING_RISK_PRE", "RISK_PRE_PASSED",
-    "PENDING_SUPPLEMENT", "PENDING_FIRST_REVIEW", "FIRST_REVIEW_PASSED",
-    "PENDING_FINAL_REVIEW", "FINAL_REVIEW_PASSED",
-    "PENDING_FUNDER_REVIEW", "FUNDER_REVIEW_PASSED",
-    "PENDING_SIGN", "SIGNED",
-    "PENDING_LOAN_REQUEST", "LOAN_REQUEST_APPROVED",
-    "PENDING_DISBURSEMENT", "DISBURSED",
-  ];
-  const currentIdx = order.indexOf(currentStatus);
-  const stepIdx = order.indexOf(stepStatus);
-  if (currentIdx > stepIdx) return "已完成";
-  if (currentStatus.includes("REJECTED")) {
-    const rejectMap = {
-      "RISK_PRE_REJECTED": "PENDING_RISK_PRE",
-      "FIRST_REVIEW_REJECTED": "PENDING_FIRST_REVIEW",
-      "FINAL_REVIEW_REJECTED": "PENDING_FINAL_REVIEW",
-      "FUNDER_REVIEW_REJECTED": "PENDING_FUNDER_REVIEW",
-      "LOAN_REQUEST_REJECTED": "PENDING_LOAN_REQUEST",
-    };
-    if (rejectMap[currentStatus] === stepStatus) return "已拒绝";
-  }
-  return "";
+function tagType(status) {
+  if (status === "done") return "success";
+  if (status === "rejected") return "error";
+  if (status === "current") return "primary";
+  return "info";
 }
 
 function formatMoney(val) {
@@ -374,41 +369,27 @@ function formatMoney(val) {
 }
 
 async function loadDetail() {
+  if (!creditOrderId.value) return;
   loading.value = true;
   try {
-    let res;
-    if (creditOrderId.value) {
-      res = await businessApi.getCreditDetailByOrderId(creditOrderId.value);
-    } else if (applicationId.value) {
-      res = await businessApi.getCreditDetail(applicationId.value);
-    } else {
-      return;
-    }
-    const data = res?.data || res || {};
-    if (data && (data.id || data.creditOrderId)) {
-      info.value = {
-        customerName: data.customerName || data.personName || data.name || "",
-        phone: data.phone || data.telephone || "",
-        applicationNo: data.applicationNo || data.creditOrderId || "",
-        creditOrderId: data.creditOrderId || data.orderNo || "",
-        productName: data.productName || "",
-        funderName: data.funderName || "",
-        amount: data.amount || data.pushQuota || 0,
-        approvedAmount: data.approvedAmount || 0,
-        term: data.term || data.periods || 0,
-        approvedTerm: data.approvedTerm || 0,
-        rate: data.rate || 0,
-        approvedRate: data.approvedRate || 0,
-        repaymentMethod: data.repaymentMethod || "",
-        status: data.status || "",
-        phaseCode: data.phaseCode || 0,
-        currentNode: data.currentNode || data.nodeCode || 0,
-        currentNodeName: data.currentNodeName || data.nodeName || "",
-        currentStatus: data.currentStatus || data.nodeStatus || "",
-        currentStatusName: data.currentStatusName || data.nodeStatusName || "",
-        submittedAt: data.submittedAt || data.createTime || "",
-      };
-    }
+    const res = await businessApi.getCreditDetailByOrderId(creditOrderId.value);
+    const d = res?.data || res || {};
+    if (!d.id && !d.creditOrderId) return;
+    Object.assign(info.value, {
+      customerName: d.customerName || d.personName || d.name || "",
+      phone: d.phone || d.telephone || "",
+      applicationNo: d.applicationNo || d.creditOrderId || "",
+      creditOrderId: d.creditOrderId || d.orderNo || "",
+      productName: d.productName || "",
+      funderName: d.funderName || "",
+      amount: d.amount || d.pushQuota || 0,
+      approvedAmount: d.approvedAmount || 0,
+      approvedTerm: d.approvedTerm || 0,
+      approvedRate: d.approvedRate || 0,
+      repaymentMethod: d.repaymentMethod || "",
+      status: d.status || "",
+      submittedAt: d.submittedAt || d.createTime || "",
+    });
   } catch (e) {
     console.warn("获取申请详情失败:", e);
     uni.showToast({ title: "获取详情失败", icon: "none" });
@@ -417,23 +398,39 @@ async function loadDetail() {
   }
 }
 
+// 导航
 function goToSign() {
   const d = info.value;
   uni.navigateTo({
-    url: buildRoute(APP_ROUTES.carloan.signing.signCenter, buildSignRouteQuery({ creditOrderId: d.creditOrderId || d.applicationNo, uuid: d.uuid || "", customerName: d.customerName })),
+    url: buildRoute(
+      APP_ROUTES.carloan.signing.signCenter,
+      buildSignRouteQuery({
+        creditOrderId: d.creditOrderId || d.applicationNo,
+        uuid: d.uuid || "",
+        customerName: d.customerName,
+      }),
+    ),
   });
 }
 
 function goToSupplement() {
   const d = info.value;
   uni.navigateTo({
-    url: buildRoute(APP_ROUTES.carloan.supplement.supplementDetail, buildSupplementRouteQuery({ creditOrderId: d.creditOrderId || d.applicationNo })),
+    url: buildRoute(
+      APP_ROUTES.carloan.supplement.supplementDetail,
+      buildSupplementRouteQuery({
+        creditOrderId: d.creditOrderId || d.applicationNo,
+      }),
+    ),
   });
+}
+
+function goToList() {
+  uni.navigateTo({ url: APP_ROUTES.carloan.precheck.applyListPage });
 }
 
 onLoad((options) => {
   creditOrderId.value = options?.creditOrderId || options?.orderId || "";
-  applicationId.value = options?.id || options?.applicationId || "";
   loadDetail();
 });
 </script>
@@ -445,7 +442,10 @@ onLoad((options) => {
   min-height: 100vh;
 }
 
-.customer-card {
+// ── 卡片通用 ──
+.customer-card,
+.timeline-card,
+.info-card {
   background: #fff;
   border-radius: 16rpx;
   padding: 28rpx;
@@ -453,6 +453,7 @@ onLoad((options) => {
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
 }
 
+// ── 客户信息 ──
 .customer-header {
   display: flex;
   align-items: center;
@@ -515,14 +516,7 @@ onLoad((options) => {
   }
 }
 
-.timeline-card {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 28rpx;
-  margin-bottom: 24rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
-}
-
+// ── 时间线 ──
 .timeline-header {
   display: flex;
   justify-content: space-between;
@@ -539,10 +533,6 @@ onLoad((options) => {
 .timeline-sub {
   font-size: 24rpx;
   color: #8c8c8c;
-}
-
-.timeline-track {
-  padding: 0 8rpx;
 }
 
 .step-item {
@@ -566,7 +556,6 @@ onLoad((options) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
   transition: all 0.3s;
 }
 
@@ -644,31 +633,12 @@ onLoad((options) => {
   margin-top: 6rpx;
 }
 
-.step-remark {
-  font-size: 24rpx;
-  color: #ef4444;
-  margin-top: 6rpx;
-  background: #fef2f2;
-  padding: 8rpx 16rpx;
-  border-radius: 8rpx;
-}
-
-.info-card {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 28rpx;
-  margin-bottom: 24rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
-}
-
-.info-header {
-  margin-bottom: 20rpx;
-}
-
+// ── 审批详情 ──
 .info-title {
   font-size: 32rpx;
   font-weight: 600;
   color: #1a1a1a;
+  margin-bottom: 20rpx;
 }
 
 .info-grid {
@@ -700,40 +670,20 @@ onLoad((options) => {
   }
 }
 
+// ── 操作按钮 ──
 .action-bar {
   padding: 24rpx 0;
   display: flex;
   gap: 20rpx;
 }
 
+.back-to-list {
+  padding: 12rpx 0 48rpx;
+}
+
 .loading-wrap {
   display: flex;
   justify-content: center;
   padding: 80rpx 0;
-}
-
-/* 深色模式适配 */
-@media (prefers-color-scheme: dark) {
-  .page-container { background-color: #121212; }
-  .card { background-color: #1e1e1e; }
-  .card-item { background-color: #1e1e1e; }
-  .list-item { background-color: #1e1e1e; }
-  .section { background-color: #1e1e1e; }
-  .form-item { background-color: #1e1e1e; border-color: #2a2a2a; }
-  .title { color: #e5e6eb; }
-  .subtitle { color: #8b8c91; }
-  .desc { color: #8b8c91; }
-  .label { color: #b0b3b8; }
-  .value { color: #e5e6eb; }
-  .name { color: #e5e6eb; }
-  .info { color: #b0b3b8; }
-  .text { color: #e5e6eb; }
-  .tip { color: #8b8c91; }
-  .divider { background-color: #2a2a2a; }
-  .border { border-color: #2a2a2a; }
-  .input { background-color: #2a2a2a; color: #e5e6eb; }
-  .textarea { background-color: #2a2a2a; color: #e5e6eb; }
-  .picker { background-color: #2a2a2a; color: #e5e6eb; }
-  .footer { background-color: #1e1e1e; }
 }
 </style>

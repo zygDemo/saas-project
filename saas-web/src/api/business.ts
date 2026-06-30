@@ -114,6 +114,12 @@ export function fetchInitDefaultFlowConfig(params: { orgId: number; businessType
   })
 }
 
+export function fetchApplicationLifecycle<T = Record<string, unknown>>(id: number) {
+  return request.get<T[]>({
+    url: `/application/lifecycle/${id}`
+  })
+}
+
 export function fetchApplicationFlowList<T = Record<string, unknown>>(params: BusinessQuery) {
   return request.get<BusinessPage<T>>({
     url: '/application/flow-list',

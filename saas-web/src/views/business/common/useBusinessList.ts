@@ -104,6 +104,120 @@ export function useBusinessList() {
     return phaseNodeTabsMap[phaseCode] || []
   })
 
+  // ==================== 阶段Tab配置：按节点展示订单字段 ====================
+  // 节点 → 数据源 + 字段列表
+  const nodeFieldDefs: Record<number, { source?: string; label: string; fields: string[] }> = {
+    1100: { source: 'customer', label: '身份证信息', fields: ['name', 'phone', 'idCard', 'gender', 'birthDate', 'nation', 'householdAddress', 'issuingAuthority', 'idCardValidFrom', 'idCardValidTo', 'idCardFront', 'idCardBack', 'maritalStatus', 'education', 'occupation', 'companyName', 'monthlyIncome', 'address', 'emergencyName', 'emergencyPhone', 'status'] },
+    1110: { source: 'vehicle', label: '车辆信息', fields: ['plateNumber', 'vin', 'vehicleCode', 'brand', 'model', 'ownerName', 'address', 'usageNature', 'sealInfo', 'engineNumber', 'registerDate', 'vehicleImgUrl', 'mileage', 'color', 'year', 'purchasePrice', 'estimateValue', 'isMortgaged', 'mortgageInfo'] },
+    1120: { source: '', label: '申请信息', fields: ['applicationNo', 'amount', 'term', 'rate', 'repaymentMethod', 'purpose', 'productName', 'funderName', 'orgName', 'creatorName', 'createdAt'] },
+    1130: { source: '', label: '签署授权书', fields: ['files'] },
+    1140: { source: '', label: '待预审', fields: ['status', 'currentNodeName', 'currentStatusName', 'phaseName', 'remark'] },
+    1200: { source: '', label: '风控预审', fields: ['approvals'] },
+    1250: { source: 'funder', label: '资方预审', fields: ['name', 'funderType', 'code', 'contactName', 'contactPhone', 'integrationMode', 'creditLimit', 'priority', 'status'] },
+    1300: { source: '', label: '资料补充', fields: ['supplementReason', 'supplementDeadline'] },
+    1310: { source: 'customer', label: '客户资料', fields: ['name', 'phone', 'idCard', 'gender', 'birthDate', 'address'] },
+    1320: { source: 'vehicle', label: '车辆资料', fields: ['plateNumber', 'vin', 'brand', 'model'] },
+    1330: { source: '', label: '订单资料', fields: ['applicationNo', 'amount', 'term', 'rate'] },
+    1340: { source: '', label: '文件资料', fields: ['files'] },
+    1350: { source: '', label: '待提交', fields: ['status', 'currentNodeName'] },
+    1400: { source: '', label: '风控初审', fields: ['approvals'] },
+    1450: { source: '', label: '风控终审', fields: ['approvals'] },
+    1500: { source: 'funder', label: '资方终审', fields: ['name', 'funderType', 'contactName', 'contactPhone'] },
+    1600: { source: '', label: '签约办理', fields: ['sign'] },
+    1610: { source: '', label: '额度确认', fields: ['approvedAmount', 'approvedTerm', 'approvedRate'] },
+    1620: { source: '', label: '绑银行卡', fields: [] },
+    1630: { source: '', label: '合同签署', fields: ['sign'] },
+    1640: { source: '', label: 'GPS安装', fields: ['disbursement'] },
+    1650: { source: '', label: '抵押办理', fields: ['disbursement'] },
+    1660: { source: '', label: '待请款', fields: ['status', 'currentNodeName'] },
+    1700: { source: '', label: '请款资料', fields: ['disbursement'] },
+    1800: { source: '', label: '资方放款', fields: ['disbursement'] },
+    1900: { source: '', label: '贷后还款', fields: ['repaymentSummary', 'repayments'] }
+  }
+
+  const phaseConfig = [
+    { code: 1000, name: '预审阶段', nodes: [1100, 1110, 1120, 1130, 1140, 1200, 1250] },
+    { code: 1300, name: '补件阶段', nodes: [1300, 1310, 1320, 1330, 1340, 1350] },
+    { code: 1400, name: '风控审批', nodes: [1400, 1450] },
+    { code: 1500, name: '资方终审', nodes: [1500] },
+    { code: 1600, name: '签约阶段', nodes: [1600, 1610, 1620, 1630, 1640, 1650, 1660] },
+    { code: 1700, name: '请款放款', nodes: [1700, 1800] },
+    { code: 1900, name: '贷后阶段', nodes: [1900] }
+  ]
+
+  // 中文标签映射
+  const fieldLabelMap: Record<string, string> = {
+    name: '姓名', phone: '手机号', idCard: '身份证号', gender: '性别', birthDate: '出生日期',
+    nation: '民族', householdAddress: '户籍地址', issuingAuthority: '签发机关',
+    idCardValidFrom: '身份证有效期起', idCardValidTo: '身份证有效期止',
+    maritalStatus: '婚姻状况', education: '学历', occupation: '职业',
+    companyName: '单位名称', monthlyIncome: '月收入', address: '地址',
+    emergencyName: '紧急联系人', emergencyPhone: '紧急联系人电话',
+    plateNumber: '车牌号', vin: '车架号', brand: '品牌', model: '车型',
+    ownerName: '车主', usageNature: '使用性质', sealInfo: '印章信息',
+    engineNumber: '发动机号', registerDate: '注册日期', mileage: '里程',
+    color: '颜色', year: '年份', purchasePrice: '购买价格', estimateValue: '评估价值',
+    isMortgaged: '是否抵押', mortgageInfo: '抵押信息',
+    applicationNo: '申请编号', amount: '申请金额', term: '期限(月)', rate: '年利率',
+    repaymentMethod: '还款方式', purpose: '贷款用途', productName: '产品',
+    funderName: '资方', orgName: '所属机构', creatorName: '创建人', createdAt: '创建时间',
+    status: '状态', currentNodeName: '当前节点', currentStatusName: '节点状态',
+    phaseName: '当前阶段', remark: '备注',
+    funderType: '资方类型', code: '编码', contactName: '联系人', contactPhone: '联系电话',
+    integrationMode: '对接方式', creditLimit: '授信额度', priority: '优先级',
+    supplementReason: '补件原因', supplementDeadline: '补件截止',
+    idCardFront: '身份证正面', idCardBack: '身份证反面', vehicleCode: '车辆编码', vehicleImgUrl: '车辆照片',
+    approvedAmount: '审批金额', approvedTerm: '审批期限', approvedRate: '审批利率'
+  }
+
+  function getFileType(fileName: string): 'image' | 'pdf' | 'video' | 'audio' | 'other' {
+    const ext = (fileName || '').split('.').pop()?.toLowerCase() || ''
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext)) return 'image'
+    if (ext === 'pdf') return 'pdf'
+    if (['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv'].includes(ext)) return 'video'
+    if (['mp3', 'wav', 'ogg', 'aac', 'flac'].includes(ext)) return 'audio'
+    return 'other'
+  }
+
+  function extractNodeFields(row: Record<string, unknown>, nodeCode: number) {
+    const def = nodeFieldDefs[nodeCode]
+    if (!def) return []
+    const sourceData = def.source ? (row[def.source] as Record<string, unknown> || {}) : row
+
+    // 文件节点特殊处理：提取 files 数组并附加类型信息
+    if (nodeCode === 1340 || nodeCode === 1130) {
+      const files = (row.files || []) as any[]
+      if (!files.length) return []
+      return [{
+        prop: '_files',
+        label: '文件资料',
+        value: files.map((f: any) => ({
+          ...f,
+          displayType: getFileType(f.fileName || f.fileUrl || '')
+        }))
+      }]
+    }
+
+    return def.fields
+      .filter(f => sourceData[f] !== undefined && sourceData[f] !== null && sourceData[f] !== '')
+      .map(f => ({ prop: f, label: fieldLabelMap[f] || f, value: sourceData[f] }))
+  }
+
+  const phaseTabs = computed(() =>
+    phaseConfig.map(phase => ({
+      code: phase.code,
+      name: phase.name,
+      groups: phase.nodes.map(nodeCode => {
+        const fields = currentRow.value ? extractNodeFields(currentRow.value, nodeCode) : []
+        return {
+          nodeCode,
+          nodeName: nodeFieldDefs[nodeCode]?.label || `节点${nodeCode}`,
+          fields
+        }
+      }).filter(g => g.fields.length > 0)
+    }))
+  )
+
   // ==================== 搜索相关 ====================
   const statusFilterOptions = computed(() => {
     const optionsMap: Record<string, any[]> = {
@@ -413,7 +527,7 @@ export function useBusinessList() {
     extraFilterModel,
     // 计算属性
     config, displayTitle, isOrgModule, showActionOverview,
-    formFields, actionFields, detailColumns, phaseNodeTabs,
+    formFields, actionFields, detailColumns, phaseNodeTabs, phaseTabs,
     statusFilterOptions, extraFilters, searchFormItems, orgSummaryItems,
     moduleName,
     // 方法
