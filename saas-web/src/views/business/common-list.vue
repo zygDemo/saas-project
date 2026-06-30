@@ -187,16 +187,61 @@
     >
       <!-- 阶段模块：增强视图，带标签页 -->
       <template v-if="hasPhaseTabs && currentRow">
-        <div class="detail-drawer__header-info">
-          <ElDescriptions :column="4" border size="small">
-            <ElDescriptionsItem
-              v-for="col in summaryFields"
-              :key="col.prop"
-              :label="col.label"
-            >
-              {{ formatCell(currentRow, col.prop) }}
-            </ElDescriptionsItem>
-          </ElDescriptions>
+        <div class="detail-drawer__header">
+          <div class="detail-drawer__header-top">
+            <div class="detail-drawer__header-identity">
+              <span class="detail-drawer__order-no">{{ currentRow?.applicationNo }}</span>
+              <ElTag :type="statusTagType(currentRow?.status)" effect="plain" round size="small">
+                {{ formatCell(currentRow, 'status') }}
+              </ElTag>
+            </div>
+            <div class="detail-drawer__header-summary">
+              <span class="detail-drawer__summary-item">
+                <span class="detail-drawer__summary-label">客户</span>
+                <span class="detail-drawer__summary-value">{{ currentRow?.customerName }}</span>
+              </span>
+              <span class="detail-drawer__summary-sep">/</span>
+              <span class="detail-drawer__summary-item">
+                <span class="detail-drawer__summary-label">产品</span>
+                <span class="detail-drawer__summary-value">{{ currentRow?.productName }}</span>
+              </span>
+              <span class="detail-drawer__summary-sep">/</span>
+              <span class="detail-drawer__summary-item">
+                <span class="detail-drawer__summary-label">资方</span>
+                <span class="detail-drawer__summary-value">{{ currentRow?.funderName }}</span>
+              </span>
+            </div>
+          </div>
+          <div class="detail-drawer__header-stats">
+            <div class="detail-drawer__stat">
+              <span class="detail-drawer__stat-label">申请金额</span>
+              <span class="detail-drawer__stat-value detail-drawer__stat-value--highlight">¥{{ currentRow?.amount }}</span>
+            </div>
+            <div class="detail-drawer__stat">
+              <span class="detail-drawer__stat-label">期限</span>
+              <span class="detail-drawer__stat-value">{{ currentRow?.term }}个月</span>
+            </div>
+            <div class="detail-drawer__stat">
+              <span class="detail-drawer__stat-label">年利率</span>
+              <span class="detail-drawer__stat-value">{{ (Number(currentRow?.rate) * 100).toFixed(2) }}%</span>
+            </div>
+            <div class="detail-drawer__stat">
+              <span class="detail-drawer__stat-label">还款方式</span>
+              <span class="detail-drawer__stat-value">{{ currentRow?.repaymentMethod }}</span>
+            </div>
+            <div class="detail-drawer__stat">
+              <span class="detail-drawer__stat-label">创建人</span>
+              <span class="detail-drawer__stat-value">{{ currentRow?.creatorName }}</span>
+            </div>
+            <div class="detail-drawer__stat">
+              <span class="detail-drawer__stat-label">车牌号</span>
+              <span class="detail-drawer__stat-value">{{ currentRow?.plateNumber }}</span>
+            </div>
+            <div class="detail-drawer__stat">
+              <span class="detail-drawer__stat-label">当前节点</span>
+              <span class="detail-drawer__stat-value">{{ currentRow?.currentNodeName }}</span>
+            </div>
+          </div>
         </div>
         <ElTabs v-model="activeMainTab" class="detail-drawer__main-tabs">
           <ElTabPane
@@ -323,7 +368,7 @@
     formModel, actionModel, activeAction,
     pagination, selectLoading,
     config, displayTitle, isOrgModule, showActionOverview,
-    formFields, actionFields, detailColumns, phaseNodeTabs, phaseTabs,
+    formFields, actionFields, detailColumns, phaseNodeTabs, phaseTabs, defaultPhaseCode,
     searchFormItems, orgSummaryItems, moduleName,
     loadData, handleSizeChange, handleCurrentChange,
     handleArtSearch, handleArtReset,
@@ -450,7 +495,7 @@
   // 打开详情抽屉时重置标签页状态
   watch(detailVisible, (visible) => {
     if (visible) {
-      activeMainTab.value = phaseTabs.value.length > 0 ? String(phaseTabs.value[0].code) : '1000'
+      activeMainTab.value = String(defaultPhaseCode.value)
     }
   })
 
@@ -458,7 +503,7 @@
   watch(
     () => route.path,
     () => {
-      activeMainTab.value = phaseTabs.value.length > 0 ? String(phaseTabs.value[0].code) : '1000'
+      activeMainTab.value = String(defaultPhaseCode.value)
       resetRuntimeState()
       loadData()
     }
@@ -675,12 +720,129 @@
     padding: 0 0 12px 0;
   }
 
+  .detail-drawer__header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 20px;
+    margin-bottom: 6px;
+    background: linear-gradient(180deg, var(--el-color-primary-light-9) 0%, var(--el-bg-color) 100%);
+    border: 1px solid var(--el-color-primary-light-8);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px var(--el-box-shadow-light);
+  }
+
+  .detail-drawer__header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .detail-drawer__header-identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .detail-drawer__order-no {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--el-text-color-primary);
+    letter-spacing: 0.5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .detail-drawer__header-summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    flex-wrap: wrap;
+  }
+
+  .detail-drawer__summary-item {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .detail-drawer__summary-label {
+    color: var(--el-text-color-placeholder);
+    font-size: 11px;
+  }
+
+  .detail-drawer__summary-value {
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+
+  .detail-drawer__summary-sep {
+    color: var(--el-border-color);
+    font-size: 11px;
+    margin: 0 1px;
+  }
+
+  .detail-drawer__header-stats {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--el-border-color-lighter);
+  }
+
+  .detail-drawer__stat {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    padding: 4px 6px;
+    background: var(--el-bg-color);
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+
+  .detail-drawer__stat:hover {
+    background: var(--el-fill-color-light);
+  }
+
+  .detail-drawer__stat-label {
+    font-size: 10px;
+    color: var(--el-text-color-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .detail-drawer__stat-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .detail-drawer__stat-value--highlight {
+    color: var(--el-color-primary);
+    font-weight: 600;
+    font-size: 13px;
+  }
+
   .detail-drawer__main-tabs {
     height: 100%;
   }
 
   .detail-drawer__main-tabs :deep(.el-tabs__header) {
     margin-bottom: 12px;
+  }
+
+  :deep(.el-drawer__header) {
+    margin-bottom: 0 !important;
   }
 
   .detail-drawer__main-tabs :deep(.el-tabs__content) {
@@ -829,15 +991,15 @@
   }
 
   .file-gallery__icon--pdf {
-    background: #fef0f0;
+    background: var(--el-color-danger-light-9);
   }
 
   .file-gallery__icon--video {
-    background: #f0f5ff;
+    background: var(--el-color-primary-light-9);
   }
 
   .file-gallery__icon--audio {
-    background: #f0fef0;
+    background: var(--el-color-success-light-9);
   }
 
   .file-gallery__icon--other {
@@ -850,15 +1012,15 @@
   }
 
   .file-gallery__icon--pdf .file-gallery__icon-svg {
-    color: #f56c6c;
+    color: var(--el-color-danger);
   }
 
   .file-gallery__icon--video .file-gallery__icon-svg {
-    color: #409eff;
+    color: var(--el-color-primary);
   }
 
   .file-gallery__icon--audio .file-gallery__icon-svg {
-    color: #67c23a;
+    color: var(--el-color-success);
   }
 
   .file-gallery__name {

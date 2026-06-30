@@ -54,6 +54,7 @@ export function useBusinessList() {
   const actionRow = ref<Record<string, unknown> | null>(null)
   const pagination = ref({ current: 1, size: 20, total: 0 })
   const activeNodeTab = ref('all')
+  const activeMainTab = ref('1000')
   const routeMeta = computed(() => route.meta as BusinessRouteMeta)
   const extraFilterModel = reactive<FormModel>({})
 
@@ -217,6 +218,31 @@ export function useBusinessList() {
       }).filter(g => g.fields.length > 0)
     }))
   )
+
+  const defaultPhaseCode = computed(() => {
+    const pathModule = getRoutePathModule()
+    return Number(routeMeta.value.defaultQuery?.phaseCode || applicationPhaseByPath[pathModule] || 1000)
+  })
+
+  // 从综合查询进入时，用订单自身的 phaseCode 决定默认 Tab
+  function resolveRowPhaseCode(row: Record<string, unknown>): number {
+    const rowPhase = Number(row.phaseCode || row.nodeCode || 0)
+    if (rowPhase && phaseConfig.some(p => p.code === rowPhase || p.nodes.some(n => n === rowPhase))) {
+      return rowPhase
+    }
+    // 根据 currentNode 反推 phaseCode
+    const nodeMap: Record<number, number> = {
+      1100: 1000, 1110: 1000, 1120: 1000, 1130: 1000, 1140: 1000, 1200: 1000, 1250: 1000,
+      1300: 1300, 1310: 1300, 1320: 1300, 1330: 1300, 1340: 1300, 1350: 1300,
+      1400: 1400, 1450: 1400,
+      1500: 1500,
+      1600: 1600, 1610: 1600, 1620: 1600, 1630: 1600, 1640: 1600, 1650: 1600, 1660: 1600,
+      1700: 1700, 1800: 1700,
+      1900: 1900
+    }
+    const mapped = nodeMap[Number(row.currentNode || 0)]
+    return mapped || defaultPhaseCode.value
+  }
 
   // ==================== 搜索相关 ====================
   const statusFilterOptions = computed(() => {
@@ -400,7 +426,7 @@ export function useBusinessList() {
     loadRemoteOptions(formFields.value)
   }
 
-  async function openDetail(row: Record<string, unknown>) {
+    async function openDetail(row: Record<string, unknown>) {
     currentRow.value = row
     detailVisible.value = true
     try {
@@ -408,6 +434,9 @@ export function useBusinessList() {
     } catch {
       currentRow.value = row
     }
+    // 根据订单自身状态决定默认 Tab（综合查询场景）
+    const phaseCode = resolveRowPhaseCode(currentRow.value || row)
+    activeMainTab.value = String(phaseCode)
   }
 
   async function submitForm() {
@@ -527,7 +556,7 @@ export function useBusinessList() {
     extraFilterModel,
     // 计算属性
     config, displayTitle, isOrgModule, showActionOverview,
-    formFields, actionFields, detailColumns, phaseNodeTabs, phaseTabs,
+    formFields, actionFields, detailColumns, phaseNodeTabs, phaseTabs, defaultPhaseCode, activeMainTab,
     statusFilterOptions, extraFilters, searchFormItems, orgSummaryItems,
     moduleName,
     // 方法
