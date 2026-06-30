@@ -142,7 +142,10 @@ export function fetchCreateDictType(params: Api.SystemManage.SaveDictTypeParams)
   })
 }
 
-export function fetchUpdateDictType(id: number, params: Partial<Api.SystemManage.SaveDictTypeParams>) {
+export function fetchUpdateDictType(
+  id: number,
+  params: Partial<Api.SystemManage.SaveDictTypeParams>
+) {
   return request.post<Api.SystemManage.DictTypeItem>({
     url: `/dict/type/${id}`,
     data: params,
@@ -172,7 +175,10 @@ export function fetchCreateDictData(params: Api.SystemManage.SaveDictDataParams)
   })
 }
 
-export function fetchUpdateDictData(id: number, params: Partial<Api.SystemManage.SaveDictDataParams>) {
+export function fetchUpdateDictData(
+  id: number,
+  params: Partial<Api.SystemManage.SaveDictDataParams>
+) {
   return request.post<Api.SystemManage.DictDataItem>({
     url: `/dict/data/${id}`,
     data: params,
@@ -210,10 +216,7 @@ export function fetchCreateFileAsset(params: Api.SystemManage.SaveFileAssetParam
   })
 }
 
-export function fetchUpdateFileAsset(
-  id: number,
-  params: Api.SystemManage.SaveFileAssetParams
-) {
+export function fetchUpdateFileAsset(id: number, params: Api.SystemManage.SaveFileAssetParams) {
   return request.post<Api.SystemManage.FileAssetItem>({
     url: `/file/${id}`,
     data: params,
@@ -263,7 +266,10 @@ export function fetchCreateSystemParam(params: Api.SystemManage.SaveSystemParamP
   })
 }
 
-export function fetchUpdateSystemParam(id: number, params: Partial<Api.SystemManage.SaveSystemParamParams>) {
+export function fetchUpdateSystemParam(
+  id: number,
+  params: Partial<Api.SystemManage.SaveSystemParamParams>
+) {
   return request.post<Api.SystemManage.SystemParamItem>({
     url: `/system-param/${id}`,
     data: params,
@@ -300,7 +306,10 @@ export function fetchCreateAnnouncement(params: Api.SystemManage.SaveAnnouncemen
   })
 }
 
-export function fetchUpdateAnnouncement(id: number, params: Partial<Api.SystemManage.SaveAnnouncementParams>) {
+export function fetchUpdateAnnouncement(
+  id: number,
+  params: Partial<Api.SystemManage.SaveAnnouncementParams>
+) {
   return request.post<Api.SystemManage.AnnouncementItem>({
     url: `/announcement/${id}`,
     data: params,
@@ -344,7 +353,10 @@ export function fetchGetRoleMobileConfig(roleId: number) {
   })
 }
 
-export function fetchUpdateRoleMobileConfig(roleId: number, params: Api.SystemManage.SaveEntityMobileConfigParams) {
+export function fetchUpdateRoleMobileConfig(
+  roleId: number,
+  params: Api.SystemManage.SaveEntityMobileConfigParams
+) {
   return request.put<Api.SystemManage.EntityMobileConfigData>({
     url: `/mobile-config/role/${roleId}`,
     data: params,
@@ -372,8 +384,3 @@ export function fetchResetUserMobileConfig(userId: number) {
     showSuccessMessage: true
   })
 }
-
-
-
-
-

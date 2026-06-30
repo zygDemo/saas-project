@@ -114,7 +114,6 @@ import {
   buildSignRouteQuery,
   buildDetailRouteQuery,
 } from "@/common/carloan-route-query";
-import { http } from "uview-pro";
 import OrderCard from "./components/OrderCard.vue";
 import FlowRecordPopup from "./components/FlowRecordPopup.vue";
 import type {
@@ -131,6 +130,7 @@ const ORDER_FILTER_MAX_AGE = 60 * 1000;
 const keyword = ref("");
 const lastKeyword = ref("");
 const isRefreshing = ref(false);
+const isFirstLoadDone = ref(false);
 const showBackToTop = ref(false);
 const scrollTopValue = ref(0);
 const SCROLL_THRESHOLD = 500;
@@ -227,7 +227,13 @@ function firstText(...values: unknown[]): string {
 /** 返回第一个非空值 */
 function first<T>(...values: Array<T | undefined | null>): T | undefined {
   for (const v of values) {
-    if (v !== undefined && v !== null && String(v).trim() !== "") return v;
+    if (v === undefined || v === null) continue;
+    // 过滤掉 boolean（false 通常不是预期的有效数据值）
+    if (typeof v === "boolean") continue;
+    const num = Number(v);
+    if (Number.isNaN(num)) continue;
+    if (typeof v === "string" && v.trim() === "") continue;
+    return v;
   }
   return undefined;
 }
@@ -270,10 +276,10 @@ function getFlowNodeLabel(key: unknown): string {
 
 // 节点 → 路由（大部分指向 applyDetail，只列出例外）
 const NODE_ROUTE_OVERRIDE: Record<string, string> = {
-  "1400": APP_ROUTES.carloan.supplement.supplementDetail,
-  "1600": APP_ROUTES.carloan.supplement.supplementDetail,
-  "4100": APP_ROUTES.carloan.signing.signCenter,
-  "5100": APP_ROUTES.carloan.supplement.supplementDetail,
+  1400: APP_ROUTES.carloan.supplement.supplementDetail,
+  1600: APP_ROUTES.carloan.supplement.supplementDetail,
+  4100: APP_ROUTES.carloan.signing.signCenter,
+  5100: APP_ROUTES.carloan.supplement.supplementDetail,
 };
 
 function normalizeNodeCode(node: unknown) {
@@ -415,6 +421,12 @@ function normalizeOrderItem(order: CreditListItem): OrderListViewItem {
   const businessNode = firstText(node);
   return {
     ...order,
+    // 确保 id 一定有值：优先 applicationId，其次 creditOrderId，最后 order.id
+    id:
+      (order.applicationId ||
+        order.id ||
+        (order.creditOrderId ? Number(order.creditOrderId) : undefined)) as
+      number | undefined,
     name: firstText(
       order.name,
       order.customerName,
@@ -560,10 +572,14 @@ async function loadNodeOptions() {
 onLoad(async () => {
   await loadNodeOptions();
   if (!applyWorkbenchFilter()) fetchList(true);
+  isFirstLoadDone.value = true;
 });
 
 onShow(() => {
-  applyWorkbenchFilter();
+  // 首次加载完成后的每次 onShow 都刷新列表，确保从详情页返回后数据是最新的
+  if (isFirstLoadDone.value) {
+    fetchList(true);
+  }
 });
 onReachBottom(() => {
   fetchList();
@@ -593,19 +609,21 @@ async function handleFlowRecord(order: OrderListViewItem) {
   flowRecordLoading.value = true;
   flowRecordList.value = [];
   try {
-    const res: any = await http.get(`/application/lifecycle/${order.id}`);
+    const res = await businessApi.getLifecycle(String(order.id));
     if (res.code === 200 && Array.isArray(res.data)) {
       flowRecordList.value = res.data;
+      flowRecordVisible.value = true;
+    } else {
+      throw new Error("接口返回异常");
     }
   } catch {
     uni.showToast({ title: "加载失败", icon: "none" });
   } finally {
     flowRecordLoading.value = false;
-    flowRecordVisible.value = true;
   }
 }
 </script>
-\n\n
+
 <style lang="scss" scoped>
 $bg-page: #f2f4f7;
 $bg-surface: #ffffff;

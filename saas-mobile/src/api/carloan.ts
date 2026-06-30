@@ -583,5 +583,9 @@ export function useCarloanApi() {
     /** 业务统计概览 */
     getStatisticsOverview: () =>
       http.get<ApiResponse<StatisticsOverview>>("/m/statistics/overview"),
+
+    /** 获取订单流程记录（生命周期） */
+    getLifecycle: (orderId: number | string) =>
+      http.get<ApiResponse<any[]>>(`/application/lifecycle/${orderId}`),
   };
 }
