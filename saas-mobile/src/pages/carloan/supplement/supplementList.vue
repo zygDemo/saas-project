@@ -17,10 +17,7 @@
       @back-top="backToTop"
       @update:search-form="(v) => Object.assign(searchForm, v)"
     >
-      <view
-        v-for="(item, index) in list"
-        :key="item.id || index"
-      >
+      <view v-for="(item, index) in list" :key="item.id || index">
         <list-card
           :item="item"
           :index="index"
@@ -67,7 +64,13 @@
             </view>
           </template>
           <template #left>
-            <u-tag text="待补充" type="warning" size="mini" plain class="status-tag" />
+            <u-tag
+              text="待补充"
+              type="warning"
+              size="mini"
+              plain
+              class="status-tag"
+            />
           </template>
           <text class="detail-text">去补充</text>
           <u-icon name="arrow-right" color="var(--u-type-primary)" size="24" />
@@ -105,7 +108,8 @@ const {
   onScroll,
   backToTop,
 } = useListPage({
-  fetchFn: async (params: any) => businessApi.getSupplementList({ ...params, supplementNode: 2 }),
+  fetchFn: async (params: any) =>
+    businessApi.getSupplementList({ ...params, supplementNode: 2 }),
   defaultParams: { supplementNode: 2 },
   getRows: (res: any) => res.data || [],
 });
