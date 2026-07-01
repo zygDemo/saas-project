@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Prepare deploy files
         run: |
@@ -23,7 +23,7 @@ jobs:
           cp saas-api/apps/new-api/README.md .deploy-new-api/README.md
 
       - name: Sync compose files to server
-        uses: easingthemes/ssh-deploy@v5.1.0
+        uses: easingthemes/ssh-deploy@v5.1.2
         with:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.SERVER_HOST }}
@@ -34,7 +34,7 @@ jobs:
           ARGS: "-rltgoDzvO"
 
       - name: Deploy to server
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@v1.2.5
         env:
           NEW_API_PORT: ${{ vars.NEW_API_PORT }}
           NEW_API_POSTGRES_PASSWORD: ${{ secrets.NEW_API_POSTGRES_PASSWORD }}
