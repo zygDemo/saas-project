@@ -121,3 +121,44 @@ Important Notes
 - Ensure your local public IP is whitelisted in Alibaba Cloud RDS security group
 - Be careful when operating against production database
 - saas-web and saas-mobile do not need changes — they connect to localhost:3001
+
+
+## 7. CI / 发版工作流说明
+
+当前仓库采用独立子项目部署模式：
+
+- `saas-web`：通过根目录 `pnpm-workspace.yaml` 纳入 workspace，由 `deploy-web.yml` 在仓库根目录安装并构建
+- `saas-mobile`：保持子项目本地安装与构建，由 `deploy-mobile.yml` 在 `saas-mobile/` 内执行
+- `saas-api`：通过 Docker 镜像发布，由 `deploy-api.yml` 负责构建、推送镜像并远程部署
+
+### web 发版
+
+```bash
+# 本地验证 web 构建（根目录）
+pnpm install --frozen-lockfile
+pnpm --filter art-design-pro run build
+```
+
+当前 `deploy-web.yml` 使用根目录 workspace + 根目录 lockfile 执行：
+
+```yaml
+run: pnpm install --frozen-lockfile
+run: pnpm --filter art-design-pro run build
+```
+
+### mobile 发版
+
+```bash
+# 本地验证 mobile 构建（子项目目录）
+cd saas-mobile
+pnpm install --frozen-lockfile
+pnpm build:h5
+```
+
+当前 `deploy-mobile.yml` 使用 `saas-mobile/pnpm-lock.yaml` 作为缓存依赖，并在 `saas-mobile/` 内执行安装与构建。
+
+### 注意事项
+
+1. 根目录新增了 `package.json`、`pnpm-workspace.yaml`、`pnpm-lock.yaml`，主要用于统一 web 发版流程  
+2. `saas-mobile`、`saas-api` 仍然保持各自独立构建模式，避免互相影响  
+3. `build-errors.txt` 是历史记录，不代表当前构建状态
