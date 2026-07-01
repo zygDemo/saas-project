@@ -130,7 +130,12 @@ export function deleteBook(id: number) {
 // ==================== 章节管理 ====================
 
 /** 获取章节列表 */
-export function getChapters(params: { bookId: number; page?: number; pageSize?: number; keyword?: string }) {
+export function getChapters(params: {
+  bookId: number
+  page?: number
+  pageSize?: number
+  keyword?: string
+}) {
   return request.get({ url: '/reading/chapters', params })
 }
 
@@ -208,7 +213,13 @@ export function saveReadingProgress(data: {
 // ==================== 书籍评价 ====================
 
 /** 获取书籍评价（管理员可查全部，不传bookId） */
-export function getBookReviews(params?: { bookId?: number; keyword?: string; status?: number; page?: number; pageSize?: number }) {
+export function getBookReviews(params?: {
+  bookId?: number
+  keyword?: string
+  status?: number
+  page?: number
+  pageSize?: number
+}) {
   return request.get({ url: '/reading/reviews', params })
 }
 
@@ -258,13 +269,16 @@ export function crawlNovel(data: {
 }
 
 /** 异步爬取小说（返回taskId，可轮询进度） */
-export function crawlNovelAsync(data: {
-  url: string
-  name?: string
-  startChapter?: number
-  endChapter?: number
-  categoryId?: number
-}, config?: { signal?: AbortSignal }) {
+export function crawlNovelAsync(
+  data: {
+    url: string
+    name?: string
+    startChapter?: number
+    endChapter?: number
+    categoryId?: number
+  },
+  config?: { signal?: AbortSignal }
+) {
   return request.post({ url: '/crawler/download-async', data, ...config })
 }
 
