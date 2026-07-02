@@ -162,3 +162,38 @@ pnpm build:h5
 1. 根目录新增了 `package.json`、`pnpm-workspace.yaml`、`pnpm-lock.yaml`，主要用于统一 web 发版流程  
 2. `saas-mobile`、`saas-api` 仍然保持各自独立构建模式，避免互相影响  
 3. `build-errors.txt` 是历史记录，不代表当前构建状态
+
+
+## 8. 本地 Prisma 类型生成注意事项
+
+当 `saas-api/pnpm-lock.yaml` 中 `@prisma/client` 版本发生变化后，本地 TypeScript 可能会报大量 Prisma 类型缺失错误，例如：
+
+- `Prisma.XxxWhereInput` 不存在
+- `Prisma.XxxGetPayload` 不存在
+- `@prisma/client` 的枚举（如 `ApplicationStatus`、`LeadStatus`）导不出来
+- `PrismaClientKnownRequestError` 不存在
+
+这种情况通常不是代码损坏，而是本地没有重新生成 Prisma Client。
+
+### 解决方式
+
+```bash
+cd saas-api/apps/admin-api
+pnpm prisma:generate
+cd ../..
+pnpm build
+```
+
+### 为什么 CI / Docker 发版不受影响
+
+`saas-api/apps/admin-api/Dockerfile` 中已经包含：
+
+```dockerfile
+RUN pnpm --filter @saas/shared build   && pnpm --filter @saas/admin-api exec prisma generate --schema prisma/schema.prisma   && pnpm --filter @saas/admin-api build
+```
+
+因此：
+
+- Docker 发版流程无需额外补 `prisma generate`
+- GitHub Actions 部署 API 的流程无需修改
+- 只有**本地开发环境**在 lockfile 升级后需要手动执行一次 `prisma:generate`

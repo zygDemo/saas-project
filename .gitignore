@@ -36,3 +36,14 @@ saas-api/apps/admin-api/uploads/
 saas-api/apps/new-api/.env
 saas-api/apps/new-api/data/
 saas-api/apps/new-api/logs/
+progress.md
+tasks.md
+servers.local.md
+.mailbox/
+.agents/state/
+.agents/automations/
+.agents/goal-forge/runs/
+AGENTS.md
+CODEBUDDY.md
+CLAUDE.md
+.zed/CONVENTIONS.md
