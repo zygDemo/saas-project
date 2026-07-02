@@ -1,6 +1,8 @@
 class TokenUtil {
   normalize(token: string) {
-    return String(token || "").replace(/^Bearer\s+/i, "").trim();
+    return String(token || "")
+      .replace(/^Bearer\s+/i, "")
+      .trim();
   }
 
   buildAuthorization(token: string) {

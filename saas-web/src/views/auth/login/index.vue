@@ -213,9 +213,7 @@
         isClickPass.value = true
         return
       }
-
       loading.value = true
-
       // 登录请求
       const { username, password } = formData
 
