@@ -33,11 +33,10 @@
 
       <!-- 模块勾选列表 -->
       <div class="mb-2 text-sm text-gray-700 font-medium">选择可用模块：</div>
-      <div class="flex flex-col gap-2">
+      <ElCheckboxGroup v-model="selectedModules" class="flex flex-col gap-2">
         <ElCheckbox
           v-for="mod in availableModules"
           :key="mod.key"
-          v-model="selectedModules"
           :value="mod.key"
           :disabled="!form.mobileMultiModule && selectedModules.length >= 1 && !selectedModules.includes(mod.key)"
           size="large"
@@ -48,7 +47,7 @@
             <span class="text-xs text-gray-400">— {{ mod.desc }}</span>
           </div>
         </ElCheckbox>
-      </div>
+      </ElCheckboxGroup>
       <p v-if="!form.mobileMultiModule && selectedModules.length > 0" class="mt-2 text-xs text-amber-500">
         单模块模式：仅第一个勾选的模块生效
       </p>
@@ -138,8 +137,8 @@ const defaultModule = computed(() => {
   return selectedModules.value[0] ?? null
 })
 
-const onMultiModuleChange = (val: boolean) => {
-  if (!val && selectedModules.value.length > 1) {
+const onMultiModuleChange = (val: string | number | boolean) => {
+  if (!Boolean(val) && selectedModules.value.length > 1) {
     selectedModules.value = [selectedModules.value[0]]
   }
 }

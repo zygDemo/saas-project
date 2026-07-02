@@ -472,7 +472,7 @@
   const loadCategories = async () => {
     try {
       const res = await getBookCategories()
-      categoryList.value = res || []
+      categoryList.value = Array.isArray(res) ? res : []
     } catch (error) {
       console.error('加载分类失败', error)
     }
@@ -608,11 +608,15 @@
 
     saving.value = true
     try {
+      const payload = {
+        ...formData,
+        categoryId: formData.categoryId ?? undefined
+      }
       if (isEdit.value && editId.value) {
-        await updateBook(editId.value, formData)
+        await updateBook(editId.value, payload)
         ElMessage.success('编辑成功')
       } else {
-        await createBook(formData)
+        await createBook(payload)
         ElMessage.success('新增成功')
       }
       showDialog.value = false

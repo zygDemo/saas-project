@@ -16,7 +16,7 @@
         <!-- 渲染展开行 -->
         <ElTableColumn v-else-if="col.type === 'expand'" v-bind="cleanColumnProps(col)">
           <template #default="{ row }">
-            <component :is="col.formatter ? col.formatter(row) : null" />
+            <component :is="col.formatter ? col.formatter(row, null, undefined, 0) : null" />
           </template>
         </ElTableColumn>
 
@@ -77,7 +77,7 @@
 
 <script setup lang="ts">
   import { ref, computed, nextTick, watchEffect, getCurrentInstance, useAttrs } from 'vue'
-  import type { ElTable, TableProps } from 'element-plus'
+  import type { TableProps } from 'element-plus'
   import { storeToRefs } from 'pinia'
   import { ColumnOption } from '@/types'
   import { useTableStore } from '@/store/modules/table'
@@ -88,7 +88,10 @@
   defineOptions({ name: 'ArtTable' })
 
   const { width } = useWindowSize()
-  const elTableRef = ref<InstanceType<typeof ElTable> | null>(null)
+  const elTableRef = ref<{
+    setScrollTop: (top?: number) => void
+    setCurrentRow?: (row?: unknown) => void
+  } | null>(null)
   const paginationRef = ref<HTMLElement>()
   const tableHeaderRef = ref<HTMLElement>()
   const tableStore = useTableStore()

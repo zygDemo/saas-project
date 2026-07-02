@@ -191,7 +191,12 @@
           <div class="detail-drawer__header-top">
             <div class="detail-drawer__header-identity">
               <span class="detail-drawer__order-no">{{ currentRow?.applicationNo }}</span>
-              <ElTag :type="statusTagType(currentRow?.status)" effect="plain" round size="small">
+              <ElTag
+                :type="normalizeTagType(statusTagType(currentRow?.status))"
+                effect="plain"
+                round
+                size="small"
+              >
                 {{ formatCell(currentRow, 'status') }}
               </ElTag>
             </div>
@@ -213,33 +218,14 @@
             </div>
           </div>
           <div class="detail-drawer__header-stats">
-            <div class="detail-drawer__stat">
-              <span class="detail-drawer__stat-label">申请金额</span>
-              <span class="detail-drawer__stat-value detail-drawer__stat-value--highlight">¥{{ currentRow?.amount }}</span>
-            </div>
-            <div class="detail-drawer__stat">
-              <span class="detail-drawer__stat-label">期限</span>
-              <span class="detail-drawer__stat-value">{{ currentRow?.term }}个月</span>
-            </div>
-            <div class="detail-drawer__stat">
-              <span class="detail-drawer__stat-label">年利率</span>
-              <span class="detail-drawer__stat-value">{{ (Number(currentRow?.rate) * 100).toFixed(2) }}%</span>
-            </div>
-            <div class="detail-drawer__stat">
-              <span class="detail-drawer__stat-label">还款方式</span>
-              <span class="detail-drawer__stat-value">{{ currentRow?.repaymentMethod }}</span>
-            </div>
-            <div class="detail-drawer__stat">
-              <span class="detail-drawer__stat-label">创建人</span>
-              <span class="detail-drawer__stat-value">{{ currentRow?.creatorName }}</span>
-            </div>
-            <div class="detail-drawer__stat">
-              <span class="detail-drawer__stat-label">车牌号</span>
-              <span class="detail-drawer__stat-value">{{ currentRow?.plateNumber }}</span>
-            </div>
-            <div class="detail-drawer__stat">
-              <span class="detail-drawer__stat-label">当前节点</span>
-              <span class="detail-drawer__stat-value">{{ currentRow?.currentNodeName }}</span>
+            <div
+              v-for="stat in headerStats"
+              :key="stat.label"
+              class="detail-drawer__stat"
+              :class="{ 'detail-drawer__stat--highlight': stat.highlight }"
+            >
+              <span class="detail-drawer__stat-label">{{ stat.label }}</span>
+              <span class="detail-drawer__stat-value">{{ stat.value }}</span>
             </div>
           </div>
         </div>
@@ -254,17 +240,13 @@
               暂无此阶段数据
             </div>
             <div v-else class="phase-fields">
-              <div
-                v-for="group in phase.groups"
-                :key="group.nodeCode"
-                class="phase-fields__group"
-              >
+              <div v-for="group in phase.groups" :key="group.nodeCode" class="phase-fields__group">
                 <div class="phase-fields__group-title">{{ group.nodeName }}</div>
                 <!-- 文件节点：图片/PDF/音视频回显 -->
-                <template v-if="group.fields.length === 1 && group.fields[0].prop === '_files'">
+                <template v-if="isFileGroup(group)">
                   <div class="file-gallery">
                     <div
-                      v-for="file in group.fields[0].value"
+                      v-for="file in fileGroupFiles(group)"
                       :key="file.id"
                       class="file-gallery__item"
                       @click="previewFile(file)"
@@ -277,15 +259,24 @@
                         class="file-gallery__img"
                       />
                       <!-- PDF -->
-                      <div v-else-if="file.displayType === 'pdf'" class="file-gallery__icon file-gallery__icon--pdf">
+                      <div
+                        v-else-if="file.displayType === 'pdf'"
+                        class="file-gallery__icon file-gallery__icon--pdf"
+                      >
                         <ArtSvgIcon icon="ri:file-pdf-2-line" class="file-gallery__icon-svg" />
                       </div>
                       <!-- 视频 -->
-                      <div v-else-if="file.displayType === 'video'" class="file-gallery__icon file-gallery__icon--video">
+                      <div
+                        v-else-if="file.displayType === 'video'"
+                        class="file-gallery__icon file-gallery__icon--video"
+                      >
                         <ArtSvgIcon icon="ri:video-line" class="file-gallery__icon-svg" />
                       </div>
                       <!-- 音频 -->
-                      <div v-else-if="file.displayType === 'audio'" class="file-gallery__icon file-gallery__icon--audio">
+                      <div
+                        v-else-if="file.displayType === 'audio'"
+                        class="file-gallery__icon file-gallery__icon--audio"
+                      >
                         <ArtSvgIcon icon="ri:music-line" class="file-gallery__icon-svg" />
                       </div>
                       <!-- 其他 -->
@@ -316,7 +307,7 @@
         <div class="detail-drawer__content">
           <ElDescriptions
             v-if="currentRow"
-            :column="{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2 }"
+            :column="2"
             border
             :content-style="{ paddingBottom: '12px' }"
           >
@@ -333,24 +324,24 @@
         </div>
       </template>
 
-    <!-- 文件预览弹窗 -->
-    <ElDialog v-model="filePreviewVisible" title="文件预览" width="720px">
-      <video
-        v-if="filePreviewType === 'video'"
-        :src="filePreviewUrl"
-        controls
-        style="width: 100%; max-height: 480px"
-      />
-      <audio
-        v-else-if="filePreviewType === 'audio'"
-        :src="filePreviewUrl"
-        controls
-        style="width: 100%"
-      />
-      <template #footer>
-        <ElButton @click="filePreviewVisible = false">关闭</ElButton>
-      </template>
-    </ElDialog>
+      <!-- 文件预览弹窗 -->
+      <ElDialog v-model="filePreviewVisible" title="文件预览" width="720px">
+        <video
+          v-if="filePreviewType === 'video'"
+          :src="filePreviewUrl"
+          controls
+          style="width: 100%; max-height: 480px"
+        />
+        <audio
+          v-else-if="filePreviewType === 'audio'"
+          :src="filePreviewUrl"
+          controls
+          style="width: 100%"
+        />
+        <template #footer>
+          <ElButton @click="filePreviewVisible = false">关闭</ElButton>
+        </template>
+      </ElDialog>
     </ElDrawer>
   </div>
 </template>
@@ -362,31 +353,96 @@
   import { useBusinessList } from './common/useBusinessList'
 
   const {
-    loading, submitting, showActions,
-    searchFormModel, columnChecks, records, currentRow,
-    detailVisible, formVisible, actionVisible, formMode,
-    formModel, actionModel, activeAction,
-    pagination, selectLoading,
-    config, displayTitle, isOrgModule, showActionOverview,
-    formFields, actionFields, detailColumns, phaseNodeTabs, phaseTabs, defaultPhaseCode, activeMainTab,
-    searchFormItems, orgSummaryItems, moduleName,
-    loadData, handleSizeChange, handleCurrentChange,
-    handleArtSearch, handleArtReset,
-    openCreate, openEdit, submitForm,
-    rowActions, openAction, submitAction,
-    formatCell, statusTagType, shouldShowFieldGroup,
-    fieldOptions, handleFieldChange,
-    openDetail, handleDelete, resetRuntimeState
+    loading,
+    submitting,
+    showActions,
+    searchFormModel,
+    columnChecks,
+    records,
+    currentRow,
+    detailVisible,
+    formVisible,
+    actionVisible,
+    formMode,
+    formModel,
+    actionModel,
+    activeAction,
+    pagination,
+    selectLoading,
+    config,
+    displayTitle,
+    isOrgModule,
+    showActionOverview,
+    formFields,
+    actionFields,
+    detailColumns,
+    phaseNodeTabs,
+    phaseTabs,
+    defaultPhaseCode,
+    activeMainTab,
+    searchFormItems,
+    orgSummaryItems,
+    moduleName,
+    loadData,
+    handleSizeChange,
+    handleCurrentChange,
+    handleArtSearch,
+    handleArtReset,
+    openCreate,
+    openEdit,
+    submitForm,
+    rowActions,
+    openAction,
+    submitAction,
+    formatCell,
+    statusTagType,
+    shouldShowFieldGroup,
+    fieldOptions,
+    handleFieldChange,
+    openDetail,
+    handleDelete,
+    resetRuntimeState
   } = useBusinessList()
 
   const route = useRoute()
+  type ElementTagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+  interface FileGalleryItem {
+    id: string | number
+    displayType?: 'image' | 'pdf' | 'video' | 'audio' | 'other' | string
+    fileUrl?: string
+    fileTypeName?: string
+    fileName?: string
+  }
 
   // ==================== 详情增强 ====================
   const hasPhaseTabs = computed(() => phaseNodeTabs.value.length > 0)
 
-  // 摘要字段：取 detailColumns 前4项作为抽屉顶部摘要
-  const summaryFields = computed(() => detailColumns.value.slice(0, 4))
+  // 详情抽屉 header 统计项（数据驱动）
+  const headerStats = computed(() => {
+    const row = currentRow.value || {}
+    return [
+      { label: '申请金额', value: `¥${row.amount || '-'}`, highlight: true },
+      { label: '期限', value: `${row.term || '-'}个月` },
+      { label: '年利率', value: row.rate ? `${(Number(row.rate) * 100).toFixed(2)}%` : '-' },
+      { label: '还款方式', value: row.repaymentMethod || '-' },
+      { label: '创建人', value: row.creatorName || '-' },
+      { label: '车牌号', value: row.plateNumber || '-' },
+      { label: '当前节点', value: row.currentNodeName || '-' }
+    ]
+  })
+  const tagTypes = new Set<ElementTagType>(['primary', 'success', 'warning', 'info', 'danger'])
+  const normalizeTagType = (value: unknown): ElementTagType => {
+    return tagTypes.has(value as ElementTagType) ? (value as ElementTagType) : 'info'
+  }
 
+  const isFileGroup = (group: { fields: Array<{ prop?: string; value?: unknown }> }) => {
+    return group.fields.length === 1 && group.fields[0].prop === '_files'
+  }
+
+  const fileGroupFiles = (group: { fields: Array<{ value?: unknown }> }): FileGalleryItem[] => {
+    const value = group.fields[0]?.value
+    return Array.isArray(value) ? (value as FileGalleryItem[]) : []
+  }
 
   // ArtTable columns 配置（依赖 render function，保留在 .vue 中）
   const tableColumns = computed(() => {
@@ -423,7 +479,11 @@
               h('span', { class: 'org-service-cell__package' }, formatCell(row, 'packageType')),
               h(
                 ElTag,
-                { type: formatCell(row, 'expireAt') ? 'warning' : 'info', effect: 'plain', size: 'small' },
+                {
+                  type: formatCell(row, 'expireAt') ? 'warning' : 'info',
+                  effect: 'plain',
+                  size: 'small'
+                },
                 () => formatCell(row, 'expireAt')
               )
             ])
@@ -443,8 +503,10 @@
             ])
           }
           if (column.prop === 'status') {
-            return h(ElTag, { type: statusTagType(row[column.prop]), effect: 'light' }, () =>
-              formatCell(row, column.prop)
+            return h(
+              ElTag,
+              { type: normalizeTagType(statusTagType(row[column.prop])), effect: 'light' },
+              () => formatCell(row, column.prop)
             )
           }
           return h('span', {}, formatCell(row, column.prop))
@@ -467,14 +529,22 @@
             h(ElButton, { link: true, type: 'primary', onClick: () => openEdit(row) }, () => '编辑')
           )
           buttons.push(
-            h(ElButton, { link: true, type: 'danger', onClick: () => handleDelete(row) }, () => '删除')
+            h(
+              ElButton,
+              { link: true, type: 'danger', onClick: () => handleDelete(row) },
+              () => '删除'
+            )
           )
         }
         for (const action of rowActions(row)) {
           buttons.push(
             h(
               ElButton,
-              { link: true, type: action.type || 'success', onClick: () => openAction(row, action) },
+              {
+                link: true,
+                type: normalizeTagType(action.type || 'success'),
+                onClick: () => openAction(row, action)
+              },
               () => action.label
             )
           )
@@ -515,9 +585,7 @@
   function previewFile(file: any) {
     filePreviewUrl.value = file.fileUrl
     filePreviewType.value = file.displayType
-    if (file.displayType === 'image' || file.displayType === 'pdf') {
-      window.open(file.fileUrl, '_blank')
-    } else if (file.displayType === 'video' || file.displayType === 'audio') {
+    if (file.displayType === 'video' || file.displayType === 'audio') {
       filePreviewVisible.value = true
     } else {
       window.open(file.fileUrl, '_blank')
@@ -537,15 +605,6 @@
       flex: 1;
       min-height: 0;
     }
-  }
-
-  .detail-json {
-    padding: 16px;
-    overflow: auto;
-    font-size: 12px;
-    line-height: 1.6;
-    background: var(--el-fill-color-light);
-    border-radius: 8px;
   }
 
   .business-form {
@@ -705,26 +764,26 @@
 
   .detail-json {
     max-height: 300px;
-    overflow-y: auto;
     padding: 12px;
-    background-color: var(--el-fill-color-lighter);
-    border-radius: 4px;
+    overflow-y: auto;
     font-size: 12px;
     line-height: 1.5;
+    background: var(--el-fill-color-lighter);
+    border-radius: 4px;
   }
 
   /* ========== 增强详情抽屉样式 ========== */
-  .detail-drawer__header-info {
-    padding: 0 0 12px 0;
-  }
-
   .detail-drawer__header {
     display: flex;
     flex-direction: column;
     gap: 12px;
     padding: 16px 20px;
     margin-bottom: 6px;
-    background: linear-gradient(180deg, var(--el-color-primary-light-9) 0%, var(--el-bg-color) 100%);
+    background: linear-gradient(
+      180deg,
+      var(--el-color-primary-light-9) 0%,
+      var(--el-bg-color) 100%
+    );
     border: 1px solid var(--el-color-primary-light-8);
     border-radius: 8px;
     box-shadow: 0 2px 8px var(--el-box-shadow-light);
@@ -825,10 +884,8 @@
     text-overflow: ellipsis;
   }
 
-  .detail-drawer__stat-value--highlight {
+  .detail-drawer__stat--highlight .detail-drawer__stat-value {
     color: var(--el-color-primary);
-    font-weight: 600;
-    font-size: 13px;
   }
 
   .detail-drawer__main-tabs {
@@ -850,61 +907,6 @@
 
   .detail-drawer__main-tabs :deep(.el-tab-pane) {
     height: 100%;
-  }
-
-  .detail-drawer__body {
-    display: flex;
-    gap: 0;
-    min-height: 400px;
-    max-height: calc(100vh - 260px);
-  }
-
-  .detail-drawer__sidebar {
-    flex: 0 0 150px;
-    border-right: 1px solid var(--el-border-color-lighter);
-    overflow-y: auto;
-  }
-
-  .detail-drawer__sidebar-item {
-    padding: 10px 16px;
-    font-size: 13px;
-    cursor: pointer;
-    color: var(--el-text-color-regular);
-    transition: all 0.2s;
-    border-left: 3px solid transparent;
-    white-space: nowrap;
-  }
-
-  .detail-drawer__sidebar-item:hover {
-    background: var(--el-fill-color-light);
-    color: var(--el-text-color-primary);
-  }
-
-  .detail-drawer__sidebar-item.is-active {
-    background: var(--el-fill-color-light);
-    color: var(--el-color-primary);
-    border-left-color: var(--el-color-primary);
-    font-weight: 600;
-  }
-
-  .detail-drawer__side-content {
-    flex: 1;
-    min-width: 0;
-    padding: 0 16px;
-    overflow-y: auto;
-  }
-
-  .detail-drawer__tab-content {
-    padding: 16px 0;
-    overflow-y: auto;
-    max-height: calc(100vh - 300px);
-  }
-
-  .detail-drawer__empty {
-    padding: 40px 0;
-    text-align: center;
-    color: var(--el-text-color-secondary);
-    font-size: 13px;
   }
 
   /* ==================== 阶段字段分组 ==================== */
@@ -970,7 +972,7 @@
 
   .file-gallery__item:hover {
     border-color: var(--el-color-primary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px var(--el-box-shadow-light);
   }
 
   .file-gallery__img {

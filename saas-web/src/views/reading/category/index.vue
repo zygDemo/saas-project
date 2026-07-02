@@ -84,7 +84,8 @@
           <ElTreeSelect
             v-model="formData.parentId"
             :data="treeSelectData"
-            :props="{ label: 'name', value: 'id', children: 'children' }"
+            node-key="id"
+            :props="{ label: 'name', children: 'children' }"
             placeholder="请选择父分类（可选）"
             clearable
             check-strictly

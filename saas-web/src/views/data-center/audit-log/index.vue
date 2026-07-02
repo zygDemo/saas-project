@@ -164,7 +164,9 @@
   })
 
   // HTTP 方法标签配置
-  const METHOD_TAG_CONFIG: Record<string, { type: string }> = {
+  type ElementTagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+  const METHOD_TAG_CONFIG: Record<string, { type: ElementTagType }> = {
     GET: { type: 'primary' },
     POST: { type: 'success' },
     PUT: { type: 'warning' },
@@ -172,7 +174,7 @@
     DELETE: { type: 'danger' }
   }
 
-  const methodTag = (method: string) => METHOD_TAG_CONFIG[method]?.type || 'info'
+  const methodTag = (method: string): ElementTagType => METHOD_TAG_CONFIG[method]?.type || 'info'
 
   // 状态码标签类型
   const statusTagType = (statusCode?: number) => {

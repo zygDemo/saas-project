@@ -223,7 +223,15 @@
 
   // 字典项弹窗
   const dataDialogVisible = ref(false)
-  const dataForm = reactive({ id: 0, label: '', value: '', sort: 0, status: 'ACTIVE', remark: '' })
+  const dataForm = reactive({
+    id: 0,
+    typeId: 0,
+    label: '',
+    value: '',
+    sort: 0,
+    status: 'ACTIVE',
+    remark: ''
+  })
 
   const handleTypePageChange = (page: number) => {
     typePagination.current = page
@@ -300,7 +308,15 @@
     if (row) {
       Object.assign(dataForm, row)
     } else {
-      Object.assign(dataForm, { id: 0, label: '', value: '', sort: 0, status: 'ACTIVE', remark: '' })
+      Object.assign(dataForm, {
+        id: 0,
+        typeId: selectedType.value?.id || 0,
+        label: '',
+        value: '',
+        sort: 0,
+        status: 'ACTIVE',
+        remark: ''
+      })
     }
     dataDialogVisible.value = true
   }
@@ -323,13 +339,15 @@
   }
 
   async function submitData() {
+    if (!selectedType.value) return
     submitting.value = true
     try {
+      const payload = { ...dataForm, typeId: selectedType.value.id }
       if (dataForm.id) {
-        await fetchUpdateDictData(dataForm.id, dataForm)
+        await fetchUpdateDictData(dataForm.id, payload)
         ElMessage.success('更新成功')
       } else {
-        await fetchCreateDictData(dataForm)
+        await fetchCreateDictData(payload)
         ElMessage.success('创建成功')
       }
       dataDialogVisible.value = false

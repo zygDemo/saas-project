@@ -42,7 +42,8 @@
           <el-tree-select
             v-model="formData.categoryId"
             :data="categoryTree"
-            :props="{ label: 'name', value: 'id', children: 'children' }"
+            node-key="id"
+            :props="{ label: 'name', children: 'children' }"
             placeholder="可选，选择书籍分类"
             clearable
             check-strictly

@@ -207,7 +207,7 @@
                   class="review-textarea"
                   placeholder="说说你对这本书的看法..."
                   placeholder-class="textarea-placeholder"
-                  maxlength="500"
+                  :maxlength="500"
                   :auto-height="true"
                 />
                 <text class="char-count">{{ reviewContent.length }}/500</text>

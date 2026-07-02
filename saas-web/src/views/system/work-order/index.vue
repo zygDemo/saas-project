@@ -472,8 +472,10 @@
   }
 
   // 工单类型标签
-  const getTypeTag = (type: string) => {
-    const map: Record<string, string> = {
+  type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
+
+  const getTypeTag = (type: string): TagType => {
+    const map: Record<string, TagType> = {
       system_maintenance: 'warning',
       data_correction: 'info',
       customer_issue: 'danger'
@@ -492,7 +494,7 @@
 
   // 状态标签
   const getStatusTag = (status: string) => {
-    const map: Record<string, string> = {
+    const map: Record<string, TagType> = {
       pending: 'info',
       processing: 'warning',
       completed: 'success',
@@ -513,13 +515,13 @@
 
   // 优先级标签
   const getPriorityTag = (priority: string) => {
-    const map: Record<string, string> = {
+    const map: Record<string, TagType> = {
       low: 'info',
-      medium: '',
+      medium: 'primary',
       high: 'warning',
       urgent: 'danger'
     }
-    return map[priority] || ''
+    return map[priority] || 'info'
   }
 
   const getPriorityLabel = (priority: string) => {

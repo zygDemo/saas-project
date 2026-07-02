@@ -183,6 +183,7 @@
 
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
+import type { TabPaneName } from 'element-plus'
 import {
   fetchGetMobileConfig,
   fetchUpdateMobileConfig,
@@ -217,10 +218,11 @@ interface EntityConfig {
 // ─── Tabs ───
 const activeTab = ref('tenant')
 
-const handleTabChange = (tab: string) => {
-  if (tab === 'tenant') loadTenantConfig()
-  else if (tab === 'role') loadRoles()
-  else if (tab === 'user') loadUsers()
+const handleTabChange = (tab: TabPaneName) => {
+  const tabName = String(tab)
+  if (tabName === 'tenant') loadTenantConfig()
+  else if (tabName === 'role') loadRoles()
+  else if (tabName === 'user') loadUsers()
 }
 
 // ─── 租户级配置 ───
@@ -248,9 +250,10 @@ const loadTenantConfig = async () => {
   }
 }
 
-const onTenantMultiModuleChange = (val: boolean) => {
-  tenantConfig.isMultiModule = val
-  if (!val && tenantSelectedModules.value.length > 1) {
+const onTenantMultiModuleChange = (val: string | number | boolean) => {
+  const enabled = Boolean(val)
+  tenantConfig.isMultiModule = enabled
+  if (!enabled && tenantSelectedModules.value.length > 1) {
     tenantSelectedModules.value = [tenantSelectedModules.value[0]]
   }
 }
@@ -280,7 +283,7 @@ const roleTotal = ref(0)
 const loadRoles = async () => {
   roleLoading.value = true
   try {
-    const res = (await fetchGetRoleList({ page: rolePage.value, pageSize: rolePageSize.value })) as any
+    const res = (await fetchGetRoleList({ current: rolePage.value, size: rolePageSize.value })) as any
     roleList.value = res?.items || []
     roleTotal.value = res?.total || 0
   } catch {

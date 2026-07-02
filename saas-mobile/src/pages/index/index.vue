@@ -130,7 +130,7 @@ onLoad(async () => {
   // 已登录用户：获取租户移动端模块配置
   if (localStore.token) {
     try {
-      const { data } = await fetchMobileConfig();
+      const data = await fetchMobileConfig();
       localStore.setMobileConfig(data);
 
       // 单模块模式 → 直接进入该模块（不用 data.enabled.length，用 isMultiModule 语义更准确）

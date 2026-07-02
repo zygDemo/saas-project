@@ -203,7 +203,7 @@
               }),
               h(ArtButtonTable, {
                 label: '移动端',
-                type: 'default',
+                type: 'more',
                 onClick: () => showMobileDialog(row)
               }),
               h(ArtButtonTable, {

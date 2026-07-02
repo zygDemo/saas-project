@@ -52,8 +52,8 @@ export interface CarloanDetailRouteQueryInput {
   nodeCode?: RouteQueryValue;
 }
 
-export function buildRouteQuery(query: RouteQueryRecord): RouteQueryRecord {
-  return query;
+export function buildRouteQuery(query: object): RouteQueryRecord {
+  return query as RouteQueryRecord;
 }
 
 export function buildSignRouteQuery(query: CarloanSignRouteQueryInput): RouteQueryRecord {

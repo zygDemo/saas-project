@@ -8,9 +8,11 @@ interface BookItem {
   cover: string;
   progress: number;
   lastReadChapter?: string;
+  lastReadTime?: number;
   hasUpdate?: boolean;
   totalChapters: number;
   category: string;
+  isVip?: boolean;
 }
 
 interface DownloadItem {

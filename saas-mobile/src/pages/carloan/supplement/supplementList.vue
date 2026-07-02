@@ -82,7 +82,7 @@
 
 <script setup lang="ts">
 import { useListPage } from "@/composables/useListPage";
-import { useCarloanApi } from "@/api/carloan";
+import { useCarloanApi, type CreditListItem } from "@/api/carloan";
 import { useSessionStore } from "@/stores";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildSupplementRouteQuery } from "@/common/carloan-route-query";
@@ -91,6 +91,15 @@ import ListPage from "@/components/list-page/ListPage.vue";
 
 const sessionStore = useSessionStore();
 const businessApi = useCarloanApi();
+
+interface SupplementListItem extends CreditListItem {
+  supplementType?: string;
+  supplementRemark?: string;
+  isSupplementCustomer?: string | number;
+  isSupplementVehicle?: string | number;
+  isSupplementOrder?: string | number;
+  isSupplementFile?: string | number;
+}
 
 // 列表逻辑
 const {
@@ -107,7 +116,7 @@ const {
   loadMore,
   onScroll,
   backToTop,
-} = useListPage({
+} = useListPage<SupplementListItem>({
   fetchFn: async (params: any) =>
     businessApi.getSupplementList({ ...params, supplementNode: 2 }),
   defaultParams: { supplementNode: 2 },

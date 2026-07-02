@@ -1579,18 +1579,52 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   private mapFlowApplication(application: any) {
+    const customer = application.customer
+    const vehicles = Array.isArray(customer?.vehicles) ? customer.vehicles : []
+    const vehicle = vehicles[0] || vehicles.at?.(0)
+    const currentNode = Number(application.currentNode)
+    const currentStatus = Number(application.currentStatus)
+    const phaseCode = this.resolveFlowPhaseCode(application)
+    const nodeName = this.resolveFlowNodeName(application)
+    const nodeStatusName = FLOW_STATUS_LABELS[currentStatus] || String(application.currentStatus)
     return {
       ...application,
+      customer,
+      vehicle,
+      vehicles,
+      applicationNo: application.applicationNo,
       creditOrderId: application.applicationNo,
-      currentNodeName: this.resolveFlowNodeName(application),
-      currentStatusName:
-        FLOW_STATUS_LABELS[Number(application.currentStatus)] || String(application.currentStatus),
-      customerName: application.customer?.name,
-      customerPhone: application.customer?.phone,
+      orderNo: application.applicationNo,
+      amount: application.amount,
+      term: application.term,
+      rate: application.rate,
+      approvedAmount: application.approvedAmount,
+      approvedTerm: application.approvedTerm,
+      approvedRate: application.approvedRate,
+      status: application.status,
+      currentNode,
+      nodeCode: currentNode,
+      currentNodeName: nodeName,
+      nodeName,
+      currentStatus,
+      nodeStatus: currentStatus,
+      currentStatusName: nodeStatusName,
+      nodeStatusName,
+      phaseCode,
+      phaseName: this.resolveFlowPhaseName(application, phaseCode),
+      customerName: customer?.name || '',
+      name: customer?.name || '',
+      phone: customer?.phone || '',
+      customerPhone: customer?.phone || '',
+      plateNumber: vehicle?.plateNumber || '',
+      vehicleBrand: vehicle?.brand || '',
+      vehicleModel: vehicle?.model || '',
       productName: application.product?.name,
       funderName: application.funder?.name,
       orgName: application.org?.name,
-      creatorName: application.creator?.nickName || application.creator?.userName
+      creatorName: application.creator?.nickName || application.creator?.userName,
+      createdAt: application.createdAt,
+      updatedAt: application.updatedAt
     }
   }
 

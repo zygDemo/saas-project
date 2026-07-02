@@ -1,6 +1,6 @@
 <template>
   <template v-for="(item, index) in filteredMenuItems" :key="getUniqueKey(item, index)">
-    <ElSubMenu v-if="hasChildren(item)" :index="item.path || item.meta.title" :level="level">
+    <ElSubMenu v-if="hasChildren(item)" :index="item.path || item.meta.title || ''" :level="level">
       <template #title>
         <div class="menu-icon flex-cc">
           <ArtSvgIcon
@@ -26,7 +26,7 @@
 
     <ElMenuItem
       v-else
-      :index="isExternalLink(item) ? undefined : item.path || item.meta.title"
+      :index="item.path || item.meta.title || ''"
       :level-item="level + 1"
       @click="goPage(item)"
     >

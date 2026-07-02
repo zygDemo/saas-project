@@ -48,7 +48,7 @@ export interface SearchChangeParams {
 // 表格列配置接口
 export interface ColumnOption<T = any> {
   // 列类型
-  type?: 'selection' | 'expand' | 'index' | 'globalIndex'
+  type?: 'selection' | 'expand' | 'index' | 'globalIndex' | string
   // 列属性名
   prop?: string
   // 列标题
@@ -58,7 +58,8 @@ export interface ColumnOption<T = any> {
   // 最小列宽度
   minWidth?: string | number
   // 固定列
-  fixed?: boolean | 'left' | 'right'
+  fixed?: boolean | 'left' | 'right' | string
+  align?: 'left' | 'center' | 'right' | string
   // 是否可排序
   sortable?: boolean | 'custom'
   // 过滤器选项
@@ -74,7 +75,7 @@ export interface ColumnOption<T = any> {
   // 是否选中显示
   checked?: boolean
   // 自定义渲染函数
-  formatter?: (row: T) => any
+  formatter?: (row: T, column: any, value: any, index: number) => any
   // 插槽相关配置
   // 是否使用插槽渲染内容
   useSlot?: boolean

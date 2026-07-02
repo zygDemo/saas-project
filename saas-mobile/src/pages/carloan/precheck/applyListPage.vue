@@ -94,7 +94,7 @@
 
 <script setup lang="ts">
 import { useListPage } from "@/composables/useListPage";
-import { useCarloanApi } from "@/api/carloan";
+import { useCarloanApi, type CreditListItem } from "@/api/carloan";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildSignRouteQuery, buildDetailRouteQuery } from "@/common/carloan-route-query";
 import ListCard from "@/components/list-card/ListCard.vue";
@@ -103,7 +103,9 @@ import ListPage from "@/components/list-page/ListPage.vue";
 const businessApi = useCarloanApi();
 
 // 授信状态映射
-const statusMap = {
+type StatusTagType = "success" | "error" | "info" | "warning";
+
+const statusMap: Record<number, { text: string; type: StatusTagType }> = {
   1: { text: "成功", type: "success" },
   2: { text: "失败", type: "error" },
   3: { text: "重新推送", type: "info" },
@@ -115,7 +117,7 @@ function statusText(val: any) {
 }
 
 function statusType(val: any) {
-  return (statusMap[val] || {}).type || "default";
+  return (statusMap[val] || {}).type || "info";
 }
 
 // 格式化额度（字符串类型，单位元）
@@ -141,7 +143,7 @@ const {
   loadMore,
   onScroll,
   backToTop,
-} = useListPage({
+} = useListPage<CreditListItem>({
   fetchFn: async (params: any) => businessApi.getCreditList({ ...params, status: 4 }),
   defaultParams: { status: 4 },
 });
