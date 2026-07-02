@@ -26,13 +26,11 @@ jobs:
           node-version: 22
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
-          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm --filter art-design-pro run build
         run: pnpm --filter art-design-pro run build
 
       - name: Deploy to server
