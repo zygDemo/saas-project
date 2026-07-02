@@ -884,6 +884,105 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
+  // ==================== 还款计划 ====================
+
+  async getRepaymentPlans(applicationId: number) {
+    return this.prisma.repaymentPlan.findMany({
+      where: this.addTenantId({ applicationId }),
+      orderBy: { period: 'asc' },
+      include: { records: { orderBy: { createdAt: 'desc' } } }
+    })
+  }
+
+  // ==================== 逾期催收 ====================
+
+  async getOverduePlans(query: { page?: number; pageSize?: number }) {
+    const { page = 1, pageSize = 20 } = query
+    const where = this.addTenantId({
+      status: RepaymentStatus.OVERDUE,
+      deletedAt: null
+    })
+    const [items, total] = await Promise.all([
+      this.prisma.repaymentPlan.findMany({
+        where,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: { dueDate: 'asc' },
+        include: {
+          application: { select: { applicationNo: true, customer: { select: { name: true, phone: true } } } },
+          records: { orderBy: { createdAt: 'desc' }, take: 3 }
+        }
+      }),
+      this.prisma.repaymentPlan.count({ where })
+    ])
+    return { items, total, page, pageSize }
+  }
+
+  async addCollectionRecord(applicationId: number, dto: { collectorId?: number; collectType?: string; content: string; result?: string; nextAction?: string; nextDate?: string }) {
+    return this.prisma.collectionRecord.create({
+      data: {
+        tenantId: getCurrentTenantId()!,
+        applicationId,
+        collectorId: dto.collectorId,
+        collectType: dto.collectType ?? 'PHONE',
+        content: dto.content,
+        result: dto.result,
+        nextAction: dto.nextAction,
+        nextDate: dto.nextDate ? new Date(dto.nextDate) : undefined
+      }
+    })
+  }
+
+  async getCollectionRecords(applicationId: number) {
+    return this.prisma.collectionRecord.findMany({
+      where: this.addTenantId({ applicationId }),
+      orderBy: { createdAt: 'desc' }
+    })
+  }
+
+  // ==================== 提前还款 ====================
+
+  async applyEarlyRepayment(applicationId: number, dto: { repayType?: string; amount: number; principal: number; interest: number; penalty?: number; reason?: string }) {
+    return this.prisma.earlyRepayment.create({
+      data: {
+        tenantId: getCurrentTenantId()!,
+        applicationId,
+        repayType: dto.repayType ?? 'FULL',
+        amount: dto.amount,
+        principal: dto.principal,
+        interest: dto.interest,
+        penalty: dto.penalty ?? 0,
+        reason: dto.reason
+      }
+    })
+  }
+
+  async approveEarlyRepayment(id: number, dto: { approvedBy: number; remark?: string }) {
+    return this.prisma.earlyRepayment.update({
+      where: { id },
+      data: {
+        repayStatus: 'APPROVED',
+        approvedBy: dto.approvedBy,
+        approvedAt: new Date(),
+        remark: dto.remark
+      }
+    })
+  }
+
+  async completeEarlyRepayment(id: number) {
+    return this.prisma.earlyRepayment.update({
+      where: { id },
+      data: { repayStatus: 'COMPLETED', completedAt: new Date() }
+    })
+  }
+
+  async getEarlyRepayments(applicationId: number) {
+    return this.prisma.earlyRepayment.findMany({
+      where: this.addTenantId({ applicationId }),
+      orderBy: { createdAt: 'desc' }
+    })
+  }
+
   async convertLeadToApplication(id: number) {
     const application = await this.prisma.application.findFirst({
       where: this.addTenantId({ id })

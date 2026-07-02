@@ -119,7 +119,11 @@ import type { UserInfo } from "@/stores/local";
 import { useBusinessApi } from "@/api/business";
 import layout from "@/pages/layout/layout.vue";
 import { useLocalStore, useSessionStore } from "@/stores";
-import { APP_ROUTES, TABBAR_SCOPES } from "@/common/navigation";
+import {
+  APP_ROUTES,
+  TABBAR_SCOPES,
+  canSwitchMobileModule,
+} from "@/common/navigation";
 import { CurrentSystem } from "@/stores/local";
 import { onShow } from "@dcloudio/uni-app";
 import { storeToRefs } from "pinia";
@@ -144,6 +148,9 @@ const businessApi = useBusinessApi();
 const localStore = useLocalStore();
 const sessionStore = useSessionStore();
 const { userInfo } = storeToRefs(localStore);
+const canSwitchProject = computed(() =>
+  canSwitchMobileModule(localStore.mobileConfig),
+);
 
 const currentProjectLabel = computed(() => {
   switch (localStore.currentSystem) {
@@ -163,7 +170,7 @@ const currentProjectLabel = computed(() => {
 const menuList = computed<MenuItem[]>(() => {
   const items: MenuItem[] = [];
   // 多模块模式下才显示切换项目入口
-  if (localStore.mobileConfig && localStore.mobileConfig.isMultiModule) {
+  if (canSwitchProject.value) {
     items.push({
       icon: "grid",
       title: "切换项目",
@@ -225,11 +232,14 @@ const currentTabbarScope = computed(() => {
     return TABBAR_SCOPES.food;
   if (localStore.currentSystem === CurrentSystem.READING)
     return TABBAR_SCOPES.reading;
+  if (localStore.currentSystem === CurrentSystem.CREDIT)
+    return TABBAR_SCOPES.credit;
   return TABBAR_SCOPES.portal;
 });
 
 const activeTabIndex = computed(() => {
   if (currentTabbarScope.value === TABBAR_SCOPES.portal) return 1;
+  if (currentTabbarScope.value === TABBAR_SCOPES.credit) return 1;
   return 2;
 });
 
@@ -475,16 +485,16 @@ onShow(() => {
 .my-page {
   min-height: 100%;
   padding: 24rpx 24rpx 48rpx;
-  background: linear-gradient(180deg, #f3f7ff 0%, #f7f8fa 45%, #f7f8fa 100%);
+  background: linear-gradient(180deg, var(--app-page-bg-soft, #f0f3ff) 0%, var(--app-page-bg, #f5f7fa) 42%, #f8fafc 100%);
 }
 
 .profile-panel,
 .section-card,
 .action-list {
   background: #ffffff;
-  border: 1rpx solid #e8edf5;
+  border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
-  box-shadow: 0 12rpx 28rpx rgba(15, 23, 42, 0.06);
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 .profile-panel {
@@ -492,10 +502,11 @@ onShow(() => {
   color: #ffffff;
   background: linear-gradient(
     135deg,
-    var(--u-type-primary-dark) 0%,
-    var(--u-type-primary) 48%,
-    var(--u-type-primary-light) 100%
+    #3f6ff3 0%,
+    #4f7cff 52%,
+    #6366f1 100%
   );
+  box-shadow: 0 14rpx 34rpx rgba(79, 124, 255, 0.2);
 }
 
 .profile-panel__header {
@@ -528,7 +539,7 @@ onShow(() => {
   flex-shrink: 0;
   padding: 6rpx 14rpx;
   font-size: 22rpx;
-  border-radius: 999rpx;
+  border-radius: 14rpx;
   background: rgba(255, 255, 255, 0.18);
 }
 
@@ -550,7 +561,7 @@ onShow(() => {
 .profile-panel__meta-item {
   min-width: 0;
   padding: 16rpx 12rpx;
-  border-radius: 18rpx;
+  border-radius: 16rpx;
   background: rgba(255, 255, 255, 0.14);
 }
 
@@ -618,7 +629,7 @@ onShow(() => {
   font-weight: 700;
   color: #2563eb;
   background: rgba(37, 99, 235, 0.08);
-  border-radius: 999rpx;
+  border-radius: 14rpx;
 }
 
 .stats-grid {
@@ -632,9 +643,10 @@ onShow(() => {
   align-items: center;
   gap: 16rpx;
   padding: 20rpx 18rpx;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  background: #ffffff;
   border: 1rpx solid #edf2f7;
   border-radius: 18rpx;
+  box-shadow: 0 4rpx 14rpx rgba(15, 23, 42, 0.03);
 }
 
 .stat-item__icon,
@@ -653,11 +665,7 @@ onShow(() => {
 
 .stat-item__icon--lead,
 .menu-item__icon--setting {
-  background: linear-gradient(
-    135deg,
-    var(--u-type-primary),
-    var(--u-type-primary-disabled)
-  );
+  background: linear-gradient(135deg, #4f7cff, #6366f1);
 }
 
 .stat-item__icon--entry,
@@ -704,6 +712,12 @@ onShow(() => {
   gap: 18rpx;
   padding: 22rpx 0;
   border-bottom: 1rpx solid #edf2f7;
+  transition: background 0.18s ease, transform 0.18s ease;
+
+  &:active {
+    background: #f8fafc;
+    transform: scale(0.99);
+  }
 }
 
 .menu-item:last-child {
@@ -750,7 +764,7 @@ onShow(() => {
   height: 88rpx;
   font-size: 28rpx;
   font-weight: 700;
-  border-radius: 999rpx;
+  border-radius: 16rpx;
 }
 
 .action-btn--cache {

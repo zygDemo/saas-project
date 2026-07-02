@@ -298,13 +298,10 @@ async function handleSubmit() {
 
   submitting.value = true;
   try {
-    // TODO: 等待后端提供抵押办理提交接口
-    // await businessApi.submitMortgage({
-    //   creditOrderId: creditOrderId.value,
-    //   uuid: uuidVal.value,
-    //   ...form,
-    //   files,
-    // });
+    await businessApi.completeMortgage(applicationId.value, {
+      mortgageStatus: form.mortgageType,
+      mortgageImg: files.mortgageCert || "",
+    });
 
     saveLocalMortgage();
     saveSignProgress("SIGNED");

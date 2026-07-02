@@ -120,15 +120,22 @@ $red: #f56c6c;
 $orange: #ff9f43;
 
 .card {
-  margin-bottom: 20rpx;
+  margin-bottom: 22rpx;
   padding: 28rpx 28rpx 0;
   background: $bg;
-  border-radius: 16rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 22rpx;
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
   overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+  &:active {
+    transform: scale(0.99);
+    box-shadow: 0 2rpx 12rpx rgba(26, 29, 41, 0.04);
+  }
 
   &__header {
     display: flex;
@@ -160,7 +167,7 @@ $orange: #ff9f43;
     margin-left: 16rpx;
     margin-top: 4rpx;
     padding: 4rpx 16rpx;
-    border-radius: 8rpx;
+    border-radius: 12rpx;
     font-size: 22rpx;
     font-weight: 600;
     line-height: 1.4;
@@ -185,9 +192,10 @@ $orange: #ff9f43;
 
   &__body {
     margin-top: 20rpx;
-    padding: 20rpx 0;
-    border-top: 1rpx solid $border;
-    border-bottom: 1rpx solid $border;
+    padding: 20rpx;
+    background: #f8fafc;
+    border: 1rpx solid #eef2f7;
+    border-radius: 16rpx;
   }
 
   &__row {
@@ -237,7 +245,7 @@ $orange: #ff9f43;
 
   &__tag {
     padding: 4rpx 14rpx;
-    border-radius: 6rpx;
+    border-radius: 10rpx;
     font-size: 20rpx;
     font-weight: 500;
 
@@ -290,12 +298,12 @@ $orange: #ff9f43;
 
   &__btn {
     padding: 10rpx 28rpx;
-    border-radius: 8rpx;
+    border-radius: 12rpx;
     border: 1rpx solid $border;
     background: $bg;
 
     &--primary {
-      background: $primary;
+      background: linear-gradient(135deg, #4f7cff, #6366f1);
       border-color: $primary;
       .card__btn-text {
         color: #fff;

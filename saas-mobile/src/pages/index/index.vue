@@ -9,9 +9,11 @@
             <text class="hero-greeting">{{ greeting }}，</text>
             <text class="hero-name">{{ userName }}</text>
             <text class="hero-date">{{ currentDate }}</text>
+            <text class="hero-slogan">多业务入口统一管理</text>
           </view>
           <view class="hero-avatar" @click="goProfile">
-            <image :src="avatar || defaultAvatar" mode="aspectFill" alt="用户头像" />
+            <image v-if="avatar" :src="avatar" mode="aspectFill" alt="用户头像" />
+            <text v-else class="hero-avatar__text">{{ avatarInitial }}</text>
           </view>
         </view>
       </view>
@@ -25,11 +27,14 @@
 
       <!-- 业务服务 2×2 网格 -->
       <view class="service-section">
-        <view class="section-label">
-          <text class="section-icon">🔹</text>
-          <text class="section-label-text">业务服务</text>
+        <view class="section-head">
+          <view class="section-label">
+            <view class="section-mark" />
+            <text class="section-label-text">业务服务</text>
+          </view>
+          <text class="section-meta">已开启 {{ moduleCount }} 个模块</text>
         </view>
-        <view class="service-grid">
+        <view v-if="serviceCards.length" class="service-grid">
           <view
             v-for="item in serviceCards"
             :key="item.key"
@@ -39,17 +44,29 @@
             <view class="service-card-icon" :class="item.iconClass">
               <u-icon :name="item.icon" color="#fff" size="44" />
             </view>
-            <text class="service-card-title">{{ item.title }}</text>
-            <text class="service-card-desc">{{ item.desc }}</text>
+            <view class="service-card-body">
+              <text class="service-card-title">{{ item.title }}</text>
+              <text class="service-card-desc">{{ item.desc }}</text>
+            </view>
+            <view class="service-card-arrow">
+              <u-icon name="arrow-right" color="#b7c0d4" size="24" />
+            </view>
           </view>
+        </view>
+        <view v-else class="empty-card">
+          <u-icon name="grid" color="var(--u-type-primary)" size="36" />
+          <text class="empty-card__title">暂无可用模块</text>
+          <text class="empty-card__desc">请联系管理员检查移动端模块配置</text>
         </view>
       </view>
 
       <!-- 快捷功能 -->
       <view class="shortcut-section">
-        <view class="section-label">
-          <text class="section-icon">⚡</text>
-          <text class="section-label-text">快捷功能</text>
+        <view class="section-head section-head--compact">
+          <view class="section-label">
+            <view class="section-mark section-mark--soft" />
+            <text class="section-label-text">快捷功能</text>
+          </view>
         </view>
         <view class="shortcut-grid">
           <view
@@ -80,8 +97,12 @@
 </template>
 
 <script setup lang="ts">
-import { APP_ROUTES, getSystemByRoute } from "@/common/navigation";
-import { fetchMobileConfig, type MobileModuleItem } from "@/api/mobile-config";
+import {
+  APP_ROUTES,
+  getInitialMobileEntry,
+  getModuleHomeRoute,
+} from "@/common/navigation";
+import { fetchMobileConfig, type MobileConfigData, type MobileModuleItem } from "@/api/mobile-config";
 import { computed, ref } from "vue";
 import { onLoad, onShow } from "@dcloudio/uni-app";
 import layout from "@/pages/layout/layout.vue";
@@ -92,9 +113,9 @@ const localStore = useLocalStore();
 const userName = ref("");
 const currentDate = ref("");
 const avatar = ref("");
-const defaultAvatar = "https://img.uviewui.com/avatar/default.png";
-
 const hasLogin = computed(() => Boolean(localStore.token));
+const avatarInitial = computed(() => (userName.value || "U").slice(0, 1).toUpperCase());
+const moduleCount = computed(() => serviceCards.value.length);
 
 const greeting = computed(() => {
   const h = new Date().getHours();
@@ -130,25 +151,24 @@ onLoad(async () => {
   // 已登录用户：获取租户移动端模块配置
   if (localStore.token) {
     try {
-      const data = await fetchMobileConfig();
+      const data = normalizeMobileConfig(await fetchMobileConfig());
+      if (!data) return;
       localStore.setMobileConfig(data);
 
-      // 单模块模式 → 直接进入该模块（不用 data.enabled.length，用 isMultiModule 语义更准确）
-      if (!data.isMultiModule && data.enabled.length > 0) {
-        const target = getModuleRoute(data.enabled[0]);
-        if (target) {
-          localStore.setCurrentSystem(getSystemByRoute(target) as any);
-          uni.reLaunch({ url: target });
-          return;
-        }
+      // 单模块模式：直接进入该模块（不用 data.enabled.length，用 isMultiModule 语义更准确）
+      const entry = getInitialMobileEntry(data);
+      if (entry.moduleKey) {
+        localStore.setCurrentSystem(entry.system as any);
+        uni.reLaunch({ url: entry.route });
+        return;
       }
 
       // 多模块模式：始终显示门户页，用户可自由选择
-      filterServiceCards(data.enabled);
+      filterServiceCards(data);
     } catch {
       // 接口失败时降级使用缓存
       if (localStore.mobileConfig) {
-        filterServiceCards(localStore.mobileConfig.enabled);
+        filterServiceCards(localStore.mobileConfig as MobileConfigData);
       }
     }
   }
@@ -159,7 +179,7 @@ onShow(() => {
   syncUserInfo();
   // 使用缓存的配置过滤模块
   if (localStore.mobileConfig) {
-    filterServiceCards(localStore.mobileConfig.enabled);
+    filterServiceCards(localStore.mobileConfig as MobileConfigData);
   }
 });
 
@@ -183,7 +203,7 @@ const serviceCards = ref([
     iconClass: "icon-food",
     handler: () => {
       localStore.setCurrentSystem(CurrentSystem.FOOD);
-      uni.navigateTo({ url: APP_ROUTES.food.home });
+      uni.reLaunch({ url: APP_ROUTES.food.home });
     },
   },
   {
@@ -194,7 +214,7 @@ const serviceCards = ref([
     iconClass: "icon-credit",
     handler: () => {
       localStore.setCurrentSystem(CurrentSystem.CREDIT);
-      uni.navigateTo({ url: APP_ROUTES.credit.home });
+      uni.reLaunch({ url: APP_ROUTES.credit.home });
     },
   },
   {
@@ -204,7 +224,8 @@ const serviceCards = ref([
     icon: "book",
     iconClass: "icon-reading",
     handler: () => {
-      uni.navigateTo({ url: APP_ROUTES.reading.home });
+      localStore.setCurrentSystem(CurrentSystem.READING);
+      uni.reLaunch({ url: APP_ROUTES.reading.home });
     },
   },
 ]);
@@ -247,15 +268,9 @@ const shortcutItems = ref([
 
 
 
-/** 模块 key → 首页路由 */
+/** 模块 key 到首页路由 */
 function getModuleRoute(key: string): string | null {
-  const map: Record<string, string> = {
-    carloan: APP_ROUTES.carloan.home,
-    food: APP_ROUTES.food.home,
-    credit: APP_ROUTES.credit.home,
-    reading: APP_ROUTES.reading.home,
-  };
-  return map[key] ?? null;
+  return getModuleHomeRoute(key);
 }
 
 /** 原始完整服务卡片列表 */
@@ -264,10 +279,40 @@ const allServiceCards = [...serviceCards.value];
 /** 原始完整快捷功能列表 */
 const allShortcutItems = [...shortcutItems.value];
 
+function normalizeMobileConfig(response: any): MobileConfigData | null {
+  const config = response?.data?.enabled ? response.data : response;
+  if (!config || !Array.isArray(config.enabled)) return null;
+  return {
+    available: Array.isArray(config.available) ? config.available : [],
+    enabled: config.enabled,
+    defaultModule: config.defaultModule ?? null,
+    isMultiModule: Boolean(config.isMultiModule),
+  };
+}
+
 /** 根据已启用模块过滤服务卡片 + 快捷功能 */
-function filterServiceCards(enabled: string[]) {
+function filterServiceCards(configOrEnabled: MobileConfigData | string[]) {
+  const config = Array.isArray(configOrEnabled)
+    ? { available: [] as MobileModuleItem[], enabled: configOrEnabled }
+    : configOrEnabled;
+  const enabled = config.enabled;
+  const available = Array.isArray(config.available) ? config.available : [];
   const enabledSet = new Set(enabled);
-  serviceCards.value = allServiceCards.filter((c) => enabledSet.has(c.key));
+  const cardMap = new Map(allServiceCards.map((card) => [card.key, card]));
+  const availableCards = available
+    .filter((item) => enabledSet.has(item.key) && cardMap.has(item.key))
+    .map((item) => {
+      const card = cardMap.get(item.key)!;
+      return {
+        ...card,
+        title: item.name || card.title,
+        desc: item.desc || card.desc,
+        icon: item.icon || card.icon,
+      };
+    });
+  serviceCards.value = availableCards.length
+    ? availableCards
+    : allServiceCards.filter((c) => enabledSet.has(c.key));
   // 快捷功能：保留不依赖特定模块的项(联系客服) + 匹配已启用模块的项
   shortcutItems.value = allShortcutItems.filter((item) => {
     if (item.key === 'service' || item.key === 'notice') return true;
@@ -290,8 +335,9 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   min-height: 100vh;
   background: linear-gradient(
     180deg,
-    rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.06) 0%,
-    var(--u-bg-color, #f5f6fa) 30%
+    var(--u-type-primary-light, #eef3ff) 0%,
+    rgba(var(--u-type-primary-rgb, 79, 124, 255), 0.05) 38%,
+    #f8fafc 100%
   );
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -299,7 +345,7 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 /* ===== Hero ===== */
 .hero {
   position: relative;
-  padding: 40rpx 32rpx 48rpx;
+  padding: 42rpx 32rpx 58rpx;
   overflow: hidden;
 }
 
@@ -311,11 +357,12 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   height: 320rpx;
   background: linear-gradient(
     135deg,
-    var(--u-type-primary-dark) 0%,
-    var(--u-type-primary) 60%,
-    var(--u-type-primary-disabled) 100%
+    var(--u-type-primary-dark, #3f6ff3) 0%,
+    var(--u-type-primary, #4f7cff) 52%,
+    var(--u-type-primary-disabled, #8ea7ff) 100%
   );
   border-radius: 0 0 40rpx 40rpx;
+  box-shadow: 0 18rpx 40rpx rgba(var(--u-type-primary-rgb, 79, 124, 255), 0.22);
 }
 
 .hero-content {
@@ -329,6 +376,7 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 .hero-left {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .hero-greeting {
@@ -338,8 +386,12 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 }
 
 .hero-name {
-  font-size: 42rpx;
-  font-weight: 700;
+  max-width: 460rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 46rpx;
+  font-weight: 800;
   color: #fff;
   margin-bottom: 8rpx;
 }
@@ -347,6 +399,16 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 .hero-date {
   font-size: 24rpx;
   color: rgba(255, 255, 255, 0.6);
+}
+
+.hero-slogan {
+  margin-top: 16rpx;
+  width: fit-content;
+  padding: 8rpx 18rpx;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 23rpx;
+  border-radius: 14rpx;
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .hero-avatar {
@@ -357,6 +419,7 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   border: 4rpx solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.12);
   flex-shrink: 0;
+  background: #fff;
 
   image {
     width: 100%;
@@ -364,18 +427,31 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   }
 }
 
+.hero-avatar__text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--u-type-primary);
+  font-size: 40rpx;
+  font-weight: 800;
+  background: #fff;
+}
+
 /* ===== Notice bar ===== */
 .notice-bar {
   position: relative;
   z-index: 2;
-  margin: -16rpx 28rpx 24rpx;
+  margin: -24rpx 28rpx 26rpx;
   display: flex;
   align-items: center;
   gap: 12rpx;
-  background: var(--u-bg-white, #fff);
-  border-radius: 14rpx;
-  padding: 18rpx 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1rpx solid rgba(226, 232, 240, 0.9);
+  border-radius: 18rpx;
+  padding: 20rpx 24rpx;
+  box-shadow: 0 10rpx 28rpx rgba(30, 41, 59, 0.06);
 }
 
 .notice-text {
@@ -387,22 +463,58 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   white-space: nowrap;
 }
 
-/* ===== Section label ===== */
-.section-label {
+.section-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
   margin-bottom: 20rpx;
 }
 
-.section-icon {
-  font-size: 32rpx;
-  margin-right: 8rpx;
+.section-head--compact {
+  margin-bottom: 18rpx;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.section-mark {
+  width: 8rpx;
+  height: 30rpx;
+  margin-right: 12rpx;
+  border-radius: 8rpx;
+  background: linear-gradient(
+    180deg,
+    var(--u-type-primary, #4f7cff),
+    var(--u-type-primary-disabled, #8ea7ff)
+  );
+}
+
+.section-mark--soft {
+  background: linear-gradient(
+    180deg,
+    var(--u-type-primary-disabled, #8ea7ff),
+    var(--u-type-primary-light, #eef3ff)
+  );
 }
 
 .section-label-text {
   font-size: 30rpx;
-  font-weight: 600;
-  color: var(--u-main-color, #303133);
+  font-weight: 800;
+  color: #1a1d29;
+}
+
+.section-meta {
+  flex-shrink: 0;
+  padding: 8rpx 16rpx;
+  color: var(--u-type-primary, #4f7cff);
+  font-size: 22rpx;
+  font-weight: 700;
+  border-radius: 14rpx;
+  background: rgba(var(--u-type-primary-rgb, 79, 124, 255), 0.08);
 }
 
 /* ===== Service 2×2 grid ===== */
@@ -413,37 +525,59 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 .service-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20rpx;
+  gap: 18rpx;
 }
 
 .service-card {
-  background: var(--u-bg-white, #fff);
-  border-radius: 20rpx;
-  padding: 32rpx 24rpx;
+  position: relative;
+  min-height: 236rpx;
+  background: #fff;
+  border: 1rpx solid #e8edf5;
+  border-radius: 22rpx;
+  padding: 28rpx 22rpx 24rpx;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
-  transition: transform 0.2s;
+  align-items: flex-start;
+  box-shadow: 0 10rpx 28rpx rgba(26, 29, 41, 0.05);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: -42rpx;
+    right: -42rpx;
+    width: 120rpx;
+    height: 120rpx;
+    border-radius: 50%;
+    background: rgba(var(--u-type-primary-rgb, 79, 124, 255), 0.06);
+  }
 
   &:active {
-    transform: scale(0.96);
+    transform: scale(0.98);
+    box-shadow: 0 6rpx 18rpx rgba(26, 29, 41, 0.06);
   }
 }
 
 .service-card-icon {
-  width: 88rpx;
-  height: 88rpx;
-  border-radius: 22rpx;
+  position: relative;
+  z-index: 1;
+  width: 82rpx;
+  height: 82rpx;
+  border-radius: 20rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 18rpx;
+  margin-bottom: 22rpx;
 }
 
 .icon-carloan {
-  background: linear-gradient(135deg, #5b5ce2 0%, #4a3db8 100%);
-  box-shadow: 0 8rpx 20rpx rgba(91, 92, 226, 0.35);
+  background: linear-gradient(
+    135deg,
+    var(--u-type-primary, #4f7cff) 0%,
+    var(--u-type-primary-dark, #3f6ff3) 100%
+  );
+  box-shadow: 0 8rpx 20rpx rgba(var(--u-type-primary-rgb, 79, 124, 255), 0.32);
 }
 
 .icon-food {
@@ -467,57 +601,115 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 }
 
 .service-card-title {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: var(--u-main-color, #303133);
-  margin-bottom: 6rpx;
+  display: block;
+  font-size: 31rpx;
+  font-weight: 800;
+  color: #1a1d29;
+  margin-bottom: 8rpx;
 }
 
 .service-card-desc {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #8b93a7;
   font-size: 22rpx;
-  color: var(--u-tips-color, #909399);
-  text-align: center;
+  line-height: 1.45;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.service-card-body {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  padding-right: 24rpx;
+}
+
+.service-card-arrow {
+  position: absolute;
+  right: 18rpx;
+  bottom: 18rpx;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42rpx;
+  height: 42rpx;
+  border-radius: 14rpx;
+  background: #f5f7fb;
+}
+
+.empty-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10rpx;
+  padding: 48rpx 24rpx;
+  background: #fff;
+  border: 1rpx dashed #cbd5e1;
+  border-radius: 22rpx;
+}
+
+.empty-card__title {
+  color: #1a1d29;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.empty-card__desc {
+  color: #8b93a7;
+  font-size: 23rpx;
 }
 
 /* ===== Shortcut section ===== */
 .shortcut-section {
   margin: 28rpx 28rpx 0;
-  background: var(--u-bg-white, #fff);
-  border-radius: 20rpx;
-  padding: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+  background: #fff;
+  border: 1rpx solid #e8edf5;
+  border-radius: 22rpx;
+  padding: 26rpx 24rpx 24rpx;
+  box-shadow: 0 10rpx 28rpx rgba(26, 29, 41, 0.05);
 }
 
 .shortcut-grid {
-  display: flex;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8rpx;
 }
 
 .shortcut-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 25%;
-  transition: transform 0.2s;
+  min-width: 0;
+  padding: 8rpx 0;
+  border-radius: 16rpx;
+  transition: transform 0.18s ease, background 0.18s ease;
 
   &:active {
-    transform: scale(0.92);
+    background: #f8fafc;
+    transform: scale(0.96);
   }
 }
 
 .shortcut-icon-wrap {
-  width: 72rpx;
-  height: 72rpx;
+  width: 70rpx;
+  height: 70rpx;
   border-radius: 18rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 12rpx;
+  box-shadow: 0 8rpx 18rpx rgba(15, 23, 42, 0.1);
 }
 
 .shortcut-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 22rpx;
-  color: var(--u-content-color, #606266);
+  color: #4e5566;
 }
 
 /* ===== Login hint ===== */
@@ -526,9 +718,9 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   display: flex;
   align-items: center;
   gap: 12rpx;
-  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.04);
-  border: 2rpx solid rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.1);
-  border-radius: 14rpx;
+  background: rgba(var(--u-type-primary-rgb, 79, 124, 255), 0.06);
+  border: 1rpx solid rgba(var(--u-type-primary-rgb, 79, 124, 255), 0.16);
+  border-radius: 18rpx;
   padding: 20rpx 24rpx;
   transition: opacity 0.2s;
 

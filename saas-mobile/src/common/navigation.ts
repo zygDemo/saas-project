@@ -82,9 +82,102 @@ export const TABBAR_SCOPES = {
   portal: "portal",
   carloan: "carloan",
   food: "food",
+  credit: "credit",
 } as const;
 
 export type TabbarScope = (typeof TABBAR_SCOPES)[keyof typeof TABBAR_SCOPES];
+export type MobileModuleKey = "carloan" | "food" | "credit" | "reading";
+
+export interface MobileModuleConfigLike {
+  enabled?: string[];
+  defaultModule?: string | null;
+  isMultiModule?: boolean;
+}
+
+const MOBILE_MODULE_KEYS: MobileModuleKey[] = [
+  "carloan",
+  "food",
+  "credit",
+  "reading",
+];
+
+const MODULE_HOME_ROUTE_MAP: Record<MobileModuleKey, string> = {
+  carloan: APP_ROUTES.carloan.home,
+  food: APP_ROUTES.food.home,
+  credit: APP_ROUTES.credit.home,
+  reading: APP_ROUTES.reading.home,
+};
+
+const MODULE_SYSTEM_MAP: Record<MobileModuleKey, string> = {
+  carloan: "carloan",
+  food: "food",
+  credit: "credit",
+  reading: "reading",
+};
+
+export function isMobileModuleKey(key?: string | null): key is MobileModuleKey {
+  return Boolean(key && MOBILE_MODULE_KEYS.includes(key as MobileModuleKey));
+}
+
+export function getEnabledMobileModules(
+  config?: MobileModuleConfigLike | null,
+): MobileModuleKey[] {
+  const enabled = Array.isArray(config?.enabled) ? config.enabled : [];
+  return enabled.filter(isMobileModuleKey);
+}
+
+export function getModuleHomeRoute(key?: string | null): string | null {
+  return isMobileModuleKey(key) ? MODULE_HOME_ROUTE_MAP[key] : null;
+}
+
+export function getModuleSystem(key?: string | null): string | null {
+  return isMobileModuleKey(key) ? MODULE_SYSTEM_MAP[key] : null;
+}
+
+export function getActiveModuleKeyBySystem(
+  system?: string | null,
+): MobileModuleKey | null {
+  return isMobileModuleKey(system) ? system : null;
+}
+
+export function canSwitchMobileModule(
+  config?: MobileModuleConfigLike | null,
+): boolean {
+  return Boolean(config?.isMultiModule && getEnabledMobileModules(config).length > 1);
+}
+
+export function getInitialMobileEntry(
+  config?: MobileModuleConfigLike | null,
+): { route: string; system: string; moduleKey: MobileModuleKey | null } {
+  const enabledModules = getEnabledMobileModules(config);
+
+  if (canSwitchMobileModule(config)) {
+    return {
+      route: APP_ROUTES.portal.home,
+      system: "portal",
+      moduleKey: null,
+    };
+  }
+
+  const preferredModule = isMobileModuleKey(config?.defaultModule)
+    && enabledModules.includes(config.defaultModule)
+    ? config.defaultModule
+    : enabledModules[0];
+
+  if (preferredModule) {
+    return {
+      route: MODULE_HOME_ROUTE_MAP[preferredModule],
+      system: MODULE_SYSTEM_MAP[preferredModule],
+      moduleKey: preferredModule,
+    };
+  }
+
+  return {
+    route: APP_ROUTES.portal.home,
+    system: "portal",
+    moduleKey: null,
+  };
+}
 
 // ─── 角色 → 默认模块映射 ───
 // key = roleKey，value = 跳转目标模块的首页路由
@@ -163,7 +256,6 @@ const SYSTEM_TABBAR_ROUTES: Set<string> = new Set([
   APP_ROUTES.portal.home,
   APP_ROUTES.carloan.home,
   APP_ROUTES.carloan.orders,
-  APP_ROUTES.reading.home,
   APP_ROUTES.my.home,
 ]);
 
@@ -194,7 +286,7 @@ const CARLOAN_TABBAR_ITEMS: LayoutTabbarItem[] = [
     iconPath: "home",
     selectedIconPath: "home-fill",
     route: APP_ROUTES.carloan.home,
-    navMode: "switchTab",
+    navMode: "reLaunch",
     customIcon: false,
     count: 0,
   },
@@ -203,7 +295,7 @@ const CARLOAN_TABBAR_ITEMS: LayoutTabbarItem[] = [
     iconPath: "order",
     selectedIconPath: "order",
     route: APP_ROUTES.carloan.orders,
-    navMode: "switchTab",
+    navMode: "reLaunch",
     customIcon: false,
     count: 0,
   },
@@ -248,6 +340,27 @@ const FOOD_TABBAR_ITEMS: LayoutTabbarItem[] = [
   },
 ];
 
+const CREDIT_TABBAR_ITEMS: LayoutTabbarItem[] = [
+  {
+    text: "首页",
+    iconPath: "home",
+    selectedIconPath: "home-fill",
+    route: APP_ROUTES.credit.home,
+    navMode: "reLaunch",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    text: "我的",
+    iconPath: "account",
+    selectedIconPath: "account-fill",
+    route: APP_ROUTES.my.home,
+    navMode: "switchTab",
+    customIcon: false,
+    count: 0,
+  },
+];
+
 const READING_TABBAR_ITEMS: LayoutTabbarItem[] = [
   {
     text: "书架",
@@ -272,7 +385,7 @@ const READING_TABBAR_ITEMS: LayoutTabbarItem[] = [
     iconPath: "account",
     selectedIconPath: "account-fill",
     route: APP_ROUTES.my.home,
-    navMode: "redirectTo",
+    navMode: "switchTab",
     customIcon: false,
     count: 0,
   },
@@ -288,7 +401,9 @@ export function getLayoutTabbar(
         ? READING_TABBAR_ITEMS
         : scope === TABBAR_SCOPES.food
           ? FOOD_TABBAR_ITEMS
-          : PORTAL_TABBAR_ITEMS;
+          : scope === TABBAR_SCOPES.credit
+            ? CREDIT_TABBAR_ITEMS
+            : PORTAL_TABBAR_ITEMS;
 
   return source.map((item) => ({ ...item }));
 }

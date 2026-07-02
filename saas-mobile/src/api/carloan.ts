@@ -427,12 +427,24 @@ export function useCarloanApi() {
     /** 提交进件/预审（需要传入 application 主键 id） */
     submitApplication: (applicationId: string | number) =>
       http.post(`/application/${applicationId}/submit`),
-    /** 兼容旧调用：当前接口清单未提供状态推进，返回订单详情保持页面流程可继续 */
-    completeFileSupplement: (creditOrderId: string) =>
-      http.get(`/m/credit/getCreditDetailByOrderId/${creditOrderId}`),
-    /** 兼容旧调用：当前接口清单未提供状态推进，返回订单详情保持页面流程可继续 */
-    submitPreAudit: (creditOrderId: string) =>
-      http.get(`/m/credit/getCreditDetailByOrderId/${creditOrderId}`),
+    /** 资料补充完成（通过 creditOrderId 获取 applicationId 后推进状态） */
+    completeFileSupplement: async (creditOrderId: string) => {
+      const detail = await http.get<ApiResponse<{ id: number }>>(
+        `/m/credit/getCreditDetailByOrderId/${creditOrderId}`
+      );
+      const applicationId = detail?.data?.id || detail?.id;
+      if (!applicationId) throw new Error('未找到订单信息');
+      return http.post(`/application/${applicationId}/complete-supplement`);
+    },
+    /** 提交预审（通过 creditOrderId 获取 applicationId 后推进状态） */
+    submitPreAudit: async (creditOrderId: string) => {
+      const detail = await http.get<ApiResponse<{ id: number }>>(
+        `/m/credit/getCreditDetailByOrderId/${creditOrderId}`
+      );
+      const applicationId = detail?.data?.id || detail?.id;
+      if (!applicationId) throw new Error('未找到订单信息');
+      return http.post(`/application/${applicationId}/submit`);
+    },
     /** 获取文件列表 */
     getFileList: (params?: string | MobileFileQuery) =>
       http.get<ApiResponse<MobileUploadResult[]>>(
@@ -577,6 +589,46 @@ export function useCarloanApi() {
     /** 授权签署（一键签署） */
     authorizeSign: (signRecordId: number) =>
       http.post<ApiResponse<any>>(`/signing/${signRecordId}/authorize-sign`),
+
+    /** GPS安装完成 */
+    completeGpsInstall: (applicationId: string | number, data?: { gpsDeviceNo?: string; gpsInstallImg?: string }) =>
+      http.post(`/application/${applicationId}/gps-installed`, data),
+
+    /** 抵押完成 */
+    completeMortgage: (applicationId: string | number, data?: { mortgageStatus?: string; mortgageImg?: string }) =>
+      http.post(`/application/${applicationId}/mortgage-done`, data),
+
+    /** 提交请款资料 */
+    submitLoanRequest: (applicationId: string | number) =>
+      http.post(`/application/${applicationId}/submit-loan-request`),
+
+    /** 获取客户银行卡列表 */
+    getBankCards: (customerId: number | string) =>
+      http.get<ApiResponse<any[]>>(`/m/bank-card/list`, { customerId }),
+
+    /** 添加银行卡 */
+    addBankCard: (data: { customerId: number; bankName: string; cardNo: string; cardType?: string; isDefault?: boolean }) =>
+      http.post(`/m/bank-card/add`, data),
+
+    /** 删除银行卡 */
+    deleteBankCard: (id: number) =>
+      http.post(`/m/bank-card/delete/${id}`),
+
+    /** 额度确认 */
+    confirmAmount: (data: { applicationId: number; approvedAmount: number; term?: number; rate?: number }) =>
+      http.post(`/m/business/confirmAmount`, data),
+
+    /** 获取还款计划 */
+    getRepaymentPlans: (applicationId: number | string) =>
+      http.get<ApiResponse<any[]>>(`/m/post-loan/repayment-plans/${applicationId}`),
+
+    /** 申请提前还款 */
+    applyEarlyRepayment: (data: { applicationId: number; repayType?: string; amount: number; principal: number; interest: number; penalty?: number; reason?: string }) =>
+      http.post('/m/post-loan/early-repayment', data),
+
+    /** 获取订单详情（用于请款确认） */
+    getApplicationDetail: (id: number | string) =>
+      http.get<ApiResponse<any>>(`/m/post-loan/detail/${id}`),
 
     // ========== 统计 ==========
 

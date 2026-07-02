@@ -462,6 +462,24 @@ async function main() {
     },
     {
       parentKey: 'Business',
+      path: 'repayment',
+      name: 'BusinessRepayment',
+      title: '还款管理',
+      icon: 'ri:money-cny-circle-line',
+      sort: 75,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'disbursement-mgmt',
+      name: 'BusinessDisbursementMgmt',
+      title: '放款管理',
+      icon: 'ri:bank-card-line',
+      sort: 76,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
       path: 'post-loan',
       name: 'PostLoan',
       title: '贷后阶段',

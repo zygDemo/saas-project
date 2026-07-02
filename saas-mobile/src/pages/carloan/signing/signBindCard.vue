@@ -162,11 +162,10 @@ onMounted(() => {
 
 async function loadCards() {
   try {
-    // TODO: 等待后端提供银行卡列表接口
-    // const res = await businessApi.getBankCards({ uuid: uuidVal.value });
-    // if (res?.code === 200) {
-    //   savedCards.value = res.data || [];
-    // }
+    const res = await businessApi.getBankCards(uuidVal.value);
+    if (res?.code === 200) {
+      savedCards.value = res.data || [];
+    }
   } catch (e) {
     console.error("获取银行卡失败", e);
   }
@@ -221,13 +220,13 @@ async function handleSave() {
 
   submitting.value = true;
   try {
-    // TODO: 等待后端提供绑卡接口
-    // await businessApi.bindBankCard({
-    //   creditOrderId: creditOrderId.value,
-    //   uuid: uuidVal.value,
-    //   ...form,
-    //   cardNo: String(form.cardNo).replace(/\s/g, ""),
-    // });
+    await businessApi.addBankCard({
+      customerId: Number(uuidVal.value),
+      bankName: form.bankName,
+      cardNo: String(form.cardNo).replace(/\s/g, ""),
+      cardType: "DEBIT",
+      isDefault: true,
+    });
 
     saveSignProgress("SIGNING_CONTRACT");
     $u.toast("绑卡成功", "success");

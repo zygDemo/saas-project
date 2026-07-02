@@ -1123,6 +1123,28 @@ async function seedAllMenus(tenantId: number) {
     sort: 69,
     keepAlive: true
   })
+
+  const businessRepayment = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'repayment',
+    name: 'BusinessRepayment',
+    component: bp,
+    title: '还款管理',
+    icon: 'ri:money-cny-circle-line',
+    sort: 71,
+    keepAlive: true
+  })
+
+  const businessDisbursementMgmt = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'disbursement-mgmt',
+    name: 'BusinessDisbursementMgmt',
+    component: bp,
+    title: '放款管理',
+    icon: 'ri:bank-card-line',
+    sort: 72,
+    keepAlive: true
+  })
   const org = await upsertMenu(tenantId, {
     parentId: orgConfigRoot.id,
     path: 'org',
@@ -1333,6 +1355,8 @@ async function seedAllMenus(tenantId: number) {
     businessFunderFinal,
     businessSigning,
     businessDisbursement,
+    businessRepayment,
+    businessDisbursementMgmt,
     orderQuery,
     org,
     dept,
@@ -1409,6 +1433,8 @@ async function seedAllMenus(tenantId: number) {
     businessFunderFinal,
     businessSigning,
     businessDisbursement,
+    businessRepayment,
+    businessDisbursementMgmt,
     lead,
     orderQuery,
     reports,

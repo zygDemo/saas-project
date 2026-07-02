@@ -57,6 +57,10 @@
               v-for="goods in getGoodsByCategory(cat.id)"
               :key="goods.id"
               class="goods-card"
+              role="button"
+              tabindex="0"
+              @click="openGoodsDetail(goods)"
+              @keyup.enter="openGoodsDetail(goods)"
             >
               <view class="goods-img-wrap">
                 <image class="goods-img" :src="goods.image" mode="aspectFill" :alt="goods.name" />
@@ -129,6 +133,38 @@
           <text class="submit-text">{{ cartCount > 0 ? '去结算' : '未选购商品' }}</text>
         </view>
       </view>
+
+      <u-popup :show="detailVisible" mode="bottom" round="18" @close="detailVisible = false">
+        <view v-if="selectedGoods" class="goods-detail-panel">
+          <image class="detail-img" :src="selectedGoods.image" mode="aspectFill" :alt="selectedGoods.name" />
+          <view class="detail-body">
+            <view class="detail-title-row">
+              <text class="detail-title">{{ selectedGoods.name }}</text>
+              <view class="detail-close" role="button" tabindex="0" @click="detailVisible = false" @keyup.enter="detailVisible = false">
+                <u-icon name="close" size="26" color="#909399" />
+              </view>
+            </view>
+            <text class="detail-desc">{{ selectedGoods.desc || "今日现做，建议尽快享用" }}</text>
+            <view class="detail-meta">
+              <text>月售 {{ selectedGoods.sales }}</text>
+              <text>库存 {{ selectedGoods.stock }}</text>
+            </view>
+            <view class="detail-footer">
+              <view class="price-wrap">
+                <text class="symbol">¥</text>
+                <text class="price">{{ selectedGoods.price.toFixed(2) }}</text>
+                <text v-if="selectedGoods.originalPrice" class="original-price">
+                  ¥{{ selectedGoods.originalPrice.toFixed(2) }}
+                </text>
+              </view>
+              <view class="detail-add-btn" role="button" tabindex="0" @click="addGoods(selectedGoods)" @keyup.enter="addGoods(selectedGoods)">
+                <u-icon name="plus" size="24" color="#fff" />
+                <text>加入购物车</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </u-popup>
     </view>
   </layout>
 </template>
@@ -166,6 +202,14 @@ const storeInfo = ref<StoreInfo>({
 });
 
 const storeName = computed(() => storeInfo.value.name);
+
+const storeProfiles: Record<number, StoreInfo> = {
+  1: { id: 1, name: "李家厨房", logo: "https://picsum.photos/seed/food1/400/300", deliveryTime: 25, sales: 328, distance: 580 },
+  2: { id: 2, name: "快客汉堡", logo: "https://picsum.photos/seed/food2/400/300", deliveryTime: 15, sales: 256, distance: 1200 },
+  3: { id: 3, name: "老城火锅", logo: "https://picsum.photos/seed/food3/400/300", deliveryTime: 35, sales: 189, distance: 2100 },
+  4: { id: 4, name: "茶百道", logo: "https://picsum.photos/seed/food4/400/300", deliveryTime: 10, sales: 512, distance: 800 },
+  6: { id: 6, name: "甜蜜时光蛋糕", logo: "https://picsum.photos/seed/food6/400/300", deliveryTime: 30, sales: 203, distance: 1500 },
+};
 
 const goodsCategories = ref<GoodsCategory[]>([
   { id: 1, name: "招牌推荐", desc: "必点好菜", hot: true },
@@ -231,8 +275,31 @@ const goodsList = ref<(FoodGoods & { categoryId: number })[]>([
   },
 ]);
 
+const storeGoodsNames: Record<number, string[]> = {
+  1: ["宫保鸡丁", "鱼香肉丝", "麻婆豆腐", "水煮肉片", "回锅肉", "凉拌黄瓜", "皮蛋豆腐", "米饭", "酸梅汤"],
+  2: ["经典牛肉堡", "香辣鸡腿堡", "黄金鸡块", "薯条", "可乐", "双层芝士堡", "鲜虾堡", "洋葱圈", "冰柠茶"],
+  3: ["鸳鸯锅底", "精品肥牛", "鲜切毛肚", "嫩牛肉", "虾滑", "菌菇拼盘", "现炸酥肉", "手工宽粉", "冰粉"],
+  4: ["杨枝甘露", "多肉葡萄", "茉莉奶绿", "芋泥波波", "柠檬茶", "桂花乌龙", "红豆双皮奶", "椰椰拿铁", "轻乳茶"],
+  6: ["草莓奶油蛋糕", "黑森林切块", "海盐芝士卷", "芒果千层", "提拉米苏", "曲奇礼盒", "北海道吐司", "焦糖布丁", "冷萃咖啡"],
+};
+
+const displayGoodsList = computed<(FoodGoods & { categoryId: number })[]>(() => {
+  const names = storeGoodsNames[storeInfo.value.id] || storeGoodsNames[1];
+  return goodsList.value.map((goods, index) => ({
+    ...goods,
+    id: `${storeInfo.value.id}-${goods.id}`,
+    storeId: storeInfo.value.id,
+    storeName: storeInfo.value.name,
+    name: names[index] || goods.name,
+    image: `https://picsum.photos/seed/food-${storeInfo.value.id}-${index + 1}/200/200`,
+    sales: Math.max(30, goods.sales - index * 8 + storeInfo.value.id * 6),
+  }));
+});
+
 const currentCatIndex = ref(0);
 const scrollIntoId = ref("");
+const detailVisible = ref(false);
+const selectedGoods = ref<FoodGoods | null>(null);
 const foodStore = useFoodStore();
 
 const cartCount = computed(() => foodStore.cartTotalCount);
@@ -240,15 +307,19 @@ const cartTotalPrice = computed(() => foodStore.cartTotalPrice);
 
 onLoad((options?: Record<string, string>) => {
   if (options?.storeId) {
-    storeInfo.value.id = Number(options.storeId) || storeInfo.value.id;
+    const nextId = Number(options.storeId) || storeInfo.value.id;
+    storeInfo.value = storeProfiles[nextId] || { ...storeInfo.value, id: nextId };
   }
   if (options?.storeName) {
-    storeInfo.value.name = decodeURIComponent(options.storeName);
+    storeInfo.value = {
+      ...storeInfo.value,
+      name: decodeURIComponent(options.storeName),
+    };
   }
 });
 
 const getGoodsByCategory = (categoryId: number) => {
-  return goodsList.value.filter((g) => g.categoryId === categoryId);
+  return displayGoodsList.value.filter((g) => g.categoryId === categoryId);
 };
 
 const getGoodsCount = (goodsId: string | number): number => {
@@ -266,6 +337,7 @@ const switchCategory = (idx: number) => {
 
 const addGoods = (goods: FoodGoods) => {
   foodStore.addToCart(goods);
+  uni.showToast({ title: "已加入购物车", icon: "success" });
 };
 
 const decreaseGoods = (goodsId: string | number) => {
@@ -279,6 +351,11 @@ const goCart = () => {
 const goSubmit = () => {
   if (cartCount.value === 0) return;
   uni.navigateTo({ url: APP_ROUTES.food.cart });
+};
+
+const openGoodsDetail = (goods: FoodGoods) => {
+  selectedGoods.value = goods;
+  detailVisible.value = true;
 };
 </script>
 
@@ -430,6 +507,7 @@ const goSubmit = () => {
   padding: 20rpx;
   margin-bottom: 16rpx;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+  border: 1rpx solid rgba(255, 255, 255, 0.7);
 }
 
 .goods-img-wrap {
@@ -670,6 +748,80 @@ const goSubmit = () => {
   color: #fff;
 }
 
+.goods-detail-panel {
+  background: #fff;
+  padding-bottom: calc(28rpx + env(safe-area-inset-bottom));
+}
+
+.detail-img {
+  width: 100%;
+  height: 360rpx;
+}
+
+.detail-body {
+  padding: 28rpx;
+}
+
+.detail-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.detail-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #202124;
+}
+
+.detail-close {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: #f4f6fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.detail-desc {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: #687182;
+}
+
+.detail-meta {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 18rpx;
+  font-size: 24rpx;
+  color: #8a94a6;
+}
+
+.detail-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 32rpx;
+}
+
+.detail-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 18rpx 28rpx;
+  border-radius: 40rpx;
+  color: #fff;
+  font-size: 28rpx;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-dark));
+  box-shadow: 0 8rpx 22rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.28);
+}
+
 /* 深色模式适配 */
 @media (prefers-color-scheme: dark) {
   .goods-page { background: #121212; }
@@ -689,5 +841,10 @@ const goSubmit = () => {
   .bottom-cart-bar.has-goods { background: #252525; }
   .cart-icon-circle { background: #2a2a2a; border-color: #444; }
   .has-goods .cart-icon-circle { background: linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-dark)); border-color: transparent; }
+  .goods-detail-panel { background: #1e1e1e; }
+  .detail-title { color: #e5e6eb; }
+  .detail-close { background: #2a2a2a; }
+  .detail-desc { color: #8b8c91; }
+  .detail-meta { color: #8b8c91; }
 }
 </style>

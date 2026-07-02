@@ -43,6 +43,7 @@ import {
 } from "@/common/navigation";
 import type { LayoutTabbarItem, TabbarScope } from "@/common/navigation";
 import { onShow } from "@dcloudio/uni-app";
+import { useTheme } from "uview-pro";
 import { computed, ref, watch } from "vue";
 
 const props = defineProps<{
@@ -57,6 +58,7 @@ const props = defineProps<{
 const currentTab = ref(props.activeTab ?? 0);
 const tabConfig = ref<LayoutTabbarItem[]>([]);
 const switchingTab = ref(false);
+const { currentTheme } = useTheme();
 
 const currentScope = computed<TabbarScope>(
   () => props.tabbarScope || TABBAR_SCOPES.portal,
@@ -77,16 +79,16 @@ function handleBack() {
   uni.reLaunch({ url: "/pages/index/index" });
 }
 
-const themeColor = "#4f7cff";
+const themeColor = computed(() => currentTheme.value?.color?.primary || "#4f7cff");
 
 const navBackground = computed(() => ({
   backgroundImage:
     "linear-gradient(90deg, var(--u-type-primary-dark), var(--u-type-primary-disabled))",
 }));
 
-const shouldHideNativeTabbar = computed(() =>
-  isSystemTabbarRoute(getCurrentPageRoute()),
-);
+const shouldHideNativeTabbar = computed(() => {
+  return isSystemTabbarRoute(getCurrentPageRoute());
+});
 
 const tabbarList = computed(() =>
   tabConfig.value.map(({ route: _route, navMode: _navMode, ...item }) => item),

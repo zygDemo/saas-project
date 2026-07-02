@@ -423,6 +423,7 @@
 import { computed, ref, watch } from "vue";
 import { onLoad, onShareAppMessage, onUnload } from "@dcloudio/uni-app";
 import { useReadingApi } from "@/api/reading";
+import { useReadingStore } from "@/stores/reading";
 
 // 本地存储 key
 const STORAGE_KEY = "reader_settings";
@@ -460,6 +461,7 @@ function loadSettings() {
 }
 
 const readingApi = useReadingApi();
+const readingStore = useReadingStore();
 const showToolbar = ref(false);
 const showChapterPopup = ref(false);
 const showSettingsPopup = ref(false);
@@ -736,19 +738,66 @@ const checkBookmarkStatus = () => {
 
 // 防抖保存进度
 let saveProgressTimer: ReturnType<typeof setTimeout> | null = null;
+
+function getSaveProgressPayload() {
+  const numericBookId = Number(bookId.value);
+  const numericChapterId = Number(chapterId.value);
+
+  if (!Number.isFinite(numericBookId) || !Number.isFinite(numericChapterId)) {
+    return null;
+  }
+
+  const totalPages = Math.max(currentPages.value.length, 1);
+  const page = Math.max(0, Math.min(currentPage.value, totalPages - 1));
+  const progress =
+    totalPages > 1 ? Math.round((page / (totalPages - 1)) * 10000) / 100 : 100;
+
+  return {
+    bookId: numericBookId,
+    chapterId: numericChapterId,
+    page,
+    progress,
+  };
+}
+
+async function saveReadingProgress() {
+  const payload = getSaveProgressPayload();
+  if (!payload) return;
+
+  readingStore.saveReadingProgress(
+    payload.bookId,
+    payload.chapterId,
+    payload.page,
+    payload.progress,
+    currentChapter.value?.title,
+  );
+
+  const result = await readingApi.saveProgress(payload);
+  if (result?.code !== undefined && result.code !== 200) {
+    throw result;
+  }
+}
+
+function syncLocalReadingProgress() {
+  const payload = getSaveProgressPayload();
+  if (!payload) return;
+
+  readingStore.saveReadingProgress(
+    payload.bookId,
+    payload.chapterId,
+    payload.page,
+    payload.progress,
+    currentChapter.value?.title,
+  );
+}
+
 const debouncedSaveProgress = () => {
   if (saveProgressTimer) clearTimeout(saveProgressTimer);
   saveProgressTimer = setTimeout(async () => {
-    if (bookId.value && chapterId.value) {
-      try {
-        await readingApi.saveProgress({
-          bookId: bookId.value,
-          chapterId: chapterId.value,
-          page: currentPage.value,
-        });
-      } catch (e) {
-        console.error("保存阅读进度失败", e);
-      }
+    try {
+      await saveReadingProgress();
+    } catch (e) {
+      console.warn("保存阅读进度失败，已保留本地进度", e);
     }
   }, 2000);
 };
@@ -819,12 +868,13 @@ onLoad(async (options) => {
       chapterList.value = allItems.map((item: any) => ({
         id: String(item.id),
         title: item.title,
-        isVip: false,
+        isVip: !!item.isVip,
       }));
 
       // 先尝试读取已保存的阅读进度（仅请求一次）
-      let savedChapterId = "";
-      let savedPage = 0;
+      const localProgress = readingStore.getReadingProgress(bookId.value);
+      let savedChapterId = localProgress?.chapterId || "";
+      let savedPage = localProgress?.page || 0;
       if (!options?.chapterId) {
         // 只有当 URL 没有指定章节时才恢复进度
         try {
@@ -858,8 +908,9 @@ onLoad(async (options) => {
           chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
           // 恢复保存的页码
           if (savedPage > 0) {
-            currentPage.value = savedPage;
+            currentPage.value = Math.min(savedPage, Math.max(currentPages.value.length - 1, 0));
           }
+          syncLocalReadingProgress();
         } finally {
           isContentLoading.value = false;
         }
@@ -875,13 +926,8 @@ onLoad(async (options) => {
 
 onUnload(() => {
   // 离开页面时立即保存进度（不防抖）
-  if (bookId.value && chapterId.value) {
-    readingApi.saveProgress({
-      bookId: bookId.value,
-      chapterId: chapterId.value,
-      page: currentPage.value,
-    }).catch((e) => console.error("保存阅读进度失败", e));
-  }
+  syncLocalReadingProgress();
+  saveReadingProgress().catch((e) => console.warn("保存阅读进度失败，已保留本地进度", e));
   // 最后保存一次设置
   saveSettings();
 });
@@ -1126,7 +1172,7 @@ uni.onWindowResize(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: #f5f0e6;
+  background: #f7f1e7;
 
   &.night-mode {
     background: #121212;
@@ -1158,9 +1204,10 @@ uni.onWindowResize(() => {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
   /* 毛玻璃效果 */
-  background: rgba(0, 0, 0, 0.82);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(24, 27, 34, 0.76);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.12);
 
   &.show {
     transform: translateY(0);
@@ -1173,37 +1220,38 @@ uni.onWindowResize(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 88rpx;
+  height: 92rpx;
   padding-top: var(--status-bar-height);
 }
 
 .toolbar-left,
 .toolbar-right {
   width: 80rpx;
+  height: 72rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 999rpx;
 }
 
 .toolbar-title {
   flex: 1;
   text-align: center;
-  font-size: 30rpx;
+  font-size: 28rpx;
   color: #fff;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 500;
-  letter-spacing: 1rpx;
 }
 
 .bottom-toolbar {
   bottom: 0;
   padding-bottom: env(safe-area-inset-bottom);
   transform: translateY(100%);
-  background: rgba(0, 0, 0, 0.82);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(24, 27, 34, 0.78);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
 
   &.show {
     transform: translateY(0);
@@ -1213,7 +1261,7 @@ uni.onWindowResize(() => {
 .chapter-nav {
   display: flex;
   justify-content: space-around;
-  padding: 24rpx 0 20rpx;
+  padding: 22rpx 0 18rpx;
   border-bottom: 1rpx solid rgba(255, 255, 255, 0.08);
 }
 
@@ -1224,8 +1272,9 @@ uni.onWindowResize(() => {
   color: #fff;
   font-size: 22rpx;
   gap: 8rpx;
-  padding: 8rpx 20rpx;
-  border-radius: 12rpx;
+  min-width: 96rpx;
+  padding: 10rpx 14rpx;
+  border-radius: 18rpx;
   transition: background 0.2s;
 
   &:active {
@@ -1270,8 +1319,9 @@ uni.onWindowResize(() => {
   color: #fff;
   font-size: 20rpx;
   gap: 8rpx;
-  padding: 8rpx 16rpx;
-  border-radius: 12rpx;
+  min-width: 96rpx;
+  padding: 10rpx 14rpx;
+  border-radius: 18rpx;
   transition: background 0.2s;
 
   &:active {
@@ -1306,7 +1356,7 @@ uni.onWindowResize(() => {
 }
 
 .page-content {
-  padding: 120rpx 48rpx 80rpx;
+  padding: 132rpx 52rpx 92rpx;
   min-height: 100%;
   box-sizing: border-box;
 }
@@ -1319,7 +1369,6 @@ uni.onWindowResize(() => {
   color: #2c2c2c;
   margin-bottom: 44rpx;
   text-align: center;
-  letter-spacing: 2rpx;
   line-height: 1.5;
 }
 
@@ -1365,7 +1414,7 @@ uni.onWindowResize(() => {
 }
 
 .vertical-content {
-  padding: 24rpx 48rpx 120rpx;
+  padding: 42rpx 52rpx 140rpx;
   min-height: 100%;
 }
 
@@ -1381,20 +1430,21 @@ uni.onWindowResize(() => {
 }
 
 .chapter-popup {
-  width: 560rpx;
+  width: 590rpx;
   height: 100%;
   display: flex;
   flex-direction: column;
   background: #fff;
-  border-radius: 0 16rpx 16rpx 0;
+  border-radius: 0 26rpx 26rpx 0;
+  box-shadow: 16rpx 0 34rpx rgba(17, 24, 39, 0.1);
 }
 
 .popup-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 28rpx 28rpx 24rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  padding: 32rpx 30rpx 24rpx;
+  border-bottom: 1rpx solid var(--app-border, #e8edf5);
   position: sticky;
   top: 0;
   background: #fff;
@@ -1405,20 +1455,19 @@ uni.onWindowResize(() => {
   font-size: 32rpx;
   font-weight: 600;
   color: #1a1a1a;
-  letter-spacing: 1rpx;
 }
 
 .popup-sub {
   font-size: 22rpx;
-  color: #999;
-  background: #f5f5f5;
-  padding: 4rpx 12rpx;
-  border-radius: 8rpx;
+  color: var(--u-type-primary);
+  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
 }
 
 .popup-close {
   font-size: 26rpx;
-  color: #667eea;
+  color: var(--u-type-primary);
   padding: 8rpx 16rpx;
 }
 
@@ -1430,8 +1479,8 @@ uni.onWindowResize(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 26rpx 28rpx;
-  border-bottom: 1rpx solid #f8f8f8;
+  padding: 26rpx 30rpx;
+  border-bottom: 1rpx solid var(--app-border, #eef1f6);
   transition: background 0.15s;
 
   &:active {
@@ -1439,10 +1488,10 @@ uni.onWindowResize(() => {
   }
 
   &.active {
-    background: rgba(102, 126, 234, 0.08);
+    background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
 
     .chapter-name {
-      color: #667eea;
+      color: var(--u-type-primary);
       font-weight: 600;
     }
   }
@@ -1507,14 +1556,15 @@ uni.onWindowResize(() => {
 /* 应用内夜间模式 */
 .night-mode {
   .toolbar {
-    background: rgba(10, 10, 10, 0.92) !important;
+    background: rgba(10, 10, 10, 0.9) !important;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
 
   .chapter-popup {
     background: #1a1a1a;
-    border-radius: 0 16rpx 16rpx 0;
+    border-radius: 0 26rpx 26rpx 0;
+    box-shadow: none;
   }
 
   .popup-header {
@@ -1652,10 +1702,10 @@ uni.onWindowResize(() => {
 
 /* 设置按钮 - 字体大小 */
 .setting-btn {
-  width: 56rpx;
-  height: 56rpx;
+  width: 60rpx;
+  height: 60rpx;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1695,7 +1745,7 @@ uni.onWindowResize(() => {
 .setting-pill {
   padding: 10rpx 20rpx;
   border-radius: 28rpx;
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
   border: 2rpx solid transparent;
   transition: all 0.2s ease;
   min-width: 64rpx;
@@ -1727,11 +1777,13 @@ uni.onWindowResize(() => {
 
 /* 设置弹窗 - 限制高度 */
 .settings-popup {
-  padding: 16rpx 24rpx 20rpx;
+  padding: 18rpx 28rpx 22rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   max-height: 55vh;
   overflow-y: auto;
   transition: background 0.3s ease;
+  background: var(--app-surface, #fff);
+  border-radius: 28rpx 28rpx 0 0;
 }
 
 .settings-popup-header {
@@ -1740,7 +1792,7 @@ uni.onWindowResize(() => {
   align-items: center;
   padding: 12rpx 0 16rpx;
   margin-bottom: 12rpx;
-  border-bottom: 1rpx solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1rpx solid var(--app-border, #e8edf5);
 }
 
 .settings-popup-title {
@@ -1856,6 +1908,9 @@ uni.onWindowResize(() => {
   max-height: 70vh;
   display: flex;
   flex-direction: column;
+  background: var(--app-surface, #fff);
+  border-radius: 28rpx 28rpx 0 0;
+  overflow: hidden;
 }
 
 .bookmark-scroll {
@@ -1877,8 +1932,8 @@ uni.onWindowResize(() => {
 .bookmark-item {
   display: flex;
   align-items: center;
-  padding: 24rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  padding: 24rpx 28rpx;
+  border-bottom: 1rpx solid var(--app-border, #e8edf5);
 }
 
 .bookmark-info {

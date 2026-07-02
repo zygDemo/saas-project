@@ -75,8 +75,29 @@
 
         <!-- 推荐门店标题 -->
         <view class="section-header">
-          <text class="section-title">附近门店</text>
-          <text class="section-subtitle">{{ filteredStoreList.length }}家可用</text>
+          <view class="section-title-wrap">
+            <text class="section-title">附近门店</text>
+            <text class="section-subtitle">{{ filteredStoreList.length }}家可用</text>
+          </view>
+          <view class="only-open-switch" role="button" tabindex="0" @click="onlyOpen = !onlyOpen" @keyup.enter="onlyOpen = !onlyOpen">
+            <view class="switch-dot" :class="{ active: onlyOpen }" />
+            <text>只看营业</text>
+          </view>
+        </view>
+
+        <view class="sort-bar">
+          <view
+            v-for="item in sortList"
+            :key="item.value"
+            class="sort-item"
+            :class="{ active: currentSort === item.value }"
+            role="button"
+            tabindex="0"
+            @click="currentSort = item.value"
+            @keyup.enter="currentSort = item.value"
+          >
+            {{ item.label }}
+          </view>
         </view>
 
         <!-- 门店列表 -->
@@ -188,8 +209,16 @@ const keyword = ref("");
 const currentCategory = ref(0);
 const selectedCategoryId = ref(0);
 const refreshing = ref(false);
+const onlyOpen = ref(false);
+const currentSort = ref<"distance" | "rating" | "sales">("distance");
 const foodStore = useFoodStore();
 const localStore = useLocalStore();
+
+const sortList = [
+  { label: "距离最近", value: "distance" },
+  { label: "评分最高", value: "rating" },
+  { label: "销量优先", value: "sales" },
+] as const;
 
 const bannerList = ref([
   { image: "https://img.uviewui.com/swiper/swiper1.jpg", link: "" },
@@ -315,13 +344,16 @@ const filteredStoreList = computed(() => {
         !kw ||
         store.name.toLowerCase().includes(kw) ||
         store.desc.toLowerCase().includes(kw);
+      const openMatched = !onlyOpen.value || store.isOpen;
 
-      return categoryMatched && keywordMatched;
+      return categoryMatched && keywordMatched && openMatched;
     })
     .sort((a, b) => {
       // 营业中的排前面
       if (a.isOpen !== b.isOpen) return a.isOpen ? -1 : 1;
-      return 0;
+      if (currentSort.value === "rating") return b.rating - a.rating;
+      if (currentSort.value === "sales") return b.sales - a.sales;
+      return a.distance - b.distance;
     });
 });
 
@@ -342,6 +374,8 @@ const resetFilter = () => {
   keyword.value = "";
   currentCategory.value = 0;
   selectedCategoryId.value = 0;
+  onlyOpen.value = false;
+  currentSort.value = "distance";
 };
 
 const onBannerClick = (banner: { link: string }) => {
@@ -479,6 +513,12 @@ const goCart = () => {
   padding: 20rpx 24rpx 12rpx;
 }
 
+.section-title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+}
+
 .section-title {
   text-wrap: balance;
   font-size: 32rpx;
@@ -491,6 +531,53 @@ const goCart = () => {
   color: #909399;
 }
 
+.only-open-switch {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 10rpx 16rpx;
+  border-radius: 999rpx;
+  background: #fff;
+  color: #606266;
+  font-size: 24rpx;
+  box-shadow: 0 4rpx 14rpx rgba(30, 42, 68, 0.05);
+}
+
+.switch-dot {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  border: 2rpx solid #c0c4cc;
+  background: #fff;
+
+  &.active {
+    border-color: var(--u-type-primary);
+    background: var(--u-type-primary);
+    box-shadow: 0 0 0 6rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.12);
+  }
+}
+
+.sort-bar {
+  display: flex;
+  gap: 12rpx;
+  padding: 0 24rpx 18rpx;
+}
+
+.sort-item {
+  padding: 12rpx 20rpx;
+  border-radius: 999rpx;
+  background: #fff;
+  color: #687182;
+  font-size: 24rpx;
+  box-shadow: 0 4rpx 14rpx rgba(30, 42, 68, 0.04);
+
+  &.active {
+    color: var(--u-type-primary);
+    background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.1);
+    font-weight: 600;
+  }
+}
+
 /* 门店列表 */
 .store-list {
   padding: 0 24rpx;
@@ -499,10 +586,11 @@ const goCart = () => {
 .store-card {
   display: flex;
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 10rpx 26rpx rgba(30, 42, 68, 0.06);
   transition: transform 0.2s;
 
   &:active {
@@ -721,6 +809,9 @@ const goCart = () => {
   .category-item.active .category-name { color: var(--u-type-primary); }
   .section-title { color: #e5e6eb; }
   .section-subtitle { color: #8b8c91; }
+  .only-open-switch,
+  .sort-item { background: #1e1e1e; color: #b0b3b8; box-shadow: none; }
+  .sort-item.active { background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.15); color: var(--u-type-primary); }
   .store-card { background: #1e1e1e; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.2); }
   .store-name { color: #e5e6eb; }
   .store-desc { color: #8b8c91; }

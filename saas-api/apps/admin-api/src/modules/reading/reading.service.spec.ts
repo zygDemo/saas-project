@@ -63,6 +63,9 @@ describe('ReadingService', () => {
       count: jest.fn(),
       aggregate: jest.fn(),
     },
+    user: {
+      findMany: jest.fn(),
+    },
     $transaction: jest.fn(),
   };
 
@@ -251,6 +254,46 @@ describe('ReadingService', () => {
         content: '好书',
       });
       expect(result.rating).toBe(5);
+    });
+  });
+
+  describe('getReviews', () => {
+    it('应该返回评论列表并补充用户展示信息', async () => {
+      mockPrisma.bookReview.findMany.mockResolvedValue([
+        {
+          id: 1,
+          tenantId: 1,
+          userId: 42,
+          bookId: 2,
+          rating: 5,
+          content: '好看',
+          likes: 3,
+          status: 1,
+          createdAt: new Date('2026-07-01T00:00:00.000Z'),
+          book: { id: 2, title: '凡骨' },
+        },
+      ]);
+      mockPrisma.bookReview.count.mockResolvedValue(1);
+      mockPrisma.user.findMany.mockResolvedValue([
+        { id: 42, userName: 'reader', nickName: '读者', avatar: '/avatar.png' },
+      ]);
+
+      const result = await service.getReviews(1, { bookId: 2, page: 1, pageSize: 10 });
+
+      expect(mockPrisma.bookReview.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: { tenantId: 1, bookId: 2, status: 1 },
+      }));
+      expect(mockPrisma.user.findMany).toHaveBeenCalledWith({
+        where: { id: { in: [42] }, tenantId: 1 },
+        select: { id: true, userName: true, nickName: true, avatar: true },
+      });
+      expect(result.total).toBe(1);
+      expect(result.items[0].user).toEqual({
+        id: 42,
+        username: 'reader',
+        nickname: '读者',
+        avatar: '/avatar.png',
+      });
     });
   });
 });

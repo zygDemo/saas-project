@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import type { MobileConfigData } from "@/api/mobile-config";
 import { tokenUtil } from "@/common/token";
 
 /** 登录用户信息 */
@@ -144,7 +145,7 @@ export const useLocalStore = defineStore("local", {
     roleKeys: [] as string[],
     permissions: [] as string[],
     currentSystem: CurrentSystem.PORTAL as CurrentSystemValue,
-    mobileConfig: null as { enabled: string[]; defaultModule: string | null; isMultiModule: boolean } | null,
+    mobileConfig: null as MobileConfigData | null,
     loginTime: 0,
     expireTime: 0,
   }),
@@ -200,7 +201,7 @@ export const useLocalStore = defineStore("local", {
       }
       this.loginTime = Date.now();
     },
-    setMobileConfig(config: { enabled: string[]; defaultModule: string | null; isMultiModule: boolean } | null) {
+    setMobileConfig(config: MobileConfigData | null) {
       this.mobileConfig = config;
     },
     setCurrentSystem(system: CurrentSystemValue) {

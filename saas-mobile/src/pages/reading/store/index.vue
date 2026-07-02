@@ -956,7 +956,7 @@ const viewMore = (type: string) => {
 
 .store-page {
   min-height: 100%;
-  background-color: #f5f6f8;
+  background: linear-gradient(180deg, var(--app-page-bg-soft, #f0f3ff) 0%, var(--app-page-bg, #f5f7fa) 30%, #f8fafc 100%);
   padding-bottom: 40rpx;
 }
 
@@ -1130,8 +1130,8 @@ const viewMore = (type: string) => {
 
 /* 搜索栏 */
 .search-section {
-  background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
-  padding: 20rpx 24rpx 30rpx;
+  background: linear-gradient(135deg, #3f6ff3 0%, #4f7cff 58%, #6366f1 100%);
+  padding: 20rpx 24rpx 28rpx;
 }
 
 .search-bar {
@@ -1143,10 +1143,11 @@ const viewMore = (type: string) => {
   display: flex;
   align-items: center;
   background: #fff;
-  border-radius: 40rpx;
+  border-radius: 18rpx;
   padding: 16rpx 24rpx;
   gap: 12rpx;
   flex: 1;
+  box-shadow: 0 8rpx 24rpx rgba(26, 29, 41, 0.08);
 }
 
 .search-input {
@@ -1165,12 +1166,12 @@ const viewMore = (type: string) => {
   display: flex;
   background: #fff;
   padding: 0 24rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #edf2f7;
 }
 
 .tab-item {
   position: relative;
-  padding: 24rpx 32rpx;
+  padding: 24rpx 30rpx;
   margin-right: 20rpx;
 }
 
@@ -1180,7 +1181,7 @@ const viewMore = (type: string) => {
 
   .active & {
     color: #303133;
-    font-weight: 600;
+    font-weight: 800;
   }
 }
 
@@ -1191,7 +1192,7 @@ const viewMore = (type: string) => {
   transform: translateX(-50%);
   width: 48rpx;
   height: 6rpx;
-  background: linear-gradient(90deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%);
+  background: linear-gradient(90deg, #4f7cff 0%, #6366f1 100%);
   border-radius: 3rpx;
 }
 
@@ -1199,7 +1200,7 @@ const viewMore = (type: string) => {
 .sub-category-scroll {
   background: #fff;
   white-space: nowrap;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #edf2f7;
 }
 
 .sub-category-list {
@@ -1208,16 +1209,26 @@ const viewMore = (type: string) => {
 }
 
 .sub-category-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 72rpx;
   padding: 10rpx 24rpx;
   margin-right: 16rpx;
-  border-radius: 28rpx;
-  background: #f5f6f8;
+  border-radius: 14rpx;
+  background: #f6f8fb;
+  border: 1rpx solid transparent;
   font-size: 26rpx;
+  line-height: 1.2;
   color: #606266;
+  white-space: nowrap;
 
   &.active {
-    background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
-    color: #fff;
+    background: #eef3ff;
+    border-color: rgba(79, 124, 255, 0.16);
+    color: #4f7cff;
+    font-weight: 700;
   }
 }
 
@@ -1228,8 +1239,9 @@ const viewMore = (type: string) => {
 
 .banner-swiper {
   height: 240rpx;
-  border-radius: 16rpx;
+  border-radius: 22rpx;
   overflow: hidden;
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 .banner-item {
@@ -1274,8 +1286,9 @@ const viewMore = (type: string) => {
   background: #fff;
   padding: 30rpx 24rpx;
   margin: 0 24rpx 20rpx;
-  border-radius: 16rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 24rpx;
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 .function-item {
@@ -1288,7 +1301,7 @@ const viewMore = (type: string) => {
 .function-icon {
   width: 80rpx;
   height: 80rpx;
-  border-radius: 50%;
+  border-radius: 18rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1320,7 +1333,7 @@ const viewMore = (type: string) => {
 .section-title {
   text-wrap: balance;
   font-size: 32rpx;
-  font-weight: 600;
+  font-weight: 800;
   color: #303133;
 }
 
@@ -1348,7 +1361,7 @@ const viewMore = (type: string) => {
   color: #fff;
   font-size: 22rpx;
   padding: 4rpx 8rpx;
-  border-radius: 4rpx;
+  border-radius: 8rpx;
   min-width: 36rpx;
   text-align: center;
 }
@@ -1368,7 +1381,7 @@ const viewMore = (type: string) => {
   font-size: 24rpx;
   color: #909399;
   padding: 4rpx 12rpx;
-  border-radius: 4rpx;
+  border-radius: 10rpx;
 
   &.active {
     color: var(--u-type-primary);
@@ -1386,7 +1399,7 @@ const viewMore = (type: string) => {
   font-size: 24rpx;
   color: #909399;
   padding: 4rpx 12rpx;
-  border-radius: 4rpx;
+  border-radius: 10rpx;
 
   &.active {
     color: var(--u-type-primary);
@@ -1417,7 +1430,8 @@ const viewMore = (type: string) => {
 .hot-cover {
   width: 200rpx;
   height: 280rpx;
-  border-radius: 12rpx;
+  border-radius: 14rpx;
+  box-shadow: 0 8rpx 20rpx rgba(26, 29, 41, 0.1);
 }
 
 .hot-badge {
@@ -1477,7 +1491,8 @@ const viewMore = (type: string) => {
 .free-cover {
   width: 180rpx;
   height: 240rpx;
-  border-radius: 12rpx;
+  border-radius: 14rpx;
+  box-shadow: 0 8rpx 20rpx rgba(26, 29, 41, 0.1);
 }
 
 .free-title {
@@ -1508,7 +1523,9 @@ const viewMore = (type: string) => {
   padding: 0 24rpx;
   background: #fff;
   margin: 0 24rpx;
-  border-radius: 16rpx;
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 24rpx;
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 .rank-item {
@@ -1540,7 +1557,7 @@ const viewMore = (type: string) => {
 .rank-cover {
   width: 80rpx;
   height: 110rpx;
-  border-radius: 8rpx;
+  border-radius: 10rpx;
   margin: 0 20rpx;
 }
 
@@ -1577,7 +1594,7 @@ const viewMore = (type: string) => {
 .rank-tag {
   font-size: 20rpx;
   padding: 2rpx 8rpx;
-  border-radius: 4rpx;
+  border-radius: 8rpx;
 
   &.serial {
     color: var(--u-type-primary);
@@ -1615,9 +1632,10 @@ const viewMore = (type: string) => {
   margin-right: 20rpx;
   flex-shrink: 0;
   background: #fff;
-  border-radius: 12rpx;
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 18rpx;
   overflow: hidden;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 .booklist-cover-wrap {
@@ -1722,7 +1740,7 @@ const viewMore = (type: string) => {
   font-size: 26rpx;
   color: var(--u-type-primary);
   padding: 12rpx 48rpx;
-  border-radius: 32rpx;
+  border-radius: 14rpx;
   background: rgba(102, 126, 234, 0.08);
 }
 
@@ -1774,16 +1792,17 @@ const viewMore = (type: string) => {
 .book-card {
   display: flex;
   background: #fff;
-  border-radius: 16rpx;
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 22rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 .book-cover {
   width: 160rpx;
   height: 220rpx;
-  border-radius: 10rpx;
+  border-radius: 14rpx;
   flex-shrink: 0;
 }
 
@@ -1821,7 +1840,7 @@ const viewMore = (type: string) => {
 .tag {
   font-size: 22rpx;
   padding: 4rpx 12rpx;
-  border-radius: 4rpx;
+  border-radius: 10rpx;
 
   &.serial {
     color: var(--u-type-primary);
@@ -1867,6 +1886,47 @@ const viewMore = (type: string) => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.store-page {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.12), transparent 34%),
+    linear-gradient(180deg, var(--app-page-bg-soft, #eef3ff) 0%, var(--app-page-bg, #f6f8fc) 38%, #f8fafc 100%);
+  padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
+}
+
+.book-card {
+  background: var(--app-surface, #fff);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+  &:active {
+    transform: scale(0.99);
+    box-shadow: 0 8rpx 24rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.12);
+  }
+}
+
+.book-cover {
+  box-shadow: 0 8rpx 18rpx rgba(17, 24, 39, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  .store-page {
+    background: linear-gradient(180deg, #141821 0%, #101217 100%);
+  }
+
+  .book-card {
+    background: rgba(31, 34, 43, 0.95);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow: none;
+  }
+
+  .book-title {
+    color: #e5e6eb;
+  }
+
+  .book-desc {
+    color: #b8bcc7;
+  }
 }
 
 </style>

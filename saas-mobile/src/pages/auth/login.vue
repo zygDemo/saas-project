@@ -80,6 +80,8 @@ import { computed, ref } from "vue";
 // import { useUserStore } from "@/stores/user";
 import { isDev } from "@/common/env";
 import { useAuthApi } from "@/api/auth";
+import { fetchMobileConfig } from "@/api/mobile-config";
+import { getInitialMobileEntry } from "@/common/navigation";
 import { useLocalStore } from "@/stores/local";
 import { useSessionStore } from "@/stores/session";
 
@@ -160,9 +162,10 @@ const handleLogin = async () => {
       });
       $u.toast("登录成功！", "success");
       // 4. 延迟跳转到首页（工作台）
+      const entry = await resolveMobileEntry();
       setTimeout(() => {
         uni.reLaunch({
-          url: "/pages/index/index",
+          url: entry.route,
         });
       }, 500);
     } else {
@@ -177,6 +180,40 @@ const handleLogin = async () => {
     loading.value = false;
   }
 };
+
+async function resolveMobileEntry() {
+  try {
+    const response = await fetchMobileConfig();
+    const config = normalizeMobileConfig(response);
+    localStore.setMobileConfig(config);
+    const entry = getInitialMobileEntry(config);
+    localStore.setCurrentSystem(entry.system);
+    return entry;
+  } catch (error) {
+    console.warn("load mobile config failed", error);
+    const entry = getInitialMobileEntry(localStore.mobileConfig);
+    localStore.setCurrentSystem(entry.system);
+    return entry;
+  }
+}
+
+function normalizeMobileConfig(response) {
+  const config = response?.data?.enabled ? response.data : response;
+  if (!config || !Array.isArray(config.enabled)) {
+    return {
+      available: [],
+      enabled: [],
+      defaultModule: null,
+      isMultiModule: true,
+    };
+  }
+  return {
+    available: Array.isArray(config.available) ? config.available : [],
+    enabled: config.enabled,
+    defaultModule: config.defaultModule ?? null,
+    isMultiModule: Boolean(config.isMultiModule),
+  };
+}
 
 async function loadCurrentUserInfo(fallbackUserInfo) {
   try {

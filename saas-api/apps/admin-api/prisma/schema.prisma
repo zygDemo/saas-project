@@ -145,6 +145,8 @@ model Tenant {
   bookReviews       BookReview[]
   systemParams      SystemParam[]
   announcements     Announcement[]
+  collectionRecords CollectionRecord[]
+  earlyRepayments   EarlyRepayment[]
 
   // 移动端模块配置
   mobileModules       Json?    // ["carloan","food","credit"] 已启用的移动端模块
@@ -716,7 +718,9 @@ model Application {
   approvals    ApprovalRecord[]
   signRecord   SignRecord?
   disbursement Disbursement?
-  repayments   RepaymentPlan[]
+  repayments         RepaymentPlan[]
+  collectionRecords CollectionRecord[]
+  earlyRepayments   EarlyRepayment[]
 
   @@index([tenantId])
   @@index([orgId])
@@ -877,6 +881,52 @@ model RepaymentRecord {
 
   @@index([tenantId])
   @@index([planId])
+}
+
+model CollectionRecord {
+  id            Int      @id @default(autoincrement())
+  tenantId      Int
+  applicationId Int
+  collectorId   Int?
+  collectType   String   @default("PHONE")
+  content       String
+  result        String?
+  nextAction    String?
+  nextDate      DateTime?
+  createdAt     DateTime @default(now())
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([applicationId])
+  @@index([createdAt])
+}
+
+model EarlyRepayment {
+  id              Int      @id @default(autoincrement())
+  tenantId        Int
+  applicationId   Int
+  repayType       String   @default("FULL")
+  amount          Decimal  @db.Decimal(15, 2)
+  principal       Decimal  @db.Decimal(15, 2)
+  interest        Decimal  @db.Decimal(15, 2)
+  penalty         Decimal  @default(0) @db.Decimal(15, 2)
+  reason          String?
+  repayStatus     String   @default("PENDING")
+  approvedBy      Int?
+  approvedAt      DateTime?
+  completedAt     DateTime?
+  remark          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([applicationId])
+  @@index([repayStatus])
 }
 
 // ==================== 操作日志/审计 ====================

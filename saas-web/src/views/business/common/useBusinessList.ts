@@ -82,6 +82,8 @@ export function useBusinessList() {
   const moduleName = computed(() => resolveBusinessModule())
   const config = computed(() => configs[moduleName.value] || configs.application)
   const displayTitle = computed(() => {
+    // 非 application 模块（如 order-query）用自身 config 标题
+    if (moduleName.value !== 'application') return config.value.title
     const phaseCode = Number(
       routeMeta.value.defaultQuery?.phaseCode || applicationPhaseByPath[getRoutePathModule()]
     )
@@ -98,9 +100,14 @@ export function useBusinessList() {
     { prop: 'updatedAt', label: '更新时间' }
   ])
 
+  // 模块默认阶段映射（不走 applicationPhaseByPath，避免影响 resolveBusinessModule）
+  const moduleDefaultPhase: Record<string, number> = { 'order-query': 1000 }
+
   const phaseNodeTabs = computed(() => {
     const phaseCode = Number(
-      routeMeta.value.defaultQuery?.phaseCode || applicationPhaseByPath[getRoutePathModule()]
+      routeMeta.value.defaultQuery?.phaseCode ||
+      applicationPhaseByPath[getRoutePathModule()] ||
+      moduleDefaultPhase[moduleName.value]
     )
     return phaseNodeTabsMap[phaseCode] || []
   })
@@ -221,7 +228,12 @@ export function useBusinessList() {
 
   const defaultPhaseCode = computed(() => {
     const pathModule = getRoutePathModule()
-    return Number(routeMeta.value.defaultQuery?.phaseCode || applicationPhaseByPath[pathModule] || 1000)
+    return Number(
+      routeMeta.value.defaultQuery?.phaseCode ||
+      applicationPhaseByPath[pathModule] ||
+      moduleDefaultPhase[moduleName.value] ||
+      1000
+    )
   })
 
   // 从综合查询进入时，用订单自身的 phaseCode 决定默认 Tab

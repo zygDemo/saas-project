@@ -1578,4 +1578,91 @@ export class MobileBusinessService {
       where: { applicationNo: creditOrderId }
     })
   }
+
+  /** 获取客户银行卡列表 */
+  async getBankCards(customerId: number) {
+    return this.prisma.bankCard.findMany({
+      where: { customerId },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+    })
+  }
+
+  /** 添加银行卡 */
+  async addBankCard(customerId: number, dto: { bankName: string; cardNo: string; cardType?: string; isDefault?: boolean }) {
+    // 如果设为默认，先取消其他默认
+    if (dto.isDefault) {
+      await this.prisma.bankCard.updateMany({
+        where: { customerId, isDefault: true },
+        data: { isDefault: false },
+      })
+    }
+    return this.prisma.bankCard.create({
+      data: {
+        customerId,
+        bankName: dto.bankName,
+        cardNo: dto.cardNo,
+        cardType: dto.cardType || 'DEBIT',
+        isDefault: dto.isDefault ?? false,
+      },
+    })
+  }
+
+  /** 删除银行卡 */
+  async deleteBankCard(id: number) {
+    return this.prisma.bankCard.delete({ where: { id } })
+  }
+
+  /** 额度确认（更新审批通过金额） */
+  async confirmAmount(applicationId: number, dto: { approvedAmount: number; term?: number; rate?: number }) {
+    return this.prisma.application.update({
+      where: { id: applicationId },
+      data: {
+        approvedAmount: dto.approvedAmount,
+        ...(dto.term && { term: dto.term }),
+        ...(dto.rate && { rate: dto.rate }),
+      },
+    })
+  }
+
+  /** 获取还款计划（移动端） */
+  async getRepaymentPlansMobile(applicationId: number) {
+    return this.prisma.repaymentPlan.findMany({
+      where: { applicationId },
+      orderBy: { period: 'asc' },
+      include: { records: { orderBy: { createdAt: 'desc' } } }
+    })
+  }
+
+  /** 提前还款申请（移动端） */
+  async applyEarlyRepaymentMobile(applicationId: number, dto: { repayType?: string; amount: number; principal: number; interest: number; penalty?: number; reason?: string }) {
+    return this.prisma.earlyRepayment.create({
+      data: {
+        tenantId: 1,
+        applicationId,
+        repayType: dto.repayType ?? 'FULL',
+        amount: dto.amount,
+        principal: dto.principal,
+        interest: dto.interest,
+        penalty: dto.penalty ?? 0,
+        reason: dto.reason
+      }
+    })
+  }
+
+  /** 获取申请详情（移动端） */
+  async getApplicationDetailMobile(id: number) {
+    const app = await this.prisma.application.findFirst({
+      where: { id },
+      include: {
+        customer: true,
+        product: true,
+        funder: true,
+        disbursement: true,
+        signRecord: true,
+        repaymentPlans: { orderBy: { period: 'asc' } }
+      }
+    })
+    if (!app) throw new NotFoundException('订单不存在')
+    return this.mapApplication(app, true)
+  }
 }

@@ -99,6 +99,30 @@ export const businessRoutes: AppRouteRecord = {
       'R_SALES_MANAGER'
     ]),
     {
+      path: 'repayment',
+      name: 'BusinessRepayment',
+      component: businessPage,
+      meta: {
+        title: '还款管理',
+        icon: 'ri:money-cny-circle-line',
+        keepAlive: true,
+        roles,
+        businessModule: 'repayment'
+      }
+    },
+    {
+      path: 'disbursement-mgmt',
+      name: 'BusinessDisbursementMgmt',
+      component: businessPage,
+      meta: {
+        title: '放款管理',
+        icon: 'ri:bank-card-line',
+        keepAlive: true,
+        roles,
+        businessModule: 'disbursement'
+      }
+    },
+    {
       path: 'order-query',
       name: 'BusinessOrderQuery',
       component: businessPage,

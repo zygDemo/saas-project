@@ -145,7 +145,19 @@
       "path": "pages/food/index/index",
       "style": {
         "navigationBarTitleText": "门店"
-      }
+      },
+    {
+      "path": "pages/carloan/postloan/repaymentPlan",
+      "style": { "navigationBarTitleText": "还款计划" }
+    },
+    {
+      "path": "pages/carloan/postloan/earlyRepayment",
+      "style": { "navigationBarTitleText": "提前还款" }
+    },
+    {
+      "path": "pages/carloan/postloan/loanConfirm",
+      "style": { "navigationBarTitleText": "请款确认" }
+    }
     },
     {
       "path": "pages/food/goods/list",

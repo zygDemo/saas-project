@@ -201,14 +201,12 @@ async function handleConfirm() {
 
   submitting.value = true;
   try {
-    // TODO: 等待后端提供额度确认接口
-    // await businessApi.confirmAmount({
-    //   creditOrderId: creditOrderId.value,
-    //   confirmedAmount: Number(form.confirmAmount),
-    //   confirmedTerm: Number(form.confirmTerm),
-    //   confirmedRate: Number(form.confirmRate),
-    //   remark: form.remark,
-    // });
+    await businessApi.confirmAmount({
+      applicationId: Number(applicationId.value),
+      approvedAmount: Number(form.confirmAmount),
+      term: Number(form.confirmTerm),
+      rate: Number(form.confirmRate),
+    });
 
     saveSignProgress("BINDING_CARD");
     $u.toast("额度确认成功", "success");

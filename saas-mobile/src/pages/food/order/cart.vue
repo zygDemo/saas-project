@@ -4,6 +4,16 @@
       <!-- 有商品 -->
       <template v-if="cartList.length > 0">
         <scroll-view class="cart-scroll" scroll-y>
+          <view class="store-summary">
+            <view class="store-icon">
+              <u-icon name="home" size="30" color="#fff" />
+            </view>
+            <view class="store-copy">
+              <text class="store-name">{{ currentStoreName }}</text>
+              <text class="store-tip">预计 {{ deliveryMinutes }} 分钟送达，支持在线支付</text>
+            </view>
+          </view>
+
           <view class="cart-header">
             <text class="cart-count">共{{ cartTotalCount }}件商品</text>
             <text class="clear-btn" role="button" tabindex="0" @click="onClearCart" @keyup.enter="onClearCart">清空购物车</text>
@@ -51,6 +61,10 @@
 
           <!-- 费用明细 -->
           <view class="fee-section">
+            <view class="fee-title-row">
+              <text class="fee-title">费用明细</text>
+              <text class="fee-tag">已优惠 ¥{{ discountAmount.toFixed(2) }}</text>
+            </view>
             <view class="fee-row">
               <text class="fee-label">商品小计</text>
               <text class="fee-value">¥{{ cartTotalPrice.toFixed(2) }}</text>
@@ -122,9 +136,26 @@ const { cartList, cartTotalCount, cartTotalPrice } = storeToRefs(foodStore);
 const remark = ref("");
 const deliveryFee = ref(3);
 const packageFee = ref(2);
+const discountAmount = ref(0);
+
+const currentStoreName = computed(() => {
+  return cartList.value[0]?.goods.storeName || "点餐门店";
+});
+
+const currentStoreId = computed(() => {
+  return cartList.value[0]?.goods.storeId;
+});
+
+const deliveryMinutes = computed(() => {
+  const count = Math.min(cartTotalCount.value, 8);
+  return 20 + count * 2;
+});
 
 const totalPrice = computed(() => {
-  return cartTotalPrice.value + deliveryFee.value + packageFee.value;
+  return Math.max(
+    0,
+    cartTotalPrice.value + deliveryFee.value + packageFee.value - discountAmount.value,
+  );
 });
 
 const decrease = (id: string | number) => {
@@ -142,6 +173,7 @@ const onClearCart = () => {
     success: (res) => {
       if (res.confirm) {
         foodStore.clearCart();
+        remark.value = "";
       }
     },
   });
@@ -159,7 +191,13 @@ const toSubmit = () => {
     content: `共${cartTotalCount.value}件商品，合计¥${totalPrice.value.toFixed(2)}`,
     success: (res) => {
       if (res.confirm) {
-        const order = foodStore.submitOrder("李家厨房");
+        foodStore.submitOrder({
+          storeName: currentStoreName.value,
+          storeId: currentStoreId.value,
+          deliveryFee: deliveryFee.value,
+          packageFee: packageFee.value - discountAmount.value,
+          remark: remark.value,
+        });
         uni.showToast({ title: "下单成功", icon: "success" });
         setTimeout(() => {
           uni.redirectTo({ url: APP_ROUTES.food.orders });
@@ -178,6 +216,48 @@ const toSubmit = () => {
 
 .cart-scroll {
   height: 100%;
+}
+
+.store-summary {
+  margin: 24rpx 24rpx 8rpx;
+  padding: 24rpx;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(255, 255, 255, 0.28), transparent 34%),
+    linear-gradient(135deg, var(--u-type-primary), var(--u-type-primary-dark));
+  box-shadow: 0 12rpx 28rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.24);
+}
+
+.store-icon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 18rpx;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.store-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.store-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #fff;
+}
+
+.store-tip {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .cart-header {
@@ -347,6 +427,27 @@ const toSubmit = () => {
   border-radius: 16rpx;
 }
 
+.fee-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10rpx;
+}
+
+.fee-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #303133;
+}
+
+.fee-tag {
+  padding: 6rpx 12rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  color: var(--u-type-primary);
+  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.1);
+}
+
 .fee-row {
   display: flex;
   justify-content: space-between;
@@ -392,13 +493,13 @@ const toSubmit = () => {
 }
 
 .bottom-placeholder {
-  height: 160rpx;
+  height: calc(300rpx + env(safe-area-inset-bottom));
 }
 
 /* 底部结算栏 */
 .bottom-bar {
   position: fixed;
-  bottom: 0;
+  bottom: calc(100rpx + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   background: #fff;
@@ -406,8 +507,8 @@ const toSubmit = () => {
   align-items: center;
   justify-content: space-between;
   padding: 20rpx 24rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+  z-index: 120;
 }
 
 .total-info {
@@ -470,6 +571,7 @@ const toSubmit = () => {
   .cart-page { background: #121212; }
   .cart-header { }
   .cart-count { color: #8b8c91; }
+  .store-summary { box-shadow: none; }
   .clear-btn { color: var(--u-type-primary); }
   .cart-item { background: #1e1e1e; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.15); }
   .item-name { color: #e5e6eb; }
@@ -480,6 +582,7 @@ const toSubmit = () => {
   .remark-label { color: #e5e6eb; }
   .remark-input { background: #2a2a2a; color: #e5e6eb; }
   .fee-section { background: #1e1e1e; }
+  .fee-title { color: #e5e6eb; }
   .fee-label { color: #b0b3b8; }
   .fee-value { color: #e5e6eb; }
   .fee-divider { background: #2a2a2a; }

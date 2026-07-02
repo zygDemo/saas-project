@@ -382,6 +382,55 @@ export class MobileFollowUpController {
 @ApiTags('移动端签约')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+
+@Controller('m/bank-card')
+@ApiTags('移动端-银行卡')
+export class MobileBankCardController {
+  constructor(private readonly service: MobileBusinessService) {}
+
+  @Get('list')
+  @ApiOperation({ summary: '获取客户银行卡列表' })
+  getList(@Query('customerId') customerId: string) {
+    return this.service.getBankCards(Number(customerId))
+  }
+
+  @Post('add')
+  @ApiOperation({ summary: '添加银行卡' })
+  add(@Body() dto: { customerId: number; bankName: string; cardNo: string; cardType?: string; isDefault?: boolean }) {
+    return this.service.addBankCard(dto.customerId, dto)
+  }
+
+  @Post('delete/:id')
+  @ApiOperation({ summary: '删除银行卡' })
+  remove(@Param('id') id: string) {
+    return this.service.deleteBankCard(Number(id))
+  }
+}
+
+@Controller('m/post-loan')
+@ApiTags('移动端-贷后管理')
+export class MobilePostLoanController {
+  constructor(private readonly service: MobileBusinessService) {}
+
+  @Get('repayment-plans/:applicationId')
+  @ApiOperation({ summary: '获取还款计划' })
+  getRepaymentPlans(@Param('applicationId') applicationId: string) {
+    return this.service.getRepaymentPlansMobile(Number(applicationId))
+  }
+
+  @Post('early-repayment')
+  @ApiOperation({ summary: '申请提前还款' })
+  applyEarlyRepayment(@Body() dto: { applicationId: number; repayType?: string; amount: number; principal: number; interest: number; penalty?: number; reason?: string }) {
+    return this.service.applyEarlyRepaymentMobile(dto.applicationId, dto)
+  }
+
+  @Get('detail/:id')
+  @ApiOperation({ summary: '获取订单详情' })
+  getDetail(@Param('id') id: string) {
+    return this.service.getApplicationDetailMobile(Number(id))
+  }
+}
+
 @Controller('m/signing')
 export class MobileSigningController {
   constructor(private readonly service: MobileBusinessService) {}

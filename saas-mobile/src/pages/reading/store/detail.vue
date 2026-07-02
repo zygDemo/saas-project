@@ -447,6 +447,7 @@ const recommendBooks = ref<RecommendBook[]>([
 ]);
 
 const isInBookshelf = computed(() => readingStore.isInBookshelf(bookId.value));
+const savedProgress = computed(() => readingStore.getReadingProgress(bookId.value));
 
 onLoad(async (options) => {
   if (options?.id) {
@@ -557,7 +558,10 @@ const toggleBookshelf = async () => {
       title: book.value.title,
       author: book.value.author,
       cover: book.value.cover,
-      progress: 0,
+      progress: savedProgress.value?.progress || 0,
+      lastReadChapter: savedProgress.value?.chapterTitle,
+      lastReadChapterId: savedProgress.value?.chapterId,
+      lastReadTime: savedProgress.value?.lastReadTime,
       totalChapters: book.value.totalChapters,
       category: book.value.category,
     });
@@ -569,13 +573,18 @@ const toggleBookshelf = async () => {
 };
 
 const startRead = () => {
+  const targetChapterId = savedProgress.value?.chapterId || chapters.value[0]?.id || "1";
   uni.navigateTo({
-    url: `/pages/reading/reader/index?bookId=${bookId.value}&chapterId=${chapters.value[0]?.id || "1"}`,
+    url: `/pages/reading/reader/index?bookId=${bookId.value}&chapterId=${targetChapterId}`,
   });
 };
 
 const downloadBook = () => {
-  readingStore.downloadBook(bookId.value);
+  readingStore.downloadBook(bookId.value, {
+    title: book.value.title,
+    author: book.value.author,
+    cover: book.value.cover,
+  });
   uni.showToast({ title: "开始下载", icon: "success" });
 };
 
@@ -634,14 +643,17 @@ const goDetail = (item: RecommendBook) => {
 
 .detail-page {
   min-height: 100%;
-  background-color: #f5f6f8;
-  padding-bottom: 120rpx;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.15), transparent 34%),
+    linear-gradient(180deg, var(--app-page-bg-soft, #eef3ff) 0%, var(--app-page-bg, #f6f8fc) 42%);
+  padding-bottom: calc(152rpx + env(safe-area-inset-bottom));
 }
 
 /* 头部 */
 .book-header {
   position: relative;
-  padding-bottom: 30rpx;
+  padding-bottom: 22rpx;
+  overflow: hidden;
 }
 
 .header-bg {
@@ -649,15 +661,17 @@ const goDetail = (item: RecommendBook) => {
   top: 0;
   left: 0;
   right: 0;
-  height: 360rpx;
-  background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
+  height: 388rpx;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.26), transparent 24%),
+    linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
 }
 
 .header-content {
   position: relative;
   z-index: 1;
   display: flex;
-  padding: 40rpx 24rpx;
+  padding: 44rpx 28rpx 38rpx;
 }
 
 .book-cover-wrap {
@@ -670,8 +684,8 @@ const goDetail = (item: RecommendBook) => {
 .book-cover {
   width: 100%;
   height: 100%;
-  border-radius: 12rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.3);
+  border-radius: 16rpx;
+  box-shadow: 0 18rpx 36rpx rgba(17, 24, 39, 0.28);
 }
 
 .serial-badge,
@@ -681,9 +695,10 @@ const goDetail = (item: RecommendBook) => {
   left: 0;
   right: 0;
   text-align: center;
-  padding: 6rpx 0;
+  padding: 8rpx 0;
   font-size: 22rpx;
   color: #fff;
+  border-radius: 0 0 16rpx 16rpx;
 }
 
 .serial-badge {
@@ -702,9 +717,11 @@ const goDetail = (item: RecommendBook) => {
 }
 
 .book-title {
+  text-wrap: balance;
   font-size: 36rpx;
   font-weight: 700;
   color: #fff;
+  line-height: 1.25;
 }
 
 .author-row {
@@ -721,16 +738,20 @@ const goDetail = (item: RecommendBook) => {
 
 .book-stats {
   display: flex;
-  gap: 20rpx;
+  gap: 14rpx;
   margin-top: 20rpx;
+  flex-wrap: wrap;
 }
 
 .stat {
   display: flex;
   align-items: center;
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.86);
   gap: 6rpx;
+  padding: 6rpx 12rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .book-tags {
@@ -742,8 +763,8 @@ const goDetail = (item: RecommendBook) => {
 
 .tag {
   font-size: 22rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 4rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
   background: rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.9);
 }
@@ -752,11 +773,12 @@ const goDetail = (item: RecommendBook) => {
 .action-bar {
   display: flex;
   justify-content: space-around;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.94);
   padding: 24rpx;
-  margin: 0 24rpx 20rpx;
-  border-radius: 16rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  margin: 0 24rpx 22rpx;
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 24rpx;
+  box-shadow: var(--app-shadow-card, 0 8rpx 26rpx rgba(26, 29, 41, 0.06));
 }
 
 .action-btn {
@@ -766,12 +788,14 @@ const goDetail = (item: RecommendBook) => {
   gap: 8rpx;
   font-size: 24rpx;
   color: #606266;
+  min-width: 112rpx;
 
   &.primary {
     background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
     color: #fff;
-    padding: 16rpx 32rpx;
-    border-radius: 32rpx;
+    padding: 16rpx 28rpx;
+    border-radius: 999rpx;
+    box-shadow: 0 10rpx 22rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.22);
   }
 
   &.inShelf {
@@ -782,11 +806,12 @@ const goDetail = (item: RecommendBook) => {
 /* 评分区域 */
 .rating-section {
   display: flex;
-  background: #fff;
+  background: var(--app-surface, #fff);
   padding: 24rpx;
-  margin: 0 24rpx 20rpx;
-  border-radius: 16rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  margin: 0 24rpx 22rpx;
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 24rpx;
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 .rating-left {
@@ -794,7 +819,7 @@ const goDetail = (item: RecommendBook) => {
   flex-direction: column;
   align-items: center;
   padding-right: 30rpx;
-  border-right: 1rpx solid #f5f5f5;
+  border-right: 1rpx solid var(--app-border, #e8edf5);
   margin-right: 24rpx;
 }
 
@@ -832,15 +857,15 @@ const goDetail = (item: RecommendBook) => {
 .bar-track {
   flex: 1;
   height: 12rpx;
-  background: #f0f0f0;
-  border-radius: 6rpx;
+  background: #eef1f6;
+  border-radius: 999rpx;
   overflow: hidden;
 }
 
 .bar-fill {
   height: 100%;
   background: linear-gradient(90deg, #ff8e53 0%, #ff6b6b 100%);
-  border-radius: 6rpx;
+  border-radius: 999rpx;
 }
 
 .bar-percent {
@@ -852,11 +877,12 @@ const goDetail = (item: RecommendBook) => {
 
 /* 通用 section */
 .section {
-  background: #fff;
-  margin: 0 24rpx 20rpx;
-  border-radius: 16rpx;
+  background: var(--app-surface, #fff);
+  margin: 0 24rpx 22rpx;
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 24rpx;
   padding: 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 .section-header {
@@ -870,6 +896,7 @@ const goDetail = (item: RecommendBook) => {
   font-size: 32rpx;
   font-weight: 600;
   color: #303133;
+  line-height: 1.25;
 }
 
 .section-meta {
@@ -917,7 +944,7 @@ const goDetail = (item: RecommendBook) => {
 
 /* 目录 */
 .chapter-list {
-  border-top: 1rpx solid #f5f5f5;
+  border-top: 1rpx solid var(--app-border, #e8edf5);
 }
 
 .chapter-item {
@@ -925,7 +952,7 @@ const goDetail = (item: RecommendBook) => {
   justify-content: space-between;
   align-items: center;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid var(--app-border, #e8edf5);
 
   &:last-child {
     border-bottom: none;
@@ -967,7 +994,7 @@ const goDetail = (item: RecommendBook) => {
   padding: 2rpx 8rpx;
   background: #ff4757;
   color: #fff;
-  border-radius: 4rpx;
+  border-radius: 999rpx;
 }
 
 .chapter-right {
@@ -981,7 +1008,7 @@ const goDetail = (item: RecommendBook) => {
   padding: 2rpx 8rpx;
   background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
   color: #fff;
-  border-radius: 4rpx;
+  border-radius: 999rpx;
 }
 
 .read-status {
@@ -1013,13 +1040,15 @@ const goDetail = (item: RecommendBook) => {
 .author-card {
   display: flex;
   align-items: center;
-  padding: 16rpx 0;
+  padding: 18rpx;
+  border-radius: 18rpx;
+  background: #f7f9fc;
 }
 
 .author-avatar {
   width: 100rpx;
   height: 100rpx;
-  border-radius: 50%;
+  border-radius: 22rpx;
   flex-shrink: 0;
 }
 
@@ -1056,12 +1085,12 @@ const goDetail = (item: RecommendBook) => {
 
 /* 读者评价 */
 .review-list {
-  border-top: 1rpx solid #f5f5f5;
+  border-top: 1rpx solid var(--app-border, #e8edf5);
 }
 
 .review-item {
   padding: 20rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid var(--app-border, #e8edf5);
 
   &:last-child {
     border-bottom: none;
@@ -1136,7 +1165,8 @@ const goDetail = (item: RecommendBook) => {
 .recommend-cover {
   width: 180rpx;
   height: 240rpx;
-  border-radius: 10rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 8rpx 18rpx rgba(17, 24, 39, 0.12);
 }
 
 .recommend-title {
@@ -1173,10 +1203,13 @@ const goDetail = (item: RecommendBook) => {
   right: 0;
   display: flex;
   align-items: center;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.96);
   padding: 16rpx 24rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.04);
+  border-top: 1rpx solid rgba(232, 237, 245, 0.86);
+  box-shadow: 0 -10rpx 30rpx rgba(26, 29, 41, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   z-index: 100;
 }
 
@@ -1191,7 +1224,7 @@ const goDetail = (item: RecommendBook) => {
 
   &:first-child {
     width: 200rpx;
-    border-right: 1rpx solid #f5f5f5;
+    border-right: 1rpx solid var(--app-border, #e8edf5);
   }
 
   &.primary {
@@ -1212,7 +1245,7 @@ const goDetail = (item: RecommendBook) => {
   gap: 8rpx;
   padding: 20rpx;
   margin-top: 8rpx;
-  border-top: 1rpx solid #f5f5f5;
+  border-top: 1rpx solid var(--app-border, #e8edf5);
   font-size: 28rpx;
   color: var(--u-type-primary);
   font-weight: 500;
@@ -1220,7 +1253,8 @@ const goDetail = (item: RecommendBook) => {
 
 /* 评价提交表单 */
 .review-form {
-  padding: 30rpx 32rpx 40rpx;
+  padding: 30rpx 32rpx calc(40rpx + env(safe-area-inset-bottom));
+  background: var(--app-surface, #fff);
 }
 
 .form-header {
@@ -1257,8 +1291,9 @@ const goDetail = (item: RecommendBook) => {
 .review-textarea {
   width: 100%;
   min-height: 200rpx;
-  background: #f5f6f8;
-  border-radius: 12rpx;
+  background: #f5f7fb;
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 18rpx;
   padding: 20rpx;
   font-size: 28rpx;
   color: #303133;
@@ -1277,5 +1312,62 @@ const goDetail = (item: RecommendBook) => {
 
 .form-submit {
   padding-top: 10rpx;
+}
+
+@media (prefers-color-scheme: dark) {
+  .detail-page {
+    background: linear-gradient(180deg, #141821 0%, #101217 100%);
+  }
+
+  .action-bar,
+  .rating-section,
+  .section,
+  .review-form {
+    background: rgba(31, 34, 43, 0.95);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow: none;
+  }
+
+  .bottom-bar {
+    background: rgba(22, 24, 31, 0.96);
+    border-top-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .section-title,
+  .chapter-title,
+  .author-name,
+  .review-name,
+  .recommend-title,
+  .form-title {
+    color: #e5e6eb;
+  }
+
+  .book-desc,
+  .review-content,
+  .author-books,
+  .author-fans,
+  .form-label {
+    color: #b8bcc7;
+  }
+
+  .section-sub,
+  .section-more,
+  .rating-count,
+  .bar-label,
+  .bar-percent,
+  .author-desc,
+  .review-time,
+  .recommend-author {
+    color: #8b8c91;
+  }
+
+  .author-card,
+  .review-textarea {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .bar-track {
+    background: rgba(255, 255, 255, 0.08);
+  }
 }
 </style>

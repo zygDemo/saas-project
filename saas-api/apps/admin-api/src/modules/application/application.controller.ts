@@ -217,6 +217,60 @@ export class ApplicationController {
     return this.service.settle(Number(id), dto)
   }
 
+  // ==================== 还款计划 ====================
+
+  @Get('repayment-plans/:id')
+  @ApiOperation({ summary: '获取还款计划列表' })
+  getRepaymentPlans(@Param('id') id: string) {
+    return this.service.getRepaymentPlans(Number(id))
+  }
+
+  // ==================== 逾期催收 ====================
+
+  @Get('overdue-list')
+  @ApiOperation({ summary: '获取逾期订单列表' })
+  getOverdueList(@Query() query: { page?: number; pageSize?: number }) {
+    return this.service.getOverduePlans(query)
+  }
+
+  @Post(':id/collection-record')
+  @ApiOperation({ summary: '添加催收记录' })
+  addCollectionRecord(@Param('id') id: string, @Body() dto: { collectorId?: number; collectType?: string; content: string; result?: string; nextAction?: string; nextDate?: string }) {
+    return this.service.addCollectionRecord(Number(id), dto)
+  }
+
+  @Get(':id/collection-records')
+  @ApiOperation({ summary: '获取催收记录列表' })
+  getCollectionRecords(@Param('id') id: string) {
+    return this.service.getCollectionRecords(Number(id))
+  }
+
+  // ==================== 提前还款 ====================
+
+  @Post(':id/early-repayment')
+  @ApiOperation({ summary: '提前还款申请' })
+  applyEarlyRepayment(@Param('id') id: string, @Body() dto: { repayType?: string; amount: number; principal: number; interest: number; penalty?: number; reason?: string }) {
+    return this.service.applyEarlyRepayment(Number(id), dto)
+  }
+
+  @Post('early-repayment/:id/approve')
+  @ApiOperation({ summary: '审批提前还款' })
+  approveEarlyRepayment(@Param('id') id: string, @Body() dto: { approvedBy: number; remark?: string }) {
+    return this.service.approveEarlyRepayment(Number(id), dto)
+  }
+
+  @Post('early-repayment/:id/complete')
+  @ApiOperation({ summary: '完成提前还款' })
+  completeEarlyRepayment(@Param('id') id: string) {
+    return this.service.completeEarlyRepayment(Number(id))
+  }
+
+  @Get(':id/early-repayments')
+  @ApiOperation({ summary: '获取提前还款列表' })
+  getEarlyRepayments(@Param('id') id: string) {
+    return this.service.getEarlyRepayments(Number(id))
+  }
+
   @Get('lifecycle/:id')
   @ApiOperation({ summary: '获取订单生命周期节点列表，用于时间轴展示' })
   getLifecycle(@Param('id') id: string) {

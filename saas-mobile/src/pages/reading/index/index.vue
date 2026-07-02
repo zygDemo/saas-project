@@ -278,6 +278,7 @@ interface BookItem {
   cover: string;
   progress: number;
   lastReadChapter?: string;
+  lastReadChapterId?: string;
   lastReadTime?: number;
   hasUpdate?: boolean;
   totalChapters: number;
@@ -381,7 +382,39 @@ const fetchBookshelf = async () => {
   try {
     const res = await readingApi.getBookshelf();
     const items = res?.data || [];
-    if (Array.isArray(items) && items.length > 0) {
+    if (Array.isArray(items)) {
+      const mappedBooks = items
+        .map((item: any) => {
+          const book = item.book;
+          if (!book?.id) return null;
+
+          const localProgress = readingStore.getReadingProgress(book.id);
+          return {
+            id: String(book.id),
+            title: book.title || "",
+            author: book.author || "",
+            cover: book.cover || "/static/reading/covers/default.svg",
+            progress: item.progress ?? localProgress?.progress ?? 0,
+            lastReadChapter: item.lastReadChapter || localProgress?.chapterTitle,
+            lastReadChapterId: item.lastReadChapterId ? String(item.lastReadChapterId) : localProgress?.chapterId,
+            lastReadTime: item.lastReadTime ? new Date(item.lastReadTime).getTime() : localProgress?.lastReadTime,
+            hasUpdate: false,
+            totalChapters: book.chapterCount || 0,
+            category: book.category?.name || "",
+            wordCount: book.wordCount ? String(book.wordCount) : undefined,
+            isVip: book.isVip,
+            isSerial: book.isSerial,
+            desc: book.desc,
+            views: book.readCount,
+            rating: Number(book.rating) || 0,
+          };
+        })
+        .filter(Boolean) as BookItem[];
+
+      readingStore.syncBookshelf(mappedBooks);
+      return;
+    }
+    if (false) {
       // 记录后端返回的 bookId 集合
       const backendIds = new Set(items.map((item: any) => item.book?.id ? String(item.book.id) : null).filter(Boolean));
       // 移除本地有但后端没有的书籍
@@ -456,8 +489,9 @@ const formatTime = (timestamp?: number) => {
 };
 
 const openBook = (book: BookItem) => {
+  const chapterQuery = book.lastReadChapterId ? `&chapterId=${book.lastReadChapterId}` : "";
   uni.navigateTo({
-    url: `/pages/reading/reader/index?bookId=${book.id}`,
+    url: `/pages/reading/reader/index?bookId=${book.id}${chapterQuery}`,
   });
 };
 
@@ -491,7 +525,7 @@ const showBookMenu = (book: BookItem) => {
           });
           break;
         case 3:
-          readingStore.downloadBook(book.id);
+          readingStore.downloadBook(book.id, book);
           uni.showToast({ title: "开始下载", icon: "success" });
           break;
         case 4:
@@ -541,7 +575,7 @@ const refreshRecommend = () => {
 
 .bookshelf-page {
   min-height: 100%;
-  background-color: #f5f6f8;
+  background: linear-gradient(180deg, var(--app-page-bg-soft, #f0f3ff) 0%, var(--app-page-bg, #f5f7fa) 34%, #f8fafc 100%);
   padding-bottom: 160rpx;
 }
 
@@ -708,9 +742,9 @@ const refreshRecommend = () => {
   top: 0;
   left: 0;
   right: 0;
-  height: 280rpx;
-  background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
-  border-radius: 0 0 40rpx 40rpx;
+  height: 274rpx;
+  background: linear-gradient(135deg, #3f6ff3 0%, #4f7cff 58%, #35b6c8 100%);
+  border-radius: 0 0 32rpx 32rpx;
   overflow: hidden;
 }
 
@@ -758,10 +792,10 @@ const refreshRecommend = () => {
 
 .header-title {
   text-wrap: balance;
-  font-size: 44rpx;
+  font-size: 40rpx;
   font-weight: 700;
   color: #fff;
-  letter-spacing: 2rpx;
+  letter-spacing: 0;
 }
 
 .header-sub {
@@ -778,7 +812,7 @@ const refreshRecommend = () => {
   gap: 8rpx;
   background: rgba(255, 255, 255, 0.2);
   padding: 20rpx 28rpx;
-  border-radius: 20rpx;
+  border-radius: 18rpx;
   backdrop-filter: blur(10px);
   border: 1rpx solid rgba(255, 255, 255, 0.3);
 
@@ -830,11 +864,12 @@ const refreshRecommend = () => {
 
 /* 统计卡片 */
 .stats-card {
-  margin: -50rpx 24rpx 24rpx;
-  background: #fff;
+  margin: 18rpx 24rpx 24rpx;
+  background: var(--app-surface, #fff);
+  border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
   padding: 30rpx 20rpx;
-  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
   position: relative;
   z-index: 2;
 }
@@ -854,11 +889,11 @@ const refreshRecommend = () => {
 .stat-icon-wrap {
   width: 72rpx;
   height: 72rpx;
-  border-radius: 50%;
+  border-radius: 18rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6rpx 16rpx rgba(26, 29, 41, 0.12);
 }
 
 .stat-value {
@@ -893,7 +928,7 @@ const refreshRecommend = () => {
 
 .section-title {
   font-size: 32rpx;
-  font-weight: 600;
+  font-weight: 800;
   color: #303133;
 }
 
@@ -908,7 +943,7 @@ const refreshRecommend = () => {
   align-items: center;
   gap: 6rpx;
   padding: 8rpx 16rpx;
-  border-radius: 20rpx;
+  border-radius: 14rpx;
   background: #f5f6f8;
   transition: all 0.2s;
 
@@ -940,7 +975,7 @@ const refreshRecommend = () => {
   align-items: center;
   gap: 8rpx;
   padding: 8rpx 16rpx;
-  border-radius: 20rpx;
+  border-radius: 14rpx;
   background: rgba(102, 126, 234, 0.1);
 
   text {
@@ -956,10 +991,11 @@ const refreshRecommend = () => {
 
 .recommend-card {
   display: flex;
-  background: #fff;
-  border-radius: 20rpx;
+  background: var(--app-surface, #fff);
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 24rpx;
   padding: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 .recommend-cover-wrap {
@@ -972,7 +1008,7 @@ const refreshRecommend = () => {
 .recommend-cover {
   width: 100%;
   height: 100%;
-  border-radius: 12rpx;
+  border-radius: 14rpx;
 }
 
 .recommend-cover-shadow {
@@ -1022,7 +1058,7 @@ const refreshRecommend = () => {
 .tag {
   font-size: 20rpx;
   padding: 4rpx 12rpx;
-  border-radius: 6rpx;
+  border-radius: 10rpx;
 
   &.category {
     color: var(--u-type-primary);
@@ -1073,10 +1109,11 @@ const refreshRecommend = () => {
 /* 书架区域 */
 .bookshelf-section {
   margin: 0 24rpx 24rpx;
-  background: #fff;
+  background: var(--app-surface, #fff);
+  border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
   padding: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 /* 搜索栏 */
@@ -1087,8 +1124,9 @@ const refreshRecommend = () => {
 .search-input-wrap {
   display: flex;
   align-items: center;
-  background: #f5f6f8;
-  border-radius: 36rpx;
+  background: #f6f8fb;
+  border: 1rpx solid #edf2f7;
+  border-radius: 18rpx;
   padding: 16rpx 24rpx;
   gap: 12rpx;
 }
@@ -1135,7 +1173,7 @@ const refreshRecommend = () => {
 .book-card {
   display: flex;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #edf2f7;
   animation: slideUp 0.3s ease-out forwards;
 
   &:last-child {
@@ -1158,8 +1196,8 @@ const refreshRecommend = () => {
 .book-cover {
   width: 100%;
   height: 100%;
-  border-radius: 12rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  border-radius: 14rpx;
+  box-shadow: 0 8rpx 20rpx rgba(26, 29, 41, 0.12);
 }
 
 .update-badge {
@@ -1234,9 +1272,9 @@ const refreshRecommend = () => {
   display: inline-flex;
   align-items: center;
   gap: 6rpx;
-  background: linear-gradient(135deg, var(--u-type-primary-dark, #3b2f8a), var(--u-type-primary, #5240FE));
+  background: linear-gradient(135deg, #4f7cff, #6366f1);
   padding: 6rpx 20rpx;
-  border-radius: 24rpx;
+  border-radius: 14rpx;
   align-self: flex-start;
 
   text {
@@ -1432,12 +1470,12 @@ const refreshRecommend = () => {
 }
 
 .empty-btn {
-  background: linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 100%);
+  background: linear-gradient(135deg, #4f7cff 0%, #6366f1 100%);
   color: #fff;
   font-size: 28rpx;
   padding: 20rpx 48rpx;
-  border-radius: 40rpx;
-  box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.3);
+  border-radius: 16rpx;
+  box-shadow: 0 8rpx 22rpx rgba(79, 124, 255, 0.24);
 
   &:active {
     transform: scale(0.98);
@@ -1461,7 +1499,7 @@ const refreshRecommend = () => {
   gap: 8rpx;
   height: 72rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.28);
-  border-radius: 20rpx;
+  border-radius: 16rpx;
   background: rgba(255, 255, 255, 0.16);
   backdrop-filter: blur(12px);
 
@@ -1474,6 +1512,48 @@ const refreshRecommend = () => {
   &:active {
     transform: scale(0.98);
     background: rgba(255, 255, 255, 0.24);
+  }
+}
+
+.bookshelf-page {
+  background:
+    radial-gradient(circle at 14% 0%, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.12), transparent 34%),
+    linear-gradient(180deg, var(--app-page-bg-soft, #eef3ff) 0%, var(--app-page-bg, #f6f8fc) 38%, #f8fafc 100%);
+  padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
+}
+
+.header-bg {
+  background:
+    radial-gradient(circle at 82% 16%, rgba(255, 255, 255, 0.26), transparent 24%),
+    linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 64%, #35b6c8 100%);
+}
+
+.book-card {
+  border-bottom-color: var(--app-border, #e8edf5);
+
+  &:active {
+    background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.05);
+  }
+}
+
+.recent-cover,
+.book-cover {
+  box-shadow: 0 8rpx 18rpx rgba(17, 24, 39, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  .bookshelf-page {
+    background: linear-gradient(180deg, #141821 0%, #101217 100%);
+  }
+
+  .bookshelf-section {
+    background: rgba(31, 34, 43, 0.95);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow: none;
+  }
+
+  .book-card {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
   }
 }
 

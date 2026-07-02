@@ -19,6 +19,16 @@ import {
   UpdateReviewStatusDto,
 } from './dto/reading.dto';
 
+type ReadingReviewRow = Prisma.BookReviewGetPayload<{
+  include: {
+    book: { select: { id: true; title: true } };
+  };
+}>;
+
+type ReadingReviewUserRow = Prisma.UserGetPayload<{
+  select: { id: true; userName: true; nickName: true; avatar: true };
+}>;
+
 @Injectable()
 export class ReadingService {
   constructor(private prisma: PrismaService) {}
@@ -703,34 +713,57 @@ export class ReadingService {
 
   async getReviews(tenantId: number, query: ReviewQueryDto) {
     const { bookId, keyword, status, page = 1, pageSize = 20 } = query;
-    const where: Record<string, unknown> = { tenantId, deletedAt: null };
+    const where: Record<string, unknown> = { tenantId };
 
     if (bookId) where.bookId = bookId;
-    if (status !== undefined) where.status = status;
+    where.status = status !== undefined ? status : 1;
     if (keyword) {
       where.content = { contains: keyword, mode: 'insensitive' };
     }
 
-    const [items, total] = await Promise.all([
+    const [reviews, total] = (await Promise.all([
       this.prisma.bookReview.findMany({
         where,
         include: {
           book: { select: { id: true, title: true } },
-          user: { select: { id: true, username: true, nickname: true } },
         },
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.bookReview.count({ where }),
-    ]);
+    ])) as [ReadingReviewRow[], number];
+
+    const userIds = [...new Set(reviews.map((item) => item.userId))];
+    const users: ReadingReviewUserRow[] = userIds.length
+      ? ((await this.prisma.user.findMany({
+          where: { id: { in: userIds }, tenantId },
+          select: { id: true, userName: true, nickName: true, avatar: true },
+        })) as ReadingReviewUserRow[])
+      : [];
+    const userMap = new Map(users.map((user) => [user.id, user]));
+
+    const items = reviews.map((item) => {
+      const user = userMap.get(item.userId);
+      return {
+        ...item,
+        user: user
+          ? {
+              id: user.id,
+              username: user.userName,
+              nickname: user.nickName,
+              avatar: user.avatar,
+            }
+          : null,
+      };
+    });
 
     return { items, total, page, pageSize };
   }
 
   async updateReviewStatus(tenantId: number, dto: UpdateReviewStatusDto) {
     const review = await this.prisma.bookReview.findFirst({
-      where: { id: dto.id, tenantId, deletedAt: null },
+      where: { id: dto.id, tenantId },
     });
     if (!review) {
       throw new NotFoundException('评价不存在');
@@ -743,7 +776,7 @@ export class ReadingService {
 
   async deleteReview(tenantId: number, id: number) {
     const review = await this.prisma.bookReview.findFirst({
-      where: { id, tenantId, deletedAt: null },
+      where: { id, tenantId },
     });
     if (!review) {
       throw new NotFoundException('评价不存在');
@@ -751,11 +784,11 @@ export class ReadingService {
     // 删除后需重新计算书籍评分
     await this.prisma.bookReview.update({
       where: { id },
-      data: { deletedAt: new Date() },
+      data: { status: 0 },
     });
 
     const agg = await this.prisma.bookReview.aggregate({
-      where: { bookId: review.bookId, status: 1, deletedAt: null },
+      where: { bookId: review.bookId, status: 1 },
       _avg: { rating: true },
       _count: true,
     });

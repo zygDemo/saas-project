@@ -625,7 +625,7 @@ async function handleFlowRecord(order: OrderListViewItem) {
 </script>
 
 <style lang="scss" scoped>
-$bg-page: #f2f4f7;
+$bg-page: #f5f7fa;
 $bg-surface: #ffffff;
 $border-subtle: #ebedf2;
 $text-main: #1a1d29;
@@ -641,7 +641,7 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: $bg-page;
+  background: linear-gradient(180deg, var(--app-page-bg-soft, #f0f3ff) 0%, $bg-page 30%, #f8fafc 100%);
 }
 
 .order-list-scroll {
@@ -651,15 +651,20 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .list__inner {
-  padding: 24rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+  padding: 24rpx 24rpx calc(32rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
   width: 100%;
 }
 
 /* ===== 搜索栏 ===== */
 .search-bar {
-  padding: 16rpx 24rpx 12rpx;
-  background: $bg-page;
+  padding: 18rpx 24rpx 12rpx;
+  background: transparent;
+
+  :deep(.u-search) {
+    box-shadow: 0 4rpx 18rpx rgba(26, 29, 41, 0.04);
+    border-radius: 18rpx;
+  }
 }
 
 /* ===== 筛选区 ===== */
@@ -667,8 +672,9 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   margin: 0 24rpx 20rpx;
   padding: 0;
   background: $bg-surface;
-  border-radius: 16rpx;
-  box-shadow: 0 1rpx 4rpx rgba(26, 29, 41, 0.04);
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 22rpx;
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
   overflow: hidden;
 }
 
@@ -682,8 +688,8 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
 .filter-tabs {
   display: inline-flex;
-  padding: 16rpx 20rpx;
-  gap: 12rpx;
+  padding: 18rpx 20rpx;
+  gap: 10rpx;
 
   &--sub {
     padding: 14rpx 20rpx 16rpx;
@@ -696,9 +702,10 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   align-items: center;
   gap: 6rpx;
   height: 56rpx;
-  padding: 0 24rpx;
-  border-radius: 28rpx;
-  background: #f2f4f7;
+  padding: 0 22rpx;
+  border-radius: 16rpx;
+  background: #f6f8fb;
+  border: 1rpx solid transparent;
   transition: all 0.2s $ease-out;
 
   &__label {
@@ -722,14 +729,16 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   &--on {
-    background: $primary;
+    background: #eef3ff;
+    border-color: rgba($primary, 0.16);
 
     .filter-tab__label {
-      color: #fff;
+      color: $primary;
+      font-weight: 700;
     }
     .filter-tab__badge {
-      background: rgba(255, 255, 255, 0.3);
-      color: #fff;
+      background: rgba($primary, 0.14);
+      color: $primary;
     }
   }
 
@@ -752,8 +761,9 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   margin: 40rpx 0;
   padding: 100rpx 40rpx;
   background: $bg-surface;
-  border-radius: 16rpx;
-  box-shadow: 0 1rpx 6rpx rgba(26, 29, 41, 0.04);
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 22rpx;
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 
   :deep(.u-empty__text) {
     color: $text-hint !important;
@@ -785,7 +795,7 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   width: 88rpx;
   height: 88rpx;
   border-radius: 50%;
-  background: $primary;
+  background: linear-gradient(135deg, #4f7cff, #6366f1);
   display: flex;
   align-items: center;
   justify-content: center;

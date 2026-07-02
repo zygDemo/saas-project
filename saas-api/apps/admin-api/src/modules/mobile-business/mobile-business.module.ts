@@ -12,7 +12,9 @@ import {
   MobileContactController,
   MobileSalesLeadController,
   MobileFollowUpController,
-  MobileSigningController
+  MobileSigningController,
+  MobileBankCardController,
+  MobilePostLoanController
 } from './mobile-business.controller'
 import { MobileBusinessService } from './mobile-business.service'
 
@@ -28,7 +30,9 @@ import { MobileBusinessService } from './mobile-business.service'
     MobileContactController,
     MobileSalesLeadController,
     MobileFollowUpController,
-    MobileSigningController
+    MobileSigningController,
+    MobileBankCardController,
+    MobilePostLoanController
   ],
   providers: [MobileBusinessService]
 })

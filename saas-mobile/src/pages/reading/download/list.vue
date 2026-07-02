@@ -188,8 +188,10 @@ const deleteDownload = (item: { id: string; title: string }) => {
 };
 
 const openBook = (item: { id: string }) => {
+  const progress = readingStore.getReadingProgress(item.id);
+  const chapterQuery = progress?.chapterId ? `&chapterId=${progress.chapterId}` : "";
   uni.navigateTo({
-    url: `/pages/reading/reader/index?bookId=${item.id}`,
+    url: `/pages/reading/reader/index?bookId=${item.id}${chapterQuery}`,
   });
 };
 
@@ -225,17 +227,23 @@ const goBookStore = () => {
 
 .download-page {
   min-height: 100%;
-  background-color: #f5f6f8;
-  padding-bottom: 40rpx;
+  background:
+    radial-gradient(circle at 16% 0%, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.14), transparent 36%),
+    linear-gradient(180deg, var(--app-page-bg-soft, #eef3ff) 0%, var(--app-page-bg, #f6f8fc) 46%);
+  padding: 24rpx 24rpx calc(160rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
 .stats-section {
   display: flex;
   align-items: center;
   justify-content: space-around;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1rpx solid rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.1);
+  border-radius: 24rpx;
   padding: 30rpx 24rpx;
-  margin-bottom: 20rpx;
+  margin-bottom: 28rpx;
+  box-shadow: var(--app-shadow-card, 0 10rpx 30rpx rgba(26, 29, 41, 0.06));
 }
 
 .stat-item {
@@ -252,27 +260,25 @@ const goBookStore = () => {
 
 .stat-label {
   font-size: 24rpx;
-  color: #909399;
+  color: #7d8494;
   margin-top: 8rpx;
 }
 
 .stat-divider {
   width: 1rpx;
   height: 60rpx;
-  background: #eee;
+  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.12);
 }
 
 .section {
-  margin-bottom: 20rpx;
+  margin-bottom: 28rpx;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx 24rpx;
-  background: #fff;
-  border-bottom: 1rpx solid #f5f5f5;
+  padding: 0 4rpx 16rpx;
 }
 
 .section-title {
@@ -284,28 +290,33 @@ const goBookStore = () => {
 .section-action {
   font-size: 24rpx;
   color: var(--u-type-primary);
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
 }
 
 .download-list {
-  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
 }
 
 .download-item {
   display: flex;
   align-items: center;
   padding: 24rpx;
-  border-bottom: 1rpx solid #f5f5f5;
-
-  &:last-child {
-    border-bottom: none;
-  }
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 22rpx;
+  background: var(--app-surface, #fff);
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 .book-cover {
   width: 100rpx;
   height: 140rpx;
-  border-radius: 8rpx;
+  border-radius: 14rpx;
   flex-shrink: 0;
+  box-shadow: 0 8rpx 18rpx rgba(17, 24, 39, 0.12);
 }
 
 .download-info {
@@ -340,16 +351,16 @@ const goBookStore = () => {
 
 .progress-bar {
   flex: 1;
-  height: 8rpx;
-  background: #f0f0f0;
-  border-radius: 4rpx;
+  height: 10rpx;
+  background: rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.1);
+  border-radius: 999rpx;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%);
-  border-radius: 4rpx;
+  border-radius: 999rpx;
   transition: width 0.3s;
 }
 
@@ -390,13 +401,45 @@ const goBookStore = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 120rpx 0;
+  margin-top: 80rpx;
+  padding: 90rpx 32rpx;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 28rpx;
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 .empty-text {
   font-size: 28rpx;
   color: #909399;
   margin: 20rpx 0 30rpx;
+}
+
+@media (prefers-color-scheme: dark) {
+  .download-page {
+    background: linear-gradient(180deg, #141821 0%, #101217 100%);
+  }
+
+  .stats-section,
+  .download-item,
+  .empty-state {
+    background: rgba(31, 34, 43, 0.92);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow: none;
+  }
+
+  .section-title,
+  .book-title {
+    color: #e5e6eb;
+  }
+
+  .stat-label,
+  .book-author,
+  .download-size,
+  .download-time,
+  .empty-text {
+    color: #8b8c91;
+  }
 }
 </style>
 <style>

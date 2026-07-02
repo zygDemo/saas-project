@@ -212,12 +212,10 @@ async function handleSubmit() {
 
   submitting.value = true;
   try {
-    // TODO: 等待后端提供GPS预约提交接口
-    // await businessApi.submitGpsAppointment({
-    //   creditOrderId: creditOrderId.value,
-    //   uuid: uuidVal.value,
-    //   ...form,
-    // });
+    await businessApi.completeGpsInstall(applicationId.value, {
+      gpsDeviceNo: form.contactPhone, // 用联系电话作为临时设备号
+      gpsInstallImg: "", // 图片后续补充
+    });
 
     saveLocalAppointment();
     saveSignProgress("MORTGAGING");

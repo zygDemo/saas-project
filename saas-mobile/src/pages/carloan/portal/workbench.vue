@@ -540,8 +540,8 @@ const sections = computed(() => {
 
 .workbench {
   min-height: 100vh;
-  padding: 22rpx 22rpx 36rpx;
-  background: #f5f7fb;
+  padding: 24rpx 24rpx 40rpx;
+  background: linear-gradient(180deg, var(--app-page-bg-soft, #f0f3ff) 0%, var(--app-page-bg, #f5f7fa) 36%, #f8fafc 100%);
 }
 
 .home-header {
@@ -549,12 +549,12 @@ const sections = computed(() => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 20rpx;
-  padding: 28rpx 28rpx 30rpx;
+  padding: 32rpx 30rpx;
   margin-bottom: 24rpx;
   color: #fff;
-  background: linear-gradient(135deg, #1f5fbf 0%, var(--u-type-primary-dark) 52%, #0f9f8f 100%);
-  border-radius: 18rpx;
-  box-shadow: 0 14rpx 34rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.18);
+  background: linear-gradient(135deg, #3f6ff3 0%, #4f7cff 58%, #35b6c8 100%);
+  border-radius: 24rpx;
+  box-shadow: 0 14rpx 34rpx rgba(79, 124, 255, 0.2);
 }
 
 .home-title-block {
@@ -571,7 +571,7 @@ const sections = computed(() => {
 }
 
 .home-title {
-  font-size: 38rpx;
+  font-size: 36rpx;
   font-weight: 800;
   line-height: 1.25;
 }
@@ -593,7 +593,7 @@ const sections = computed(() => {
   color: #dcfce7;
   background: rgba(255, 255, 255, 0.16);
   border: 1rpx solid rgba(255, 255, 255, 0.22);
-  border-radius: 999rpx;
+  border-radius: 18rpx;
 }
 
 .msg-badge {
@@ -628,7 +628,7 @@ const sections = computed(() => {
 }
 
 .block-head {
-  margin-bottom: 16rpx;
+  margin: 2rpx 4rpx 16rpx;
 }
 
 .block-title,
@@ -647,10 +647,10 @@ const sections = computed(() => {
 .overview-panel {
   margin-bottom: 24rpx;
   padding: 26rpx;
-  background: #fff;
-  border: 1rpx solid #e8edf5;
-  border-radius: 18rpx;
-  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.04);
+  background: var(--app-surface, #fff);
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 24rpx;
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 .overview-head {
@@ -684,9 +684,9 @@ const sections = computed(() => {
   justify-content: center;
   min-height: 112rpx;
   padding: 18rpx 10rpx;
-  background: #f8fafc;
+  background: var(--app-surface-muted, #f8fafc);
   border: 1rpx solid #edf2f7;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   text-align: center;
 }
 
@@ -712,7 +712,7 @@ const sections = computed(() => {
 .quick-actions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16rpx;
+  gap: 18rpx;
   width: 100%;
   margin-bottom: 24rpx;
 }
@@ -722,27 +722,27 @@ const sections = computed(() => {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  min-height: 132rpx;
-  padding: 24rpx 22rpx;
+  min-height: 136rpx;
+  padding: 24rpx;
   color: #fff;
   position: relative;
   overflow: hidden;
   background: linear-gradient(135deg, var(--u-type-primary-dark), #06b6d4);
-  border-radius: 16rpx;
-  box-shadow: 0 10rpx 24rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.16);
+  border-radius: 22rpx;
+  box-shadow: 0 10rpx 24rpx rgba(79, 124, 255, 0.16);
 
   &:active {
     transform: translateY(2rpx);
   }
 
   &--lead {
-    background: linear-gradient(135deg, #0f9f8f, #22c55e);
-    box-shadow: 0 10rpx 24rpx rgba(15, 159, 143, 0.16);
+    background: linear-gradient(135deg, #19a38d, #2ecb7d);
+    box-shadow: 0 10rpx 24rpx rgba(25, 163, 141, 0.16);
   }
 
   &--credit {
-    background: linear-gradient(135deg, var(--u-type-primary-dark), #5b7cfa);
-    box-shadow: 0 10rpx 24rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.18);
+    background: linear-gradient(135deg, #4f7cff, #6366f1);
+    box-shadow: 0 10rpx 24rpx rgba(79, 124, 255, 0.18);
   }
 }
 
@@ -827,11 +827,11 @@ const sections = computed(() => {
 .section {
   position: relative;
   margin-top: 28rpx;
-  padding: 22rpx;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1rpx solid #e7edf6;
-  border-radius: 22rpx;
-  box-shadow: 0 12rpx 34rpx rgba(15, 23, 42, 0.045);
+  padding: 24rpx;
+  background: var(--app-surface, #fff);
+  border: 1rpx solid var(--app-border, #e8edf5);
+  border-radius: 24rpx;
+  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 .section-head {
@@ -841,7 +841,7 @@ const sections = computed(() => {
 .section-title {
   position: relative;
   padding-left: 18rpx;
-  letter-spacing: 0.2rpx;
+  letter-spacing: 0;
 
   &::before {
     content: "";
@@ -850,8 +850,8 @@ const sections = computed(() => {
     left: 0;
     width: 6rpx;
     height: 28rpx;
-    background: linear-gradient(180deg, var(--u-type-primary-dark), #14b8a6);
-    border-radius: 999rpx;
+    background: linear-gradient(180deg, #4f7cff, #35b6c8);
+    border-radius: 8rpx;
     transform: translateY(-50%);
   }
 }
@@ -860,7 +860,7 @@ const sections = computed(() => {
   padding: 4rpx 14rpx;
   color: #64748b;
   background: #f1f5f9;
-  border-radius: 999rpx;
+  border-radius: 14rpx;
 }
 
 .grid {
@@ -875,29 +875,18 @@ const sections = computed(() => {
   flex-direction: column;
   align-items: stretch;
   justify-content: space-between;
-  min-height: 152rpx;
+  min-height: 150rpx;
   padding: 20rpx;
   overflow: hidden;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  background: #ffffff;
   border: 1rpx solid #e5ecf6;
   border-radius: 18rpx;
   animation: slideUp 0.4s ease-out both;
-  box-shadow: 0 8rpx 22rpx rgba(15, 23, 42, 0.04);
+  box-shadow: 0 6rpx 18rpx rgba(15, 23, 42, 0.035);
   transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 
-  &::after {
-    content: "";
-    position: absolute;
-    right: -26rpx;
-    bottom: -34rpx;
-    width: 104rpx;
-    height: 104rpx;
-    background: radial-gradient(circle, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.1), transparent 65%);
-    pointer-events: none;
-  }
-
   &:active {
-    background: #eef6ff;
+    background: #f6f9ff;
     box-shadow: 0 4rpx 12rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
     transform: scale(0.985);
   }
@@ -931,7 +920,7 @@ const sections = computed(() => {
   justify-content: center;
   width: 64rpx;
   height: 64rpx;
-  background: #eef6ff;
+  background: #f0f4ff;
   border: 1rpx solid #dbeafe;
   border-radius: 18rpx;
   box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
