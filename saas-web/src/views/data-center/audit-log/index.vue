@@ -1,62 +1,74 @@
 <template>
   <div class="audit-log-page art-full-height">
     <!-- 统计卡片 -->
-    <div class="stats-cards mb-5">
-      <ElRow :gutter="16">
-        <ElCol :span="6">
-          <ElCard shadow="hover" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-icon total">
-                <ElIcon :size="24"><Document /></ElIcon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ stats.total }}</div>
-                <div class="stat-label">总请求数</div>
-              </div>
+    <ElRow :gutter="20">
+      <ElCol :xl="5" :lg="5" :sm="12" :xs="24">
+        <div class="art-card p-5 mb-5 max-sm:mb-4">
+          <div class="flex items-center gap-4">
+            <div class="size-12 rounded-lg flex-cc bg-theme/10 text-theme">
+              <ArtSvgIcon icon="ri:file-list-3-line" class="text-xl" />
             </div>
-          </ElCard>
-        </ElCol>
-        <ElCol :span="6">
-          <ElCard shadow="hover" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-icon success">
-                <ElIcon :size="24"><CircleCheck /></ElIcon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value text-success">{{ stats.successCount }}</div>
-                <div class="stat-label">成功请求</div>
-              </div>
+            <div>
+              <div class="text-2xl font-bold text-g-800">{{ stats.total }}</div>
+              <p class="mt-1 text-sm text-g-500">总请求数</p>
             </div>
-          </ElCard>
-        </ElCol>
-        <ElCol :span="6">
-          <ElCard shadow="hover" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-icon fail">
-                <ElIcon :size="24"><CircleClose /></ElIcon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value text-danger">{{ stats.failCount }}</div>
-                <div class="stat-label">失败请求</div>
-              </div>
+          </div>
+        </div>
+      </ElCol>
+      <ElCol :xl="5" :lg="5" :sm="12" :xs="24">
+        <div class="art-card p-5 mb-5 max-sm:mb-4">
+          <div class="flex items-center gap-4">
+            <div class="size-12 rounded-lg flex-cc bg-success/10 text-success">
+              <ArtSvgIcon icon="ri:checkbox-circle-line" class="text-xl" />
             </div>
-          </ElCard>
-        </ElCol>
-        <ElCol :span="6">
-          <ElCard shadow="hover" class="stat-card">
-            <div class="stat-content">
-              <div class="stat-icon rate">
-                <ElIcon :size="24"><TrendCharts /></ElIcon>
-              </div>
-              <div class="stat-info">
-                <div class="stat-value">{{ stats.successRate }}%</div>
-                <div class="stat-label">成功率</div>
-              </div>
+            <div>
+              <div class="text-2xl font-bold text-success">{{ stats.successCount }}</div>
+              <p class="mt-1 text-sm text-g-500">成功请求</p>
             </div>
-          </ElCard>
-        </ElCol>
-      </ElRow>
-    </div>
+          </div>
+        </div>
+      </ElCol>
+      <ElCol :xl="5" :lg="5" :sm="12" :xs="24">
+        <div class="art-card p-5 mb-5 max-sm:mb-4">
+          <div class="flex items-center gap-4">
+            <div class="size-12 rounded-lg flex-cc bg-danger/10 text-danger">
+              <ArtSvgIcon icon="ri:close-circle-line" class="text-xl" />
+            </div>
+            <div>
+              <div class="text-2xl font-bold text-danger">{{ stats.failCount }}</div>
+              <p class="mt-1 text-sm text-g-500">失败请求</p>
+            </div>
+          </div>
+        </div>
+      </ElCol>
+      <ElCol :xl="4" :lg="4" :sm="12" :xs="24">
+        <div class="art-card p-5 mb-5 max-sm:mb-4">
+          <div class="flex items-center gap-4">
+            <div class="size-12 rounded-lg flex-cc bg-info/10 text-info">
+              <ArtSvgIcon icon="ri:percent-line" class="text-xl" />
+            </div>
+            <div>
+              <div class="text-2xl font-bold text-g-800">{{ stats.successRate }}%</div>
+              <p class="mt-1 text-sm text-g-500">成功率</p>
+            </div>
+          </div>
+        </div>
+      </ElCol>
+      <ElCol :xl="5" :lg="5" :sm="12" :xs="24">
+        <div class="art-card p-5 mb-5 max-sm:mb-4 attack-card" @click="showAttackMonitor = true">
+          <div class="flex items-center gap-4">
+            <div class="size-12 rounded-lg flex-cc bg-warning/10 text-warning">
+              <ArtSvgIcon icon="ri:warning-line" class="text-xl" />
+            </div>
+            <div class="flex-1">
+              <div class="text-2xl font-bold text-warning">{{ stats.attackIps?.length || 0 }}</div>
+              <p class="mt-1 text-sm text-g-500">异常IP数</p>
+            </div>
+            <ArtSvgIcon icon="ri:arrow-right-s-line" class="text-lg text-g-400 arrow-icon" />
+          </div>
+        </div>
+      </ElCol>
+    </ElRow>
 
     <!-- 图表区域 -->
     <ElRow :gutter="20" class="mb-5">
@@ -65,16 +77,13 @@
           <template #header>
             <div class="card-header">
               <h4>接口调用时段分布</h4>
-              <ElTag type="info" size="small">24小时请求量分布</ElTag>
+              <ElSpace>
+                <ElTag type="info" size="small">正常请求</ElTag>
+                <ElTag type="danger" size="small">异常请求</ElTag>
+              </ElSpace>
             </div>
           </template>
-          <ArtBarChart
-            height="280px"
-            :data="hourlyChartData"
-            :xAxisData="hourlyXAxisData"
-            :showAxisLine="false"
-            barWidth="60%"
-          />
+          <div ref="hourlyChartRef" style="width: 100%; height: 280px"></div>
         </ElCard>
       </ElCol>
       <ElCol :xl="10" :lg="9" :xs="24">
@@ -148,7 +157,15 @@
             <ElDescriptionsItem label="描述">{{
               currentRow.description || '-'
             }}</ElDescriptionsItem>
-            <ElDescriptionsItem label="IP">{{ currentRow.ip || '-' }}</ElDescriptionsItem>
+            <ElDescriptionsItem label="IP">
+              <ElTag
+                :type="isAttackIp(currentRow.ip) ? 'danger' : 'info'"
+                effect="dark"
+                size="small"
+              >
+                {{ currentRow.ip || '-' }}
+              </ElTag>
+            </ElDescriptionsItem>
             <ElDescriptionsItem label="User Agent">
               <div class="ua-text">{{ currentRow.userAgent || '-' }}</div>
             </ElDescriptionsItem>
@@ -162,12 +179,18 @@
         </template>
       </ElDrawer>
     </ElCard>
+
+    <!-- 异常IP监控弹窗 -->
+    <ElDrawer v-model="showAttackMonitor" title="异常IP监控" size="90%" destroy-on-close>
+      <AttackMonitor :stats="stats" />
+    </ElDrawer>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { ref, h, onMounted, reactive, computed } from 'vue'
+  import { ref, h, onMounted, onUnmounted, reactive, computed, watch } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
+  import * as echarts from 'echarts'
   import {
     fetchAuditLogs,
     fetchAuditLogStats,
@@ -175,9 +198,8 @@
     type AuditLogStats
   } from '@/api/data-center'
   import { ElTag, ElButton } from 'element-plus'
-  import { Document, CircleCheck, CircleClose, TrendCharts } from '@element-plus/icons-vue'
   import AuditLogSearch from './modules/audit-log-search.vue'
-  import type { BarDataItem } from '@/types/component/chart'
+  import AttackMonitor from './modules/attack-monitor.vue'
 
   defineOptions({ name: 'AuditLog' })
 
@@ -189,12 +211,17 @@
     successRate: 0,
     modules: [],
     actions: [],
-    hourly: []
+    hourly: [],
+    attackIps: [],
+    burstIps: [],
+    loginAttempts: [],
+    consecutiveFails: []
   })
 
-  // 详情弹窗
+  // 弹窗控制
   const detailVisible = ref(false)
   const currentRow = ref<AuditLogItem | null>(null)
+  const showAttackMonitor = ref(false)
 
   // 搜索表单
   const searchForm = ref({
@@ -205,36 +232,45 @@
     status: ''
   })
 
-  // 24小时分布数据
-  const hourlyChartData = computed<BarDataItem[]>(() => [
-    {
-      name: '请求数',
-      data: stats.hourly.map(item => item.count)
-    }
-  ])
-  const hourlyXAxisData = computed(() => stats.hourly.map(item => item.label))
+  // 图表引用
+  const hourlyChartRef = ref<HTMLElement>()
+  let hourlyChart: echarts.ECharts | null = null
 
   // 模块分布数据
   const moduleChartData = computed(() =>
-    stats.modules.slice(0, 8).map(item => ({
+    stats.modules.slice(0, 8).map((item) => ({
       value: item.count,
       name: item.module
     }))
   )
-  const moduleColors = ['#4C87F3', '#93F1B4', '#8BD8FC', '#FFD485', '#FF8A8A', '#C49FFF', '#FFB4A2', '#A8D8EA']
+  const moduleColors = [
+    '#4C87F3',
+    '#93F1B4',
+    '#8BD8FC',
+    '#FFD485',
+    '#FF8A8A',
+    '#C49FFF',
+    '#FFB4A2',
+    '#A8D8EA'
+  ]
 
   // 计算接口调用次数
   const moduleCallCounts = computed(() => {
     const counts: Record<string, number> = {}
-    stats.modules.forEach(item => {
+    stats.modules.forEach((item) => {
       counts[item.module] = item.count
     })
     return counts
   })
 
+  // 判断是否为攻击IP
+  const isAttackIp = (ip?: string) => {
+    if (!ip) return false
+    return stats.attackIps?.some((item) => item.ip === ip) || false
+  }
+
   // HTTP 方法标签配置
   type ElementTagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
-
   const METHOD_TAG_CONFIG: Record<string, { type: ElementTagType }> = {
     GET: { type: 'primary' },
     POST: { type: 'success' },
@@ -242,7 +278,6 @@
     PATCH: { type: 'warning' },
     DELETE: { type: 'danger' }
   }
-
   const methodTag = (method: string): ElementTagType => METHOD_TAG_CONFIG[method]?.type || 'info'
 
   // 状态码标签类型
@@ -304,15 +339,105 @@
     try {
       const result = await fetchAuditLogStats()
       Object.assign(stats, result)
+      updateHourlyChart()
     } catch (error) {
       console.error('获取统计数据失败:', error)
     }
   }
 
+  // 初始化图表
+  function initCharts() {
+    if (hourlyChartRef.value) {
+      hourlyChart = echarts.init(hourlyChartRef.value)
+    }
+  }
+
+  // 更新24小时分布图表
+  function updateHourlyChart() {
+    if (!hourlyChart || !stats.hourly.length) return
+
+    const hours = stats.hourly.map((item) => item.label)
+    const counts = stats.hourly.map((item) => item.count)
+    const attackCounts = stats.hourly.map((item) => item.attackCount)
+
+    hourlyChart.setOption({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'cross', label: { backgroundColor: '#6a7985' } }
+      },
+      legend: {
+        data: ['正常请求', '异常请求'],
+        top: 0,
+        right: 0
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        top: '40px',
+        containLabel: true
+      },
+      xAxis: [
+        {
+          type: 'category',
+          data: hours,
+          axisTick: { alignWithLabel: true },
+          axisLabel: { interval: 2, fontSize: 10 }
+        }
+      ],
+      yAxis: [
+        {
+          type: 'value',
+          name: '请求数',
+          position: 'left',
+          axisLabel: { fontSize: 10 }
+        }
+      ],
+      series: [
+        {
+          name: '正常请求',
+          type: 'bar',
+          barWidth: '60%',
+          data: counts,
+          itemStyle: {
+            borderRadius: [4, 4, 0, 0],
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#4C87F3' },
+              { offset: 1, color: '#8BD8FC' }
+            ])
+          }
+        },
+        {
+          name: '异常请求',
+          type: 'line',
+          smooth: true,
+          symbol: 'circle',
+          symbolSize: 8,
+          data: attackCounts,
+          lineStyle: { color: '#f56c6c', width: 3 },
+          itemStyle: { color: '#f56c6c', borderColor: '#fff', borderWidth: 2 },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(245, 108, 108, 0.3)' },
+              { offset: 1, color: 'rgba(245, 108, 108, 0.02)' }
+            ])
+          }
+        }
+      ]
+    })
+  }
+
+  // 监听数据变化
+  watch(() => stats.hourly, updateHourlyChart)
+
+  // 窗口大小变化
+  function handleResize() {
+    hourlyChart?.resize()
+  }
+
   // 表格配置
   const {
     columns,
-    columnChecks,
     data,
     loading,
     pagination,
@@ -325,11 +450,7 @@
   } = useTable({
     core: {
       apiFn: fetchAuditLogs,
-      apiParams: {
-        current: 1,
-        size: 20,
-        ...searchForm.value
-      },
+      apiParams: { current: 1, size: 20, ...searchForm.value },
       columnsFactory: () => [
         { type: 'index', width: 60, label: '序号' },
         {
@@ -345,7 +466,7 @@
           formatter: (row: AuditLogItem) =>
             row.userName
               ? h(ElTag, { size: 'small' }, () => row.userName)
-              : h('span', { class: 'text-secondary' }, '-')
+              : h('span', { class: 'text-g-400' }, '-')
         },
         {
           prop: 'module',
@@ -362,25 +483,31 @@
             const count = moduleCallCounts.value[row.module] || 0
             return h(
               ElTag,
-              { 
-                type: count > 100 ? 'danger' : count > 50 ? 'warning' : 'success', 
-                effect: 'dark', 
-                size: 'small' 
+              {
+                type: count > 100 ? 'danger' : count > 50 ? 'warning' : 'success',
+                effect: 'dark',
+                size: 'small'
               },
               () => count
             )
           }
         },
         {
-          prop: 'action',
-          label: '方法',
-          width: 90,
-          formatter: (row: AuditLogItem) =>
-            h(
+          prop: 'ip',
+          label: 'IP',
+          width: 140,
+          formatter: (row: AuditLogItem) => {
+            const isAttack = isAttackIp(row.ip)
+            return h(
               ElTag,
-              { type: methodTag(row.action), effect: 'dark', size: 'small' },
-              () => row.action
+              {
+                type: isAttack ? 'danger' : 'info',
+                effect: isAttack ? 'dark' : 'plain',
+                size: 'small'
+              },
+              () => row.ip || '-'
             )
+          }
         },
         {
           prop: 'statusCode',
@@ -388,21 +515,18 @@
           width: 100,
           formatter: (row: AuditLogItem) => {
             const code = row.statusCode
-            if (!code) return h('span', { class: 'text-secondary' }, '-')
-            const type = statusTagType(code)
-            return h(ElTag, { type, effect: 'dark', size: 'small' }, () => code)
+            if (!code) return h('span', { class: 'text-g-400' }, '-')
+            return h(
+              ElTag,
+              { type: statusTagType(code), effect: 'dark', size: 'small' },
+              () => code
+            )
           }
         },
         {
           prop: 'description',
           label: '描述',
           minWidth: 260,
-          showOverflowTooltip: true
-        },
-        {
-          prop: 'ip',
-          label: 'IP',
-          width: 140,
           showOverflowTooltip: true
         },
         {
@@ -413,12 +537,7 @@
           formatter: (row: AuditLogItem) =>
             h(
               ElButton,
-              {
-                link: true,
-                type: 'primary',
-                size: 'small',
-                onClick: () => openDetail(row)
-              },
+              { link: true, type: 'primary', size: 'small', onClick: () => openDetail(row) },
               () => '详情'
             )
         }
@@ -436,62 +555,32 @@
   // 初始化
   onMounted(() => {
     loadStats()
+    initCharts()
+    window.addEventListener('resize', handleResize)
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener('resize', handleResize)
+    hourlyChart?.dispose()
   })
 </script>
 
 <style scoped>
-  .stats-cards {
-    margin-bottom: 16px;
-  }
+  .attack-card {
+    cursor: pointer;
+    transition: all 0.3s;
 
-  .stat-card {
-    .stat-content {
-      display: flex;
-      align-items: center;
-      gap: 16px;
+    &:hover {
+      box-shadow: 0 4px 12px rgba(245, 175, 25, 0.3);
+      transform: translateY(-2px);
     }
 
-    .stat-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-
-      &.total {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      }
-
-      &.success {
-        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-      }
-
-      &.fail {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      }
-
-      &.rate {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      }
+    .arrow-icon {
+      transition: transform 0.3s;
     }
 
-    .stat-info {
-      flex: 1;
-    }
-
-    .stat-value {
-      font-size: 28px;
-      font-weight: 700;
-      line-height: 1.2;
-      color: var(--el-text-color-primary);
-    }
-
-    .stat-label {
-      font-size: 13px;
-      color: var(--el-text-color-secondary);
-      margin-top: 4px;
+    &:hover .arrow-icon {
+      transform: translateX(4px);
     }
   }
 
@@ -499,24 +588,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-  }
 
-  .card-header h4 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  .text-success {
-    color: #67c23a;
-  }
-
-  .text-danger {
-    color: #f56c6c;
-  }
-
-  .text-secondary {
-    color: var(--el-text-color-secondary);
+    h4 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
   }
 
   .ua-text {
@@ -542,7 +619,6 @@
   :deep(.el-divider) {
     margin: 20px 0 12px;
   }
-
   :deep(.el-divider__text) {
     font-size: 14px;
   }

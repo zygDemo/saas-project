@@ -306,6 +306,20 @@ export class DataCenterService {
     return text.length > 1200 ? `${text.slice(0, 1200)}...` : value
   }
 
+  /**
+   * 获取日志审计统计数据
+   * 
+   * 异常IP检测规则（只统计 statusCode >= 400 的异常请求）：
+   * 1. 突发攻击检测：5分钟内异常请求超过50次的IP
+   * 2. 登录接口监控：登录接口（auth/login模块）请求超过5次且失败率高的IP
+   * 3. 连续失败检测：连续失败超过5次的IP
+   * 4. 综合攻击排行：异常请求总次数超过10次的IP
+   * 
+   * 威胁等级：
+   * - 严重(critical)：突发请求≥100 / 登录失败≥10 / 连续失败≥20
+   * - 高危(high)：突发请求≥70 / 登录失败≥5 / 连续失败≥10
+   * - 中危(medium)：其他异常请求
+   */
   async getAuditLogStats(query: AuditLogStatsDto) {
     const dateWhere = this.buildDateWhere(query, 'createdAt')
     const tenantWhere = this.tenantWhere()
@@ -315,7 +329,7 @@ export class DataCenterService {
       ? { ...baseWhere, module: { contains: query.module, mode: 'insensitive' as const } }
       : baseWhere
 
-    const [total, successCount, failCount, moduleStats, actionStats, hourlyStats] = await Promise.all([
+    const [total, successCount, failCount, moduleStats, actionStats, hourlyStats, attackStats, topAttackIps, burstIps, loginAttempts, consecutiveFails] = await Promise.all([
       this.prisma.operationLog.count({ where: baseWhere }),
       this.prisma.operationLog.count({ where: { ...baseWhere, statusCode: { gte: 200, lt: 300 } } }),
       this.prisma.operationLog.count({ where: { ...baseWhere, statusCode: { gte: 400 } } }),
@@ -341,16 +355,145 @@ export class DataCenterService {
           AND (${query.endAt || null}::timestamp IS NULL OR "createdAt" <= ${query.endAt || null}::timestamp)
         GROUP BY 1
         ORDER BY 1
+      `,
+      // 异常请求统计（失败请求或4xx/5xx状态码）
+      this.prisma.$queryRaw<Array<{ hour: number; count: number }>>`
+        SELECT 
+          EXTRACT(HOUR FROM "createdAt")::int AS hour,
+          COUNT(*)::int AS count
+        FROM "OperationLog"
+        WHERE (${this.currentTenantId()}::int IS NULL OR "tenantId" = ${this.currentTenantId()}::int)
+          AND (${query.startAt || null}::timestamp IS NULL OR "createdAt" >= ${query.startAt || null}::timestamp)
+          AND (${query.endAt || null}::timestamp IS NULL OR "createdAt" <= ${query.endAt || null}::timestamp)
+          AND "statusCode" >= 400
+        GROUP BY 1
+        ORDER BY 1
+      `,
+      // 攻击IP排行：只统计异常请求（失败请求或4xx/5xx状态码）
+      this.prisma.$queryRaw<Array<{ ip: string; count: number; failCount: number }>>`
+        SELECT 
+          "ip",
+          COUNT(*)::int AS count,
+          SUM(CASE WHEN "statusCode" >= 400 THEN 1 ELSE 0 END)::int AS "failCount"
+        FROM "OperationLog"
+        WHERE (${this.currentTenantId()}::int IS NULL OR "tenantId" = ${this.currentTenantId()}::int)
+          AND (${query.startAt || null}::timestamp IS NULL OR "createdAt" >= ${query.startAt || null}::timestamp)
+          AND (${query.endAt || null}::timestamp IS NULL OR "createdAt" <= ${query.endAt || null}::timestamp)
+          AND "ip" IS NOT NULL
+          AND "ip" != ''
+          AND "statusCode" >= 400
+        GROUP BY "ip"
+        HAVING COUNT(*) >= 10
+        ORDER BY count DESC
+        LIMIT 10
+      `,
+      // 1. 短时间窗口检测：5分钟内异常请求超过50次的IP
+      this.prisma.$queryRaw<Array<{ ip: string; burstCount: number; windowStart: string; windowEnd: string }>>`
+        WITH ip_windows AS (
+          SELECT 
+            "ip",
+            "createdAt",
+            COUNT(*) OVER (
+              PARTITION BY "ip" 
+              ORDER BY "createdAt" 
+              RANGE BETWEEN INTERVAL '5 minutes' PRECEDING AND CURRENT ROW
+            ) AS burst_count
+          FROM "OperationLog"
+          WHERE (${this.currentTenantId()}::int IS NULL OR "tenantId" = ${this.currentTenantId()}::int)
+            AND (${query.startAt || null}::timestamp IS NULL OR "createdAt" >= ${query.startAt || null}::timestamp)
+            AND (${query.endAt || null}::timestamp IS NULL OR "createdAt" <= ${query.endAt || null}::timestamp)
+            AND "ip" IS NOT NULL
+            AND "ip" != ''
+            AND "statusCode" >= 400
+        )
+        SELECT DISTINCT
+          "ip",
+          MAX(burst_count)::int AS "burstCount",
+          MIN("createdAt")::text AS "windowStart",
+          MAX("createdAt")::text AS "windowEnd"
+        FROM ip_windows
+        WHERE burst_count >= 50
+        GROUP BY "ip"
+        ORDER BY "burstCount" DESC
+        LIMIT 10
+      `,
+      // 2. 特定接口监控：登录接口的异常请求
+      this.prisma.$queryRaw<Array<{ ip: string; count: number; failCount: number; lastAttempt: string }>>`
+        SELECT 
+          "ip",
+          COUNT(*)::int AS count,
+          SUM(CASE WHEN "statusCode" >= 400 THEN 1 ELSE 0 END)::int AS "failCount",
+          MAX("createdAt")::text AS "lastAttempt"
+        FROM "OperationLog"
+        WHERE (${this.currentTenantId()}::int IS NULL OR "tenantId" = ${this.currentTenantId()}::int)
+          AND (${query.startAt || null}::timestamp IS NULL OR "createdAt" >= ${query.startAt || null}::timestamp)
+          AND (${query.endAt || null}::timestamp IS NULL OR "createdAt" <= ${query.endAt || null}::timestamp)
+          AND "ip" IS NOT NULL
+          AND "ip" != ''
+          AND (
+            "module" ILIKE '%auth%' 
+            OR "module" ILIKE '%login%'
+            OR "action" ILIKE '%login%'
+            OR "action" ILIKE '%signin%'
+            OR "description" ILIKE '%登录%'
+            OR "description" ILIKE '%login%'
+          )
+        GROUP BY "ip"
+        HAVING COUNT(*) >= 5
+        ORDER BY "failCount" DESC, count DESC
+        LIMIT 10
+      `,
+      // 3. 连续失败检测：连续失败超过5次的IP
+      this.prisma.$queryRaw<Array<{ ip: string; consecutiveFails: number; lastFailTime: string; failModule: string }>>`
+        WITH fail_sequences AS (
+          SELECT 
+            "ip",
+            "createdAt",
+            "module",
+            "statusCode",
+            SUM(CASE WHEN "statusCode" < 400 THEN 1 ELSE 0 END) OVER (
+              PARTITION BY "ip" ORDER BY "createdAt"
+            ) AS fail_group
+          FROM "OperationLog"
+          WHERE (${this.currentTenantId()}::int IS NULL OR "tenantId" = ${this.currentTenantId()}::int)
+            AND (${query.startAt || null}::timestamp IS NULL OR "createdAt" >= ${query.startAt || null}::timestamp)
+            AND (${query.endAt || null}::timestamp IS NULL OR "createdAt" <= ${query.endAt || null}::timestamp)
+            AND "ip" IS NOT NULL
+            AND "ip" != ''
+        ),
+        consecutive_counts AS (
+          SELECT 
+            "ip",
+            fail_group,
+            COUNT(*)::int AS consecutive_fails,
+            MAX("createdAt")::text AS last_fail_time,
+            MAX("module") AS fail_module
+          FROM fail_sequences
+          WHERE "statusCode" >= 400
+          GROUP BY "ip", fail_group
+          HAVING COUNT(*) >= 5
+        )
+        SELECT 
+          "ip",
+          MAX(consecutive_fails) AS "consecutiveFails",
+          MAX(last_fail_time) AS "lastFailTime",
+          MAX(fail_module) AS "failModule"
+        FROM consecutive_counts
+        GROUP BY "ip"
+        ORDER BY "consecutiveFails" DESC
+        LIMIT 10
       `
     ])
 
     // 填充24小时数据，确保每个小时都有数据
     const hourlyData = Array.from({ length: 24 }, (_, i) => {
       const row = hourlyStats.find(r => r.hour === i)
+      const attackRow = attackStats.find(r => r.hour === i)
       return {
         hour: i,
         label: `${i.toString().padStart(2, '0')}:00`,
-        count: row ? row.count : 0
+        count: row ? row.count : 0,
+        attackCount: attackRow ? attackRow.count : 0
       }
     })
 
@@ -367,7 +510,38 @@ export class DataCenterService {
         action: item.action,
         count: item._count._all
       })),
-      hourly: hourlyData
+      hourly: hourlyData,
+      attackIps: topAttackIps.map(item => ({
+        ip: item.ip,
+        count: item.count,
+        failCount: item.failCount,
+        failRate: item.count > 0 ? Number(((item.failCount / item.count) * 100).toFixed(1)) : 0
+      })),
+      // 1. 短时间窗口检测结果
+      burstIps: burstIps.map(item => ({
+        ip: item.ip,
+        burstCount: item.burstCount,
+        windowStart: item.windowStart,
+        windowEnd: item.windowEnd,
+        threatLevel: item.burstCount >= 100 ? 'critical' : item.burstCount >= 70 ? 'high' : 'medium'
+      })),
+      // 2. 登录接口监控结果
+      loginAttempts: loginAttempts.map(item => ({
+        ip: item.ip,
+        count: item.count,
+        failCount: item.failCount,
+        failRate: item.count > 0 ? Number(((item.failCount / item.count) * 100).toFixed(1)) : 0,
+        lastAttempt: item.lastAttempt,
+        threatLevel: item.failCount >= 10 ? 'critical' : item.failCount >= 5 ? 'high' : 'medium'
+      })),
+      // 3. 连续失败检测结果
+      consecutiveFails: consecutiveFails.map(item => ({
+        ip: item.ip,
+        consecutiveFails: item.consecutiveFails,
+        lastFailTime: item.lastFailTime,
+        failModule: item.failModule,
+        threatLevel: item.consecutiveFails >= 20 ? 'critical' : item.consecutiveFails >= 10 ? 'high' : 'medium'
+      }))
     }
   }
 }
