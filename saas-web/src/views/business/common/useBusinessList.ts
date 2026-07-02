@@ -144,13 +144,77 @@ export function useBusinessList() {
   }
 
   const phaseConfig = [
-    { code: 1000, name: '预审阶段', nodes: [1100, 1110, 1120, 1130, 1140, 1200, 1250] },
-    { code: 1300, name: '补件阶段', nodes: [1300, 1310, 1320, 1330, 1340, 1350] },
-    { code: 1400, name: '风控审批', nodes: [1400, 1450] },
-    { code: 1500, name: '资方终审', nodes: [1500] },
-    { code: 1600, name: '签约阶段', nodes: [1600, 1610, 1620, 1630, 1640, 1650, 1660] },
-    { code: 1700, name: '请款放款', nodes: [1700, 1800] },
-    { code: 1900, name: '贷后阶段', nodes: [1900] }
+    { 
+      code: 1000, 
+      name: '预审阶段', 
+      nodes: [1100, 1110, 1120, 1130, 1140, 1200, 1250],
+      actions: [
+        { name: 'submit', label: '提交进件', type: 'primary', visible: (row: any) => ['DRAFT', 'PENDING_SUPPLEMENT'].includes(String(row.status)) },
+        { name: 'risk-pre-pass', label: '风控预审通过', type: 'success', visible: (row: any) => ['SUBMITTED', 'PENDING_RISK_PRE'].includes(String(row.status)) },
+        { name: 'risk-pre-reject', label: '风控预审拒绝', type: 'danger', visible: (row: any) => ['SUBMITTED', 'PENDING_RISK_PRE'].includes(String(row.status)) },
+        { name: 'funder-pre-pass', label: '资方预审通过', type: 'success', visible: (row: any) => String(row.status) === 'PENDING_FUNDER_PRE' },
+        { name: 'funder-pre-reject', label: '资方预审拒绝', type: 'danger', visible: (row: any) => String(row.status) === 'PENDING_FUNDER_PRE' }
+      ]
+    },
+    { 
+      code: 1300, 
+      name: '补件阶段', 
+      nodes: [1300, 1310, 1320, 1330, 1340, 1350],
+      actions: [
+        { name: 'complete-supplement', label: '资料补充完成', type: 'primary', visible: (row: any) => ['PENDING_SUPPLEMENT', 'FUNDER_PRE_PASSED'].includes(String(row.status)) }
+      ]
+    },
+    { 
+      code: 1400, 
+      name: '风控审批', 
+      nodes: [1400, 1450],
+      actions: [
+        { name: 'approve', label: '初审/终审通过', type: 'success', visible: (row: any) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW'].includes(String(row.status)) },
+        { name: 'reject', label: '审批驳回', type: 'danger', visible: (row: any) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW', 'PENDING_FUNDER_REVIEW'].includes(String(row.status)) },
+        { name: 'supplement', label: '要求补件', type: 'warning', visible: (row: any) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW', 'PENDING_FUNDER_REVIEW'].includes(String(row.status)) },
+        { name: 'submit-funder-review', label: '提交资方审批', type: 'primary', visible: (row: any) => String(row.status) === 'FINAL_REVIEW_PASSED' }
+      ]
+    },
+    { 
+      code: 1500, 
+      name: '资方终审', 
+      nodes: [1500],
+      actions: [
+        { name: 'funder-pass', label: '资方通过', type: 'success', visible: (row: any) => String(row.status) === 'PENDING_FUNDER_REVIEW' },
+        { name: 'funder-reject', label: '资方拒绝', type: 'danger', visible: (row: any) => String(row.status) === 'PENDING_FUNDER_REVIEW' },
+        { name: 'start-signing', label: '发起签约', type: 'primary', visible: (row: any) => ['FINAL_REVIEW_PASSED', 'FUNDER_REVIEW_PASSED'].includes(String(row.status)) }
+      ]
+    },
+    { 
+      code: 1600, 
+      name: '签约阶段', 
+      nodes: [1600, 1610, 1620, 1630, 1640, 1650, 1660],
+      actions: [
+        { name: 'complete-signing', label: '签约完成', type: 'success', visible: (row: any) => ['PENDING_SIGN', 'SIGNING_PROGRESS'].includes(String(row.status)) }
+      ]
+    },
+    { 
+      code: 1700, 
+      name: '请款放款', 
+      nodes: [1700, 1800],
+      actions: [
+        { name: 'submit-loan-request', label: '提交请款资料', type: 'primary', visible: (row: any) => ['SIGNED', 'PENDING_LOAN_REQUEST', 'LOAN_REQUEST_REJECTED'].includes(String(row.status)) },
+        { name: 'approve-loan-request', label: '请款审核通过', type: 'success', visible: (row: any) => String(row.status) === 'LOAN_REQUEST_REVIEWING' },
+        { name: 'reject-loan-request', label: '请款审核拒绝', type: 'danger', visible: (row: any) => String(row.status) === 'LOAN_REQUEST_REVIEWING' },
+        { name: 'gps-installed', label: 'GPS安装完成', type: 'success', visible: (row: any) => String(row.status) === 'PENDING_DISBURSEMENT' },
+        { name: 'mortgage-done', label: '抵押完成', type: 'success', visible: (row: any) => String(row.status) === 'PENDING_DISBURSEMENT' },
+        { name: 'request-disbursement', label: '提交资方放款', type: 'primary', visible: (row: any) => ['LOAN_REQUEST_APPROVED', 'PENDING_DISBURSEMENT'].includes(String(row.status)) },
+        { name: 'confirm-disbursement', label: '放款确认', type: 'success', visible: (row: any) => String(row.status) === 'PENDING_DISBURSEMENT' }
+      ]
+    },
+    { 
+      code: 1900, 
+      name: '贷后阶段', 
+      nodes: [1900],
+      actions: [
+        { name: 'settle', label: '结清归档', type: 'success', visible: (row: any) => String(row.status) === 'DISBURSED' }
+      ]
+    }
   ]
 
   // 中文标签映射
@@ -215,6 +279,7 @@ export function useBusinessList() {
     phaseConfig.map(phase => ({
       code: phase.code,
       name: phase.name,
+      actions: phase.actions || [],
       groups: phase.nodes.map(nodeCode => {
         const fields = currentRow.value ? extractNodeFields(currentRow.value, nodeCode) : []
         return {

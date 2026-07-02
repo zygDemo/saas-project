@@ -188,6 +188,41 @@ export class DataCenterService {
     }
   }
 
+  async getHeatmapData(query: DateRangeQueryDto) {
+    const tenantId = this.currentTenantId()
+    const dateWhere = this.buildDateWhere(query, 'createdAt')
+    const tenantWhere = tenantId ? { tenantId } : {}
+    const where = { ...tenantWhere, ...dateWhere }
+
+    // 查询最近7天的订单时间分布
+    const heatmapRows = await this.prisma.$queryRaw<Array<{ day_of_week: number; hour: number; count: number }>>`
+      SELECT 
+        EXTRACT(DOW FROM "createdAt")::int AS day_of_week,
+        EXTRACT(HOUR FROM "createdAt")::int AS hour,
+        COUNT(*)::int AS count
+      FROM "Application"
+      WHERE (${tenantId}::int IS NULL OR "tenantId" = ${tenantId}::int)
+        AND (${query.startAt || null}::timestamp IS NULL OR "createdAt" >= ${query.startAt || null}::timestamp)
+        AND (${query.endAt || null}::timestamp IS NULL OR "createdAt" <= ${query.endAt || null}::timestamp)
+      GROUP BY 1, 2
+      ORDER BY 1, 2
+    `
+
+    // 转换为热力图数据格式 [hour, dayOfWeek, count]
+    const heatmapData: Array<[number, number, number]> = []
+    for (let day = 0; day < 7; day++) {
+      for (let hour = 0; hour < 24; hour++) {
+        const row = heatmapRows.find(r => r.day_of_week === day && r.hour === hour)
+        heatmapData.push([hour, day, row ? row.count : 0])
+      }
+    }
+
+    return {
+      heatmapData,
+      maxValue: Math.max(...heatmapData.map(d => d[2]), 0)
+    }
+  }
+
   async getAuditLogs(query: AuditLogQueryDto) {
     const pagination = getPagination(query)
     const where = this.buildAuditWhere(query)
@@ -280,7 +315,7 @@ export class DataCenterService {
       ? { ...baseWhere, module: { contains: query.module, mode: 'insensitive' as const } }
       : baseWhere
 
-    const [total, successCount, failCount, moduleStats, actionStats] = await Promise.all([
+    const [total, successCount, failCount, moduleStats, actionStats, hourlyStats] = await Promise.all([
       this.prisma.operationLog.count({ where: baseWhere }),
       this.prisma.operationLog.count({ where: { ...baseWhere, statusCode: { gte: 200, lt: 300 } } }),
       this.prisma.operationLog.count({ where: { ...baseWhere, statusCode: { gte: 400 } } }),
@@ -295,8 +330,29 @@ export class DataCenterService {
         where: moduleWhere,
         _count: { _all: true },
         orderBy: { _count: { id: 'desc' } }
-      })
+      }),
+      this.prisma.$queryRaw<Array<{ hour: number; count: number }>>`
+        SELECT 
+          EXTRACT(HOUR FROM "createdAt")::int AS hour,
+          COUNT(*)::int AS count
+        FROM "OperationLog"
+        WHERE (${this.currentTenantId()}::int IS NULL OR "tenantId" = ${this.currentTenantId()}::int)
+          AND (${query.startAt || null}::timestamp IS NULL OR "createdAt" >= ${query.startAt || null}::timestamp)
+          AND (${query.endAt || null}::timestamp IS NULL OR "createdAt" <= ${query.endAt || null}::timestamp)
+        GROUP BY 1
+        ORDER BY 1
+      `
     ])
+
+    // 填充24小时数据，确保每个小时都有数据
+    const hourlyData = Array.from({ length: 24 }, (_, i) => {
+      const row = hourlyStats.find(r => r.hour === i)
+      return {
+        hour: i,
+        label: `${i.toString().padStart(2, '0')}:00`,
+        count: row ? row.count : 0
+      }
+    })
 
     return {
       total,
@@ -310,7 +366,8 @@ export class DataCenterService {
       actions: actionStats.map(item => ({
         action: item.action,
         count: item._count._all
-      }))
+      })),
+      hourly: hourlyData
     }
   }
 }

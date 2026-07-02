@@ -240,6 +240,18 @@
               暂无此阶段数据
             </div>
             <div v-else class="phase-fields">
+              <!-- 阶段特定操作按钮 -->
+              <div v-if="phase.actions && phase.actions.length" class="phase-actions">
+                <ElButton
+                  v-for="action in phase.actions"
+                  :key="action.name"
+                  :type="(action.type || 'primary') as any"
+                  :disabled="!action.visible(currentRow)"
+                  @click="openAction(currentRow, action)"
+                >
+                  {{ action.label }}
+                </ElButton>
+              </div>
               <div v-for="group in phase.groups" :key="group.nodeCode" class="phase-fields__group">
                 <div class="phase-fields__group-title">{{ group.nodeName }}</div>
                 <!-- 文件节点：图片/PDF/音视频回显 -->
@@ -924,6 +936,14 @@
     flex-direction: column;
     gap: 16px;
     padding: 4px 0;
+  }
+
+  .phase-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--el-border-color-lighter);
   }
 
   .phase-fields__group {

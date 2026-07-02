@@ -1,7 +1,7 @@
 <template>
   <div class="audit-log-page art-full-height">
     <!-- 统计卡片 -->
-    <div class="stats-cards">
+    <div class="stats-cards mb-5">
       <ElRow :gutter="16">
         <ElCol :span="6">
           <ElCard shadow="hover" class="stat-card">
@@ -57,6 +57,46 @@
         </ElCol>
       </ElRow>
     </div>
+
+    <!-- 图表区域 -->
+    <ElRow :gutter="20" class="mb-5">
+      <ElCol :xl="14" :lg="15" :xs="24">
+        <ElCard class="art-card-xs">
+          <template #header>
+            <div class="card-header">
+              <h4>接口调用时段分布</h4>
+              <ElTag type="info" size="small">24小时请求量分布</ElTag>
+            </div>
+          </template>
+          <ArtBarChart
+            height="280px"
+            :data="hourlyChartData"
+            :xAxisData="hourlyXAxisData"
+            :showAxisLine="false"
+            barWidth="60%"
+          />
+        </ElCard>
+      </ElCol>
+      <ElCol :xl="10" :lg="9" :xs="24">
+        <ElCard class="art-card-xs">
+          <template #header>
+            <div class="card-header">
+              <h4>模块分布</h4>
+              <ElTag type="success" size="small">各模块请求占比</ElTag>
+            </div>
+          </template>
+          <ArtRingChart
+            height="280px"
+            :data="moduleChartData"
+            :color="moduleColors"
+            :radius="['40%', '65%']"
+            :showLegend="true"
+            legendPosition="bottom"
+            :borderRadius="8"
+          />
+        </ElCard>
+      </ElCol>
+    </ElRow>
 
     <!-- 搜索栏 -->
     <AuditLogSearch v-model="searchForm" @search="handleSearch" @reset="resetSearchParams" />
@@ -126,7 +166,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, h, onMounted, reactive } from 'vue'
+  import { ref, h, onMounted, reactive, computed } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
   import {
     fetchAuditLogs,
@@ -137,6 +177,7 @@
   import { ElTag, ElButton } from 'element-plus'
   import { Document, CircleCheck, CircleClose, TrendCharts } from '@element-plus/icons-vue'
   import AuditLogSearch from './modules/audit-log-search.vue'
+  import type { BarDataItem } from '@/types/component/chart'
 
   defineOptions({ name: 'AuditLog' })
 
@@ -147,7 +188,8 @@
     failCount: 0,
     successRate: 0,
     modules: [],
-    actions: []
+    actions: [],
+    hourly: []
   })
 
   // 详情弹窗
@@ -161,6 +203,33 @@
     action: '',
     userName: '',
     status: ''
+  })
+
+  // 24小时分布数据
+  const hourlyChartData = computed<BarDataItem[]>(() => [
+    {
+      name: '请求数',
+      data: stats.hourly.map(item => item.count)
+    }
+  ])
+  const hourlyXAxisData = computed(() => stats.hourly.map(item => item.label))
+
+  // 模块分布数据
+  const moduleChartData = computed(() =>
+    stats.modules.slice(0, 8).map(item => ({
+      value: item.count,
+      name: item.module
+    }))
+  )
+  const moduleColors = ['#4C87F3', '#93F1B4', '#8BD8FC', '#FFD485', '#FF8A8A', '#C49FFF', '#FFB4A2', '#A8D8EA']
+
+  // 计算接口调用次数
+  const moduleCallCounts = computed(() => {
+    const counts: Record<string, number> = {}
+    stats.modules.forEach(item => {
+      counts[item.module] = item.count
+    })
+    return counts
   })
 
   // HTTP 方法标签配置
@@ -286,6 +355,23 @@
             h(ElTag, { type: 'info', size: 'small', effect: 'plain' }, () => row.module)
         },
         {
+          prop: 'callCount',
+          label: '调用次数',
+          width: 100,
+          formatter: (row: AuditLogItem) => {
+            const count = moduleCallCounts.value[row.module] || 0
+            return h(
+              ElTag,
+              { 
+                type: count > 100 ? 'danger' : count > 50 ? 'warning' : 'success', 
+                effect: 'dark', 
+                size: 'small' 
+              },
+              () => count
+            )
+          }
+        },
+        {
           prop: 'action',
           label: '方法',
           width: 90,
@@ -409,6 +495,18 @@
     }
   }
 
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
   .text-success {
     color: #67c23a;
   }
@@ -447,7 +545,5 @@
 
   :deep(.el-divider__text) {
     font-size: 14px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
   }
 </style>

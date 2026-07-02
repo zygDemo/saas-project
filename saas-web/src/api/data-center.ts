@@ -34,11 +34,24 @@ export interface AuditLogStats {
   successRate: number
   modules: Array<{ module: string; count: number }>
   actions: Array<{ action: string; count: number }>
+  hourly: Array<{ hour: number; label: string; count: number }>
+}
+
+export interface HeatmapData {
+  heatmapData: Array<[number, number, number]>
+  maxValue: number
 }
 
 export function fetchDataCenterStats(params: Record<string, unknown>) {
   return request.get<DataCenterStats>({
     url: '/data-center/stats',
+    params
+  })
+}
+
+export function fetchHeatmapData(params?: Record<string, unknown>) {
+  return request.get<HeatmapData>({
+    url: '/data-center/heatmap',
     params
   })
 }

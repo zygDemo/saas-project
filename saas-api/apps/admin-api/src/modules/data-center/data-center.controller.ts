@@ -17,6 +17,12 @@ export class DataCenterController {
     return this.service.getStats(query)
   }
 
+  @Get('heatmap')
+  @ApiOperation({ summary: '订单时间热力图数据' })
+  heatmap(@Query() query: DateRangeQueryDto) {
+    return this.service.getHeatmapData(query)
+  }
+
   @Get('audit-logs')
   @ApiOperation({ summary: '日志审计列表' })
   auditLogs(@Query() query: AuditLogQueryDto) {

@@ -1007,5 +1007,31 @@ export const configs: Record<string, PageConfig> = {
       }
     ],
     actions: []
+  },
+  reports: {
+    title: '报表统计',
+    description: '业务数据统计、图表展示和关键指标监控。',
+    api: 'data-center',
+    listApi: 'stats',
+    readonly: true,
+    columns: [
+      { prop: 'metricName', label: '指标名称', width: 200 },
+      { prop: 'metricValue', label: '指标值', width: 150 },
+      { prop: 'metricUnit', label: '单位', width: 100 },
+      { prop: 'changeRate', label: '环比变化', width: 120 },
+      { prop: 'period', label: '统计周期', width: 150 },
+      { prop: 'updatedAt', label: '更新时间', width: 180 }
+    ],
+    detailColumns: [
+      { prop: 'metricName', label: '指标名称' },
+      { prop: 'metricValue', label: '指标值' },
+      { prop: 'metricUnit', label: '单位' },
+      { prop: 'changeRate', label: '环比变化' },
+      { prop: 'period', label: '统计周期' },
+      { prop: 'description', label: '指标说明' },
+      { prop: 'updatedAt', label: '更新时间' }
+    ],
+    formFields: [],
+    actions: []
   }
 }
