@@ -65,10 +65,12 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
+import { useLocalStore } from "@/stores/local";
 import { $u } from "uview-pro";
 import AppForm from "@/components/app-form/app-form.vue";
 
 const businessApi = useCarloanApi();
+const localStore = useLocalStore();
 const SIGN_PROGRESS_STORAGE_KEY = "SIGN_PROGRESS_MAP";
 
 function saveSignProgress(status) {
@@ -86,6 +88,7 @@ const uuidVal = ref("");
 const approvedAmount = ref(0);
 const approvedTerm = ref(0);
 const approvedRate = ref(0);
+const applicationId = ref<number | null>(null);
 const submitting = ref(false);
 
 const form = reactive({
@@ -163,6 +166,7 @@ async function loadDetail() {
     const res = await businessApi.getCreditDetailByOrderId(creditOrderId.value);
     if (res?.code === 200 && res.data) {
       const d = res.data;
+      applicationId.value = Number(d.id || d.applicationId || 0);
       approvedAmount.value = Number(d.approvedAmount || d.amount || 0);
       approvedTerm.value = Number(d.approvedTerm || d.term || d.periods || 0);
       approvedRate.value = Number(d.approvedRate || d.rate || 0);
@@ -203,6 +207,7 @@ async function handleConfirm() {
   try {
     await businessApi.confirmAmount({
       applicationId: Number(applicationId.value),
+      approverId: Number(localStore.userInfo?.userId) || 0,
       approvedAmount: Number(form.confirmAmount),
       term: Number(form.confirmTerm),
       rate: Number(form.confirmRate),

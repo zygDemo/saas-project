@@ -468,9 +468,9 @@ export function useCarloanApi() {
         "/application/order-list",
         params,
       ),
-    /** 获取待补充资料列表 */
+    /** 获取待补充资料列表（复用 getCreditList + businessNode 过滤） */
     getSupplementList: (params: Record<string, unknown>) =>
-      http.get("/m/credit/getSupplementList", params),
+      http.get("/m/credit/getCreditList", { ...params, businessNode: "SUPPLEMENT_MATERIALS" }),
     /** 获取授信申请详情（编辑也用） */
     getCreditDetail: (id: number | string) =>
       http.get<ApiResponse<CreditListItem>>(`/m/credit/getCreditDetail/${id}`),
@@ -614,9 +614,14 @@ export function useCarloanApi() {
     deleteBankCard: (id: number) =>
       http.post(`/m/bank-card/delete/${id}`),
 
-    /** 额度确认 */
-    confirmAmount: (data: { applicationId: number; approvedAmount: number; term?: number; rate?: number }) =>
-      http.post(`/m/business/confirmAmount`, data),
+    /** 额度确认（复用审批接口传核定金额） */
+    confirmAmount: (data: { applicationId: number; approverId: number; approvedAmount: number; term?: number; rate?: number }) =>
+      http.post(`/application/${data.applicationId}/approve`, {
+        approverId: data.approverId,
+        amount: data.approvedAmount,
+        term: data.term,
+        rate: data.rate,
+      }),
 
     /** 获取还款计划 */
     getRepaymentPlans: (applicationId: number | string) =>
