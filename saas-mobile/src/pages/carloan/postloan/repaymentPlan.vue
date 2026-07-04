@@ -52,6 +52,7 @@
 import { ref, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useCarloanApi } from '@/api/carloan'
+import type { ApiResponse } from '@/api/carloan'
 
 const businessApi = useCarloanApi()
 const loading = ref(true)
@@ -70,7 +71,7 @@ function formatDate(val: any) {
   return new Date(val).toLocaleDateString('zh-CN')
 }
 
-const STATUS_MAP: Record<string, { text: string; type: string }> = {
+const STATUS_MAP: Record<string, { text: string; type: 'info' | 'primary' | 'warning' | 'success' | 'error' }> = {
   NOT_DUE: { text: '未到期', type: 'info' },
   PENDING: { text: '待还款', type: 'primary' },
   PARTIAL: { text: '部分还款', type: 'warning' },
@@ -84,7 +85,7 @@ function statusText(status: string) {
 }
 
 function statusType(status: string) {
-  return STATUS_MAP[status]?.type || 'info'
+  return (STATUS_MAP[status]?.type || 'info') as 'info' | 'primary' | 'warning' | 'success' | 'error'
 }
 
 onLoad((options: any) => {
@@ -98,7 +99,8 @@ onMounted(async () => {
   if (!applicationId.value) return
   try {
     const res = await businessApi.getRepaymentPlans(applicationId.value)
-    plans.value = res?.data || res || []
+    const list = Array.isArray(res) ? res : (res as ApiResponse<any[]> | undefined)?.data
+    plans.value = list ?? []
   } catch (e) {
     console.error('获取还款计划失败', e)
   } finally {

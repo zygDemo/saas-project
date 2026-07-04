@@ -70,7 +70,7 @@ async function handleSubmit() {
   try {
     await businessApi.applyEarlyRepayment({
       applicationId: Number(applicationId.value),
-      type: form.repayType,
+      repayType: form.repayType,
       amount: Number(form.amount),
       principal: Number(form.principal),
       interest: Number(form.interest || 0),

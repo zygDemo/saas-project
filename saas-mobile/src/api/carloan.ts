@@ -432,18 +432,16 @@ export function useCarloanApi() {
       const detail = await http.get<ApiResponse<{ id: number }>>(
         `/m/credit/getCreditDetailByOrderId/${creditOrderId}`
       );
-      const applicationId = detail?.data?.id || detail?.id;
-      if (!applicationId) throw new Error('未找到订单信息');
-      return http.post(`/application/${applicationId}/complete-supplement`);
+      if (!detail?.data?.id) throw new Error('未找到订单信息');
+      return http.post(`/application/${detail.data.id}/complete-supplement`);
     },
     /** 提交预审（通过 creditOrderId 获取 applicationId 后推进状态） */
     submitPreAudit: async (creditOrderId: string) => {
       const detail = await http.get<ApiResponse<{ id: number }>>(
         `/m/credit/getCreditDetailByOrderId/${creditOrderId}`
       );
-      const applicationId = detail?.data?.id || detail?.id;
-      if (!applicationId) throw new Error('未找到订单信息');
-      return http.post(`/application/${applicationId}/submit`);
+      if (!detail?.data?.id) throw new Error('未找到订单信息');
+      return http.post(`/application/${detail.data.id}/submit`);
     },
     /** 获取文件列表 */
     getFileList: (params?: string | MobileFileQuery) =>

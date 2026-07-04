@@ -380,9 +380,10 @@ async function queryVehiclePrice() {
     } else {
       $u.toast(res?.msg || "查询车价失败");
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("查询车价失败", e);
-    $u.toast(e?.msg || "查询失败，请重试");
+    const message = e instanceof Error ? e.message : "查询失败，请重试";
+    $u.toast(message);
   } finally {
     priceLoading.value = false;
   }
@@ -448,9 +449,10 @@ async function queryVehicleModel() {
     } else {
       $u.toast(res?.msg || "查询车型失败");
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("查询车型失败", e);
-    $u.toast(e?.msg || "查询失败，请重试");
+    const message = e instanceof Error ? e.message : "查询失败，请重试";
+    $u.toast(message);
   } finally {
     modelLoading.value = false;
   }
@@ -517,9 +519,10 @@ async function saveVehicleInfo() {
       $u.toast(res?.msg || "车辆信息保存失败");
       return false;
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("保存车辆信息失败", e);
-    $u.toast(e?.msg || "保存失败，请重试");
+    const message = e instanceof Error ? e.message : "保存失败，请重试";
+    $u.toast(message);
     return false;
   } finally {
     submitLoading.value = false;

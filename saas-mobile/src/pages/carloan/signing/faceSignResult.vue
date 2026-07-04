@@ -492,8 +492,8 @@ async function handleFaceCallback(
   if (creditOrderId) {
     try {
       console.warn("调用人脸识别详情接口:", creditOrderId);
-      const res: any = await businessApi.getFaceSignDetail(creditOrderId);
-      const data = res?.data || res;
+      const res = await businessApi.getFaceSignDetail(creditOrderId);
+      const data = (res as Record<string, unknown>)?.data || res;
 
       applyFaceApiData(data, options);
     } catch (err) {
@@ -508,34 +508,44 @@ async function handleFaceCallback(
 }
 
 /** 用 API 返回数据 + URL 参数填充结果 */
-function applyFaceApiData(data: any, options: Record<string, string>) {
+function applyFaceApiData(data: unknown, options: Record<string, string>) {
+  const api = (data || {}) as Record<string, unknown>;
   customerInfo.name = safeDecode(
-    data?.customerName || data?.name || options.name || DEFAULT_CUSTOMER.name,
+    (api?.customerName as string | undefined) ||
+      (api?.name as string | undefined) ||
+      options.name ||
+      DEFAULT_CUSTOMER.name,
   );
   customerInfo.idCard =
-    data?.idCard || options.idCard || DEFAULT_CUSTOMER.idCard;
+    (api?.idCard as string | undefined) || options.idCard || DEFAULT_CUSTOMER.idCard;
   customerInfo.phone = safeDecode(
-    data?.phone || options.phone || DEFAULT_CUSTOMER.phone,
+    (api?.phone as string | undefined) || options.phone || DEFAULT_CUSTOMER.phone,
   );
   customerInfo.amount =
-    formatAmount(safeDecode(data?.amount || options.amount)) ||
-    DEFAULT_CUSTOMER.amount;
+    formatAmount(
+      safeDecode(
+        (api?.amount as string | undefined) || options.amount,
+      ) || "",
+    ) || DEFAULT_CUSTOMER.amount;
   if (!customerInfo.creditOrderId && options.creditOrderId) {
     customerInfo.creditOrderId = options.creditOrderId;
   }
 
-  // status: 1-完成 2-进行中 3-失败
-  const apiStatus = Number(data?.status);
+  const apiStatus = Number((api?.status as string | number | undefined) || 1);
   const urlPassed = parsePassed(options.passed);
   const passed = urlPassed !== undefined ? urlPassed : apiStatus === 1;
   const isProcessing = apiStatus === 2;
 
   faceResult.passed = passed;
-  faceResult.score = String(data?.score || data?.similarity || "");
+  faceResult.score = String(
+    (api?.score as string | undefined) ||
+      (api?.similarity as string | undefined) ||
+      "",
+  );
   faceResult.msg =
     options.msg ||
-    data?.msg ||
-    data?.message ||
+    (api?.msg as string | undefined) ||
+    (api?.message as string | undefined) ||
     (isProcessing
       ? "人脸核验进行中"
       : passed
@@ -546,7 +556,10 @@ function applyFaceApiData(data: any, options: Record<string, string>) {
     : passed
       ? "success"
       : "fail";
-  signTime.value = data?.signTime || data?.createTime || getNowTime();
+  signTime.value =
+    (api?.signTime as string | undefined) ||
+    (api?.createTime as string | undefined) ||
+    getNowTime();
 }
 
 /** 用 URL 参数或 mock 数据填充 */
@@ -573,34 +586,38 @@ function applyUrlOrMock(options: Record<string, string>) {
 }
 
 function applyCustomerInfoFromData(
-  data: any,
+  data: unknown,
   options: Record<string, string> = {},
 ) {
+  const api = (data || {}) as Record<string, unknown>;
   const name = safeDecode(
-    data?.customerName ||
-      data?.personName ||
-      data?.name ||
-      data?.userName ||
+    (api?.customerName as string | undefined) ||
+      (api?.personName as string | undefined) ||
+      (api?.name as string | undefined) ||
+      (api?.userName as string | undefined) ||
       options.name ||
       customerInfo.name,
   );
   const phone = safeDecode(
-    data?.phone ||
-      data?.telephone ||
-      data?.mobile ||
-      data?.phonenumber ||
+    (api?.phone as string | undefined) ||
+      (api?.telephone as string | undefined) ||
+      (api?.mobile as string | undefined) ||
+      (api?.phonenumber as string | undefined) ||
       options.phone ||
       customerInfo.phone,
   );
   const amount = safeDecode(
-    data?.amount ||
-      data?.loanAmount ||
-      data?.creditAmount ||
+    (api?.amount as string | undefined) ||
+      (api?.loanAmount as string | undefined) ||
+      (api?.creditAmount as string | undefined) ||
       options.amount ||
       customerInfo.amount,
   );
   const orderId =
-    data?.creditOrderId || data?.orderId || data?.id || options.creditOrderId;
+    (api?.creditOrderId as string | undefined) ||
+    (api?.orderId as string | undefined) ||
+    (api?.id as string | undefined) ||
+    options.creditOrderId;
 
   if (name) customerInfo.name = name;
   if (phone) customerInfo.phone = phone;
@@ -615,16 +632,16 @@ async function fetchCustomerInfoByOrderId(
   if (!creditOrderId) return;
 
   try {
-    const res: any = await businessApi.getCreditDetailByOrderId(creditOrderId);
-    applyCustomerInfoFromData(res?.data || res, options);
+    const res = await businessApi.getCreditDetailByOrderId(creditOrderId);
+    applyCustomerInfoFromData((res as unknown) as Record<string, unknown>, options);
     return;
   } catch (err) {
     console.warn("按授信单号查询客户信息失败，尝试按ID查询:", err);
   }
 
   try {
-    const res: any = await businessApi.getCreditDetail(creditOrderId);
-    applyCustomerInfoFromData(res?.data || res, options);
+    const res = await businessApi.getCreditDetail(creditOrderId);
+    applyCustomerInfoFromData((res as unknown) as Record<string, unknown>, options);
   } catch (err) {
     console.warn("查询客户信息失败:", err);
   }
@@ -637,7 +654,7 @@ function pageFinalize(type: string) {
 }
 
 /** 解析 passed 参数为 boolean | undefined */
-function parsePassed(val: any): boolean | undefined {
+function parsePassed(val: unknown): boolean | undefined {
   if (val === "true" || val === true) return true;
   if (val === "false" || val === false) return false;
   return undefined;
@@ -653,25 +670,32 @@ async function fetchContractDetail(
   detailType: ContractDetailType = "loan",
 ): Promise<SignStatus> {
   try {
-    const res: any =
+    const res =
       detailType === "auth"
         ? await businessApi.getAuthContractDetail(creditOrderId)
         : await businessApi.getContractDetail(creditOrderId);
-    const data = res?.data || res;
-    applyCustomerInfoFromData(data);
-    const status = Number(data?.status || 1);
+    const data = (res as Record<string, unknown>)?.data || res;
+    const typedData = data as Record<string, unknown>;
+    applyCustomerInfoFromData(typedData);
+    const status = Number((typedData?.status as string | number | undefined) || 1);
     // status: 1-完成 2-进行中 3-失败
     contractSigned.value = status === 1;
     // 文件列表兼容 fileList 和 files
-    const fileList = data?.fileList || data?.files || [];
+    const fileList: unknown[] =
+      ((data as Record<string, unknown>)?.fileList ||
+        (data as Record<string, unknown>)?.files ||
+        []) as unknown[];
     contractFiles.value =
       fileList.length > 0
-        ? fileList.map((f: any) => ({
-            name: f.fileName || f.name,
-            status: "已签署",
-            signed: true,
-            fileUrl: f.fileUrl || "",
-          }))
+        ? fileList.map((f: unknown) => {
+            const file = f as Record<string, unknown>;
+            return {
+              name: (file.fileName || file.name) as string,
+              status: "已签署",
+              signed: true,
+              fileUrl: (file.fileUrl || "") as string,
+            };
+          })
         : [...DEFAULT_FILES];
     return status === 1 ? "success" : status === 2 ? "processing" : "fail";
   } catch {
@@ -825,14 +849,15 @@ async function handleContractSign() {
       `amount=${encodeURIComponent(customerInfo.amount)}`,
     ].join("&");
 
-    const res: any = await businessApi.startContractSign({
+    const res = await businessApi.startContractSign({
       uuid: callbackUuid.value,
       creditOrderId: customerInfo.creditOrderId,
       redirectUrl,
     });
 
-    const data = res?.data || res || {};
-    const signUrl = data.signUrl || data.authUrl || "";
+    const raw = (res as unknown) as Record<string, unknown>;
+    const data = (raw?.data || raw || {}) as Record<string, unknown>;
+    const signUrl = (data.signUrl || data.authUrl || "") as string;
     const orderId = data.creditOrderId || customerInfo.creditOrderId;
 
     if (orderId) {
@@ -893,14 +918,15 @@ async function handleSignContract() {
       `amount=${encodeURIComponent(customerInfo.amount)}`,
     ].join("&");
 
-    const res: any = await businessApi.startAuthContractSign({
+    const res = await businessApi.startAuthContractSign({
       uuid: callbackUuid.value,
       creditOrderId: customerInfo.creditOrderId,
       redirectUrl,
     });
 
-    const data = res?.data || res || {};
-    const signUrl = data.signUrl || data.authUrl || "";
+    const raw = (res as unknown) as Record<string, unknown>;
+    const data = (raw?.data || raw || {}) as Record<string, unknown>;
+    const signUrl = (data.signUrl || data.authUrl || "") as string;
     const orderId = data.creditOrderId || customerInfo.creditOrderId;
 
     if (orderId) {

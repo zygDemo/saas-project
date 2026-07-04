@@ -117,14 +117,14 @@ const {
   onScroll,
   backToTop,
 } = useListPage<SupplementListItem>({
-  fetchFn: async (params: any) =>
+  fetchFn: async (params: Record<string, unknown>) =>
     businessApi.getSupplementList({ ...params, supplementNode: 2 }),
   defaultParams: { supplementNode: 2 },
-  getRows: (res: any) => res.data || [],
+  getRows: (res: unknown) => (res as { data?: SupplementListItem[] }).data || [],
 });
 
 /** 跳转到补充详情页 */
-function handleDetail(item: any) {
+function handleDetail(item: SupplementListItem) {
   const uuid = item.uuid || "";
   const creditOrderId = item.creditOrderId || "";
   const name = item.name || "";

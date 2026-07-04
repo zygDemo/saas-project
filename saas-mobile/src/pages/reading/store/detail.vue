@@ -269,7 +269,7 @@
 import layout from "@/pages/layout/layout.vue";
 import { useReadingStore } from "@/stores/reading";
 import { computed, ref } from "vue";
-import { useReadingApi } from "@/api/reading";
+import { useReadingApi, type ReviewItem, type ChapterItem } from "@/api/reading";
 import { onLoad, onShareAppMessage } from "@dcloudio/uni-app";
 
 interface Chapter {
@@ -381,7 +381,7 @@ const fetchReviews = async (reset = false) => {
     const res = await readingApi.getReviews({ bookId: bookId.value, page, pageSize: 10 });
     const data = res?.data;
     const items = data?.items || [];
-    const mapped = items.map((item: any) => ({
+    const mapped = items.map((item: ReviewItem) => ({
       id: String(item.id),
       nickname: item.user?.nickname || "匿名读者",
       avatar: item.user?.avatar || "/static/reading/covers/user1.svg",
@@ -471,7 +471,7 @@ const fetchChapters = async (id: string, reset = false) => {
     const total = data?.total || 0;
     chapterTotal.value = total;
 
-    const mapped = items.map((item: any) => ({
+    const mapped = items.map((item: ChapterItem) => ({
       id: String(item.id),
       title: item.title,
       isRead: false,

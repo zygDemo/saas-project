@@ -422,7 +422,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { onLoad, onShareAppMessage, onUnload } from "@dcloudio/uni-app";
-import { useReadingApi } from "@/api/reading";
+import { useReadingApi, type ChapterLiteItem, type ReadingStatistics } from "@/api/reading";
 import { useReadingStore } from "@/stores/reading";
 
 // 本地存储 key
@@ -865,7 +865,7 @@ onLoad(async (options) => {
       const liteRes = await readingApi.getChaptersLite(bookId.value);
       const allItems = liteRes.data?.items || [];
 
-      chapterList.value = allItems.map((item: any) => ({
+      chapterList.value = allItems.map((item: ChapterLiteItem) => ({
         id: String(item.id),
         title: item.title,
         isVip: !!item.isVip,
@@ -882,7 +882,7 @@ onLoad(async (options) => {
           const saved = progressRes?.data;
           if (saved?.chapterId) {
             const exists = allItems.some(
-              (item: any) => String(item.id) === String(saved.chapterId),
+              (item: ChapterLiteItem) => String(item.id) === String(saved.chapterId),
             );
             if (exists) {
               savedChapterId = String(saved.chapterId);
@@ -956,7 +956,7 @@ onShareAppMessage(() => {
 
 const isAutoLoading = ref(false);
 
-const onVerticalScroll = (_scrollEvent: any) => {
+const onVerticalScroll = (_scrollEvent: unknown) => {
   // scroll-view 滚动事件，实际加载通过 scrolltolower 触发
 };
 
@@ -984,8 +984,13 @@ const onScrollToLower = async () => {
   }
 };
 
-const onPageChange = async (changeEvent: any) => {
-  currentPage.value = changeEvent.detail.current;
+interface ReaderPageChangeEvent {
+  current: number;
+  source?: string;
+}
+
+const onPageChange = async (changeEvent: { current: number; detail?: { current?: number } }) => {
+  currentPage.value = changeEvent.detail?.current ?? changeEvent.current;
   checkBookmarkStatus();
   debouncedSaveProgress();
   // 滑到最后一页时自动加载下一章
@@ -1010,7 +1015,13 @@ const onPageChange = async (changeEvent: any) => {
   }
 };
 
-const onProgressChange = (progressEvent: any) => {
+interface ReaderProgressEvent {
+  detail: {
+    value: number;
+  };
+}
+
+const onProgressChange = (progressEvent: ReaderProgressEvent) => {
   currentPage.value = progressEvent.detail.value;
   checkBookmarkStatus();
 };
@@ -1058,7 +1069,13 @@ const onBgColorChange = (color: string) => {
   }
 };
 
-const onBrightnessChange = (brightnessEvent: any) => {
+interface ReaderBrightnessEvent {
+  detail: {
+    value: number;
+  };
+}
+
+const onBrightnessChange = (brightnessEvent: ReaderBrightnessEvent) => {
   brightness.value = brightnessEvent.detail.value;
   // 实际项目中这里可以调整屏幕亮度
 };

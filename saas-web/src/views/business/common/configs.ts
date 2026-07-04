@@ -725,7 +725,7 @@ export const configs: Record<string, PageConfig> = {
   tenant: {
     title: '租户机构管理',
     description: '维护平台所有租户机构的基础资料、联系信息与状态。',
-    api: 'tenant',
+    api: 'org',
     keywordField: 'name',
     keywordParam: 'keyword',
     keywordPlaceholder: '机构名称/编码/联系人/电话',
@@ -771,7 +771,7 @@ export const configs: Record<string, PageConfig> = {
   'package-billing': {
     title: '套餐与计费',
     description: '管理平台套餐方案、定价与用户/机构配额。',
-    api: 'package-billing',
+    api: 'package-plan',
     keywordField: 'name',
     keywordParam: 'keyword',
     keywordPlaceholder: '套餐名称/编码',
@@ -926,7 +926,7 @@ export const configs: Record<string, PageConfig> = {
   supervision: {
     title: '平台业务监管',
     description: '查看各机构的业务数据统计与运营指标，只读监控面板。',
-    api: 'supervision',
+    api: 'platform-supervision',
     listApi: 'stats',
     readonly: true,
     keywordField: 'orgName',
@@ -959,7 +959,7 @@ export const configs: Record<string, PageConfig> = {
   'third-party': {
     title: '第三方服务管理',
     description: '维护征信、身份核验、GPS、电子签约等第三方服务接入配置。',
-    api: 'third-party',
+    api: 'third-party-service',
     keywordField: 'name',
     keywordParam: 'keyword',
     keywordPlaceholder: '服务名称/编码/供应商',

@@ -47,8 +47,8 @@
 import { computed } from "vue";
 
 const props = defineProps<{
-  searchForm: any;
-  list: any[];
+  searchForm: Record<string, unknown>;
+  list: unknown[];
   loading: boolean;
   hasMore: boolean;
   isRefreshing: boolean;
@@ -59,16 +59,16 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "update:searchForm", value: any): void;
+  (e: "update:searchForm", value: Record<string, unknown>): void;
   (e: "search"): void;
   (e: "refresh"): void;
   (e: "loadMore"): void;
-  (e: "scroll", event: any): void;
+  (e: "scroll", event: unknown): void;
   (e: "backToTop"): void;
 }>();
 
 const keywordModel = computed({
-  get: () => props.searchForm.keyword,
+  get: () => props.searchForm.keyword as string | undefined,
   set: (val) => emit("update:searchForm", { ...props.searchForm, keyword: val }),
 });
 

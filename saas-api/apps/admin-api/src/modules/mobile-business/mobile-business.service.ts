@@ -548,6 +548,23 @@ export class MobileBusinessService {
       if (status) where.status = status
     }
 
+    // 支持 status 参数（数字或字符串）
+    if (query.status !== undefined && query.status !== null) {
+      const statusMap: Record<number, string> = {
+        1: 'DRAFT',
+        2: 'PENDING_RISK_PRE',
+        3: 'PENDING_SUPPLEMENT',
+        4: 'PENDING_SIGN',
+        5: 'DISBURSED'
+      }
+      const numStatus = Number(query.status)
+      if (!Number.isNaN(numStatus) && statusMap[numStatus]) {
+        where.status = statusMap[numStatus]
+      } else if (typeof query.status === 'string') {
+        where.status = query.status
+      }
+    }
+
     if (query.personName) {
       where.customer = { name: { contains: query.personName, mode: 'insensitive' } }
     }
@@ -985,6 +1002,23 @@ export class MobileBusinessService {
           uploadedBy: params.user.sub
         }
       })
+
+      // 同步创建 ApplicationFile 记录，使后台进件详情能关联到文件
+      if (params.businessType === 'APPLICATION' && params.businessId) {
+        try {
+          await this.prisma.applicationFile.create({
+            data: {
+              applicationId: params.businessId,
+              fileType: params.categoryCode,
+              fileUrl: params.upload?.url || normalized.url,
+              fileName
+            }
+          })
+        } catch {
+          // 忽略重复或关联失败，不影响主流程
+        }
+      }
+
       return this.mapFileAsset(created as Record<string, unknown>)
     } catch (error) {
       if (this.isMissingFileAssetStorage(error)) return null

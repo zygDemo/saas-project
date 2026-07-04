@@ -36,6 +36,14 @@ import { DbOpsModule } from './modules/db-ops/db-ops.module'
 import { SystemParamModule } from './modules/system-param/system-param.module'
 import { MobileConfigModule } from './modules/mobile-config/mobile-config.module'
 import { AnnouncementModule } from './modules/announcement/announcement.module'
+import { MonitorModule } from './modules/monitor/monitor.module'
+
+// 平台管理模块
+import { PackagePlanModule } from './modules/package-plan/package-plan.module'
+import { ProductTemplateModule } from './modules/product-template/product-template.module'
+import { ThirdPartyServiceModule } from './modules/third-party-service/third-party-service.module'
+import { WorkOrderModule } from './modules/work-order/work-order.module'
+import { PlatformSupervisionModule } from './modules/platform-supervision/platform-supervision.module'
 
 const appEnv = process.env.NODE_ENV || 'development'
 const envFilePaths = [
@@ -94,7 +102,13 @@ const envFilePaths = [
     DbOpsModule,
     SystemParamModule,
     MobileConfigModule,
-    AnnouncementModule
+    AnnouncementModule,
+    // 平台管理模块
+    PackagePlanModule,
+    ProductTemplateModule,
+    ThirdPartyServiceModule,
+    WorkOrderModule,
+    PlatformSupervisionModule
   ]
 })
 export class AppModule implements NestModule {

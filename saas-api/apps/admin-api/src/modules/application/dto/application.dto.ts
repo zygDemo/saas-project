@@ -72,6 +72,11 @@ export class OrderListQueryDto extends ApplicationQueryDto {
   @Min(0)
   nodeCode?: number
 
+  @ApiPropertyOptional({ description: '业务节点字符串编码，如 PRE_AUDIT、SIGN_CONTRACT' })
+  @IsOptional()
+  @IsString()
+  businessNode?: string
+
   @ApiPropertyOptional({ description: '节点状态，兼容 nodeStatus 字段' })
   @IsOptional()
   @ToNumber()

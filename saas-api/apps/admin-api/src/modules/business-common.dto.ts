@@ -28,7 +28,8 @@ import {
 export function ToNumber() {
   return Transform(({ value }) => {
     if (value === '' || value === null || value === undefined) return undefined
-    return Number(value)
+    const num = Number(value)
+    return Number.isNaN(num) ? undefined : num
   })
 }
 
@@ -1706,12 +1707,6 @@ export class ThirdPartyServiceQueryDto extends PageQueryDto {
 
 // ========== 平台管理：运营工单 ==========
 export class CreateWorkOrderDto {
-  @ApiProperty({ description: '租户ID' })
-  @ToNumber()
-  @IsInt()
-  @Min(1)
-  tenantId: number
-
   @ApiProperty({ description: '工单标题' })
   @IsString()
   title: string

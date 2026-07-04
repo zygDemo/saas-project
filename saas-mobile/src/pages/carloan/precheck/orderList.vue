@@ -466,18 +466,18 @@ function normalizeOrderItem(order: CreditListItem): OrderListViewItem {
 
 // ---- 列表请求 ----
 
-function extractRows(res: any) {
-  const pageData = (res?.data || {}) as PageResult<CreditListItem>;
-  if (Array.isArray(pageData.records)) return pageData.records;
-  if (Array.isArray(pageData.rows)) return pageData.rows;
-  if (Array.isArray(res?.records)) return res.records as CreditListItem[];
-  if (Array.isArray(res?.rows)) return res.rows as CreditListItem[];
+function extractRows(res: unknown): CreditListItem[] {
+  const pageData = (res as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
+  if (Array.isArray(pageData?.records)) return pageData.records as CreditListItem[];
+  if (Array.isArray(pageData?.rows)) return pageData.rows as CreditListItem[];
+  if (Array.isArray((res as Record<string, unknown>)?.records)) return (res as Record<string, unknown>).records as CreditListItem[];
+  if (Array.isArray((res as Record<string, unknown>)?.rows)) return (res as Record<string, unknown>).rows as CreditListItem[];
   return [];
 }
 
-function extractTotal(res: any, rowsLength: number) {
-  const pageData = (res?.data || {}) as PageResult<CreditListItem>;
-  const numericTotal = Number(first(pageData.total, res?.total));
+function extractTotal(res: unknown, rowsLength: number) {
+  const pageData = (res as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
+  const numericTotal = Number(first(pageData?.total, (res as Record<string, unknown>)?.total));
   return Number.isFinite(numericTotal) ? numericTotal : rowsLength;
 }
 
@@ -495,7 +495,7 @@ async function fetchList(isRefresh = false) {
       pageSize,
     };
     if (currentBusinessNode.value !== "all")
-      params.nodeCode = Number(currentBusinessNode.value);
+      params.businessNode = currentBusinessNode.value;
     if (currentNodeStatus.value !== "all")
       params.nodeStatus = Number(currentNodeStatus.value);
     const kw = keyword.value.trim();

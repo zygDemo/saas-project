@@ -384,7 +384,7 @@ const fetchBookshelf = async () => {
     const items = res?.data || [];
     if (Array.isArray(items)) {
       const mappedBooks = items
-        .map((item: any) => {
+        .map((item) => {
           const book = item.book;
           if (!book?.id) return null;
 
@@ -416,11 +416,11 @@ const fetchBookshelf = async () => {
     }
     if (false) {
       // 记录后端返回的 bookId 集合
-      const backendIds = new Set(items.map((item: any) => item.book?.id ? String(item.book.id) : null).filter(Boolean));
+      const backendIds = new Set(items.map((item) => item.book?.id ? String(item.book.id) : null).filter(Boolean));
       // 移除本地有但后端没有的书籍
       readingStore.bookshelf = readingStore.bookshelf.filter(b => backendIds.has(b.id));
       // 将 API 数据同步到 store
-      items.forEach((item: any) => {
+      items.forEach((item) => {
         const book = item.book;
         if (book && !readingStore.isInBookshelf(String(book.id))) {
           readingStore.addToBookshelf({

@@ -18,9 +18,11 @@
 import { computed, ref } from "vue";
 import { onLoad, onShow, onBackPress } from "@dcloudio/uni-app";
 import { useSessionStore } from "@/stores";
+import { useCarloanApi } from "@/api/carloan";
 import { closeBrowser } from "@/composables/useCloseBrowser";
 
 const sessionStore = useSessionStore();
+const businessApi = useCarloanApi();
 
 const authUrl = ref("");
 const previewUrl = ref("");
@@ -53,8 +55,50 @@ onLoad((options) => {
 onShow(() => {
   if (!creditOrderId.value || hasFetched.value) return;
   hasFetched.value = true;
-  //   fetchResultOnce();
+  fetchResultOnce();
 });
+
+async function fetchResultOnce() {
+  try {
+    // 查询订单详情确认签约状态
+    const res = await businessApi.getCreditDetailByOrderId(creditOrderId.value);
+    if (res?.code === 200 && res.data) {
+      const d = res.data;
+      const nodeStatus = d.currentStatus || d.nodeStatus || d.status;
+
+      // 根据签约类型更新本地进度
+      if (signType.value === "contract") {
+        if (nodeStatus === "SIGNED" || d.isSignContract === 1) {
+          saveSignProgress("SIGNED");
+        } else {
+          // 签约完成，推进到下一步
+          saveSignProgress("GPS_APPOINTING");
+        }
+      } else {
+        // 面签完成
+        saveSignProgress("GPS_APPOINTING");
+      }
+    }
+  } catch (e) {
+    console.error("获取签约结果失败", e);
+  } finally {
+    // 返回签约中心刷新状态
+    uni.navigateBack();
+  }
+}
+
+const SIGN_PROGRESS_STORAGE_KEY = "SIGN_PROGRESS_MAP";
+
+function saveSignProgress(status: string) {
+  if (!creditOrderId.value || !status) return;
+  const progressMap = uni.getStorageSync(SIGN_PROGRESS_STORAGE_KEY) || {};
+  progressMap[creditOrderId.value] = {
+    ...(progressMap[creditOrderId.value] || {}),
+    status,
+    updatedAt: Date.now(),
+  };
+  uni.setStorageSync(SIGN_PROGRESS_STORAGE_KEY, progressMap);
+}
 
 onBackPress(() => {
   if (isCustomerRole.value) {

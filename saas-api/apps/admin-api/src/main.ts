@@ -5,7 +5,8 @@ import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import { NestExpressApplication } from '@nestjs/platform-express'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
-import { join } from 'path'
+import { join, dirname } from 'path'
+import * as fs from 'fs'
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { RequestLoggerInterceptor } from './common/interceptors/request-logger.interceptor'
@@ -39,7 +40,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix(normalizedApiPrefix)
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
-    prefix: `/${normalizedApiPrefix}/uploads/`
+    prefix: `/${normalizedApiPrefix}/uploads/`,
   })
   app.enableCors({
     origin: allowAllCors ? true : allowedOrigins,
@@ -65,6 +66,18 @@ async function bootstrap() {
     .addBearerAuth()
     .build()
   const document = SwaggerModule.createDocument(app, swaggerConfig)
+  
+  // Support OpenAPI export without starting HTTP server
+  const openApiExport = config.get<string>('OPENAPI_EXPORT')
+  if (openApiExport) {
+    const outputPath = join(process.cwd(), openApiExport)
+    fs.mkdirSync(dirname(outputPath), { recursive: true })
+    fs.writeFileSync(outputPath, JSON.stringify(document, null, 2), 'utf8')
+    console.log(`OpenAPI exported to ${outputPath}`)
+    await app.close()
+    process.exit(0)
+  }
+  
   SwaggerModule.setup(`${normalizedApiPrefix}/docs`, app, document, {
     swaggerOptions: {
       docExpansion: 'list',

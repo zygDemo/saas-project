@@ -1,11 +1,62 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
+import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 @Injectable()
 export class PlatformSupervisionService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** 平台监管列表（各机构业务统计，分页） */
+  async getStats(query: Record<string, string>) {
+    const pagination = getPagination(query)
+
+    const orgs: any[] = await this.prisma.organization.findMany({
+      where: { deletedAt: null },
+      select: { id: true, name: true, code: true, status: true, packageType: true, expireAt: true },
+      skip: pagination.skip,
+      take: pagination.take,
+      orderBy: { id: 'desc' }
+    })
+
+    const total: number = await this.prisma.organization.count({ where: { deletedAt: null } })
+
+    const orgIds = orgs.map((o) => o.id)
+
+    const [appCounts, leadCounts, disbursedAggs] = await Promise.all([
+      this.prisma.application.groupBy({
+        by: ['orgId'],
+        where: { orgId: { in: orgIds }, deletedAt: null },
+        _count: { id: true }
+      }),
+      this.prisma.lead.groupBy({
+        by: ['orgId'],
+        where: { orgId: { in: orgIds }, deletedAt: null },
+        _count: { id: true }
+      }),
+      this.prisma.disbursement.aggregate({
+        where: { application: { orgId: { in: orgIds } }, status: 'DISBURSED' },
+        _sum: { disburseAmount: true }
+      })
+    ])
+
+    const appMap = new Map(appCounts.map((a) => [a.orgId, a._count.id]))
+    const leadMap = new Map(leadCounts.map((l) => [l.orgId, l._count.id]))
+
+    const records = orgs.map((org) => ({
+      orgName: org.name,
+      orgCode: org.code,
+      status: org.status,
+      packageType: org.packageType ?? '未设置',
+      expireAt: org.expireAt,
+      totalApplications: appMap.get(org.id) ?? 0,
+      leadCount: leadMap.get(org.id) ?? 0,
+      disbursedAmount: disbursedAggs._sum?.disburseAmount ?? 0
+    }))
+
+    return toPaginatedResponse(records, total, pagination)
+  }
 
   /** 平台概览统计 */
   async getOverview() {
@@ -29,56 +80,5 @@ export class PlatformSupervisionService {
       activeServices,
       openWorkOrders
     }
-  }
-
-  /** 各租户申请数量统计 */
-  async getTenantApplicationStats() {
-    const results: any[] = await this.prisma.application.groupBy({
-      by: ['tenantId'],
-      where: { deletedAt: null },
-      _count: { id: true },
-      orderBy: { _count: { id: 'desc' } }
-    })
-
-    const tenantIds: number[] = results.map((r) => r.tenantId)
-    const tenants: any[] = await this.prisma.tenant.findMany({
-      where: { id: { in: tenantIds } },
-      select: { id: true, name: true }
-    })
-    const tenantMap = new Map(tenants.map((t) => [t.id, t.name]))
-
-    return results.map((r) => ({
-      tenantId: r.tenantId,
-      tenantName: tenantMap.get(r.tenantId) ?? '未知',
-      applicationCount: r._count.id
-    }))
-  }
-
-  /** 工单状态分布 */
-  async getWorkOrderStatusDistribution() {
-    const results: any[] = await this.prisma.workOrder.groupBy({
-      by: ['status'],
-      where: { deletedAt: null },
-      _count: { id: true }
-    })
-
-    return results.map((r) => ({
-      status: r.status,
-      count: r._count.id
-    }))
-  }
-
-  /** 套餐使用分布 */
-  async getPackageUsageDistribution() {
-    const orgs: any[] = await this.prisma.organization.groupBy({
-      by: ['packageType'],
-      where: { deletedAt: null },
-      _count: { id: true }
-    })
-
-    return orgs.map((r) => ({
-      packageType: r.packageType ?? '未设置',
-      count: r._count.id
-    }))
   }
 }

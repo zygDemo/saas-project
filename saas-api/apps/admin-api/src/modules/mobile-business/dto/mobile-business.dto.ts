@@ -81,6 +81,10 @@ export class MobileCreditListQueryDto {
   @IsString()
   businessNode?: string
 
+  @ApiPropertyOptional({ description: '状态筛选（支持数字或字符串状态码）' })
+  @IsOptional()
+  status?: string | number
+
   @ApiPropertyOptional({ description: '客户姓名' })
   @IsOptional()
   @IsString()

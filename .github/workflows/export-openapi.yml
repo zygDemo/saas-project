@@ -1,0 +1,94 @@
+name: Export OpenAPI Spec
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'saas-api/**'
+      - '.github/workflows/export-openapi.yml'
+  workflow_dispatch:
+
+jobs:
+  export-openapi:
+    runs-on: ubuntu-latest
+    env:
+      APIFOX_TOKEN: ${{ secrets.APIFOX_TOKEN }}
+      APIFOX_PROJECT_ID: ${{ secrets.APIFOX_PROJECT_ID }}
+      APIFOX_BASE_URL: ${{ secrets.APIFOX_BASE_URL || 'https://api.apifox.com' }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.0
+          cache: true
+          cache-dependency-path: saas-api/pnpm-lock.yaml
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        working-directory: saas-api
+        run: pnpm install --frozen-lockfile
+
+      - name: Build admin-api
+        working-directory: saas-api
+        run: pnpm build
+
+      - name: Export OpenAPI spec
+        working-directory: saas-api/apps/admin-api
+        run: |
+          OPENAPI_EXPORT=openapi/openapi.json \
+          PORT=3001 \
+          node dist/main.js
+        env:
+          NODE_ENV: development
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://saas:saas@localhost:5432/saas?schema=public' }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST || 'localhost' }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT || '6379' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'dev-secret' }}
+
+      - name: Validate OpenAPI spec
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('saas-api/apps/admin-api/openapi/openapi.json','utf8')); console.log('openapi.json valid')"
+          test -s saas-api/apps/admin-api/openapi/openapi.json
+
+      - name: Sync OpenAPI spec to Apifox
+        if: env.APIFOX_TOKEN != '' && env.APIFOX_PROJECT_ID != ''
+        run: |
+          OPENAPI_PATH="saas-api/apps/admin-api/openapi/openapi.json"
+          STATUS=$(curl -s -o /tmp/apifox-response.json -w "%{http_code}" \
+            -X POST "$APIFOX_BASE_URL/api/v1/projects/$APIFOX_PROJECT_ID/imports/openapi" \
+            -H "Authorization: Bearer $APIFOX_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary "@$OPENAPI_PATH")
+          echo "Apifox response status: $STATUS"
+          cat /tmp/apifox-response.json
+          if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 300 ]; then
+            echo "::warning::Apifox sync failed with status $STATUS"
+          fi
+        env:
+          APIFOX_TOKEN: ${{ secrets.APIFOX_TOKEN }}
+          APIFOX_PROJECT_ID: ${{ secrets.APIFOX_PROJECT_ID }}
+          APIFOX_BASE_URL: ${{ secrets.APIFOX_BASE_URL || 'https://api.apifox.com' }}
+
+      - name: Upload OpenAPI spec
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-spec
+          path: saas-api/apps/admin-api/openapi/openapi.json
+          retention-days: 30
+
+      - name: Commit OpenAPI spec to repo
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config --local user.email "github-actions@users.noreply.github.com"
+          git config --local user.name "github-actions"
+          git add saas-api/apps/admin-api/openapi/openapi.json
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "chore: update OpenAPI spec [skip ci]"
+          git push origin main

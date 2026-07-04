@@ -401,10 +401,23 @@ const mainTabs = [
   { id: 2, name: "出版" },
 ];
 
-// 从后端加载的分类数据
-let _apiCategories: any[] = [];
+interface CategoryItem {
+  id: string | number;
+  name: string;
+  parentId: string | number | null;
+  realId?: string | number | null;
+}
 
-const subTabs = ref([
+// 从后端加载的分类数据
+let _apiCategories: CategoryItem[] = [];
+
+interface SubTabItem {
+  id: number;
+  name: string;
+  realId: string | number | null;
+}
+
+const subTabs = ref<SubTabItem[][]>([
   [
     { id: 0, name: "全部", realId: null },
     { id: 1, name: "玄幻", realId: null },
@@ -627,6 +640,11 @@ const formatWordCount = (count?: number) => {
 };
 
 // 从API获取图书列表
+interface BookListResponse {
+  items: BookItem[];
+  total: number;
+}
+
 const fetchBooks = async (kw?: string, append = false) => {
   if (isLoadingMore.value) return;
   if (!append) {
@@ -635,15 +653,15 @@ const fetchBooks = async (kw?: string, append = false) => {
   const page = append ? currentPage.value : 1;
   isLoadingMore.value = true;
   try {
-    const params: any = { page, pageSize: pageSize.value };
-    if (kw) params.keyword = kw;
+    const params = { page, pageSize: pageSize.value } as const;
+    if (kw) (params as Record<string, unknown>).keyword = kw;
     if (currentSubTab.value > 0) {
       const cat = currentSubTabs.value?.[currentSubTab.value];
-      if (cat?.realId) params.categoryId = cat.realId;
+      if (cat?.realId) (params as Record<string, unknown>).categoryId = cat.realId;
     }
     const res = await readingApi.getBooks(params);
     if (res?.code === 200 && res.data?.items) {
-      const items = res.data.items.map((item: any) => ({
+      const items = res.data.items.map((item) => ({
         id: String(item.id),
         title: item.title || "",
         author: item.author || "未知",
@@ -772,22 +790,28 @@ const filteredBooks = computed(() => {
 const fetchCategories = async () => {
   try {
     const res = await readingApi.getCategories();
-    const cats = res?.data || [];
+    const cats = (res?.data ?? []) as CategoryItem[];
     if (Array.isArray(cats) && cats.length > 0) {
       _apiCategories = cats;
       // 用真实分类替换每组的分类标签（保留"全部"）
-      const topLevelCats = cats.filter((c: any) => c.parentId === null || c.parentId === 0);
+      const topLevelCats = cats.filter((c) => c.parentId === null || c.parentId === 0);
       if (topLevelCats.length > 0) {
         // 将顶级分类填充到每个主tab的子分类中
-        const firstGroup = [{ id: 0, name: "全部", realId: null } as any];
-        topLevelCats.forEach((cat: any, idx: number) => {
+        const firstGroup: SubTabItem[] = [{ id: 0, name: "全部", realId: null }];
+        topLevelCats.forEach((cat, idx) => {
           firstGroup.push({ id: idx + 1, name: cat.name, realId: cat.id });
         });
         subTabs.value = [
           firstGroup,
           // 女生和出版 tab 也使用同样的分类，但可以根据 parentId 区分
-          [{ id: 0, name: "全部", realId: null } as any, ...cats.filter((c: any) => c.parentId === 1).map((c: any, i: number) => ({ id: i + 1, name: c.name, realId: c.id }))],
-          [{ id: 0, name: "全部", realId: null } as any, ...cats.filter((c: any) => c.parentId === 2).map((c: any, i: number) => ({ id: i + 1, name: c.name, realId: c.id }))],
+          [
+            { id: 0, name: "全部", realId: null },
+            ...cats.filter((c) => c.parentId === 1).map((c, i) => ({ id: i + 1, name: c.name, realId: c.id } as SubTabItem)),
+          ],
+          [
+            { id: 0, name: "全部", realId: null },
+            ...cats.filter((c) => c.parentId === 2).map((c, i) => ({ id: i + 1, name: c.name, realId: c.id } as SubTabItem)),
+          ],
         ];
       }
     }

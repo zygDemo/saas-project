@@ -55,8 +55,9 @@ export const httpInterceptor: RequestInterceptor = {
     return config;
   },
 
-  response: (response: any) => {
-    const meta: RequestMeta = response.config?.meta || {};
+  response: (response: unknown) => {
+    const res = response as ApiResponseLike;
+    const meta: RequestMeta = res.config?.meta || {};
 
     // 1. 统一关闭 Loading
     if (meta.loading) {
@@ -64,33 +65,43 @@ export const httpInterceptor: RequestInterceptor = {
     }
 
     // 2. HTTP 状态码错误 (非 200)
-    if (response.statusCode !== 200) {
-      handleHttpError(response, meta);
+    if (res.statusCode !== 200) {
+      handleHttpError(res, meta);
       // 返回 false 让请求进入 catch，阻断后续代码
       return false;
     }
 
     // 3. 业务状态码错误 (code !== 200)
-    if (response.data && response.data.code !== 200) {
-      handleBusinessError(response, meta);
+    if (res.data && res.data.code !== 200) {
+      handleBusinessError(res, meta);
       return false;
     }
 
     // 4. 返回成功数据
-    return response.data;
+    return res.data;
   },
 };
 
+// --- 类型补充 ---
+
+interface ApiResponseLike {
+  statusCode: number;
+  data: Record<string, unknown>;
+  config?: {
+    meta?: RequestMeta;
+  };
+}
+
 // --- 错误处理辅助函数 ---
 
-function handleHttpError(response: any, meta: RequestMeta) {
+function handleHttpError(response: ApiResponseLike, meta: RequestMeta) {
   // 401 - 未授权
   if (response.statusCode === 401) {
     handleUnauthorized(meta);
     return;
   }
   if (response.data?.msg) {
-    uni.showToast({ title: response.data.msg, icon: "none" });
+    uni.showToast({ title: response.data.msg as string, icon: "none" });
   } else {
     // 其他 HTTP 错误
     const msg = getErrorMessage(response.statusCode);
@@ -100,17 +111,17 @@ function handleHttpError(response: any, meta: RequestMeta) {
   }
 }
 
-function handleBusinessError(response: any, meta: RequestMeta) {
+function handleBusinessError(response: ApiResponseLike, meta: RequestMeta) {
   // 业务层面的 401 (Token 过期)
   if (response.data.code === 401) {
-    handleUnauthorized(meta, response.data.message);
+    handleUnauthorized(meta, response.data.message as string | undefined);
     return;
   }
 
   // 其他业务错误
   if (meta.toast) {
     uni.showToast({
-      title: response.data.msg || "操作失败",
+      title: (response.data.msg as string) || "操作失败",
       icon: "none",
     });
   }

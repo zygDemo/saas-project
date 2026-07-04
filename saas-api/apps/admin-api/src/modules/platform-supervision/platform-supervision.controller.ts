@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common'
+import { Controller, Get, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { PlatformSupervisionService } from './platform-supervision.service'
@@ -10,27 +10,15 @@ import { PlatformSupervisionService } from './platform-supervision.service'
 export class PlatformSupervisionController {
   constructor(private readonly service: PlatformSupervisionService) {}
 
+  @Get('stats')
+  @ApiOperation({ summary: '平台监管列表（各机构业务统计）' })
+  stats(@Query() query: Record<string, string>) {
+    return this.service.getStats(query)
+  }
+
   @Get('overview')
   @ApiOperation({ summary: '平台概览统计' })
   overview() {
     return this.service.getOverview()
-  }
-
-  @Get('tenant-application-stats')
-  @ApiOperation({ summary: '各租户申请数量统计' })
-  tenantApplicationStats() {
-    return this.service.getTenantApplicationStats()
-  }
-
-  @Get('work-order-status-distribution')
-  @ApiOperation({ summary: '工单状态分布' })
-  workOrderStatusDistribution() {
-    return this.service.getWorkOrderStatusDistribution()
-  }
-
-  @Get('package-usage-distribution')
-  @ApiOperation({ summary: '套餐使用分布' })
-  packageUsageDistribution() {
-    return this.service.getPackageUsageDistribution()
   }
 }

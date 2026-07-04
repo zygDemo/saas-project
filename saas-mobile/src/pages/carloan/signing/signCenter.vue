@@ -115,7 +115,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { onLoad } from "@dcloudio/uni-app";
+import { onLoad, onShow } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { $u } from "uview-pro";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
@@ -266,18 +266,19 @@ onMounted(() => {
   }
 });
 
+// 从子页面返回时刷新签约状态
+onShow(() => {
+  if (creditOrderId.value) {
+    const localStatus = getLocalSignStatus();
+    if (localStatus) {
+      signStatus.value = normalizeSignStatus(localStatus);
+    }
+  }
+});
+
 async function loadSignStatus() {
   loading.value = true;
   try {
-    // TODO: 等待后端提供签约状态查询接口
-    // const res = await businessApi.getSignStatus(creditOrderId.value);
-    // if (res?.code === 200) {
-    //   signStatus.value = res.data?.status || "PENDING";
-    //   customerName.value = res.data?.customerName || customerName.value;
-    //   customerPhone.value = res.data?.customerPhone || customerPhone.value;
-    // }
-
-    // 临时：根据订单详情推断状态
     const res = await businessApi.getCreditDetailByOrderId(creditOrderId.value);
     if (res?.code === 200 && res.data) {
       const d = res.data;
@@ -285,18 +286,37 @@ async function loadSignStatus() {
       customerPhone.value = d.phone || d.telephone || customerPhone.value;
 
       const localStatus = getLocalSignStatus();
-      const nodeStatus = d.currentStatus || d.nodeStatus || d.status;
-      const nodeCode = d.currentNode || d.nodeCode || d.businessNode;
+      const businessNode = d.businessNode || "";
+      const creditStatus = d.status; // 1=成功 2=失败 3=补件 4=处理中
+      const passQuota = Number(d.passQuota || d.validAmt || 0);
 
-      if (d.isSignContract === 1 || nodeStatus === "SIGNED") {
-        signStatus.value = "SIGNED";
-      } else if (localStatus) {
-        signStatus.value = normalizeSignStatus(localStatus);
-      } else if (nodeCode === "4100" || nodeStatus === "PENDING_SIGN") {
-        signStatus.value = "CONFIRMING_AMOUNT";
-      } else {
-        signStatus.value = "CONFIRMING_AMOUNT";
+      // 根据订单数据判断当前应处于哪个签约阶段
+      let inferredStatus = localStatus || "";
+
+      // 已放款/已签约 → 全部完成
+      if (businessNode === "LOAN_DISBURSEMENT" && creditStatus === 1) {
+        inferredStatus = "SIGNED";
       }
+      // 签约阶段 → 根据子步骤判断
+      else if (businessNode === "SIGN_CONTRACT") {
+        if (localStatus) {
+          inferredStatus = localStatus; // 保留本地进度
+        } else if (passQuota > 0) {
+          inferredStatus = "BINDING_CARD"; // 有核定金额，从绑卡开始
+        } else {
+          inferredStatus = "CONFIRMING_AMOUNT";
+        }
+      }
+      // 有核定金额 → 额度已确认
+      else if (passQuota > 0) {
+        inferredStatus = inferredStatus || "BINDING_CARD";
+      }
+      // 默认
+      else {
+        inferredStatus = inferredStatus || "CONFIRMING_AMOUNT";
+      }
+
+      signStatus.value = normalizeSignStatus(inferredStatus);
       saveLocalSignStatus(signStatus.value);
     }
   } catch (e) {

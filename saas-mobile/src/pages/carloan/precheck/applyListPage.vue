@@ -112,19 +112,21 @@ const statusMap: Record<number, { text: string; type: StatusTagType }> = {
   4: { text: "待授信", type: "warning" },
 };
 
-function statusText(val: any) {
-  return (statusMap[val] || {}).text || (val ? `状态${val}` : "未知");
+function statusText(val: unknown) {
+  const key = Number(val);
+  return (statusMap[key] || {}).text || (val ? `状态${val}` : "未知");
 }
 
-function statusType(val: any) {
-  return (statusMap[val] || {}).type || "info";
+function statusType(val: unknown) {
+  const key = Number(val);
+  return (statusMap[key] || {}).type || "info";
 }
 
 // 格式化额度（字符串类型，单位元）
-function formatQuota(val: any) {
+function formatQuota(val: unknown) {
   if (!val && val !== "0") return "-";
   const num = Number(val);
-  if (Number.isNaN(num)) return val;
+  if (Number.isNaN(num)) return String(val);
   return num >= 10000 ? `${(num / 10000).toFixed(2)}万` : `${num.toFixed(2)}元`;
 }
 
@@ -144,12 +146,12 @@ const {
   onScroll,
   backToTop,
 } = useListPage<CreditListItem>({
-  fetchFn: async (params: any) => businessApi.getCreditList({ ...params, status: 4 }),
+  fetchFn: async (params: Record<string, unknown>) => businessApi.getCreditList({ ...params, status: 4 }),
   defaultParams: { status: 4 },
 });
 
 // 跳转详情
-function handleDetail(item: any) {
+function handleDetail(item: CreditListItem) {
   uni.navigateTo({
     url: buildRoute(
       APP_ROUTES.carloan.precheck.applyDetail,
@@ -159,7 +161,7 @@ function handleDetail(item: any) {
 }
 
 // 去授信 — 跳转人脸识别授信页面
-function handleGoCredit(item: any) {
+function handleGoCredit(item: CreditListItem) {
   const signRouteQuery = buildSignRouteQuery({
     uuid: item.uuid || "",
     name: item.name || "",

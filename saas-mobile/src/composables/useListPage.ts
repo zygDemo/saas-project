@@ -1,18 +1,26 @@
 import { reactive, ref } from "vue";
 
-export function useListPage<T>(options: {
-  fetchFn: (params: any) => Promise<any>;
-  defaultParams?: Record<string, any>;
+export interface UseListPageOptions<T> {
+  fetchFn: (params: Record<string, unknown>) => Promise<unknown>;
+  defaultParams?: Record<string, unknown>;
   pageSize?: number;
-  getRows?: (res: any) => T[];
-  getTotal?: (res: any) => number;
-}) {
+  getRows?: (res: unknown) => T[];
+  getTotal?: (res: unknown) => number;
+}
+
+export function useListPage<T>(options: UseListPageOptions<T>) {
   const {
     fetchFn,
     defaultParams = {},
     pageSize = 10,
-    getRows = (res) => res.rows || res.data || [],
-    getTotal = (res) => res.total || 0,
+    getRows = (res: unknown): T[] => {
+      const data = res as Record<string, unknown>;
+      return ((data.rows || data.data || []) as unknown) as T[];
+    },
+    getTotal = (res: unknown): number => {
+      const data = res as Record<string, unknown>;
+      return (data.total || 0) as number;
+    },
   } = options;
 
   const searchForm = reactive({
@@ -28,8 +36,8 @@ export function useListPage<T>(options: {
   const showBackTop = ref(false);
   const scrollTopValue = ref(0);
 
-  const buildSearchParams = () => {
-    const params: Record<string, any> = { ...defaultParams };
+  const buildSearchParams = (): Record<string, unknown> => {
+    const params: Record<string, unknown> = { ...defaultParams };
     const kw = searchForm.keyword.trim();
     if (kw) {
       if (/^\d{7,}$/.test(kw)) {
@@ -52,21 +60,19 @@ export function useListPage<T>(options: {
     }
 
     try {
-      const params = {
+      const params: Record<string, unknown> = {
         ...buildSearchParams(),
         pageNum: pageNum.value,
         pageSize,
       };
 
-      const res = await fetchFn(params);
+      const res = (await fetchFn(params)) as Record<string, unknown>;
 
-      if (res?.code === 200) {
+      if ((res as { code?: number }).code === 200) {
         const rows = getRows(res);
-        if (isRefresh) {
-          list.value = rows;
-        } else {
-          list.value.push(...rows);
-        }
+        list.value = isRefresh
+          ? rows
+          : [...(list.value as T[]), ...rows];
         hasMore.value = list.value.length < getTotal(res);
         pageNum.value++;
       }
@@ -97,9 +103,10 @@ export function useListPage<T>(options: {
     fetchList(false);
   };
 
-  const onScroll = (e: any) => {
-    scrollTop.value = e.detail.scrollTop;
-    showBackTop.value = e.detail.scrollTop > 400;
+  const onScroll = (e: unknown) => {
+    const detail = (e as { detail?: { scrollTop?: number } })?.detail;
+    scrollTop.value = detail?.scrollTop ?? 0;
+    showBackTop.value = (detail?.scrollTop ?? 0) > 400;
   };
 
   const backToTop = () => {

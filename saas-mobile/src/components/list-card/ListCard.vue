@@ -15,7 +15,7 @@
           class="avatar"
           :class="avatarClass ? `avatar--${avatarClass}` : ''"
         >
-          {{ (item.name || "?").charAt(0) }}
+          {{ avatarText }}
         </view>
         <view class="title-block">
           <text class="name">{{ item.name || `客户${index + 1}` }}</text>
@@ -46,7 +46,7 @@
 import { computed } from "vue";
 
 const props = defineProps<{
-  item: any;
+  item: Record<string, unknown>;
   index: number;
   statusClass?: string;
   avatarClass?: string;
@@ -54,8 +54,13 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "click", item: any): void;
+  (e: "click", item: Record<string, unknown>): void;
 }>();
+
+const avatarText = computed(() => {
+  const name = props.item.name
+  return typeof name === "string" && name.length > 0 ? name.charAt(0) : "?"
+});
 
 const handleClick = () => {
   emit("click", props.item);

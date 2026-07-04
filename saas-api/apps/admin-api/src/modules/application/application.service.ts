@@ -807,7 +807,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const tenantId = getCurrentTenantId()!
       const disbursement = await tx.disbursement.findFirst({ where: { applicationId: id } })
-      if (disbursement?.status !== DisbursementStatus.PENDING_APPROVAL) {
+      if (!disbursement || !['PENDING_APPROVAL', 'GPS_INSTALLED', 'MORTGAGE_DONE'].includes(disbursement.status)) {
         throw new BadRequestException('请先提交出账申请')
       }
       await tx.disbursement.upsert({
@@ -1277,8 +1277,27 @@ export class ApplicationService extends BaseBusinessCrudService<
 
     const nodeCode = query.currentNode ?? query.nodeCode
     const nodeStatus = query.currentStatus ?? query.nodeStatus
-    if (hasQueryValue(nodeCode)) where.currentNode = nodeCode
-    else if (hasQueryValue(query.phaseCode)) {
+    if (hasQueryValue(nodeCode)) {
+      where.currentNode = nodeCode
+    } else if (query.businessNode) {
+      // 字符串节点编码映射到数字 currentNode
+      const nodeMap: Record<string, number> = {
+        INITIAL_AUDIT: 1100,
+        PRE_AUDIT: 1200,
+        SUPPLEMENT_MATERIALS: 1300,
+        FIRST_REVIEW: 1400,
+        FINAL_REVIEW: 1450,
+        FUNDER_REVIEW: 1500,
+        SIGN_CONTRACT: 1600,
+        FACE_RECOGNITION: 1610,
+        FACE_SIGN: 1620,
+        LOAN_REQUEST: 1700,
+        LOAN_DISBURSEMENT: 1800,
+        POST_LOAN: 1900
+      }
+      const mapped = nodeMap[query.businessNode]
+      if (mapped) where.currentNode = mapped
+    } else if (hasQueryValue(query.phaseCode)) {
       const phaseCode = Number(query.phaseCode)
       const nodePhases = this.getFlowMappings().nodePhases
       const phaseNodeCodes = Object.entries(nodePhases)

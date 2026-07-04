@@ -16,7 +16,7 @@ export function useReadingApi() {
 
     /** 获取章节目录（轻量版，仅 id/title/sort/isVip，无分页） */
     getChaptersLite: (bookId: number | string) =>
-      http.get<ApiResponse<{ items: { id: number; title: string; sort: number; isVip: boolean }[] }>>(`/reading/chapters/lite`, { bookId }),
+      http.get<ApiResponse<{ items: ChapterLiteItem[] }>>(`/reading/chapters/lite`, { bookId }),
 
     /** 获取章节目录（分页版） */
     getChapters: (bookId: number | string, params?: { page?: number; pageSize?: number }) =>
@@ -91,6 +91,7 @@ export interface BookItem {
   ratingCount?: number;
   readCount?: number;
   category?: CategoryItem;
+  originalPrice?: number;
 }
 
 export interface BookDetail extends BookItem {
@@ -128,6 +129,13 @@ export interface ChapterItem {
   price?: string | number;
 }
 
+export interface ChapterLiteItem {
+  id: number;
+  title: string;
+  sort: number;
+  isVip: boolean;
+}
+
 export interface ChapterListResult {
   items: ChapterItem[];
   total: number;
@@ -146,6 +154,7 @@ export interface BookshelfItem {
   book?: BookItem;
   progress?: number;
   lastReadChapter?: string;
+  lastReadChapterId?: string | number;
   lastReadTime?: string;
 }
 

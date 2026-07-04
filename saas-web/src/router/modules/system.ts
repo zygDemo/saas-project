@@ -97,6 +97,17 @@ export const systemRoutes: AppRouteRecord = {
         keepAlive: true,
         roles: ['R_SUPER', 'R_ADMIN']
       }
+    },
+    {
+      path: 'monitor',
+      name: 'Monitor',
+      component: '/system/monitor',
+      meta: {
+        title: '监控中心',
+        icon: 'ri:shield-check-line',
+        keepAlive: true,
+        roles: ['R_SUPER', 'R_ADMIN']
+      }
     }
   ]
 }
