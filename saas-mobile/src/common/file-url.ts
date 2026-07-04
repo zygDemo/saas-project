@@ -4,7 +4,11 @@ const ABSOLUTE_URL_RE = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i;
 const API_PREFIX = "/saas/api";
 const FRONTEND_BASE_PREFIX = "/saas/mobile";
 
-type FileRecord = Record<string, any>;
+export interface FileRecord {
+  [key: string]: unknown;
+}
+
+const EMPTY_FILE_RECORD: FileRecord = {};
 
 function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");
@@ -19,8 +23,8 @@ function hasPathPrefix(path: string, prefix: string) {
   const normalizedPrefix = trimLeadingSlash(prefix);
   return Boolean(
     normalizedPrefix &&
-    (normalizedPath === normalizedPrefix ||
-      normalizedPath.startsWith(`${normalizedPrefix}/`)),
+      (normalizedPath === normalizedPrefix ||
+        normalizedPath.startsWith(`${normalizedPrefix}/`)),
   );
 }
 
@@ -143,53 +147,59 @@ export function toFilePreviewUrl(value?: string | null) {
   return `${base}/${trimLeadingSlash(filePath)}`;
 }
 
-export function normalizeFileRecord<T extends FileRecord>(file: T) {
-  const rawUrl = String(file?.fileUrl || file?.url || file?.objectKey || file?.fileKey || "");
-  const rawPreviewUrl = String(file?.previewUrl || file?.fullUrl || "");
+function toFileRecord(value: unknown): FileRecord {
+  return (value || EMPTY_FILE_RECORD) as FileRecord;
+}
+
+export function normalizeFileRecord(file: unknown): FileRecord {
+  const record = toFileRecord(file);
+  const rawUrl = String((record?.fileUrl || record?.url || record?.objectKey || record?.fileKey || "") as string);
+  const rawPreviewUrl = String((record?.previewUrl || record?.fullUrl || "") as string);
   const previewUrl = toFilePreviewUrl(rawPreviewUrl || rawUrl);
-  const fileUrl = toFilePreviewUrl(file?.fileUrl || rawUrl);
+  const fileUrl = toFilePreviewUrl((record?.fileUrl || rawUrl) as string);
 
   return {
-    ...file,
+    ...record,
     rawUrl,
     previewUrl,
     url: previewUrl || rawUrl,
     fileUrl: fileUrl || rawUrl,
-    objectKey: file?.objectKey || file?.fileKey,
-    fileKey: file?.fileKey || file?.objectKey,
+    objectKey: record?.objectKey || record?.fileKey,
+    fileKey: record?.fileKey || record?.objectKey,
   };
 }
 
-export function normalizeUploadItem<T extends FileRecord>(file: T) {
-  const normalizedResponse = normalizeFileRecord(file?.response || file || {});
+export function normalizeUploadItem(file: unknown): FileRecord {
+  const record = toFileRecord(file);
+  const normalizedResponse = normalizeFileRecord(record?.response || EMPTY_FILE_RECORD);
   const previewUrl = toFilePreviewUrl(
-    file?.previewUrl ||
+    (record?.previewUrl ||
       normalizedResponse.previewUrl ||
-      file?.url ||
-      file?.path ||
-      file?.thumb ||
-      "",
+      record?.url ||
+      record?.path ||
+      record?.thumb ||
+      "") as string,
   );
 
   return {
-    ...file,
+    ...record,
     previewUrl,
-    url: previewUrl || file?.url || "",
-    path: previewUrl || file?.path || "",
-    thumb: toFilePreviewUrl(file?.thumb || previewUrl),
-    response: file?.response ? normalizeFileRecord(file.response) : normalizedResponse,
+    url: previewUrl || record?.url || "",
+    path: previewUrl || record?.path || "",
+    thumb: toFilePreviewUrl((record?.thumb || previewUrl) as string),
+    response: record?.response ? normalizeFileRecord(record.response) : normalizedResponse,
   };
 }
 
-export function normalizeUploadResponse<T extends FileRecord>(response: T) {
-  const responseData =
-    response?.data && typeof response.data === "object" ? response.data : response;
-  if (!hasFileReference(responseData || {})) return response;
+export function normalizeUploadResponse(response: unknown): FileRecord {
+  const record = toFileRecord(response);
+  const responseData = ((record?.data && typeof record.data === "object" ? record.data : record) || EMPTY_FILE_RECORD) as FileRecord;
+  if (!hasFileReference(responseData)) return record;
 
-  const normalizedData = normalizeFileRecord(responseData || {});
+  const normalizedData = normalizeFileRecord(responseData as unknown as FileRecord);
 
   return {
-    ...response,
+    ...record,
     ...normalizedData,
     data: normalizedData,
   };

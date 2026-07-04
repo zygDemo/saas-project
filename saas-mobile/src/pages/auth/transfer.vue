@@ -87,19 +87,25 @@ async function initTransfer(query: TransferQuery) {
         sessionStore.setToken(token);
         console.log("Token 已成功存储到会话存储");
       }
-    } catch (tokenError: any) {
+    } catch (tokenError: unknown) {
       console.error("获取 Token 失败:", tokenError);
-      // Token 获取失败不阻断流程，继续跳转
+      const message =
+        tokenError instanceof Error
+          ? tokenError.message
+          : "获取授权信息失败，请重试";
+      console.warn(message);
     }
     loadingText.value = "正在处理跳转信息";
 
     const target = normalizeTargetPath(query.path) || getFallbackPage();
     const url = buildTargetUrl(target, transferInfo);
     navigate(url, target === HOME_PAGE ? "reLaunch" : "redirectTo");
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("中转页处理失败:", error);
-    errorText.value = error?.message || "处理失败,请重新进入";
-    uni.showToast({ title: errorText.value, icon: "none" });
+    const message =
+      error instanceof Error ? error.message : "处理失败,请重新进入";
+    errorText.value = message;
+    uni.showToast({ title: message, icon: "none" });
     setTimeout(() => {
       uni.reLaunch({ url: LOGIN_PAGE });
     }, 900);

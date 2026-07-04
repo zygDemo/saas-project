@@ -55,15 +55,28 @@ import { onLoad } from '@dcloudio/uni-app'
 import { useCarloanApi } from '@/api/carloan'
 
 const businessApi = useCarloanApi()
+interface LoanConfirmDetail {
+  applicationNo?: string;
+  customerName?: string;
+  approvedAmount?: string | number;
+  disbursement?: {
+    status?: string;
+    gpsDeviceNo?: string;
+    mortgageStatus?: string;
+    disburseAmount?: string | number;
+    disburseAccount?: string;
+  };
+}
+
 const applicationId = ref('')
-const detail = ref<any>({})
+const detail = ref<LoanConfirmDetail>({})
 const submitting = ref(false)
 
-function formatMoney(val: any) {
+function formatMoney(val: string | number | undefined) {
   return val ? Number(val).toLocaleString('zh-CN', { minimumFractionDigits: 2 }) : '0.00'
 }
 
-onLoad((options: any) => {
+onLoad((options?: Record<string, string | undefined>) => {
   applicationId.value = options?.applicationId || ''
 })
 
@@ -71,7 +84,7 @@ onMounted(async () => {
   if (!applicationId.value) return
   try {
     const res = await businessApi.getApplicationDetail(applicationId.value)
-    detail.value = res?.data || res || {}
+    detail.value = ((res as unknown) as Record<string, unknown>)?.data || res || {}
   } catch (e) {
     console.error('获取详情失败', e)
   }

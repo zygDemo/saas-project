@@ -129,6 +129,24 @@ export interface StatisticsOverview {
   loanAmount?: number;
 }
 
+export interface RepaymentPlanItem {
+  id: string | number;
+  period: number;
+  status: string;
+  dueDate: string;
+  totalAmount: string | number;
+  paidTotal: string | number;
+  penaltyAmount: string | number;
+}
+
+export interface FlowRecordItem {
+  currentNode: string;
+  approvalStatus: string;
+  approveName?: string;
+  approvalTime?: string;
+  approvalReason?: string;
+}
+
 /** 贷款业务节点枚举 */
 export interface LoanBusinessNode {
   /** 编码 */
@@ -602,7 +620,7 @@ export function useCarloanApi() {
 
     /** 获取客户银行卡列表 */
     getBankCards: (customerId: number | string) =>
-      http.get<ApiResponse<any[]>>(`/m/bank-card/list`, { customerId }),
+      http.get<ApiResponse<Record<string, unknown>[]>>(`/m/bank-card/list`, { customerId }),
 
     /** 添加银行卡 */
     addBankCard: (data: { customerId: number; bankName: string; cardNo: string; cardType?: string; isDefault?: boolean }) =>
@@ -623,7 +641,7 @@ export function useCarloanApi() {
 
     /** 获取还款计划 */
     getRepaymentPlans: (applicationId: number | string) =>
-      http.get<ApiResponse<any[]>>(`/m/post-loan/repayment-plans/${applicationId}`),
+      http.get<ApiResponse<RepaymentPlanItem[]>>(`/m/post-loan/repayment-plans/${applicationId}`),
 
     /** 申请提前还款 */
     applyEarlyRepayment: (data: { applicationId: number; repayType?: string; amount: number; principal: number; interest: number; penalty?: number; reason?: string }) =>
@@ -631,7 +649,7 @@ export function useCarloanApi() {
 
     /** 获取订单详情（用于请款确认） */
     getApplicationDetail: (id: number | string) =>
-      http.get<ApiResponse<any>>(`/m/post-loan/detail/${id}`),
+      http.get<ApiResponse<Record<string, unknown>>>(`/m/post-loan/detail/${id}`),
 
     // ========== 统计 ==========
 
@@ -641,6 +659,6 @@ export function useCarloanApi() {
 
     /** 获取订单流程记录（生命周期） */
     getLifecycle: (orderId: number | string) =>
-      http.get<ApiResponse<any[]>>(`/application/lifecycle/${orderId}`),
+      http.get<ApiResponse<FlowRecordItem[]>>(`/application/lifecycle/${orderId}`),
   };
 }

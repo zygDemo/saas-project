@@ -143,7 +143,7 @@ function toggleCategory(index: number) {
   categories.value[index].expanded = !categories.value[index].expanded;
 }
 
-function showDetail(item: any) {
+function showDetail(item: Record<string, unknown>) {
   currentItem.value = item;
   showDetailPopup.value = true;
 }

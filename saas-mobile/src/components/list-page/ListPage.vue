@@ -75,7 +75,7 @@ const keywordModel = computed({
 const handleSearch = () => emit("search");
 const onRefresh = () => emit("refresh");
 const loadMore = () => emit("loadMore");
-const onScroll = (event: any) => emit("scroll", event);
+const onScroll = (event: Record<string, unknown>) => emit("scroll", event);
 const backToTop = () => emit("backToTop");
 </script>
 

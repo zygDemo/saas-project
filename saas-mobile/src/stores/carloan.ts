@@ -62,7 +62,7 @@ export const useCarloanStore = defineStore("carloan", {
   },
   actions: {
     /** 从路由 query 中同步页面上下文（统一字段映射：name→customerName, phone→customerPhone, orderNo→creditOrderId）。 */
-    syncFromRouteQuery(query: Record<string, any>) {
+    syncFromRouteQuery(query: Record<string, string | undefined>) {
       this.pageContext = {
         uuid: String(query?.uuid || ""),
         creditOrderId: String(query?.creditOrderId || query?.orderNo || ""),
@@ -112,7 +112,7 @@ export const useCarloanStore = defineStore("carloan", {
   },
   persist: {
     key: "carloan-store",
-    storage: (globalThis as any)?.sessionStorage || sessionStorageAdapter,
+    storage: ((globalThis as unknown) as { sessionStorage?: Storage }).sessionStorage || sessionStorageAdapter,
     paths: ["currentOrder", "pageContext", "workbenchFilter", "latestQuery", "draftMap"],
   },
 });

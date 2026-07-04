@@ -55,18 +55,28 @@ import { useCarloanApi } from '@/api/carloan'
 import type { ApiResponse } from '@/api/carloan'
 
 const businessApi = useCarloanApi()
+interface RepaymentPlanItem {
+  id: string | number;
+  period: number;
+  status: string;
+  dueDate: string;
+  totalAmount: string | number;
+  paidTotal: string | number;
+  penaltyAmount: string | number;
+}
+
 const loading = ref(true)
-const plans = ref<any[]>([])
+const plans = ref<RepaymentPlanItem[]>([])
 const applicationId = ref('')
 const applicationNo = ref('')
 const customerName = ref('')
 const loanAmount = ref('')
 
-function formatMoney(val: any) {
+function formatMoney(val: string | number | undefined) {
   return val ? Number(val).toLocaleString('zh-CN', { minimumFractionDigits: 2 }) : '0.00'
 }
 
-function formatDate(val: any) {
+function formatDate(val: string | number | undefined) {
   if (!val) return '-'
   return new Date(val).toLocaleDateString('zh-CN')
 }
@@ -88,7 +98,7 @@ function statusType(status: string) {
   return (STATUS_MAP[status]?.type || 'info') as 'info' | 'primary' | 'warning' | 'success' | 'error'
 }
 
-onLoad((options: any) => {
+onLoad((options?: Record<string, string | undefined>) => {
   applicationId.value = options?.applicationId || ''
   applicationNo.value = options?.applicationNo || ''
   customerName.value = options?.customerName || ''
@@ -99,7 +109,7 @@ onMounted(async () => {
   if (!applicationId.value) return
   try {
     const res = await businessApi.getRepaymentPlans(applicationId.value)
-    const list = Array.isArray(res) ? res : (res as ApiResponse<any[]> | undefined)?.data
+    const list = Array.isArray(res) ? res : (res as ApiResponse<RepaymentPlanItem[]> | undefined)?.data
     plans.value = list ?? []
   } catch (e) {
     console.error('获取还款计划失败', e)

@@ -169,7 +169,7 @@ const form = reactive({
   usageType: "",
   // 车辆评估金额
   valuationPrice: "",
-});
+} as Record<string, string>);
 
 // ========== 数据加载 ==========
 
@@ -206,7 +206,8 @@ async function loadData() {
   for (const [apiField, { key, transform }] of Object.entries(FIELD_MAP)) {
     const val = data[apiField];
     if (val !== undefined && val !== null) {
-      (form as any)[key] = transform ? transform(val) : val;
+      const typedVal = val as string;
+      form[key] = transform ? transform(typedVal) : typedVal;
     }
   }
 
@@ -327,26 +328,36 @@ const evaluationFormItems = [
   },
 ];
 
+interface FormItemConfig {
+  key: string;
+  label: string;
+  type: string;
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+  options?: Array<{ label: string; value: string | number }>;
+}
+
 const readonlyBasicFormItems = computed(() =>
   basicFormItems.map((item) => ({
     ...item,
-    disabled: readonly.value || Boolean((item as any).disabled),
+    disabled: readonly.value || Boolean((item as FormItemConfig).disabled),
   })),
-);
+)
 
 const readonlyStatusFormItems = computed(() =>
   statusFormItems.map((item) => ({
     ...item,
-    disabled: readonly.value || Boolean((item as any).disabled),
+    disabled: readonly.value || Boolean((item as FormItemConfig).disabled),
   })),
-);
+)
 
 const readonlyEvaluationFormItems = computed(() =>
   evaluationFormItems.map((item) => ({
     ...item,
-    disabled: readonly.value || Boolean((item as any).disabled),
+    disabled: readonly.value || Boolean((item as FormItemConfig).disabled),
   })),
-);
+)
 
 // ========== 查询接口 ==========
 
@@ -460,6 +471,44 @@ async function queryVehicleModel() {
 
 // ========== 保存 ==========
 
+interface SupplementSubmitData {
+  uuid: string;
+  creditOrderId?: string;
+  vehicleBrand?: string;
+  vehicleModel?: string;
+  vehicleCode?: string;
+  fuelType?: number;
+  mileage?: string;
+  vehicleColor?: string;
+  isFault?: number;
+  isMortgage?: number;
+  usageNature?: string;
+  valuationPrice?: number;
+  modelId?: string;
+}
+
+const submitData = reactive<SupplementSubmitData>({
+  uuid: "",
+});
+
+function updateSubmitData() {
+  submitData.uuid = carloanStore.pageContext.uuid;
+  submitData.creditOrderId = creditOrderId.value || undefined;
+  submitData.vehicleBrand = form.vehicleBrand || undefined;
+  submitData.vehicleModel = form.vehicleModel || undefined;
+  submitData.vehicleCode = form.vehicleCode || undefined;
+  submitData.fuelType = form.fuelType ? Number(form.fuelType) : undefined;
+  submitData.mileage = form.mileage || undefined;
+  submitData.vehicleColor = form.carColor || undefined;
+  submitData.isFault = form.isAccident ? Number(form.isAccident) : undefined;
+  submitData.isMortgage = form.isMortgage ? Number(form.isMortgage) : undefined;
+  submitData.usageNature = form.usageType || undefined;
+  submitData.valuationPrice = form.valuationPrice
+    ? Number(form.valuationPrice)
+    : undefined;
+  submitData.modelId = form.modelId || undefined;
+}
+
 async function saveVehicleInfo() {
   if (readonly.value) return false;
 
@@ -489,29 +538,12 @@ async function saveVehicleInfo() {
     $u.toast("评估金额格式不正确，请输入正确金额");
     return false;
   }
-  // ========== 校验通过，组装提交数据 ==========
+  // ========== 校验通过，提交数据 ==========
 
   submitLoading.value = true;
   try {
-    const data: Record<string, unknown> = {
-      uuid: carloanStore.pageContext.uuid,
-      creditOrderId: creditOrderId.value || undefined,
-      vehicleBrand: form.vehicleBrand || undefined,
-      vehicleModel: form.vehicleModel || undefined,
-      vehicleCode: form.vehicleCode || undefined,
-      fuelType: form.fuelType ? Number(form.fuelType) : undefined,
-      mileage: form.mileage || undefined,
-      vehicleColor: form.carColor || undefined,
-      isFault: form.isAccident ? Number(form.isAccident) : undefined,
-      isMortgage: form.isMortgage ? Number(form.isMortgage) : undefined,
-      usageNature: form.usageType || undefined,
-      valuationPrice: form.valuationPrice
-        ? Number(form.valuationPrice)
-        : undefined,
-      modelId: form.modelId || undefined,
-    };
-
-    const res = await businessApi.addOrUpdateVehicle(data);
+    updateSubmitData();
+    const res = await businessApi.addOrUpdateVehicle(submitData);
     if (res?.code === 200) {
       $u.toast("保存成功", "success");
       return true;

@@ -104,11 +104,7 @@ import layout from "@/pages/layout/layout.vue";
 import { computed, ref } from "vue";
 import { onLoad, onReachBottom, onShow } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
-import type {
-  CreditListItem,
-  LoanBusinessNode,
-  PageResult,
-} from "@/api/carloan";
+import type { CreditListItem, LoanBusinessNode, PageResult, FlowRecordItem } from "@/api/carloan";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import {
   buildSignRouteQuery,
@@ -258,15 +254,34 @@ const formatDateTime = (v: unknown): string => {
 
 // ---- 业务节点相关 ----
 
+// 流程节点中文映射（lifecycle API 返回的节点 code）
+const FLOW_NODE_LABELS: Record<string, string> = {
+  INITIAL_AUDIT: "初审",
+  PRE_AUDIT: "预审",
+  SUPPLEMENT_MATERIALS: "补充资料",
+  SIGN_CONTRACT: "签约",
+  LOAN_DISBURSEMENT: "放款",
+  FUNDER_PRE: "资方预审",
+  FIRST_REVIEW: "初审",
+  FINAL_REVIEW: "终审",
+  FUNDER_REVIEW: "资方审批",
+  LOAN_REQUEST: "请款审批",
+  "1100": "初审", "1200": "预审", "1250": "资方预审",
+  "1300": "补件", "1400": "初审", "1450": "终审",
+  "1500": "资方审批", "1600": "签约", "1610": "面签",
+  "1700": "请款", "1800": "放款", "1900": "贷后",
+};
+
 function getBusinessNodeLabel(node: unknown) {
   if (node === undefined || node === null || String(node) === "")
     return "未知节点";
   const code = String(node);
+  if (FLOW_NODE_LABELS[code]) return FLOW_NODE_LABELS[code];
   if (code.startsWith("125"))
     return businessNodeMap.value["1300"] || "资方预审";
   const normalizedCode = code.length >= 3 ? `${code.slice(0, 2)}00` : code;
   return (
-    businessNodeMap.value[code] || businessNodeMap.value[normalizedCode] || code
+    businessNodeMap.value[code] || businessNodeMap.value[normalizedCode] || FLOW_NODE_LABELS[normalizedCode] || code
   );
 }
 
@@ -591,8 +606,9 @@ async function onRefresh() {
   isRefreshing.value = false;
 }
 
-function onScroll(e: any) {
-  showBackToTop.value = e.detail.scrollTop > SCROLL_THRESHOLD;
+function onScroll(e: unknown) {
+  const detail = (e as Record<string, unknown>)?.detail as Record<string, unknown> | undefined;
+  showBackToTop.value = Number(detail?.scrollTop ?? 0) > SCROLL_THRESHOLD;
 }
 
 function handleBackToTop() {
@@ -603,7 +619,7 @@ function handleBackToTop() {
 
 const flowRecordVisible = ref(false);
 const flowRecordLoading = ref(false);
-const flowRecordList = ref<any[]>([]);
+const flowRecordList = ref<FlowRecordItem[]>([]);
 
 async function handleFlowRecord(order: OrderListViewItem) {
   flowRecordLoading.value = true;

@@ -53,7 +53,7 @@ const form = reactive({
   reason: '',
 })
 
-onLoad((options: any) => {
+onLoad((options?: Record<string, string | undefined>) => {
   applicationId.value = options?.applicationId || ''
 })
 

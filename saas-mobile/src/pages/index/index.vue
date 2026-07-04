@@ -103,6 +103,7 @@ import {
   getModuleHomeRoute,
 } from "@/common/navigation";
 import { fetchMobileConfig, type MobileConfigData, type MobileModuleItem } from "@/api/mobile-config";
+import type { CurrentSystemValue } from "@/stores/local";
 import { computed, ref } from "vue";
 import { onLoad, onShow } from "@dcloudio/uni-app";
 import layout from "@/pages/layout/layout.vue";
@@ -158,7 +159,7 @@ onLoad(async () => {
       // 单模块模式：直接进入该模块（不用 data.enabled.length，用 isMultiModule 语义更准确）
       const entry = getInitialMobileEntry(data);
       if (entry.moduleKey) {
-        localStore.setCurrentSystem(entry.system as any);
+        localStore.setCurrentSystem(entry.system as CurrentSystemValue);
         uni.reLaunch({ url: entry.route });
         return;
       }
@@ -279,11 +280,14 @@ const allServiceCards = [...serviceCards.value];
 /** 原始完整快捷功能列表 */
 const allShortcutItems = [...shortcutItems.value];
 
-function normalizeMobileConfig(response: any): MobileConfigData | null {
-  const config = response?.data?.enabled ? response.data : response;
+function normalizeMobileConfig(response: unknown): MobileConfigData | null {
+  const raw = (response as Record<string, unknown>)?.data
+    ? ((response as Record<string, unknown>).data as Record<string, unknown>)
+    : (response as Record<string, unknown>);
+  const config = raw as unknown as MobileConfigData;
   if (!config || !Array.isArray(config.enabled)) return null;
   return {
-    available: Array.isArray(config.available) ? config.available : [],
+    available: Array.isArray(config.available) ? (config.available as MobileModuleItem[]) : [],
     enabled: config.enabled,
     defaultModule: config.defaultModule ?? null,
     isMultiModule: Boolean(config.isMultiModule),

@@ -1,5 +1,5 @@
 <template>
-  <u-popup :value="visible" mode="bottom" :round="16" :closeable="true" @input="onInput">
+  <u-popup :modelValue="visible" mode="bottom" :round="16" :closeable="true" @update:modelValue="onInput">
     <view class="flow-record-popup">
       <view class="flow-record-header">
         <view class="flow-record-header__bar" />
@@ -52,11 +52,19 @@
 </template>
 
 <script setup lang="ts">
+interface FlowRecordItem {
+  currentNode: string;
+  approvalStatus: string;
+  approveName?: string;
+  approvalTime?: string;
+  approvalReason?: string;
+}
+
 defineProps<{
   visible: boolean;
   loading: boolean;
-  records: any[];
-  getNodeLabel: (key: unknown) => string;
+  records: FlowRecordItem[];
+  getNodeLabel: (key: string) => string;
 }>();
 
 const emit = defineEmits<{
@@ -67,14 +75,14 @@ function onInput(val: boolean) {
   emit("update:visible", val);
 }
 
-function dotClass(item: any) {
+function dotClass(item: FlowRecordItem) {
   if (item.approvalStatus === "待处理") return "dot-pending";
   if (item.approvalStatus.includes("通过") || item.approvalStatus === "完成") return "dot-pass";
   if (item.approvalStatus.includes("拒绝")) return "dot-reject";
   return "dot-default";
 }
 
-function statusClass(item: any) {
+function statusClass(item: FlowRecordItem) {
   if (item.approvalStatus === "待处理") return "status-pending";
   if (item.approvalStatus.includes("通过") || item.approvalStatus === "完成") return "status-pass";
   if (item.approvalStatus.includes("拒绝")) return "status-reject";

@@ -53,11 +53,11 @@ defineProps({
     default: false,
   },
   customStyle: {
-    type: [String, Object] as PropType<string | Record<string, any>>,
+    type: [String, Object] as PropType<string | Record<string, unknown>>,
     default: "",
   },
   customClass: {
-    type: [String, Object] as PropType<string | Record<string, any>>,
+    type: [String, Object] as PropType<string | Record<string, unknown>>,
     default: "",
   },
 });

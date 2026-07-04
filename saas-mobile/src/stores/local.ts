@@ -230,7 +230,7 @@ export const useLocalStore = defineStore("local", {
   },
   persist: {
     key: "local-store",
-    storage: (globalThis as any)?.localStorage || localStorageAdapter,
+    storage: ((globalThis as unknown) as { localStorage?: Storage }).localStorage || localStorageAdapter,
     paths: [
       "token",
       "refreshToken",
