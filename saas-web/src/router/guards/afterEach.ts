@@ -5,29 +5,37 @@ import NProgress from 'nprogress'
 import { useCommon } from '@/hooks/core/useCommon'
 import { loadingService } from '@/utils/ui'
 import { getPendingLoading, resetPendingLoading } from './beforeEach'
+import { reportPerformance } from '@/utils/monitor/monitor'
 
 /** 路由全局后置守卫 */
 export function setupAfterEachGuard(router: Router) {
   const { scrollToTop } = useCommon()
 
-  router.afterEach(() => {
+  router.afterEach((to, from) => {
     scrollToTop()
 
-    // 关闭进度条
     const settingStore = useSettingStore()
     if (settingStore.showNprogress) {
       NProgress.done()
-      // 确保进度条完全移除，避免残影
       setTimeout(() => {
         NProgress.remove()
       }, 600)
     }
 
-    // 关闭 loading 效果
     if (getPendingLoading()) {
       nextTick(() => {
         loadingService.hideLoading()
         resetPendingLoading()
+      })
+    }
+
+    const fromRoute = from.fullPath
+    const toRoute = to.fullPath
+    if (fromRoute !== toRoute) {
+      reportPerformance({
+        type: 'route',
+        name: to.name as string,
+        url: toRoute,
       })
     }
   })

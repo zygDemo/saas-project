@@ -11,7 +11,7 @@
  */
 
 export interface MonitorError {
-  type: 'vue' | 'script' | 'promise' | 'resource' | 'request'
+  type: 'vue' | 'script' | 'promise' | 'resource' | 'request' | 'request-error'
   message: string
   source?: string
   lineno?: number
@@ -88,7 +88,7 @@ function safeStringify(data: unknown): string {
 export async function report(item: MonitorReportItem): Promise<void> {
   if (!enabled) return
 
-  const payload = buildCommon(item)
+  const payload = buildCommon((item as unknown) as Record<string, unknown>)
 
   try {
     const send = () => {

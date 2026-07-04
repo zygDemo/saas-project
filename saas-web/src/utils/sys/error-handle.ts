@@ -30,6 +30,7 @@
  * @author Art Design Pro Team
  */
 import type { App, ComponentPublicInstance } from 'vue'
+import { reportError, reportPerformance } from '@/utils/monitor/monitor'
 
 const IGNORABLE_SCRIPT_ERRORS = [
   'ResizeObserver loop completed with undelivered notifications.',
@@ -56,11 +57,9 @@ function isIgnorableScriptError(message: Event | string, source?: string): boole
   }
 
   if (IGNORABLE_SCRIPT_ERRORS.some((item) => normalizedMessage.includes(item))) {
-    // 浏览器/扩展在布局抖动时常见的 ResizeObserver 噪声，不作为真实异常处理
     return true
   }
 
-  // 浏览器扩展注入脚本偶发的跨域 Script error 也没有排查价值
   if (normalizedMessage === 'Script error.' && source === '') {
     return true
   }
@@ -68,18 +67,16 @@ function isIgnorableScriptError(message: Event | string, source?: string): boole
   return false
 }
 
-/**
- * Vue 运行时错误处理
- */
 export function vueErrorHandler(err: unknown, instance: ComponentPublicInstance | null, info: string) {
   console.error('[VueError]', err, info, instance)
-  // 这里可以上报到服务端，比如：
-  // reportError({ type: 'vue', err, info })
+  reportError({
+    type: 'vue',
+    message: err instanceof Error ? err.message : String(err),
+    stack: err instanceof Error ? err.stack : undefined,
+    source: instance?.$options?.name || info,
+  })
 }
 
-/**
- * 全局脚本错误处理
- */
 export function scriptErrorHandler(
   message: Event | string,
   source?: string,
@@ -92,23 +89,29 @@ export function scriptErrorHandler(
   }
 
   console.error('[ScriptError]', { message, source, lineno, colno, error })
-  // reportError({ type: 'script', message, source, lineno, colno, error })
-  return true // 阻止默认控制台报错，可根据需求改
+  reportError({
+    type: 'script',
+    message: normalizeErrorMessage(message),
+    source,
+    lineno: typeof lineno === 'number' ? lineno : undefined,
+    colno: typeof colno === 'number' ? colno : undefined,
+    stack: error?.stack,
+  })
+  return true
 }
 
-/**
- * Promise 未捕获错误处理
- */
 export function registerPromiseErrorHandler() {
   window.addEventListener('unhandledrejection', (event) => {
     console.error('[PromiseError]', event.reason)
-    // reportError({ type: 'promise', reason: event.reason })
+    const reason = event.reason
+    reportError({
+      type: 'promise',
+      message: reason instanceof Error ? reason.message : String(reason),
+      stack: reason instanceof Error ? reason.stack : undefined,
+    })
   })
 }
 
-/**
- * 资源加载错误处理 (img, script, css...)
- */
 export function registerResourceErrorHandler() {
   window.addEventListener(
     'error',
@@ -125,16 +128,20 @@ export function registerResourceErrorHandler() {
             (target as HTMLScriptElement).src ||
             (target as HTMLLinkElement).href
         })
-        // reportError({ type: 'resource', target })
+        reportError({
+          type: 'resource',
+          message: `${target.tagName} load failed`,
+          source:
+            (target as HTMLImageElement).src ||
+            (target as HTMLScriptElement).src ||
+            (target as HTMLLinkElement).href,
+        })
       }
     },
-    true // 捕获阶段才能监听到资源错误
+    true
   )
 }
 
-/**
- * 安装统一错误处理
- */
 export function setupErrorHandle(app: App) {
   app.config.errorHandler = vueErrorHandler
   window.onerror = scriptErrorHandler

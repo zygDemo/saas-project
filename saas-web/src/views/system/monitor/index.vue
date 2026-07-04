@@ -145,7 +145,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, h, onMounted, onUnmounted, reactive, computed, watch, nextTick } from 'vue'
+  import { ref, onMounted, onUnmounted, reactive, watch, nextTick } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
   import { echarts, graphic } from '@/plugins/echarts'
   import {
@@ -159,28 +159,22 @@
 
   defineOptions({ name: 'Monitor' })
 
-  const stats = reactive<AuditLogStats>({
+  const stats = reactive<MonitorStats>({
     total: 0,
-    successCount: 0,
-    failCount: 0,
-    successRate: 0,
-    modules: [],
-    actions: [],
+    errorCount: 0,
+    performanceCount: 0,
+    actionCount: 0,
     hourly: [],
-    attackIps: [],
-    burstIps: [],
-    loginAttempts: [],
-    consecutiveFails: []
+    sourceBreakdown: [],
   })
 
   const detailVisible = ref(false)
-  const currentRow = ref<AuditLogItem | null>(null)
+  const currentRow = ref<MonitorLogItem | null>(null)
   const searchForm = ref({
     keyword: '',
     module: 'frontend-monitor',
-    action: '',
-    userName: '',
-    status: ''
+    event: '',
+    statusCode: '',
   })
 
   const trendChartRef = ref<HTMLElement>()
@@ -198,13 +192,30 @@
     { prop: 'action', label: '操作', width: 100, fixed: 'right' }
   ]
 
-  const { loading, data, pagination, refreshData, handleSizeChange, handleCurrentChange, handleSearch, resetSearchParams } =
-    useTable<AuditLogItem>(fetchAuditLogs, {
-      immediate: true
+  const { loading, data, pagination, refreshData, handleSizeChange, handleCurrentChange } =
+    useTable({
+      core: {
+        apiFn: fetchMonitorLogs,
+        immediate: true,
+      },
     })
 
-  const errorCount = computed(() => stats.failCount || 0)
-  const performanceCount = computed(() => stats.attackIps?.length || 0)
+  const handleSearch = () => {
+    refreshData()
+  }
+
+  const resetSearchParams = () => {
+    searchForm.value = {
+      keyword: '',
+      module: 'frontend-monitor',
+      event: '',
+      statusCode: '',
+    }
+    refreshData()
+  }
+
+  const errorCount = computed(() => stats.errorCount || 0)
+  const performanceCount = computed(() => stats.performanceCount || 0)
   const actionCount = computed(() => Math.max((stats.total || 0) - errorCount.value - performanceCount.value, 0))
 
   const typeTagType = (type?: string) => {
@@ -238,14 +249,16 @@
     })
   }
 
-  const showDetail = (row: AuditLogItem) => {
-    currentRow.value = row
+  const showDetail = (row: Record<string, unknown>) => {
+    currentRow.value = (row as unknown) as MonitorLogItem
     detailVisible.value = true
   }
 
   const loadStats = async () => {
     try {
-      const result = await fetchAuditLogStats()
+      const result = await fetchMonitorStats({
+        module: searchForm.value.module,
+      })
       Object.assign(stats, result)
       updateTrendChart()
     } catch (error) {
@@ -260,7 +273,7 @@
   }
 
   const updateTrendChart = () => {
-    if (!trendChart || !stats.hourly.length) return
+    if (!trendChart || !stats.hourly?.length) return
 
     const hours = stats.hourly.map((item) => item.label)
     const counts = stats.hourly.map((item) => item.count)

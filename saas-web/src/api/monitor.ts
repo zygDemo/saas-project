@@ -29,7 +29,7 @@ export interface MonitorStats {
 }
 
 export function fetchMonitorLogs(params: Record<string, unknown>) {
-  return request.get<{ records: MonitorLogItem[]; total: number }>({
+  return request.get<Api.Common.PaginatedResponse<MonitorLogItem>>({
     url: '/monitor/logs',
     params,
   })

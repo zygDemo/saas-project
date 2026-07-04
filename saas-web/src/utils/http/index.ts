@@ -20,6 +20,7 @@ import { ApiStatus } from './status'
 import { HttpError, handleError, showError, showSuccess } from './error'
 import { $t } from '@/locales'
 import { BaseResponse } from '@/types'
+import { reportError, reportPerformance } from '@/utils/monitor/monitor'
 
 /** 请求配置常量 */
 const REQUEST_TIMEOUT = 15000
@@ -78,6 +79,12 @@ axiosInstance.interceptors.request.use(
       request.data = JSON.stringify(request.data)
     }
 
+    const startTime = Date.now()
+    const requestUrl = request.url || ''
+    request.headers.set('X-Request-Id', `${startTime}-${Math.random().toString(36).slice(2, 9)}`)
+    ;(request as ExtendedAxiosRequestConfig & { __monitorStart?: number }).__monitorStart = startTime
+    ;(request as ExtendedAxiosRequestConfig & { __monitorUrl?: string }).__monitorUrl = requestUrl
+
     return request
   },
   (error) => {
@@ -90,12 +97,44 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<BaseResponse>) => {
     const { code, msg } = response.data
-    if (code === ApiStatus.success) return response
+    if (code === ApiStatus.success) {
+      const startTime = (response.config as ExtendedAxiosRequestConfig & { __monitorStart?: number }).__monitorStart
+      const requestUrl = (response.config as ExtendedAxiosRequestConfig & { __monitorUrl?: string }).__monitorUrl || response.config.url || ''
+      if (typeof startTime === 'number') {
+        const duration = Date.now() - startTime
+        reportPerformance({
+          type: 'request',
+          name: requestUrl,
+          duration,
+          statusCode: response.status,
+          url: requestUrl,
+        })
+      }
+      return response
+    }
     if (code === ApiStatus.unauthorized) handleUnauthorizedError(msg)
     throw createHttpError(msg || $t('httpMsg.requestFailed'), code)
   },
   (error) => {
     if (error.response?.status === ApiStatus.unauthorized) handleUnauthorizedError()
+    const startTime = (error.config as ExtendedAxiosRequestConfig & { __monitorStart?: number }).__monitorStart
+    const requestUrl = (error.config as ExtendedAxiosRequestConfig & { __monitorUrl?: string }).__monitorUrl || error.config?.url || ''
+    if (typeof startTime === 'number') {
+      const duration = Date.now() - startTime
+      reportPerformance({
+        type: 'request',
+        name: requestUrl,
+        duration,
+        statusCode: error.response?.status,
+        url: requestUrl,
+      })
+    }
+    reportError({
+      type: 'request-error',
+      message: error.message,
+      source: requestUrl,
+      stack: error.stack,
+    })
     return Promise.reject(handleError(error))
   }
 )
