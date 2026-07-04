@@ -15,7 +15,7 @@ import { IframeRouteManager } from './IframeRouteManager'
 interface ConvertedRoute extends Omit<RouteRecordRaw, 'children'> {
   id?: number
   children?: ConvertedRoute[]
-  component?: RouteRecordRaw['component'] | (() => Promise<any>)
+  component?: RouteRecordRaw['component'] | (() => Promise<unknown>)
 }
 
 export class RouteTransformer {

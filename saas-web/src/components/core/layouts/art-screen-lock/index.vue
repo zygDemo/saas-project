@@ -126,8 +126,8 @@
 
   // 响应式数据
   const visible = ref<boolean>(false)
-  const lockInputRef = ref<any>(null)
-  const unlockInputRef = ref<any>(null)
+  const lockInputRef = ref<HTMLInputElement | null>(null)
+  const unlockInputRef = ref<HTMLInputElement | null>(null)
   const showDevToolsWarning = ref<boolean>(false)
 
   // 表单相关

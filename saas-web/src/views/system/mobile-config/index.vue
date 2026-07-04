@@ -215,6 +215,41 @@ interface EntityConfig {
   roles?: { roleId: number; roleName: string }[]
 }
 
+interface RoleItem {
+  id: number
+  name: string
+  code: string
+  description?: string
+}
+
+interface UserItem {
+  id: number
+  username: string
+  nickname?: string
+  email?: string
+}
+
+interface RoleListResponse {
+  items: RoleItem[]
+  total: number
+}
+
+interface UserListResponse {
+  items: UserItem[]
+  total: number
+}
+
+interface UserListParams {
+  page: number
+  pageSize: number
+  keyword?: string
+}
+
+interface ResetConfigData {
+  enabled?: string[]
+  mobileMultiModule?: boolean
+}
+
 // ─── Tabs ───
 const activeTab = ref('tenant')
 
@@ -274,7 +309,7 @@ const saveTenantConfig = async () => {
 }
 
 // ─── 角色列表 ───
-const roleList = ref<any[]>([])
+const roleList = ref<RoleItem[]>([])
 const roleLoading = ref(false)
 const rolePage = ref(1)
 const rolePageSize = ref(20)
@@ -283,7 +318,7 @@ const roleTotal = ref(0)
 const loadRoles = async () => {
   roleLoading.value = true
   try {
-    const res = (await fetchGetRoleList({ current: rolePage.value, size: rolePageSize.value })) as any
+    const res = (await fetchGetRoleList({ current: rolePage.value, size: rolePageSize.value })) as unknown as RoleListResponse
     roleList.value = res?.items || []
     roleTotal.value = res?.total || 0
   } catch {
@@ -294,7 +329,7 @@ const loadRoles = async () => {
 }
 
 // ─── 用户列表 ───
-const userList = ref<any[]>([])
+const userList = ref<UserItem[]>([])
 const userLoading = ref(false)
 const userSearch = ref('')
 const userPage = ref(1)
@@ -305,9 +340,9 @@ const loadUsers = async () => {
   userLoading.value = true
   userPage.value = 1
   try {
-    const params: any = { page: userPage.value, pageSize: userPageSize.value }
+    const params: UserListParams = { page: userPage.value, pageSize: userPageSize.value }
     if (userSearch.value) params.keyword = userSearch.value
-    const res = (await fetchGetUserList(params)) as any
+    const res = (await fetchGetUserList(params)) as unknown as UserListResponse
     userList.value = res?.items || []
     userTotal.value = res?.total || 0
   } catch {
@@ -319,8 +354,8 @@ const loadUsers = async () => {
 
 // ─── 角色/用户配置弹窗 ───
 const showRoleDialog = ref(false)
-const currentRole = ref<any>(null)
-const currentUser = ref<any>(null)
+const currentRole = ref<RoleItem | null>(null)
+const currentUser = ref<UserItem | null>(null)
 const entityConfigData = ref<EntityConfig>({
   available: [],
   enabled: [],
@@ -335,14 +370,14 @@ const entityConfigLoading = ref(false)
 const entitySaving = ref(false)
 const entityResetLoading = ref(false)
 
-const openRoleConfig = async (row: any) => {
+const openRoleConfig = async (row: RoleItem) => {
   currentRole.value = row
   currentUser.value = null
   await loadEntityConfig('role', row.id)
   showRoleDialog.value = true
 }
 
-const openUserConfig = async (row: any) => {
+const openUserConfig = async (row: UserItem) => {
   currentUser.value = row
   currentRole.value = null
   await loadEntityConfig('user', row.id)
@@ -392,13 +427,13 @@ const resetEntityConfig = async () => {
   try {
     if (currentRole.value) {
       const res = await fetchResetRoleMobileConfig(currentRole.value.id)
-      const data = res as any
+      const data = res as ResetConfigData
       entitySelectedModules.value = data?.enabled || []
       entityMultiModule.value = data?.mobileMultiModule ?? false
       ElMessage.success('已恢复为默认配置')
     } else if (currentUser.value) {
       const res = await fetchResetUserMobileConfig(currentUser.value.id)
-      const data = res as any
+      const data = res as ResetConfigData
       entitySelectedModules.value = data?.enabled || []
       entityMultiModule.value = data?.mobileMultiModule ?? false
       ElMessage.success('已恢复为默认配置（跟随角色/租户）')

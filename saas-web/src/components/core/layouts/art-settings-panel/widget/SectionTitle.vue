@@ -10,7 +10,7 @@
 <script setup lang="ts">
   interface Props {
     title: string
-    style?: Record<string, any>
+    style?: Record<string, string | number>
   }
 
   defineProps<Props>()

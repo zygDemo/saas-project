@@ -493,7 +493,7 @@
         const transitions = nodeRule(row).transitions || []
         if (!transitions.length) return h('span', {}, '-')
         return h('div', { class: 'transition-cell' }, [
-          transitions.map((item: any) =>
+          transitions.map((item: { id: number; fromNode: string; toNode: string; condition?: string }) =>
             h(
               'span',
               { key: `${item.action}-${item.toNode}` },
@@ -821,7 +821,7 @@
     }
   }
 
-  function nodeRule(row: FlowRecord): Record<string, any> {
+  function nodeRule(row: FlowRecord): Record<string, unknown> {
     const config = row.ruleConfig && typeof row.ruleConfig === 'object' ? row.ruleConfig : {}
     const fallback = meta.nodes.find((item) => String(item.code) === String(row.nodeCode))
     return {
@@ -839,7 +839,7 @@
 
   function hasConditional(row: FlowRecord) {
     const transitions = nodeRule(row).transitions || []
-    return transitions.some((t: any) => t.condition)
+    return transitions.some((t: { condition?: string }) => t.condition)
   }
 
   function nodeSteps(row: FlowRecord) {

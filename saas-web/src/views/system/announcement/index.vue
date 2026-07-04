@@ -185,11 +185,11 @@
     title: [{ required: true, message: '请输入公告标题', trigger: 'blur' }]
   }
 
-  const getTypeTag = (t: string) => ({ NOTICE: 'info', ANNOUNCEMENT: '', ALERT: 'warning' }[t] || 'info') as any
-  const getTypeLabel = (t: string) => ({ NOTICE: '通知', ANNOUNCEMENT: '公告', ALERT: '警告' }[t] || t)
-  const getLevelTag = (l: string) => ({ NORMAL: 'info', IMPORTANT: 'warning', URGENT: 'danger' }[l] || 'info') as any
+  const getTypeTag = (t: string): '' | 'info' | 'success' | 'warning' | 'danger' => ({ NOTICE: 'info', ANNOUNCEMENT: '', ALERT: 'warning' } as Record<string, '' | 'info' | 'success' | 'warning' | 'danger'>)[t] || 'info'
+
+  const getLevelTag = (l: string): '' | 'info' | 'success' | 'warning' | 'danger' => ({ NORMAL: 'info', IMPORTANT: 'warning', URGENT: 'danger' } as Record<string, '' | 'info' | 'success' | 'warning' | 'danger'>)[l] || 'info'
   const getLevelLabel = (l: string) => ({ NORMAL: '普通', IMPORTANT: '重要', URGENT: '紧急' }[l] || l)
-  const getStatusTag = (s: string) => ({ DRAFT: 'info', PUBLISHED: 'success', EXPIRED: 'warning' }[s] || 'info') as any
+  const getStatusTag = (s: string): '' | 'info' | 'success' | 'warning' | 'danger' => ({ DRAFT: 'info', PUBLISHED: 'success', EXPIRED: 'warning' } as Record<string, '' | 'info' | 'success' | 'warning' | 'danger'>)[s] || 'info'
   const getStatusLabel = (s: string) => ({ DRAFT: '草稿', PUBLISHED: '已发布', EXPIRED: '已过期' }[s] || s)
 
   const columns = computed(() => [

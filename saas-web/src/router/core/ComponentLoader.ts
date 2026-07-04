@@ -7,11 +7,14 @@
  * @author Art Design Pro Team
  */
 
-import { h } from 'vue'
+import { h, type Component } from 'vue'
 import { router } from '@/router'
 
+/** Module shape returned by Vite's import.meta.glob for .vue files */
+type VueModule = { default: Component }
+
 export class ComponentLoader {
-  private modules: Record<string, () => Promise<any>>
+  private modules: Record<string, () => Promise<{ default: unknown }>>
 
   constructor() {
     // 动态导入 views 目录下所有 .vue 组件
@@ -21,7 +24,7 @@ export class ComponentLoader {
   /**
    * 加载组件
    */
-  load(componentPath: string): () => Promise<any> {
+  load(componentPath: string): () => Promise<{ default: unknown }> {
     if (!componentPath) {
       return this.createEmptyComponent()
     }
@@ -46,21 +49,21 @@ export class ComponentLoader {
   /**
    * 加载布局组件
    */
-  loadLayout(): () => Promise<any> {
+  loadLayout(): () => Promise<{ default: unknown }> {
     return () => import('@/views/index/index.vue')
   }
 
   /**
    * 加载 iframe 组件
    */
-  loadIframe(): () => Promise<any> {
+  loadIframe(): () => Promise<{ default: unknown }> {
     return () => import('@/views/outside/Iframe.vue')
   }
 
   /**
    * 创建空组件
    */
-  private createEmptyComponent(): () => Promise<any> {
+  private createEmptyComponent(): () => Promise<{ default: unknown }> {
     return () =>
       Promise.resolve({
         render() {
@@ -72,7 +75,7 @@ export class ComponentLoader {
   /**
    * 创建错误提示组件
    */
-  private createErrorComponent(componentPath: string): () => Promise<any> {
+  private createErrorComponent(componentPath: string): () => Promise<{ default: unknown }> {
     return () =>
       Promise.resolve({
         render() {

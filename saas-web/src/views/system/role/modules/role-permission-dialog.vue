@@ -63,9 +63,23 @@
     }
     children?: MenuNode[]
     isAuth?: boolean
-    [key: string]: any
+    [key: string]: unknown
   }
 
+  /** Raw menu item shape coming from the store (before processing) */
+  interface MenuItemInput {
+    id: string | number
+    meta?: {
+      title?: string
+      authList?: Array<{
+        id?: number
+        authMark: string
+        title: string
+      }>
+    }
+    children?: MenuItemInput[]
+    [key: string]: unknown
+  }
   const props = withDefaults(defineProps<Props>(), {
     modelValue: false,
     roleData: undefined
@@ -84,7 +98,7 @@
   })
 
   const processedMenuList = computed<MenuNode[]>(() => {
-    const processNode = (node: any): MenuNode => {
+    const processNode = (node: MenuItemInput): MenuNode => {
       const menuId = Number(node.id)
       const processed: MenuNode = {
         ...node,
@@ -109,12 +123,12 @@
       return processed
     }
 
-    return (menuList.value as any[]).map(processNode)
+    return (menuList.value as Array<Record<string, unknown>>).map(processNode)
   })
 
   const defaultProps = {
     children: 'children',
-    label: (data: any) => data.label || formatMenuTitle(data.meta?.title || '') || ''
+    label: (data: MenuNode) => data.label || formatMenuTitle(data.meta?.title || '') || ''
   }
 
   watch(
@@ -162,7 +176,7 @@
     const tree = treeRef.value
     if (!tree) return
 
-    Object.values(tree.store.nodesMap).forEach((node: any) => {
+    Object.values(tree.store.nodesMap).forEach((node: { expanded: boolean }) => {
       node.expanded = !isExpandAll.value
     })
 

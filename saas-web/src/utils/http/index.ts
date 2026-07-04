@@ -169,7 +169,7 @@ function delay(ms: number) {
 }
 
 /** 请求函数 */
-async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> {
+async function request<T = unknown>(config: ExtendedAxiosRequestConfig): Promise<T> {
   try {
     const res = await axiosInstance.request<BaseResponse<T>>(config)
 

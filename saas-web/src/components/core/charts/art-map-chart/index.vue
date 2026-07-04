@@ -202,7 +202,7 @@
 
     chartInstance.value = echarts.init(chinaMapRef.value)
 
-    echarts.registerMap('china', chinaMapJson as any)
+    echarts.registerMap('china', chinaMapJson as unknown as string)
     const mapData = props.mapData.length > 0 ? props.mapData : prepareMapData(chinaMapJson)
     const option = createChartOption(mapData)
 

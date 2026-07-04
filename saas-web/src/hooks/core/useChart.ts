@@ -199,9 +199,9 @@ export function useChart(options: UseChartOptions = {}) {
 
   // 缓存样式配置以减少重复计算
   const styleCache = {
-    axisLine: null as any,
-    splitLine: null as any,
-    axisLabel: null as any,
+    axisLine: null as Record<string, unknown> | null,
+    splitLine: null as Record<string, unknown> | null,
+    axisLabel: null as Record<string, unknown> | null,
     lastDarkValue: isDark.value
   }
 
@@ -269,7 +269,7 @@ export function useChart(options: UseChartOptions = {}) {
   })
 
   // 获取统一的 tooltip 配置
-  const getTooltipStyle = (trigger: 'item' | 'axis' = 'axis', customOptions: any = {}) => ({
+  const getTooltipStyle = (trigger: 'item' | 'axis' = 'axis', customOptions: Record<string, unknown> = {}) => ({
     trigger,
     backgroundColor: isDark.value ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.9)',
     borderColor: isDark.value ? '#333' : '#ddd',
@@ -283,7 +283,7 @@ export function useChart(options: UseChartOptions = {}) {
   // 获取统一的图例配置
   const getLegendStyle = (
     position: 'bottom' | 'top' | 'left' | 'right' = 'bottom',
-    customOptions: any = {}
+    customOptions: Record<string, unknown> = {}
   ) => {
     const baseConfig = {
       textStyle: {
@@ -338,7 +338,7 @@ export function useChart(options: UseChartOptions = {}) {
   const getGridWithLegend = (
     showLegend: boolean,
     legendPosition: 'bottom' | 'top' | 'left' | 'right' = 'bottom',
-    baseGrid: any = {}
+    baseGrid: Record<string, unknown> = {}
   ) => {
     const defaultGrid = {
       top: 15,
@@ -631,7 +631,7 @@ interface UseChartComponentOptions<T extends BaseChartProps> {
   /** 空数据检查函数 */
   checkEmpty?: () => boolean
   /** 自定义监听的响应式数据 */
-  watchSources?: (() => any)[]
+  watchSources?: (() => unknown)[]
   /** 自定义可视事件处理 */
   onVisible?: () => void
   /** useChart选项 */

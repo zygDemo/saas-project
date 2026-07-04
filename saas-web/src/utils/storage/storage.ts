@@ -51,7 +51,7 @@ class StorageCompatibilityManager {
   /**
    * 获取系统存储数据（兼容旧格式）
    */
-  getSystemStorage(): any {
+  getSystemStorage(): Record<string, unknown> | null {
     const version = this.getSystemVersion() || StorageConfig.CURRENT_VERSION
     const legacyKey = StorageConfig.generateLegacyKey(version)
     const data = localStorage.getItem(legacyKey)
@@ -83,7 +83,7 @@ class StorageCompatibilityManager {
   /**
    * 获取旧格式的本地存储数据
    */
-  private getLegacyStorageData(): Record<string, any> {
+  private getLegacyStorageData(): Record<string, unknown> {
     try {
       const systemStorage = this.getSystemStorage()
       return systemStorage || {}
@@ -222,7 +222,7 @@ const storageManager = new StorageCompatibilityManager()
 /**
  * 获取系统存储数据
  */
-export function getSystemStorage(): any {
+export function getSystemStorage(): Record<string, unknown> | null {
   return storageManager.getSystemStorage()
 }
 

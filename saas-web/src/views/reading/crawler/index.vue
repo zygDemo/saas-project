@@ -325,12 +325,45 @@
 
   defineOptions({ name: 'ReadingCrawler' })
 
+  interface CategoryNode {
+    id: number
+    name: string
+    children?: CategoryNode[]
+  }
+
+  interface CrawlResult {
+    bookId: number
+    title: string
+    author: string
+    totalChapters: number
+    totalWordCount?: number
+    failedChapters?: number
+  }
+
+  interface CrawlProgress {
+    status: 'preparing' | 'downloading' | 'paused' | 'completed' | 'cancelled' | 'error'
+    totalChapters: number
+    completedChapters: number
+    failedChapters: number
+    totalWordCount?: number
+    message?: string
+    result?: CrawlResult
+  }
+
+  interface CrawlTaskResponse {
+    taskId: string
+  }
+
+  interface ApiErrorResponse {
+    response?: { data?: { message?: string } }
+  }
+
   const router = useRouter()
   const formRef = ref<FormInstance>()
   const loading = ref(false)
   const taskId = ref('')
-  const progress = ref<any>(null)
-  const result = ref<any>(null)
+  const progress = ref<CrawlProgress | null>(null)
+  const result = ref<CrawlResult | null>(null)
   const showLogDetail = ref(true)
   const chapterLogs = ref<Array<{ text: string; type: string }>>([])
   let pollTimer: ReturnType<typeof setInterval> | null = null
@@ -352,7 +385,7 @@
     ]
   }
 
-  const categoryTree = ref<any[]>([])
+  const categoryTree = ref<CategoryNode[]>([])
 
   const progressPercent = computed(() => {
     if (!progress.value || !progress.value.totalChapters) return 0
@@ -361,7 +394,7 @@
 
   const loadCategories = async () => {
     try {
-      const res = (await getBookCategories({ tree: true })) as any
+      const res = (await getBookCategories({ tree: true })) as unknown as CategoryNode[]
       categoryTree.value = Array.isArray(res) ? res : []
     } catch (error) {
       console.error('加载分类失败', error)
@@ -372,7 +405,7 @@
     if (pollTimer) clearInterval(pollTimer)
     pollTimer = setInterval(async () => {
       try {
-        const res = (await getCrawlProgress(id)) as any
+        const res = (await getCrawlProgress(id)) as CrawlProgress
         if (!res) return
         progress.value = res
 
@@ -442,16 +475,17 @@
             categoryId: formData.categoryId || undefined
           },
           { signal: submitAbortController.signal }
-        )) as any
+        )) as CrawlTaskResponse
         taskId.value = res.taskId
         chapterLogs.value.push({ text: '任务已创建，开始下载...', type: 'info' })
         startPolling(res.taskId)
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (isSubmitCancelled) {
           ElMessage.warning('已取消下载')
         } else {
           loading.value = false
-          ElMessage.error(error?.response?.data?.message || '下载失败，请检查地址是否正确')
+          const err = error as ApiErrorResponse
+          ElMessage.error(err?.response?.data?.message || '下载失败，请检查地址是否正确')
         }
       } finally {
         submitAbortController = null
@@ -485,8 +519,9 @@
       stopPolling()
       loading.value = false
       ElMessage.success('任务已暂停')
-    } catch (error: any) {
-      ElMessage.error(error?.response?.data?.message || '暂停失败')
+    } catch (error: unknown) {
+      const err = error as ApiErrorResponse
+      ElMessage.error(err?.response?.data?.message || '暂停失败')
     }
   }
 
@@ -495,8 +530,9 @@
       await resumeCrawlTask(taskId.value)
       startPolling(taskId.value)
       ElMessage.success('任务已恢复')
-    } catch (error: any) {
-      ElMessage.error(error?.response?.data?.message || '恢复失败')
+    } catch (error: unknown) {
+      const err = error as ApiErrorResponse
+      ElMessage.error(err?.response?.data?.message || '恢复失败')
     }
   }
 
@@ -511,9 +547,10 @@
       stopPolling()
       loading.value = false
       ElMessage.success('取消指令已发送')
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error !== 'cancel') {
-        ElMessage.error(error?.response?.data?.message || '取消失败')
+        const err = error as ApiErrorResponse
+        ElMessage.error(err?.response?.data?.message || '取消失败')
       }
     }
   }

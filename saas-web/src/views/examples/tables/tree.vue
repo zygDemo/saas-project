@@ -171,7 +171,7 @@
     label: 'label'
   }
 
-  const handleNodeClick = (data: any) => {
+  const handleNodeClick = (data: Record<string, unknown>) => {
     console.log('选中节点:', data)
     // 可以根据选中的节点更新右侧表格数据
   }

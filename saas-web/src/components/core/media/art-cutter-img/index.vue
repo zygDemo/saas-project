@@ -226,12 +226,12 @@
   }
 
   // 图片加载完成
-  function handleImageLoadComplete(result: any) {
+  function handleImageLoadComplete(result: unknown) {
     emit('imageLoadComplete', result)
   }
 
   // 图片加载失败
-  function handleImageLoadError(error: any) {
+  function handleImageLoadError(error: unknown) {
     emit('error', error)
     emit('imageLoadError', error)
   }

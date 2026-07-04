@@ -171,8 +171,8 @@
 
             <!-- 导出导入功能 -->
             <ArtExcelExport
-              :data="data as any"
-              :columns="exportColumns as any"
+              :data="(data as unknown as ExportData[])"
+              :columns="(exportColumns as unknown as ExportColumn[])"
               filename="用户数据"
               :auto-index="true"
               button-text="导出"
@@ -457,7 +457,7 @@
 
   // 缓存调试状态
   const cacheDebugLogs = ref<string[]>([])
-  const requestParams = ref<any>({
+  const requestParams = ref<Record<string, unknown>>({
     current: 1,
     size: 20,
     name: '',
@@ -1061,7 +1061,7 @@
    * Excel 导入成功处理
    * @param data 导入的数据数组
    */
-  const handleImportSuccess = (data: Record<string, any>[]) => {
+  const handleImportSuccess = (data: Record<string, unknown>[]) => {
     ElMessage.success(`导入 ${data.length} 条数据成功`)
     refreshCreate()
   }
@@ -1188,7 +1188,7 @@
     () => [pagination.current, pagination.size, searchFormState.value],
     ([current, size, search]) => {
       requestParams.value = {
-        ...(search as any),
+        ...(search as Record<string, unknown>),
         current,
         size
       }

@@ -245,7 +245,7 @@
                 <ElButton
                   v-for="action in phase.actions"
                   :key="action.name"
-                  :type="(action.type || 'primary') as any"
+                  :type="(action.type || 'primary') as 'primary' | 'success' | 'warning' | 'danger' | 'info'"
                   :disabled="!action.visible(currentRow)"
                   @click="openAction(currentRow, action)"
                 >
@@ -458,7 +458,7 @@
 
   // ArtTable columns 配置（依赖 render function，保留在 .vue 中）
   const tableColumns = computed(() => {
-    const cols: any[] = [{ type: 'index', width: 60, label: '序号' }]
+    const cols: Array<Record<string, unknown>> = [{ type: 'index', width: 60, label: '序号' }]
 
     for (const column of config.value.columns) {
       cols.push({
@@ -533,7 +533,7 @@
       width: isOrgModule.value ? 270 : 360,
       fixed: 'right',
       formatter: (row: Record<string, unknown>) => {
-        const buttons: any[] = [
+        const buttons: Array<{ label: string; type?: string; visible?: boolean; onClick?: () => void }> = [
           h(ElButton, { link: true, type: 'primary', onClick: () => openDetail(row) }, () => '详情')
         ]
         if (!config.value.readonly) {
@@ -594,7 +594,7 @@
   const filePreviewUrl = ref('')
   const filePreviewType = ref<'image' | 'pdf' | 'video' | 'audio' | 'other'>('other')
 
-  function previewFile(file: any) {
+  function previewFile(file: { url?: string; name?: string; fileUrl?: string }) {
     filePreviewUrl.value = file.fileUrl
     filePreviewType.value = file.displayType
     if (file.displayType === 'video' || file.displayType === 'audio') {

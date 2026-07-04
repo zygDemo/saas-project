@@ -314,7 +314,7 @@
    * 点击页面其他区域关闭通知面板
    * @param {Event} e - 点击事件对象
    */
-  const bodyCloseNotice = (e: any): void => {
+  const bodyCloseNotice = (e: MouseEvent): void => {
     if (!showNotice.value) return
 
     const target = e.target as HTMLElement

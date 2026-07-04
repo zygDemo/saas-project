@@ -35,7 +35,7 @@
  * @module router/guards/beforeEach
  * @author Art Design Pro Team
  */
-import type { Router, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
+import type { Router, RouteLocationNormalized, NavigationGuardNext, RouteRecordRaw } from 'vue-router'
 import { nextTick } from 'vue'
 import NProgress from 'nprogress'
 import { useSettingStore } from '@/store/modules/setting'
@@ -232,8 +232,8 @@ function isPrivateRoute(path: string): boolean {
   return isPathInRoutes(privateRoutes, path)
 }
 
-function isPathInRoutes(routes: any[], path: string): boolean {
-  const checkRoute = (routes: any[], targetPath: string): boolean => {
+function isPathInRoutes(routes: RouteRecordRaw[], path: string): boolean {
+  const checkRoute = (routes: RouteRecordRaw[], targetPath: string): boolean => {
     return routes.some((route) => {
       // 404 catch-all 路由不应视为可匿名访问的静态页，
       // 否则未登录时手动输入任意地址会直接落到 404，无法跳转登录页。
@@ -259,10 +259,10 @@ function isPathInRoutes(routes: any[], path: string): boolean {
   return checkRoute(routes, path)
 }
 
-function getRouteNames(routes: Array<{ name?: unknown; children?: any[] }>): Set<unknown> {
+function getRouteNames(routes: RouteRecordRaw[]): Set<unknown> {
   const names = new Set<unknown>()
 
-  const collect = (items: Array<{ name?: unknown; children?: any[] }>) => {
+  const collect = (items: RouteRecordRaw[]) => {
     items.forEach((item) => {
       if (item.name) {
         names.add(item.name)

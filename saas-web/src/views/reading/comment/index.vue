@@ -101,6 +101,31 @@
     status: 'pending' | 'approved' | 'rejected'
   }
 
+  interface ReviewApiItem {
+    id: number
+    content?: string
+    status: number
+    createdAt?: string
+    book?: { title?: string }
+    user?: { nickname?: string; username?: string }
+  }
+
+  interface ReviewApiResponse {
+    items: ReviewApiItem[]
+    total: number
+  }
+
+  interface ReviewQueryParams {
+    page: number
+    pageSize: number
+    keyword?: string
+    status?: number
+  }
+
+  interface ApiErrorResponse {
+    response?: { data?: { message?: string } }
+  }
+
   const searchVal = ref('')
   const statusFilter = ref<number | undefined>(undefined)
   const isLoading = ref(false)
@@ -197,11 +222,11 @@
   const loadReviews = async () => {
     isLoading.value = true
     try {
-      const params: any = { page: currentPage.value, pageSize: pageSize.value }
+      const params: ReviewQueryParams = { page: currentPage.value, pageSize: pageSize.value }
       if (searchVal.value) params.keyword = searchVal.value
       if (statusFilter.value !== undefined) params.status = statusFilter.value
-      const res = (await getBookReviews(params)) as any
-      commentList.value = (res?.items || []).map((item: any) => ({
+      const res = (await getBookReviews(params)) as unknown as ReviewApiResponse
+      commentList.value = (res?.items || []).map((item: ReviewApiItem) => ({
         id: item.id,
         bookName: item.book?.title || '未知',
         content: item.content || '',
@@ -245,8 +270,9 @@
       await updateReviewStatus({ id: row.id, status: 1 })
       ElMessage.success('评论已通过审核')
       loadReviews()
-    } catch (error: any) {
-      ElMessage.error(error?.response?.data?.message || '操作失败')
+    } catch (error: unknown) {
+      const err = error as ApiErrorResponse
+      ElMessage.error(err?.response?.data?.message || '操作失败')
     }
   }
 
@@ -255,8 +281,9 @@
       await updateReviewStatus({ id: row.id, status: 2 })
       ElMessage.success('评论已驳回')
       loadReviews()
-    } catch (error: any) {
-      ElMessage.error(error?.response?.data?.message || '操作失败')
+    } catch (error: unknown) {
+      const err = error as ApiErrorResponse
+      ElMessage.error(err?.response?.data?.message || '操作失败')
     }
   }
 
@@ -275,8 +302,9 @@
         await deleteReview(row.id)
         ElMessage.success('删除成功')
         loadReviews()
-      } catch (error: any) {
-        ElMessage.error(error?.response?.data?.message || '删除失败')
+      } catch (error: unknown) {
+        const err = error as ApiErrorResponse
+        ElMessage.error(err?.response?.data?.message || '删除失败')
       }
     }).catch(() => {})
   }

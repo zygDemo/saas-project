@@ -25,7 +25,7 @@ export class CacheService {
   /**
    * 获取缓存值
    */
-  async get<T = any>(key: string): Promise<T | null> {
+  async get<T = unknown>(key: string): Promise<T | null> {
     try {
       const raw = await this.redis.client.get(key)
       if (raw === null) return null
@@ -42,7 +42,7 @@ export class CacheService {
    * @param value 缓存值（会被 JSON 序列化）
    * @param ttlSeconds 过期时间（秒），默认 600 秒
    */
-  async set(key: string, value: any, ttlSeconds?: number): Promise<void> {
+  async set(key: string, value: unknown, ttlSeconds?: number): Promise<void> {
     try {
       const ttl = ttlSeconds ?? this.DEFAULT_TTL
       const serialized = JSON.stringify(value)
@@ -84,7 +84,7 @@ export class CacheService {
    * @param factory 数据工厂函数（缓存未命中时调用）
    * @param ttlSeconds 过期时间（秒），默认 600 秒
    */
-  async getOrSet<T = any>(key: string, factory: () => Promise<T>, ttlSeconds?: number): Promise<T> {
+  async getOrSet<T = unknown>(key: string, factory: () => Promise<T>, ttlSeconds?: number): Promise<T> {
     const cached = await this.get<T>(key)
     if (cached !== null) return cached
 

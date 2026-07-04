@@ -129,7 +129,7 @@
     emit('reset')
   }
 
-  async function handleSearch(params: Record<string, any>) {
+  async function handleSearch(params: Record<string, unknown>) {
     await searchBarRef.value.validate()
     emit('search', params as SearchForm)
   }

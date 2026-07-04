@@ -126,7 +126,7 @@
    * 验证密码
    * 当密码输入后，如果确认密码已填写，则触发确认密码的验证
    */
-  const validatePassword = (_rule: any, value: string, callback: (error?: Error) => void) => {
+  const validatePassword = (_rule: Record<string, unknown>, value: string, callback: (error?: Error) => void) => {
     if (!value) {
       callback(new Error(t('register.placeholder.password')))
       return
@@ -144,7 +144,7 @@
    * 检查确认密码是否与密码一致
    */
   const validateConfirmPassword = (
-    _rule: any,
+    _rule: Record<string, unknown>,
     value: string,
     callback: (error?: Error) => void
   ) => {
@@ -165,7 +165,7 @@
    * 验证用户协议
    * 确保用户已勾选同意协议
    */
-  const validateAgreement = (_rule: any, value: boolean, callback: (error?: Error) => void) => {
+  const validateAgreement = (_rule: unknown, value: boolean, callback: (error?: Error) => void) => {
     if (!value) {
       callback(new Error(t('register.rule.agreementRequired')))
       return

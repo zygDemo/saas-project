@@ -58,7 +58,7 @@
   onMounted(async () => {
     statusOptions.value = await fetchStatusOptions()
     const orgRes = await fetchBusinessList('org', { current: 1, size: 200, status: 'ACTIVE' })
-    orgOptions.value = orgRes.records.map((item: any) => ({ label: item.name, value: item.id }))
+    orgOptions.value = orgRes.records.map((item: Record<string, unknown>) => ({ label: item.name, value: item.id }))
   })
 
   watch(
@@ -70,7 +70,7 @@
         return
       }
       const deptRes = await fetchBusinessList('dept', { current: 1, size: 200, orgId })
-      deptOptions.value = deptRes.records.map((item: any) => ({ label: item.name, value: item.id }))
+      deptOptions.value = deptRes.records.map((item: Record<string, unknown>) => ({ label: item.name, value: item.id }))
     }
   )
 

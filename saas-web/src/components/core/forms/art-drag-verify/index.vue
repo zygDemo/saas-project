@@ -129,7 +129,7 @@
    * 触摸开始事件处理
    * @param e 触摸事件对象
    */
-  const onTouchStart = (e: any) => {
+  const onTouchStart = (e: TouchEvent) => {
     startX = e.targetTouches[0].pageX
     startY = e.targetTouches[0].pageY
   }
@@ -138,7 +138,7 @@
    * 触摸移动事件处理 - 判断是否为横向滑动，如果是则阻止默认行为
    * @param e 触摸事件对象
    */
-  const onTouchMove = (e: any) => {
+  const onTouchMove = (e: TouchEvent) => {
     moveX = e.targetTouches[0].pageX
     moveY = e.targetTouches[0].pageY
 
@@ -228,17 +228,20 @@
     return props.value ? props.successText : props.text
   })
 
+  type DragEvent = MouseEvent | TouchEvent
+  const getPageX = (e: DragEvent): number =>
+    'pageX' in e ? e.pageX : e.touches[0]?.pageX ?? e.changedTouches[0]?.pageX ?? 0
+
   /**
    * 拖拽开始处理函数
    * @param e 鼠标或触摸事件对象
    */
-  const dragStart = (e: any) => {
+  const dragStart = (e: DragEvent) => {
     if (!props.value) {
       state.isMoving = true
       handler.value.style.transition = 'none'
       // 计算拖拽起始位置
-      state.x =
-        (e.pageX || e.touches[0].pageX) - parseInt(handler.value.style.left.replace('px', ''), 10)
+      state.x = getPageX(e) - parseInt(handler.value.style.left.replace('px', ''), 10)
     }
     emit('handlerMove')
   }
@@ -247,11 +250,11 @@
    * 拖拽移动处理函数
    * @param e 鼠标或触摸事件对象
    */
-  const dragMoving = (e: any) => {
+  const dragMoving = (e: DragEvent) => {
     if (state.isMoving && !props.value) {
       const numericWidth = getNumericWidth()
       // 计算当前位置
-      let _x = (e.pageX || e.touches[0].pageX) - state.x
+      let _x = getPageX(e) - state.x
 
       // 在有效范围内移动
       if (_x > 0 && _x <= numericWidth - props.height) {
@@ -270,11 +273,11 @@
    * 拖拽结束处理函数
    * @param e 鼠标或触摸事件对象
    */
-  const dragFinish = (e: any) => {
+  const dragFinish = (e: DragEvent) => {
     if (state.isMoving && !props.value) {
       const numericWidth = getNumericWidth()
       // 计算最终位置
-      let _x = (e.pageX || e.changedTouches[0].pageX) - state.x
+      let _x = getPageX(e) - state.x
 
       if (_x < numericWidth - props.height) {
         // 未拖拽到末端，重置位置

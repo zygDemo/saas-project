@@ -166,11 +166,11 @@
     /** 表单项占据的列宽，基于24格栅格系统 */
     span?: number
     /** 选项数据，用于 select、checkbox-group、radio-group 等 */
-    options?: Record<string, any>
+    options?: Array<Record<string, unknown>>
     /** 传递给表单项组件的属性 */
-    props?: Record<string, any>
+    props?: Record<string, unknown>
     /** 表单项的插槽配置 */
-    slots?: Record<string, (() => any) | undefined>
+    slots?: Record<string, (() => VNode | null) | undefined>
     /** 表单项的占位符文本 */
     placeholder?: string
     /** 更多属性配置请参考 ElementPlus 官方文档 */
@@ -230,16 +230,16 @@
 
   interface FormEmits {
     reset: []
-    submit: [Record<string, any>]
+    submit: [Record<string, unknown>]
   }
 
   const emit = defineEmits<FormEmits>()
 
-  const modelValue = defineModel<Record<string, any>>('modelValue', { default: () => ({}) })
-  const initialModelValue = ref<Record<string, any>>({})
+  const modelValue = defineModel<Record<string, unknown>>('modelValue', { default: () => ({}) })
+  const initialModelValue = ref<Record<string, unknown>>({})
 
   // 保存组件初始化时的表单快照，用于 reset 时恢复默认值。
-  const cloneModelValue = (value: Record<string, any> | undefined) => {
+  const cloneModelValue = (value: Record<string, unknown> | undefined) => {
     if (!value) return {}
 
     const deepClone = (source: unknown): unknown => {
@@ -258,7 +258,7 @@
       return source
     }
 
-    return deepClone(toRaw(value)) as Record<string, any>
+    return deepClone(toRaw(value)) as Record<string, unknown>
   }
 
   initialModelValue.value = cloneModelValue(modelValue.value)
@@ -286,9 +286,9 @@
   }
 
   const getFieldValue = (path: string) => {
-    return parsePath(path).reduce<any>((currentValue, segment) => {
-      if (currentValue == null) return undefined
-      return currentValue[segment]
+    return parsePath(path).reduce<unknown>((currentValue, segment) => {
+      if (currentValue == null || typeof currentValue !== 'object') return undefined
+      return (currentValue as Record<string, unknown>)[segment]
     }, modelValue.value)
   }
 
@@ -298,13 +298,13 @@
     if (!segments.length) return
 
     const lastSegment = segments.pop()
-    const parent = segments.reduce<any>((currentValue, segment) => {
-      if (currentValue == null) return undefined
-      return currentValue[segment]
+    const parent = segments.reduce<unknown>((currentValue, segment) => {
+      if (currentValue == null || typeof currentValue !== 'object') return undefined
+      return (currentValue as Record<string | number, unknown>)[segment]
     }, modelValue.value)
 
-    if (parent != null && lastSegment !== undefined) {
-      delete parent[lastSegment]
+    if (parent != null && typeof parent === 'object' && lastSegment !== undefined) {
+      delete (parent as Record<string | number, unknown>)[lastSegment]
     }
   }
 
@@ -320,7 +320,7 @@
       return
     }
 
-    let currentValue: any = modelValue.value
+    let currentValue: Record<string | number, unknown> = modelValue.value as Record<string | number, unknown>
 
     segments.forEach((segment, index) => {
       const isLast = index === segments.length - 1
@@ -341,7 +341,7 @@
         currentValue[segment] = nextContainer
       }
 
-      currentValue = currentValue[segment]
+      currentValue = currentValue[segment] as Record<string | number, unknown>
     })
   }
 
@@ -410,20 +410,20 @@
   }
 
   const getSanitizedOutput = () => {
-    return (sanitizeOutputValue(cloneModelValue(modelValue.value)) || {}) as Record<string, any>
+    return (sanitizeOutputValue(cloneModelValue(modelValue.value)) || {}) as Record<string, unknown>
   }
 
   const getProps = (item: FormItem) => {
     if (item.props) return item.props
     const props = { ...item }
-    rootProps.forEach((key) => delete (props as Record<string, any>)[key])
+    rootProps.forEach((key) => delete (props as Record<string, unknown>)[key])
     return props
   }
 
   // 获取插槽
   const getSlots = (item: FormItem) => {
     if (!item.slots) return {}
-    const validSlots: Record<string, () => any> = {}
+    const validSlots: Record<string, () => VNode | null> = {}
     Object.entries(item.slots).forEach(([key, slotFn]) => {
       if (slotFn) {
         validSlots[key] = slotFn
@@ -496,7 +496,7 @@
 
   defineExpose({
     ref: formInstance,
-    validate: (...args: any[]) => formInstance.value?.validate(...args),
+    validate: (...args: unknown[]) => formInstance.value?.validate(...args as [(valid: boolean) => void]),
     reset: handleReset,
     // 允许外部在不触发提交事件时主动获取清洗后的输出。
     getOutput: getSanitizedOutput

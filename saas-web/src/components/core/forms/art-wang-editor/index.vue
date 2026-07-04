@@ -125,7 +125,7 @@
         onSuccess() {
           ElMessage.success(`图片上传成功 ${EmojiText[200]}`)
         },
-        onError(file: File, err: any, res: any) {
+        onError(file: File, err: unknown, res: unknown) {
           console.error('图片上传失败:', err, res)
           ElMessage.error(`图片上传失败 ${EmojiText[500]}`)
         }

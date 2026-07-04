@@ -19,7 +19,7 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSettingStore } from '@/store/modules/setting'
 import { headerBarConfig } from '@/config/modules/headerBar'
-import { HeaderBarFeatureConfig } from '@/types'
+import { HeaderBarFeatureConfig, type FeatureConfigItem } from '@/types'
 
 /**
  * 顶部栏功能管理
@@ -111,7 +111,7 @@ export function useHeaderBar() {
   // 获取快速入口的最小宽度
   const fastEnterMinWidth = computed(() => {
     const config = getFeatureConfig('fastEnter')
-    return (config as any)?.minWidth || 1200
+    return (config as FeatureConfigItem & { minWidth?: number })?.minWidth || 1200
   })
 
   /**

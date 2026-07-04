@@ -2,11 +2,23 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import {
   ApplicationStatus,
   ApprovalAction,
+  Application as ApplicationModel,
+  ApplicationFile,
+  ApprovalRecord,
+  Customer,
+  Disbursement,
   DisbursementStatus,
+  Funder,
   LeadStatus,
+  Organization,
   Prisma,
+  Product,
+  RepaymentPlan,
   RepaymentStatus,
-  SignStatus
+  SignRecord,
+  SignStatus,
+  User,
+  Vehicle
 } from '@prisma/client'
 import { BaseBusinessCrudService, omitNested } from '../base-business-crud.service'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
@@ -35,6 +47,32 @@ import {
   StartSigningDto,
   SupplementActionDto
 } from './dto/business-action.dto'
+
+/**
+ * Prisma model delegate - used for generic CRUD operations across any model.
+ * Uses any return because these are type-erased generic utilities that work
+ * with any Prisma delegate (customer, product, funder, etc.)
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PrismaDelegate = { findFirst: (...args: any[]) => Promise<any> }
+
+/** Application with all possible includes for detail/flow/list mapping */
+interface ApplicationWithIncludes extends ApplicationWithFlow {
+  files?: ApplicationFile[]
+  approvals?: (ApprovalRecord & { approver?: Pick<User, 'id' | 'userName' | 'nickName'> | null })[]
+  signRecord?: SignRecord | null
+  disbursement?: Disbursement | null
+  repayments?: RepaymentPlan[]
+}
+
+/** Application with org+flowConfigs for flow view mapping */
+interface ApplicationWithFlow extends ApplicationModel {
+  org?: (Organization & { flowConfigs?: Array<Record<string, unknown>> }) | null
+  customer?: (Customer & { vehicles?: Vehicle[] }) | null
+  product?: Product | null
+  funder?: Funder | null
+  creator?: Pick<User, 'id' | 'userName' | 'nickName'> | null
+}
 
 const FLOW_STATUS_LABELS: Record<number, string> = {
   0: '未开始',
@@ -325,7 +363,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     ])
 
     return toPaginatedResponse(
-      records.map((record: Record<string, unknown>) => this.mapFlowApplication(record)),
+      records.map((record) => this.mapFlowApplication(record as unknown as ApplicationWithFlow)),
       total,
       pagination
     )
@@ -357,7 +395,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     ])
 
     return toPaginatedResponse(
-      records.map((record: Record<string, unknown>) => this.mapOrderListItem(record)),
+      records.map((record) => this.mapOrderListItem(record as unknown as ApplicationWithFlow)),
       total,
       pagination
     )
@@ -1071,7 +1109,7 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   private async assertSameOrg(
-    model: any,
+    model: PrismaDelegate,
     id: number | undefined,
     orgId: number,
     notFoundMessage: string,
@@ -1082,7 +1120,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     if (item.orgId !== orgId) throw new BadRequestException(mismatchMessage)
   }
 
-  private async getScopedRelated(model: any, id: number | undefined, message: string) {
+  private async getScopedRelated(model: PrismaDelegate, id: number | undefined, message: string) {
     if (id === undefined || id === null) throw new BadRequestException(message)
     const tenantId = getCurrentTenantId()
     const where = tenantId ? { id, tenantId } : { id }
@@ -1292,7 +1330,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     return where
   }
 
-  private mapOrderListItem(application: any) {
+  private mapOrderListItem(application: ApplicationWithFlow) {
     const customer = application.customer
     const vehicle = customer?.vehicles?.[0] || customer?.vehicles?.at?.(0)
     const currentNode = Number(application.currentNode)
@@ -1340,7 +1378,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     }
   }
 
-  private mapApplicationDetail(application: any) {
+  private mapApplicationDetail(application: ApplicationWithIncludes) {
     const customer = application.customer
     const vehicles = Array.isArray(customer?.vehicles) ? customer.vehicles : []
     const vehicle = vehicles[0] || vehicles.at?.(0)
@@ -1350,7 +1388,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     const currentNodeName = this.resolveFlowNodeName(application)
     const currentStatusName = FLOW_STATUS_LABELS[currentStatus] || String(application.currentStatus)
     const files = this.mapDetailFiles(application.files)
-    const repayments = this.mapRepayments(application.repayments)
+    const mappedRepayments = this.mapRepayments(application.repayments)
 
     return omitEmptyValues({
       id: application.id,
@@ -1402,7 +1440,7 @@ export class ApplicationService extends BaseBusinessCrudService<
       ),
       customer: customer ? this.mapDetailCustomer(customer) : undefined,
       vehicle: vehicle ? this.mapDetailVehicle(vehicle) : undefined,
-      vehicles: vehicles.map((item: Record<string, unknown>) => this.mapDetailVehicle(item)),
+      vehicles: vehicles.map((item) => this.mapDetailVehicle(item)),
       product: application.product ? this.mapDetailProduct(application.product) : undefined,
       funder: application.funder ? this.mapDetailFunder(application.funder) : undefined,
       org: application.org ? this.mapDetailOrg(application.org) : undefined,
@@ -1413,13 +1451,13 @@ export class ApplicationService extends BaseBusinessCrudService<
       disbursement: application.disbursement
         ? this.mapDisbursement(application.disbursement)
         : null,
-      repaymentSummary: this.buildRepaymentSummary(repayments),
-      repayments
+      repaymentSummary: this.buildRepaymentSummary(application.repayments ?? []),
+      repayments: mappedRepayments
     })
   }
 
   private mapDetailOrder(
-    application: any,
+    application: ApplicationWithIncludes,
     currentNode: number,
     currentStatus: number,
     currentNodeName: string,
@@ -1455,7 +1493,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailCustomer(customer: any) {
+  private mapDetailCustomer(customer: Customer) {
     return omitEmptyValues({
       id: customer.id,
       name: customer.name,
@@ -1482,7 +1520,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailVehicle(vehicle: any) {
+  private mapDetailVehicle(vehicle: Vehicle) {
     return omitEmptyValues({
       id: vehicle.id,
       plateNumber: vehicle.plateNumber,
@@ -1507,7 +1545,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailProduct(product: any) {
+  private mapDetailProduct(product: Product) {
     return omitEmptyValues({
       id: product.id,
       name: product.name,
@@ -1532,7 +1570,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailFunder(funder: any) {
+  private mapDetailFunder(funder: Funder) {
     return omitEmptyValues({
       id: funder.id,
       name: funder.name,
@@ -1547,7 +1585,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailOrg(org: any) {
+  private mapDetailOrg(org: Organization) {
     return omitEmptyValues({
       id: org.id,
       name: org.name,
@@ -1563,7 +1601,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailCreator(creator: any) {
+  private mapDetailCreator(creator: Pick<User, 'id' | 'userName' | 'nickName'>) {
     return omitEmptyValues({
       id: creator.id,
       userName: creator.userName,
@@ -1572,7 +1610,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDetailFiles(files: any[] = []) {
+  private mapDetailFiles(files: ApplicationFile[] = []) {
     const result: Record<string, unknown>[] = []
     const seen = new Set<string>()
 
@@ -1597,7 +1635,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     return result
   }
 
-  private mapApprovals(approvals: any[] = []) {
+  private mapApprovals(approvals: Array<ApprovalRecord & { approver?: Pick<User, 'id' | 'userName' | 'nickName'> | null }> = []) {
     return approvals.map((approval) =>
       omitEmptyValues({
         id: approval.id,
@@ -1614,7 +1652,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     )
   }
 
-  private mapSignRecord(record: any) {
+  private mapSignRecord(record: SignRecord) {
     return omitEmptyValues({
       id: record.id,
       status: record.status,
@@ -1626,7 +1664,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapDisbursement(disbursement: any) {
+  private mapDisbursement(disbursement: Disbursement) {
     return omitEmptyValues({
       id: disbursement.id,
       status: disbursement.status,
@@ -1645,7 +1683,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
-  private mapRepayments(repayments: any[] = []) {
+  private mapRepayments(repayments: RepaymentPlan[] = []) {
     return repayments.map((repayment) =>
       omitEmptyValues({
         id: repayment.id,
@@ -1665,7 +1703,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     )
   }
 
-  private buildRepaymentSummary(repayments: any[] = []) {
+  private buildRepaymentSummary(repayments: RepaymentPlan[] = []) {
     return {
       totalPeriods: repayments.length,
       paidPeriods: repayments.filter((item) => item.status === RepaymentStatus.PAID).length,
@@ -1677,7 +1715,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     }
   }
 
-  private mapFlowApplication(application: any) {
+  private mapFlowApplication(application: ApplicationWithFlow) {
     const customer = application.customer
     const vehicles = Array.isArray(customer?.vehicles) ? customer.vehicles : []
     const vehicle = vehicles[0] || vehicles.at?.(0)
@@ -1727,7 +1765,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     }
   }
 
-  private resolveFlowNodeName(application: any) {
+  private resolveFlowNodeName(application: ApplicationWithFlow): string {
     const flowConfigs = application.org?.flowConfigs
     const config = Array.isArray(flowConfigs)
       ? flowConfigs.find(
@@ -1737,13 +1775,13 @@ export class ApplicationService extends BaseBusinessCrudService<
         )
       : null
     return (
-      config?.nodeName ||
+      String(config?.nodeName || '') ||
       this.getFlowMappings().nodeNames[Number(application.currentNode)] ||
       String(application.currentNode)
     )
   }
 
-  private resolveFlowPhaseCode(application: any) {
+  private resolveFlowPhaseCode(application: ApplicationWithFlow) {
     const currentNode = Number(application.currentNode)
     const flowConfigs = application.org?.flowConfigs
     const config = Array.isArray(flowConfigs)
@@ -1759,7 +1797,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     return Number.isFinite(phaseCode) ? phaseCode : currentNode
   }
 
-  private resolveFlowPhaseName(application: any, phaseCode: number) {
+  private resolveFlowPhaseName(application: ApplicationWithFlow, phaseCode: number) {
     const flowConfigs = application.org?.flowConfigs
     const config = Array.isArray(flowConfigs)
       ? flowConfigs.find(
@@ -1779,7 +1817,7 @@ export class ApplicationService extends BaseBusinessCrudService<
 
   private async createRepaymentPlansIfNeeded(
     tx: Prisma.TransactionClient,
-    application: any,
+    application: ApplicationWithIncludes,
     dto: ConfirmDisbursementDto
   ) {
     const existed = await tx.repaymentPlan.count({ where: { applicationId: application.id } })

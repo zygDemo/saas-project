@@ -49,13 +49,38 @@
 
   defineOptions({ name: 'ReadingBookshelf' })
 
+  interface BookshelfItem {
+    id: number
+    title: string
+    author: string
+    cover?: string
+    category?: { id: number; name: string } | null
+    wordCount?: number
+    chapterCount?: number
+    rating?: number
+    readCount?: number
+    status: number
+  }
+
+  interface BookListResponse {
+    items: BookshelfItem[]
+    total: number
+  }
+
+  interface BookListParams {
+    page: number
+    pageSize: number
+    keyword?: string
+  }
+
   const router = useRouter()
   const searchVal = ref('')
   const isLoading = ref(false)
   const currentPage = ref(1)
   const pageSize = ref(20)
   const total = ref(0)
-  const bookshelfList = ref<any[]>([])
+
+  const bookshelfList = ref<BookshelfItem[]>([])
 
   // 分页配置
   const pagination = computed(() => ({
@@ -76,7 +101,7 @@
       label: '封面',
       width: 80,
       align: 'center' as const,
-      formatter: (row: any) =>
+      formatter: (row: BookshelfItem) =>
         row.cover
           ? h(ElImage, {
               src: row.cover,
@@ -92,14 +117,14 @@
       prop: 'category.name',
       label: '分类',
       width: 100,
-      formatter: (row: any) => row.category?.name || '-'
+      formatter: (row: BookshelfItem) => row.category?.name || '-'
     },
     {
       prop: 'wordCount',
       label: '字数',
       width: 100,
       align: 'center' as const,
-      formatter: (row: any) => {
+      formatter: (row: BookshelfItem) => {
         const count = row.wordCount || 0
         return count >= 10000 ? (count / 10000).toFixed(1) + '万' : count.toLocaleString()
       }
@@ -110,14 +135,14 @@
       label: '评分',
       width: 80,
       align: 'center' as const,
-      formatter: (row: any) => h('span', { class: 'text-orange-500' }, row.rating || '-')
+      formatter: (row: BookshelfItem) => h('span', { class: 'text-orange-500' }, row.rating || '-')
     },
     {
       prop: 'readCount',
       label: '阅读量',
       width: 100,
       align: 'center' as const,
-      formatter: (row: any) => {
+      formatter: (row: BookshelfItem) => {
         const count = row.readCount || 0
         return count >= 10000 ? (count / 10000).toFixed(1) + '万' : count.toLocaleString()
       }
@@ -127,7 +152,7 @@
       label: '状态',
       width: 80,
       align: 'center' as const,
-      formatter: (row: any) =>
+      formatter: (row: BookshelfItem) =>
         h(ElTag, { type: row.status === 1 ? 'success' : 'info' }, () =>
           row.status === 1 ? '上架' : '下架'
         )
@@ -138,7 +163,7 @@
       width: 120,
       fixed: 'right' as const,
       align: 'center' as const,
-      formatter: (row: any) =>
+      formatter: (row: BookshelfItem) =>
         h('div', [
           h(
             ElButton,
@@ -157,9 +182,9 @@
   const loadBooks = async () => {
     isLoading.value = true
     try {
-      const params: any = { page: currentPage.value, pageSize: pageSize.value }
+      const params: BookListParams = { page: currentPage.value, pageSize: pageSize.value }
       if (searchVal.value) params.keyword = searchVal.value
-      const res = (await getBooks(params)) as any
+      const res = (await getBooks(params)) as unknown as BookListResponse
       bookshelfList.value = res?.items || []
       total.value = res?.total || 0
     } catch {

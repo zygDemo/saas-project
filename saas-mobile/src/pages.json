@@ -12,21 +12,7 @@
     {
       "path": "pages/carloan/workbench"
     },
-    {
-      "path": "pages/home/uview-intro"
-    },
-    {
-      "path": "pages/home/http-demo"
-    },
-    {
-      "path": "pages/home/pinia-demo"
-    },
-    {
-      "path": "pages/home/components-demo"
-    },
-    {
-      "path": "pages/home/create-demo"
-    },
+
     {
       "path": "pages/auth/login"
     },

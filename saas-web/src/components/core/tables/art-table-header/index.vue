@@ -223,7 +223,7 @@
    * @param evt move事件对象
    * @returns 是否允许移动
    */
-  const checkColumnMove = (event: any) => {
+  const checkColumnMove = (event: { related: EventTarget | null }) => {
     // 拖拽进入的目标 DOM 元素
     const toElement = event.related as HTMLElement
     // 如果目标位置是 fixed 列，则不允许移动

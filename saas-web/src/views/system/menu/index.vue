@@ -83,7 +83,7 @@
   // 弹窗相关
   const dialogVisible = ref(false)
   const dialogType = ref<'menu' | 'button'>('menu')
-  const editData = ref<AppRouteRecord | any>(null)
+  const editData = ref<AppRouteRecord | null>(null)
   const currentMenuRow = ref<AppRouteRecord | null>(null)
   const lockMenuType = ref(false)
   const dialogParentId = ref<number | null>(null)
@@ -447,7 +447,7 @@
     icon?: string
     roles?: string[]
     sort?: number
-    [key: string]: any
+    [key: string]: unknown
   }
 
   /**

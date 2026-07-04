@@ -99,7 +99,7 @@
 
   interface Props {
     visible: boolean
-    editData?: AppRouteRecord | any
+    editData?: AppRouteRecord | null
     type?: 'menu' | 'button'
     lockType?: boolean
     parentId?: number | null

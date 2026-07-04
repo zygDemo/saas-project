@@ -163,7 +163,7 @@
     symbol?: string
     symbolSize?: number
     lineWidth?: number
-    areaStyle?: any
+    areaStyle?: Record<string, unknown>
   }) => {
     return {
       name: config.name,

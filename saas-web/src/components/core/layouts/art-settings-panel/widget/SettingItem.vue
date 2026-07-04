@@ -49,17 +49,17 @@
     style?: Record<string, string>
     controlsPosition?: '' | 'right'
     options?:
-      | Array<{ value: any; label: string }>
-      | ComputedRef<Array<{ value: any; label: string }>>
+      | Array<{ value: string | number; label: string }>
+      | ComputedRef<Array<{ value: string | number; label: string }>>
   }
 
   interface Props {
     config: SettingItemConfig
-    modelValue: any
+    modelValue: string | number | boolean
   }
 
   interface Emits {
-    (e: 'change', value: any): void
+    (e: 'change', value: string | number | boolean): void
   }
 
   const props = defineProps<Props>()
@@ -83,7 +83,7 @@
     }
   })
 
-  const handleChange = (value: any) => {
+  const handleChange = (value: string | number | boolean) => {
     try {
       emit('change', value)
     } catch (error) {

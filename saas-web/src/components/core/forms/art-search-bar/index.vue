@@ -173,11 +173,11 @@
     /** 表单项占据的列宽，基于24格栅格系统 */
     span?: number
     /** 选项数据，用于 select、checkbox-group、radio-group 等 */
-    options?: Record<string, any>
+    options?: Array<Record<string, unknown>>[]
     /** 传递给表单项组件的属性 */
-    props?: Record<string, any>
+    props?: Record<string, unknown>
     /** 表单项的插槽配置 */
-    slots?: Record<string, (() => any) | undefined>
+    slots?: Record<string, (() => VNode | null) | undefined>
     /** 表单项的占位符文本 */
     placeholder?: string
     /** 更多属性配置请参考 ElementPlus 官方文档 */
@@ -246,16 +246,16 @@
 
   interface SearchBarEmits {
     reset: []
-    search: [Record<string, any>]
+    search: [Record<string, unknown>]
   }
 
   const emit = defineEmits<SearchBarEmits>()
 
-  const modelValue = defineModel<Record<string, any>>('modelValue', { default: () => ({}) })
-  const initialModelValue = ref<Record<string, any>>({})
+  const modelValue = defineModel<Record<string, unknown>>('modelValue', { default: () => ({}) })
+  const initialModelValue = ref<Record<string, unknown>>({})
 
   // 保存组件初始化时的表单快照，用于 reset 时恢复默认筛选条件。
-  const cloneModelValue = (value: Record<string, any> | undefined) => {
+  const cloneModelValue = (value: Record<string, unknown> | undefined) => {
     if (!value) return {}
 
     const deepClone = (source: unknown): unknown => {
@@ -274,7 +274,7 @@
       return source
     }
 
-    return deepClone(toRaw(value)) as Record<string, any>
+    return deepClone(toRaw(value)) as Record<string, unknown>
   }
 
   initialModelValue.value = cloneModelValue(modelValue.value)
@@ -299,14 +299,14 @@
   const getProps = (item: SearchFormItem) => {
     if (item.props) return item.props
     const props = { ...item }
-    rootProps.forEach((key) => delete (props as Record<string, any>)[key])
+    rootProps.forEach((key) => delete (props as Record<string, unknown>)[key])
     return props
   }
 
   // 获取插槽
   const getSlots = (item: SearchFormItem) => {
     if (!item.slots) return {}
-    const validSlots: Record<string, () => any> = {}
+    const validSlots: Record<string, () => VNode | null> = {}
     Object.entries(item.slots).forEach(([key, slotFn]) => {
       if (slotFn) {
         validSlots[key] = slotFn
@@ -406,7 +406,7 @@
   }
 
   const getSanitizedOutput = () => {
-    return (sanitizeOutputValue(cloneModelValue(modelValue.value)) || {}) as Record<string, any>
+    return (sanitizeOutputValue(cloneModelValue(modelValue.value)) || {}) as Record<string, unknown>
   }
 
   // 组件
@@ -495,7 +495,7 @@
 
   defineExpose({
     ref: formInstance,
-    validate: (...args: any[]) => formInstance.value?.validate(...args),
+    validate: (...args: unknown[]) => formInstance.value?.validate(...args as [(valid: boolean) => void]),
     reset: handleReset,
     // 允许外部在手动组装请求前直接读取清洗后的参数。
     getOutput: getSanitizedOutput

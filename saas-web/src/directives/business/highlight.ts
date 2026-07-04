@@ -225,7 +225,7 @@ const highlightDirective: HighlightDirective = {
     })
 
     // 将 observer 存储到元素上，以便在 unmounted 时清理
-    ;(el as any)._highlightObserver = observer
+    ;(el as HTMLElement & { _highlightObserver?: MutationObserver })._highlightObserver = observer
   },
 
   updated(el: HTMLElement) {
@@ -237,10 +237,10 @@ const highlightDirective: HighlightDirective = {
 
   unmounted(el: HTMLElement) {
     // 清理 MutationObserver
-    const observer = (el as any)._highlightObserver
+    const observer = (el as HTMLElement & { _highlightObserver?: MutationObserver })._highlightObserver
     if (observer) {
       observer.disconnect()
-      delete (el as any)._highlightObserver
+      delete (el as HTMLElement & { _highlightObserver?: MutationObserver })._highlightObserver
     }
   }
 }

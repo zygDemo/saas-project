@@ -1,6 +1,14 @@
 import type { FieldConfig, FilterConfig, OptionConfig } from './types'
+import type { FormModel } from './types'
 import { commonStatusMap, flowBusinessTypeOptions, flowNodeOptions, orgPackageOptions } from './constants'
 import type { PageConfig } from './types'
+
+// 关联实体类型（用于 flattenRelations 和 formatCell）
+interface RelationEntity {
+  name?: string
+  userName?: string
+  realName?: string
+}
 
 // ==================== 格式化工具 ====================
 
@@ -98,7 +106,7 @@ export function formatCell(
     if (Array.isArray(value)) {
       if (value.length === 0) return '-'
       if (value.every((v) => v && typeof v === 'object' && 'name' in v)) {
-        return value.map((v: any) => v.name).join(', ')
+        return value.map((v: unknown) => (v as RelationEntity).name ?? '').join(', ')
       }
       return `共${value.length}项`
     }
@@ -135,7 +143,8 @@ export function flattenRelations(row: Record<string, unknown>): Record<string, u
   for (const [key, alias] of Object.entries(relationMap)) {
     const rel = row[key]
     if (rel && typeof rel === 'object' && !Array.isArray(rel)) {
-      const name = (rel as any).name ?? (rel as any).userName ?? (rel as any).realName
+      const relEntity = rel as RelationEntity
+      const name = relEntity.name ?? relEntity.userName ?? relEntity.realName
       if (name !== undefined) flat[alias] = name
     }
   }
@@ -228,6 +237,6 @@ export function getRemoteOptionParams(
   formModel: Record<string, unknown>
 ): Record<string, unknown> {
   const params = source.remoteOptions?.params
-  if (typeof params === 'function') return params(formModel as any)
+  if (typeof params === 'function') return (params as (model: FormModel) => Record<string, unknown>)(formModel as FormModel)
   return params || {}
 }

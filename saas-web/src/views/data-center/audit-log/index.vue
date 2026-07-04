@@ -70,42 +70,70 @@
       </ElCol>
     </ElRow>
 
-    <!-- 图表区域 -->
-    <ElRow :gutter="20" class="mb-5">
-      <ElCol :xl="14" :lg="15" :xs="24">
-        <ElCard class="art-card-xs">
-          <template #header>
-            <div class="card-header">
-              <h4>接口调用时段分布</h4>
-              <ElSpace>
-                <ElTag type="info" size="small">正常请求</ElTag>
-                <ElTag type="danger" size="small">异常请求</ElTag>
-              </ElSpace>
-            </div>
-          </template>
-          <div ref="hourlyChartRef" style="width: 100%; height: 280px"></div>
-        </ElCard>
-      </ElCol>
-      <ElCol :xl="10" :lg="9" :xs="24">
-        <ElCard class="art-card-xs">
-          <template #header>
-            <div class="card-header">
-              <h4>模块分布</h4>
-              <ElTag type="success" size="small">各模块请求占比</ElTag>
-            </div>
-          </template>
-          <ArtRingChart
-            height="280px"
-            :data="moduleChartData"
-            :color="moduleColors"
-            :radius="['40%', '65%']"
-            :showLegend="true"
-            legendPosition="bottom"
-            :borderRadius="8"
-          />
-        </ElCard>
-      </ElCol>
-    </ElRow>
+    <!-- 图表抽屉 -->
+    <ElDrawer v-model="showCharts" title="数据概览" size="75%" destroy-on-close>
+      <ElRow :gutter="20">
+        <!-- 24小时调用分布 -->
+        <ElCol :span="24">
+          <ElCard class="art-card-xs mb-4">
+            <template #header>
+              <div class="card-header">
+                <h4>接口调用时段分布</h4>
+                <ElSpace>
+                  <ElTag type="info" size="small">正常请求</ElTag>
+                  <ElTag type="danger" size="small">异常请求</ElTag>
+                </ElSpace>
+              </div>
+            </template>
+            <div ref="hourlyChartRef" style="width: 100%; height: 280px"></div>
+          </ElCard>
+        </ElCol>
+        <!-- HTTP方法分布 -->
+        <ElCol :xl="12" :lg="12" :xs="24">
+          <ElCard class="art-card-xs mb-4">
+            <template #header>
+              <div class="card-header">
+                <h4>HTTP 方法分布</h4>
+                <ElTag type="primary" size="small">{{ stats.actions?.length || 0 }} 种方法</ElTag>
+              </div>
+            </template>
+            <div ref="actionsChartRef" style="width: 100%; height: 280px"></div>
+          </ElCard>
+        </ElCol>
+        <!-- 模块调用排行 -->
+        <ElCol :xl="12" :lg="12" :xs="24">
+          <ElCard class="art-card-xs mb-4">
+            <template #header>
+              <div class="card-header">
+                <h4>模块调用排行</h4>
+                <ElTag type="success" size="small">Top {{ Math.min(stats.modules?.length || 0, 10) }}</ElTag>
+              </div>
+            </template>
+            <div ref="modulesChartRef" style="width: 100%; height: 280px"></div>
+          </ElCard>
+        </ElCol>
+        <!-- 模块占比 -->
+        <ElCol :span="24">
+          <ElCard class="art-card-xs mb-4">
+            <template #header>
+              <div class="card-header">
+                <h4>模块请求占比</h4>
+                <ElTag type="success" size="small">各模块请求占比</ElTag>
+              </div>
+            </template>
+            <ArtRingChart
+              height="300px"
+              :data="moduleChartData"
+              :color="moduleColors"
+              :radius="['35%', '65%']"
+              :showLegend="true"
+              legendPosition="bottom"
+              :borderRadius="8"
+            />
+          </ElCard>
+        </ElCol>
+      </ElRow>
+    </ElDrawer>
 
     <!-- 搜索栏 -->
     <AuditLogSearch v-model="searchForm" @search="handleSearch" @reset="resetSearchParams" />
@@ -119,6 +147,12 @@
             <ElTag type="success" effect="plain">成功 {{ stats.successCount }}</ElTag>
             <ElTag type="danger" effect="plain">失败 {{ stats.failCount }}</ElTag>
           </ElSpace>
+        </template>
+        <template #right>
+          <ElButton size="small" @click="showCharts = true">
+            <ArtSvgIcon icon="ri:bar-chart-2-line" class="mr-1" />
+            数据概览
+          </ElButton>
         </template>
       </ArtTableHeader>
 
@@ -188,9 +222,9 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, h, onMounted, onUnmounted, reactive, computed, watch } from 'vue'
+  import { ref, h, onMounted, onUnmounted, reactive, computed, watch, nextTick } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
-  import * as echarts from 'echarts'
+  import { echarts, graphic } from '@/plugins/echarts'
   import {
     fetchAuditLogs,
     fetchAuditLogStats,
@@ -232,9 +266,16 @@
     status: ''
   })
 
+  // 图表显示控制
+  const showCharts = ref(false)
+
   // 图表引用
   const hourlyChartRef = ref<HTMLElement>()
+  const actionsChartRef = ref<HTMLElement>()
+  const modulesChartRef = ref<HTMLElement>()
   let hourlyChart: echarts.ECharts | null = null
+  let actionsChart: echarts.ECharts | null = null
+  let modulesChart: echarts.ECharts | null = null
 
   // 模块分布数据
   const moduleChartData = computed(() =>
@@ -347,8 +388,14 @@
 
   // 初始化图表
   function initCharts() {
-    if (hourlyChartRef.value) {
+    if (hourlyChartRef.value && !hourlyChart) {
       hourlyChart = echarts.init(hourlyChartRef.value)
+    }
+    if (actionsChartRef.value && !actionsChart) {
+      actionsChart = echarts.init(actionsChartRef.value)
+    }
+    if (modulesChartRef.value && !modulesChart) {
+      modulesChart = echarts.init(modulesChartRef.value)
     }
   }
 
@@ -401,7 +448,7 @@
           data: counts,
           itemStyle: {
             borderRadius: [4, 4, 0, 0],
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            color: new graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: '#4C87F3' },
               { offset: 1, color: '#8BD8FC' }
             ])
@@ -417,7 +464,7 @@
           lineStyle: { color: '#f56c6c', width: 3 },
           itemStyle: { color: '#f56c6c', borderColor: '#fff', borderWidth: 2 },
           areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            color: new graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: 'rgba(245, 108, 108, 0.3)' },
               { offset: 1, color: 'rgba(245, 108, 108, 0.02)' }
             ])
@@ -430,9 +477,107 @@
   // 监听数据变化
   watch(() => stats.hourly, updateHourlyChart)
 
+  // 展开图表时初始化并调整尺寸
+  watch(showCharts, (val) => {
+    if (val) {
+      nextTick(() => {
+        initCharts()
+        updateHourlyChart()
+        updateActionsChart()
+        updateModulesChart()
+      })
+    } else {
+      hourlyChart?.dispose()
+      hourlyChart = null
+      actionsChart?.dispose()
+      actionsChart = null
+      modulesChart?.dispose()
+      modulesChart = null
+    }
+  })
+
+  // 更新HTTP方法分布图表
+  function updateActionsChart() {
+    if (!actionsChart || !stats.actions?.length) return
+
+    const sorted = [...stats.actions].sort((a, b) => b.count - a.count)
+    const methods = sorted.map((item) => item.action)
+    const counts = sorted.map((item) => item.count)
+
+    const methodColors: Record<string, string> = {
+      GET: '#4C87F3',
+      POST: '#67C23A',
+      PUT: '#E6A23C',
+      PATCH: '#F56C6C',
+      DELETE: '#909399'
+    }
+
+    actionsChart.setOption({
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+      xAxis: { type: 'category', data: methods },
+      yAxis: { type: 'value', name: '调用次数', axisLabel: { fontSize: 10 } },
+      series: [
+        {
+          type: 'bar',
+          barWidth: '50%',
+          data: counts.map((val, i) => ({
+            value: val,
+            itemStyle: {
+              color: methodColors[methods[i]] || '#4C87F3',
+              borderRadius: [4, 4, 0, 0]
+            }
+          }))
+        }
+      ]
+    })
+  }
+
+  // 更新模块调用排行图表
+  function updateModulesChart() {
+    if (!modulesChart || !stats.modules?.length) return
+
+    const top10 = [...stats.modules].sort((a, b) => b.count - a.count).slice(0, 10)
+    const names = top10.map((item) => item.module).reverse()
+    const counts = top10.map((item) => item.count).reverse()
+
+    modulesChart.setOption({
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: '3%', right: '10%', bottom: '3%', top: '5%', containLabel: true },
+      xAxis: { type: 'value', axisLabel: { fontSize: 10 } },
+      yAxis: {
+        type: 'category',
+        data: names,
+        axisLabel: { fontSize: 11, width: 100, overflow: 'truncate' }
+      },
+      series: [
+        {
+          type: 'bar',
+          barWidth: '60%',
+          data: counts,
+          itemStyle: {
+            borderRadius: [0, 4, 4, 0],
+            color: new graphic.LinearGradient(0, 0, 1, 0, [
+              { offset: 0, color: '#8BD8FC' },
+              { offset: 1, color: '#4C87F3' }
+            ])
+          },
+          label: {
+            show: true,
+            position: 'right',
+            fontSize: 11,
+            formatter: '{c}'
+          }
+        }
+      ]
+    })
+  }
+
   // 窗口大小变化
   function handleResize() {
     hourlyChart?.resize()
+    actionsChart?.resize()
+    modulesChart?.resize()
   }
 
   // 表格配置
@@ -555,7 +700,6 @@
   // 初始化
   onMounted(() => {
     loadStats()
-    initCharts()
     window.addEventListener('resize', handleResize)
   })
 

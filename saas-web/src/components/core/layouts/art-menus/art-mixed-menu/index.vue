@@ -80,7 +80,7 @@
     list: () => []
   })
 
-  const scrollbarRef = ref<any>()
+  const scrollbarRef = ref<{ scrollTo: (options: { top: number }) => void }>()
   const showLeftArrow = ref(false)
   const showRightArrow = ref(false)
 

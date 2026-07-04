@@ -1,6 +1,7 @@
 ﻿import { Public } from '../../common/decorators/public.decorator'
 import { Controller, Get } from '@nestjs/common'
-import { ApiOperation, ApiTags } from '@nestjs/swagger'
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { HealthCheckResponseDto } from './dto/health.dto'
 
 @ApiTags('健康检查')
 @Public()
@@ -8,7 +9,8 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger'
 export class HealthController {
   @Get()
   @ApiOperation({ summary: '服务健康检查', description: '检查 API 服务是否正常运行，返回服务状态和时间戳' })
-  check() {
+  @ApiResponse({ status: 200, description: '服务正常', type: HealthCheckResponseDto })
+  check(): HealthCheckResponseDto {
     return {
       status: 'ok',
       timestamp: new Date().toISOString()
