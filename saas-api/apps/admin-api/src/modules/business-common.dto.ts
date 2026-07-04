@@ -1449,3 +1449,371 @@ export class RepaymentQueryDto extends PageQueryDto {
   @IsEnum(RepaymentStatus)
   status?: RepaymentStatus
 }
+
+// ========== 平台管理：套餐计划 ==========
+export class CreatePackagePlanDto {
+  @ApiProperty({ description: '套餐名称' })
+  @IsString()
+  name: string
+
+  @ApiProperty({ description: '套餐编码' })
+  @IsString()
+  code: string
+
+  @ApiPropertyOptional({ description: '套餐描述' })
+  @IsOptional()
+  @IsString()
+  description?: string
+
+  @ApiProperty({ description: '月费' })
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  price: number
+
+  @ApiPropertyOptional({ description: '最大用户数，0=不限', default: 0 })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(0)
+  maxUsers?: number
+
+  @ApiPropertyOptional({ description: '最大机构数，0=不限', default: 0 })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(0)
+  maxOrgs?: number
+
+  @ApiPropertyOptional({ description: '功能特性列表' })
+  @IsOptional()
+  @IsObject()
+  features?: Record<string, unknown>
+
+  @ApiPropertyOptional({ description: '状态', default: 'ACTIVE' })
+  @IsOptional()
+  @IsString()
+  status?: string
+
+  @ApiPropertyOptional({ description: '排序', default: 0 })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(0)
+  sortOrder?: number
+}
+
+export class UpdatePackagePlanDto extends PartialType(CreatePackagePlanDto) {}
+
+export class PackagePlanQueryDto extends PageQueryDto {
+  @ApiPropertyOptional({ description: '关键词，匹配套餐名称或编码' })
+  @IsOptional()
+  @IsString()
+  keyword?: string
+
+  @ApiPropertyOptional({ description: '套餐名称，模糊查询' })
+  @IsOptional()
+  @IsString()
+  name?: string
+
+  @ApiPropertyOptional({ description: '套餐编码，模糊查询' })
+  @IsOptional()
+  @IsString()
+  code?: string
+
+  @ApiPropertyOptional({ description: '状态' })
+  @IsOptional()
+  @IsString()
+  status?: string
+}
+
+// ========== 平台管理：产品模板 ==========
+export class CreateProductTemplateDto {
+  @ApiProperty({ description: '模板名称' })
+  @IsString()
+  name: string
+
+  @ApiProperty({ description: '产品类型：抵押贷、信用贷、融资租赁' })
+  @IsString()
+  productType: string
+
+  @ApiPropertyOptional({ description: '描述' })
+  @IsOptional()
+  @IsString()
+  description?: string
+
+  @ApiPropertyOptional({ description: '最低年利率' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  minRate?: number
+
+  @ApiPropertyOptional({ description: '最高年利率' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  maxRate?: number
+
+  @ApiPropertyOptional({ description: '最低金额' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  minAmount?: number
+
+  @ApiPropertyOptional({ description: '最高金额' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  maxAmount?: number
+
+  @ApiPropertyOptional({ description: '最短期限（月）' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  minTerm?: number
+
+  @ApiPropertyOptional({ description: '最长期限（月）' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  maxTerm?: number
+
+  @ApiPropertyOptional({ description: '还款方式' })
+  @IsOptional()
+  @IsString()
+  repaymentMethod?: string
+
+  @ApiPropertyOptional({ description: '准入条件模板' })
+  @IsOptional()
+  @IsObject()
+  accessConditions?: Record<string, unknown>
+
+  @ApiPropertyOptional({ description: '所需文件清单模板' })
+  @IsOptional()
+  @IsObject()
+  fileChecklist?: Record<string, unknown>
+
+  @ApiPropertyOptional({ description: '状态', default: 'ACTIVE' })
+  @IsOptional()
+  @IsString()
+  status?: string
+
+  @ApiPropertyOptional({ description: '排序', default: 0 })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(0)
+  sortOrder?: number
+}
+
+export class UpdateProductTemplateDto extends PartialType(CreateProductTemplateDto) {}
+
+export class ProductTemplateQueryDto extends PageQueryDto {
+  @ApiPropertyOptional({ description: '关键词，匹配模板名称' })
+  @IsOptional()
+  @IsString()
+  keyword?: string
+
+  @ApiPropertyOptional({ description: '模板名称，模糊查询' })
+  @IsOptional()
+  @IsString()
+  name?: string
+
+  @ApiPropertyOptional({ description: '产品类型' })
+  @IsOptional()
+  @IsString()
+  productType?: string
+
+  @ApiPropertyOptional({ description: '状态' })
+  @IsOptional()
+  @IsString()
+  status?: string
+}
+
+// ========== 平台管理：第三方服务 ==========
+export class CreateThirdPartyServiceDto {
+  @ApiProperty({ description: '服务名称' })
+  @IsString()
+  name: string
+
+  @ApiProperty({ description: '服务编码' })
+  @IsString()
+  code: string
+
+  @ApiProperty({ description: '类型：SMS, OCR, GPS, CREDIT, PAYMENT' })
+  @IsString()
+  serviceType: string
+
+  @ApiProperty({ description: '服务商' })
+  @IsString()
+  provider: string
+
+  @ApiPropertyOptional({ description: 'API地址' })
+  @IsOptional()
+  @IsString()
+  apiUrl?: string
+
+  @ApiPropertyOptional({ description: '配置信息' })
+  @IsOptional()
+  @IsObject()
+  config?: Record<string, unknown>
+
+  @ApiPropertyOptional({ description: '状态', default: 'ACTIVE' })
+  @IsOptional()
+  @IsString()
+  status?: string
+
+  @ApiPropertyOptional({ description: '备注' })
+  @IsOptional()
+  @IsString()
+  remark?: string
+}
+
+export class UpdateThirdPartyServiceDto extends PartialType(CreateThirdPartyServiceDto) {}
+
+export class ThirdPartyServiceQueryDto extends PageQueryDto {
+  @ApiPropertyOptional({ description: '关键词，匹配服务名称或编码' })
+  @IsOptional()
+  @IsString()
+  keyword?: string
+
+  @ApiPropertyOptional({ description: '服务名称，模糊查询' })
+  @IsOptional()
+  @IsString()
+  name?: string
+
+  @ApiPropertyOptional({ description: '服务编码，模糊查询' })
+  @IsOptional()
+  @IsString()
+  code?: string
+
+  @ApiPropertyOptional({ description: '服务类型' })
+  @IsOptional()
+  @IsString()
+  serviceType?: string
+
+  @ApiPropertyOptional({ description: '状态' })
+  @IsOptional()
+  @IsString()
+  status?: string
+}
+
+// ========== 平台管理：运营工单 ==========
+export class CreateWorkOrderDto {
+  @ApiProperty({ description: '租户ID' })
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  tenantId: number
+
+  @ApiProperty({ description: '工单标题' })
+  @IsString()
+  title: string
+
+  @ApiPropertyOptional({ description: '工单内容' })
+  @IsOptional()
+  @IsString()
+  content?: string
+
+  @ApiPropertyOptional({ description: '工单类型', default: 'FEEDBACK' })
+  @IsOptional()
+  @IsString()
+  orderType?: string
+
+  @ApiPropertyOptional({ description: '优先级', default: 'NORMAL' })
+  @IsOptional()
+  @IsString()
+  priority?: string
+
+  @ApiPropertyOptional({ description: '状态', default: 'OPEN' })
+  @IsOptional()
+  @IsString()
+  status?: string
+
+  @ApiPropertyOptional({ description: '创建人ID' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  creatorId?: number
+
+  @ApiPropertyOptional({ description: '处理人ID' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  assigneeId?: number
+
+  @ApiPropertyOptional({ description: '解决时间' })
+  @IsOptional()
+  @ToDate()
+  @IsDate({ message: 'resolvedAt 必须是有效日期' })
+  resolvedAt?: string | Date
+
+  @ApiPropertyOptional({ description: '关闭时间' })
+  @IsOptional()
+  @ToDate()
+  @IsDate({ message: 'closedAt 必须是有效日期' })
+  closedAt?: string | Date
+
+  @ApiPropertyOptional({ description: '备注' })
+  @IsOptional()
+  @IsString()
+  remark?: string
+}
+
+export class UpdateWorkOrderDto extends PartialType(CreateWorkOrderDto) {}
+
+export class WorkOrderQueryDto extends PageQueryDto {
+  @ApiPropertyOptional({ description: '关键词，匹配工单标题' })
+  @IsOptional()
+  @IsString()
+  keyword?: string
+
+  @ApiPropertyOptional({ description: '工单标题，模糊查询' })
+  @IsOptional()
+  @IsString()
+  title?: string
+
+  @ApiPropertyOptional({ description: '租户ID' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  tenantId?: number
+
+  @ApiPropertyOptional({ description: '工单类型' })
+  @IsOptional()
+  @IsString()
+  orderType?: string
+
+  @ApiPropertyOptional({ description: '优先级' })
+  @IsOptional()
+  @IsString()
+  priority?: string
+
+  @ApiPropertyOptional({ description: '状态' })
+  @IsOptional()
+  @IsString()
+  status?: string
+
+  @ApiPropertyOptional({ description: '创建人ID' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  creatorId?: number
+
+  @ApiPropertyOptional({ description: '处理人ID' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  assigneeId?: number
+}

@@ -363,7 +363,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     ])
 
     return toPaginatedResponse(
-      records.map((record) => this.mapFlowApplication(record as unknown as ApplicationWithFlow)),
+      records.map((record: unknown) => this.mapFlowApplication(record as unknown as ApplicationWithFlow)),
       total,
       pagination
     )
@@ -395,7 +395,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     ])
 
     return toPaginatedResponse(
-      records.map((record) => this.mapOrderListItem(record as unknown as ApplicationWithFlow)),
+      records.map((record: unknown) => this.mapOrderListItem(record as unknown as ApplicationWithFlow)),
       total,
       pagination
     )
@@ -1887,11 +1887,11 @@ export class ApplicationService extends BaseBusinessCrudService<
 
     // 将审批记录转换为要求的格式
     // 按时间倒序排列，最新的在前面
-    const lifecycle = application.approvals.map((approval) => ({
+    const lifecycle = application.approvals.map((approval: { id: number; stage: string; action: string; createdAt: Date; approver: { userName?: string; nickName?: string } | null; opinion: string | null; amount: number | null }) => ({
       id: approval.id,
       currentNode: approval.stage,
       nextNode: null, // TODO: 根据流程配置获取下一节点
-      approveName: approval.approver.nickName || approval.approver.userName,
+      approveName: approval.approver?.nickName || approval.approver?.userName || null,
       approvalTime: this.formatDatetime(approval.createdAt),
       approvalReason: approval.opinion || null,
       reasonExternal: null,

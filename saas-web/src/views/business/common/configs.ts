@@ -21,7 +21,15 @@ import {
   apiEnabledOptions,
   orgExpireStateOptions,
   toOption,
-  commonStatusMap
+  commonStatusMap,
+  tenantStatusOptions,
+  packageBillingStatusOptions,
+  productTemplateStatusOptions,
+  thirdPartyServiceTypeOptions,
+  thirdPartyStatusOptions,
+  workOrderTypeOptions,
+  workOrderPriorityOptions,
+  workOrderStatusOptions
 } from './constants'
 import { leadActions, applicationActions } from './actions'
 
@@ -711,6 +719,355 @@ export const configs: Record<string, PageConfig> = {
       { prop: 'updatedAt', label: '更新时间' }
     ],
     formFields: [],
+    actions: []
+  },
+  // ==================== 平台管理 ====================
+  tenant: {
+    title: '租户机构管理',
+    description: '维护平台所有租户机构的基础资料、联系信息与状态。',
+    api: 'tenant',
+    keywordField: 'name',
+    keywordParam: 'keyword',
+    keywordPlaceholder: '机构名称/编码/联系人/电话',
+    columns: [
+      { prop: 'name', label: '机构名称', width: 200 },
+      { prop: 'code', label: '机构编码', width: 140 },
+      { prop: 'contactName', label: '联系人', width: 120 },
+      { prop: 'contactPhone', label: '联系电话', width: 140 },
+      { prop: 'packageType', label: '套餐类型', width: 120 },
+      { prop: 'status', label: '状态', width: 100 }
+    ],
+    detailColumns: [
+      { prop: 'name', label: '机构名称' },
+      { prop: 'code', label: '机构编码' },
+      { prop: 'contactName', label: '联系人' },
+      { prop: 'contactPhone', label: '联系电话' },
+      { prop: 'packageType', label: '套餐类型' },
+      { prop: 'status', label: '状态' }
+    ],
+    formFields: [
+      { prop: 'name', label: '机构名称', required: true, group: '基础信息' },
+      { prop: 'code', label: '机构编码', required: true, placeholder: '建议使用英文或拼音缩写' },
+      {
+        prop: 'status',
+        label: '状态',
+        type: 'select',
+        options: tenantStatusOptions,
+        defaultValue: 'ACTIVE'
+      },
+      { prop: 'contactName', label: '联系人', group: '联系信息' },
+      { prop: 'contactPhone', label: '联系电话' },
+      {
+        prop: 'packageType',
+        label: '套餐类型',
+        type: 'select',
+        options: orgPackageOptions,
+        defaultValue: 'STANDARD',
+        group: '服务配置'
+      }
+    ],
+    actions: []
+  },
+  'package-billing': {
+    title: '套餐与计费',
+    description: '管理平台套餐方案、定价与用户/机构配额。',
+    api: 'package-billing',
+    keywordField: 'name',
+    keywordParam: 'keyword',
+    keywordPlaceholder: '套餐名称/编码',
+    columns: [
+      { prop: 'name', label: '套餐名称', width: 200 },
+      { prop: 'code', label: '套餐编码', width: 140 },
+      { prop: 'price', label: '价格', width: 120 },
+      { prop: 'maxUsers', label: '最大用户数', width: 120 },
+      { prop: 'maxOrgs', label: '最大机构数', width: 120 },
+      { prop: 'status', label: '状态', width: 100 }
+    ],
+    detailColumns: [
+      { prop: 'name', label: '套餐名称' },
+      { prop: 'code', label: '套餐编码' },
+      { prop: 'price', label: '价格' },
+      { prop: 'maxUsers', label: '最大用户数' },
+      { prop: 'maxOrgs', label: '最大机构数' },
+      { prop: 'status', label: '状态' }
+    ],
+    formFields: [
+      { prop: 'name', label: '套餐名称', required: true, group: '基础信息' },
+      { prop: 'code', label: '套餐编码', required: true },
+      {
+        prop: 'price',
+        label: '价格',
+        type: 'number',
+        precision: 2,
+        unit: '元/月',
+        required: true
+      },
+      {
+        prop: 'status',
+        label: '状态',
+        type: 'select',
+        options: packageBillingStatusOptions,
+        defaultValue: 'ACTIVE'
+      },
+      {
+        prop: 'maxUsers',
+        label: '最大用户数',
+        type: 'number',
+        required: true,
+        group: '配额设置'
+      },
+      {
+        prop: 'maxOrgs',
+        label: '最大机构数',
+        type: 'number',
+        required: true
+      }
+    ],
+    actions: []
+  },
+  'product-template': {
+    title: '产品与资方模板',
+    description: '维护产品模板的利率、金额、期限区间，供新建产品时快速引用。',
+    api: 'product-template',
+    keywordField: 'name',
+    keywordParam: 'keyword',
+    keywordPlaceholder: '模板名称',
+    columns: [
+      { prop: 'name', label: '模板名称', width: 200 },
+      { prop: 'productType', label: '产品类型', width: 120 },
+      { prop: 'minRate', label: '最低利率', width: 100 },
+      { prop: 'maxRate', label: '最高利率', width: 100 },
+      { prop: 'minAmount', label: '最低金额', width: 120 },
+      { prop: 'maxAmount', label: '最高金额', width: 120 },
+      { prop: 'status', label: '状态', width: 100 }
+    ],
+    detailColumns: [
+      { prop: 'name', label: '模板名称' },
+      { prop: 'productType', label: '产品类型' },
+      { prop: 'minRate', label: '最低年利率' },
+      { prop: 'maxRate', label: '最高年利率' },
+      { prop: 'minAmount', label: '最低金额' },
+      { prop: 'maxAmount', label: '最高金额' },
+      { prop: 'minTerm', label: '最短期限' },
+      { prop: 'maxTerm', label: '最长期限' },
+      { prop: 'status', label: '状态' }
+    ],
+    formFields: [
+      { prop: 'name', label: '模板名称', required: true, group: '基础信息' },
+      {
+        prop: 'productType',
+        label: '产品类型',
+        type: 'select',
+        options: productTypeOptions,
+        defaultValue: 'CAR_LOAN',
+        required: true
+      },
+      {
+        prop: 'status',
+        label: '状态',
+        type: 'select',
+        options: productTemplateStatusOptions,
+        defaultValue: 'ACTIVE'
+      },
+      {
+        prop: 'minRate',
+        label: '最低年利率',
+        type: 'number',
+        precision: 2,
+        unit: '%',
+        transform: 'percent',
+        required: true,
+        group: '利率范围'
+      },
+      {
+        prop: 'maxRate',
+        label: '最高年利率',
+        type: 'number',
+        precision: 2,
+        unit: '%',
+        transform: 'percent',
+        required: true
+      },
+      {
+        prop: 'minAmount',
+        label: '最低金额',
+        type: 'number',
+        precision: 2,
+        unit: '元',
+        required: true,
+        group: '金额范围'
+      },
+      {
+        prop: 'maxAmount',
+        label: '最高金额',
+        type: 'number',
+        precision: 2,
+        unit: '元',
+        required: true
+      },
+      {
+        prop: 'minTerm',
+        label: '最短期限',
+        type: 'number',
+        unit: '个月',
+        required: true,
+        group: '期限范围'
+      },
+      {
+        prop: 'maxTerm',
+        label: '最长期限',
+        type: 'number',
+        unit: '个月',
+        required: true
+      }
+    ],
+    actions: []
+  },
+  supervision: {
+    title: '平台业务监管',
+    description: '查看各机构的业务数据统计与运营指标，只读监控面板。',
+    api: 'supervision',
+    listApi: 'stats',
+    readonly: true,
+    keywordField: 'orgName',
+    keywordParam: 'keyword',
+    keywordPlaceholder: '机构名称',
+    columns: [
+      { prop: 'orgName', label: '机构名称', width: 200 },
+      { prop: 'totalApplications', label: '进件总数', width: 120 },
+      { prop: 'activeApplications', label: '处理中', width: 100 },
+      { prop: 'disbursedAmount', label: '放款总额', width: 140 },
+      { prop: 'overdueRate', label: '逾期率', width: 100 },
+      { prop: 'leadCount', label: '线索数', width: 100 },
+      { prop: 'conversionRate', label: '转化率', width: 100 }
+    ],
+    detailColumns: [
+      { prop: 'orgName', label: '机构名称' },
+      { prop: 'totalApplications', label: '进件总数' },
+      { prop: 'activeApplications', label: '处理中' },
+      { prop: 'disbursedAmount', label: '放款总额' },
+      { prop: 'overdueRate', label: '逾期率' },
+      { prop: 'leadCount', label: '线索数' },
+      { prop: 'conversionRate', label: '转化率' },
+      { prop: 'userCount', label: '用户数' },
+      { prop: 'productCount', label: '产品数' },
+      { prop: 'funderCount', label: '资方数' }
+    ],
+    formFields: [],
+    actions: []
+  },
+  'third-party': {
+    title: '第三方服务管理',
+    description: '维护征信、身份核验、GPS、电子签约等第三方服务接入配置。',
+    api: 'third-party',
+    keywordField: 'name',
+    keywordParam: 'keyword',
+    keywordPlaceholder: '服务名称/编码/供应商',
+    columns: [
+      { prop: 'name', label: '服务名称', width: 180 },
+      { prop: 'code', label: '服务编码', width: 140 },
+      { prop: 'serviceType', label: '服务类型', width: 120 },
+      { prop: 'provider', label: '供应商', width: 140 },
+      { prop: 'apiUrl', label: '接口地址', width: 240 },
+      { prop: 'status', label: '状态', width: 120 }
+    ],
+    detailColumns: [
+      { prop: 'name', label: '服务名称' },
+      { prop: 'code', label: '服务编码' },
+      { prop: 'serviceType', label: '服务类型' },
+      { prop: 'provider', label: '供应商' },
+      { prop: 'apiUrl', label: '接口地址' },
+      { prop: 'apiKey', label: 'API Key' },
+      { prop: 'status', label: '状态' },
+      { prop: 'remark', label: '备注' }
+    ],
+    formFields: [
+      { prop: 'name', label: '服务名称', required: true, group: '基础信息' },
+      { prop: 'code', label: '服务编码', required: true },
+      {
+        prop: 'serviceType',
+        label: '服务类型',
+        type: 'select',
+        options: thirdPartyServiceTypeOptions,
+        required: true
+      },
+      {
+        prop: 'status',
+        label: '状态',
+        type: 'select',
+        options: thirdPartyStatusOptions,
+        defaultValue: 'ACTIVE'
+      },
+      { prop: 'provider', label: '供应商', required: true, group: '接入配置' },
+      { prop: 'apiUrl', label: '接口地址', required: true },
+      { prop: 'apiKey', label: 'API Key' },
+      { prop: 'apiSecret', label: 'API Secret' },
+      { prop: 'remark', label: '备注', type: 'textarea', group: '其他' }
+    ],
+    actions: []
+  },
+  'work-order': {
+    title: '运营工单中心',
+    description: '提交、分配和处理平台运营工单，跟踪问题解决进度。',
+    api: 'work-order',
+    keywordField: 'title',
+    keywordParam: 'keyword',
+    keywordPlaceholder: '工单标题',
+    columns: [
+      { prop: 'title', label: '工单标题', width: 240 },
+      { prop: 'orderType', label: '工单类型', width: 120 },
+      { prop: 'priority', label: '优先级', width: 100 },
+      { prop: 'creatorName', label: '创建人', width: 120 },
+      { prop: 'assigneeName', label: '处理人', width: 120 },
+      { prop: 'status', label: '状态', width: 120 }
+    ],
+    detailColumns: [
+      { prop: 'title', label: '工单标题' },
+      { prop: 'orderType', label: '工单类型' },
+      { prop: 'priority', label: '优先级' },
+      { prop: 'description', label: '问题描述' },
+      { prop: 'creatorName', label: '创建人' },
+      { prop: 'assigneeName', label: '处理人' },
+      { prop: 'status', label: '状态' },
+      { prop: 'resolution', label: '解决方案' },
+      { prop: 'createdAt', label: '创建时间' },
+      { prop: 'resolvedAt', label: '解决时间' }
+    ],
+    formFields: [
+      { prop: 'title', label: '工单标题', required: true, group: '基础信息' },
+      {
+        prop: 'orderType',
+        label: '工单类型',
+        type: 'select',
+        options: workOrderTypeOptions,
+        required: true
+      },
+      {
+        prop: 'priority',
+        label: '优先级',
+        type: 'select',
+        options: workOrderPriorityOptions,
+        defaultValue: 'MEDIUM'
+      },
+      {
+        prop: 'status',
+        label: '状态',
+        type: 'select',
+        options: workOrderStatusOptions,
+        defaultValue: 'OPEN'
+      },
+      { prop: 'description', label: '问题描述', type: 'textarea', required: true, group: '详细信息' },
+      {
+        prop: 'assigneeId',
+        label: '处理人',
+        type: 'select',
+        remoteOptions: {
+          module: 'user',
+          labelField: 'nickName'
+        },
+        placeholder: '请选择处理人'
+      }
+    ],
     actions: []
   }
 }

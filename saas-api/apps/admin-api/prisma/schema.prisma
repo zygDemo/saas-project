@@ -147,6 +147,7 @@ model Tenant {
   announcements     Announcement[]
   collectionRecords CollectionRecord[]
   earlyRepayments   EarlyRepayment[]
+  workOrders        WorkOrder[]
 
   // 移动端模块配置
   mobileModules       Json?    // ["carloan","food","credit"] 已启用的移动端模块
@@ -1148,4 +1149,96 @@ model Announcement {
   @@index([status])
   @@index([type])
   @@index([publishAt])
+}
+
+// ========== 平台管理：套餐与计费 ==========
+model PackagePlan {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)   // 套餐名称
+  code        String   @unique @db.VarChar(50) // 套餐编码
+  description String?  @db.VarChar(500)   // 套餐描述
+  price       Decimal  @db.Decimal(10, 2) // 月费
+  maxUsers    Int      @default(0)        // 最大用户数，0=不限
+  maxOrgs     Int      @default(0)        // 最大机构数，0=不限
+  features    Json?                        // 功能特性列表
+  status      String   @default("ACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@index([status])
+}
+
+// ========== 平台管理：产品与资方模板 ==========
+model ProductTemplate {
+  id              Int      @id @default(autoincrement())
+  name            String   @db.VarChar(100)   // 模板名称
+  productType     String   @db.VarChar(50)    // 产品类型：抵押贷、信用贷、融资租赁
+  description     String?  @db.VarChar(500)
+  minRate         Decimal? @db.Decimal(5, 4)
+  maxRate         Decimal? @db.Decimal(5, 4)
+  minAmount       Decimal? @db.Decimal(15, 2)
+  maxAmount       Decimal? @db.Decimal(15, 2)
+  minTerm         Int?
+  maxTerm         Int?
+  repaymentMethod String?  @db.VarChar(50)
+  accessConditions Json?                       // 准入条件模板
+  fileChecklist   Json?                       // 所需文件清单模板
+  status          String   @default("ACTIVE") @db.VarChar(20)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  @@index([status])
+  @@index([productType])
+}
+
+// ========== 平台管理：第三方服务管理 ==========
+model ThirdPartyService {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)   // 服务名称
+  code        String   @unique @db.VarChar(50)  // 服务编码
+  serviceType String   @db.VarChar(50)    // 类型：SMS, OCR, GPS, CREDIT, PAYMENT
+  provider    String   @db.VarChar(100)   // 服务商
+  apiUrl      String?  @db.VarChar(500)   // API地址
+  config      Json?                        // 配置信息（加密存储）
+  status      String   @default("ACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE, ERROR
+  lastTestAt  DateTime?                    // 最后测试时间
+  lastTestOk  Boolean?                     // 最后测试结果
+  remark      String?  @db.VarChar(500)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@index([status])
+  @@index([serviceType])
+}
+
+// ========== 平台管理：运营工单 ==========
+model WorkOrder {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int
+  title       String   @db.VarChar(200)   // 工单标题
+  content     String?  @db.Text           // 工单内容
+  orderType   String   @default("FEEDBACK") @db.VarChar(30) // FEEDBACK, BUG, SUGGESTION, SUPPORT
+  priority    String   @default("NORMAL") @db.VarChar(20)   // LOW, NORMAL, HIGH, URGENT
+  status      String   @default("OPEN") @db.VarChar(20)     // OPEN, PROCESSING, RESOLVED, CLOSED
+  creatorId   Int?                        // 创建人
+  assigneeId  Int?                        // 处理人
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+  remark      String?  @db.VarChar(500)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([orderType])
+  @@index([priority])
+  @@index([createdAt])
 }

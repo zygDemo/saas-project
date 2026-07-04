@@ -144,17 +144,17 @@ export class DataCenterService {
 
     const [products, funders] = await Promise.all([
       this.prisma.product.findMany({
-        where: { id: { in: productRows.map((item) => item.productId).filter(Boolean) as number[] } },
+        where: { id: { in: productRows.map((item: { productId: number | null }) => item.productId).filter(Boolean) as number[] } },
         select: { id: true, name: true }
       }),
       this.prisma.funder.findMany({
-        where: { id: { in: funderRows.map((item) => item.funderId).filter(Boolean) as number[] } },
+        where: { id: { in: funderRows.map((item: { funderId: number | null }) => item.funderId).filter(Boolean) as number[] } },
         select: { id: true, name: true }
       })
     ])
 
-    const productNameMap = new Map(products.map((item) => [item.id, item.name]))
-    const funderNameMap = new Map(funders.map((item) => [item.id, item.name]))
+    const productNameMap = new Map(products.map((item: { id: number; name: string }) => [item.id, item.name]))
+    const funderNameMap = new Map(funders.map((item: { id: number; name: string }) => [item.id, item.name]))
     const disbursedAmount = this.toNumber(disbursedAgg._sum.disburseAmount)
     const pendingRepaymentAmount =
       this.toNumber(pendingRepaymentAgg._sum.totalAmount) -
@@ -179,32 +179,32 @@ export class DataCenterService {
         code: phase.code,
         name: phase.name,
         count: phaseRows
-          .filter((item) => phase.nodes.includes(Number(item.currentNode)))
-          .reduce((sum, item) => sum + item._count._all, 0)
+          .filter((item: { currentNode: number }) => phase.nodes.includes(Number(item.currentNode)))
+          .reduce((sum: number, item: { _count: { _all: number } }) => sum + item._count._all, 0)
       })),
-      statuses: statusRows.map((item) => ({
+      statuses: statusRows.map((item: { status: string; _count: { _all: number } }) => ({
         status: item.status,
         count: item._count._all
       })),
       products: productRows
-        .map((item) => ({
+        .map((item: { productId: number | null; _count: { _all: number }; _sum: { amount: number | null } }) => ({
           id: item.productId,
           name: item.productId ? productNameMap.get(item.productId) || `产品 #${item.productId}` : '未选择产品',
           count: item._count._all,
           amount: this.toNumber(item._sum.amount)
         }))
-        .sort((a, b) => b.count - a.count)
+        .sort((a: { count: number }, b: { count: number }) => b.count - a.count)
         .slice(0, 8),
       funders: funderRows
-        .map((item) => ({
+        .map((item: { funderId: number | null; _count: { _all: number }; _sum: { amount: number | null } }) => ({
           id: item.funderId,
           name: item.funderId ? funderNameMap.get(item.funderId) || `资方 #${item.funderId}` : '未选择资方',
           count: item._count._all,
           amount: this.toNumber(item._sum.amount)
         }))
-        .sort((a, b) => b.count - a.count)
+        .sort((a: { count: number }, b: { count: number }) => b.count - a.count)
         .slice(0, 8),
-      trends: trendRows.map((item) => ({
+      trends: trendRows.map((item: { day: Date; count: number; amount: number | null }) => ({
         day: this.formatDay(item.day),
         count: Number(item.count),
         amount: this.toNumber(item.amount)
@@ -237,7 +237,7 @@ export class DataCenterService {
     const heatmapData: Array<[number, number, number]> = []
     for (let day = 0; day < 7; day++) {
       for (let hour = 0; hour < 24; hour++) {
-        const row = heatmapRows.find(r => r.day_of_week === day && r.hour === hour)
+        const row = heatmapRows.find((r: { day_of_week: number; hour: number }) => r.day_of_week === day && r.hour === hour)
         heatmapData.push([hour, day, row ? row.count : 0])
       }
     }
@@ -263,7 +263,7 @@ export class DataCenterService {
     ])
 
     return toPaginatedResponse(
-      records.map((item) => ({
+      records.map((item: { id: number; module: string; action: string; userName: string; statusCode: number; requestData: unknown; responseData: unknown; createdAt: Date }) => ({
         ...item,
         requestData: this.compactJson(item.requestData),
         responseData: this.compactJson(item.responseData)
@@ -512,8 +512,8 @@ export class DataCenterService {
 
     // 填充24小时数据，确保每个小时都有数据
     const hourlyData = Array.from({ length: 24 }, (_, i) => {
-      const row = hourlyStats.find(r => r.hour === i)
-      const attackRow = attackStats.find(r => r.hour === i)
+      const row = hourlyStats.find((r: { hour: number; count: number }) => r.hour === i)
+      const attackRow = attackStats.find((r: { hour: number; count: number }) => r.hour === i)
       return {
         hour: i,
         label: `${i.toString().padStart(2, '0')}:00`,
@@ -527,23 +527,23 @@ export class DataCenterService {
       successCount,
       failCount,
       successRate: total > 0 ? Number(((successCount / total) * 100).toFixed(1)) : 0,
-      modules: moduleStats.map(item => ({
+      modules: moduleStats.map((item: { module: string; _count: { _all: number } }) => ({
         module: item.module,
         count: item._count._all
       })),
-      actions: actionStats.map(item => ({
+      actions: actionStats.map((item: { action: string; _count: { _all: number } }) => ({
         action: item.action,
         count: item._count._all
       })),
       hourly: hourlyData,
-      attackIps: topAttackIps.map(item => ({
+      attackIps: topAttackIps.map((item: { ip: string; count: number; failCount: number }) => ({
         ip: item.ip,
         count: item.count,
         failCount: item.failCount,
         failRate: item.count > 0 ? Number(((item.failCount / item.count) * 100).toFixed(1)) : 0
       })),
       // 1. 短时间窗口检测结果
-      burstIps: burstIps.map(item => ({
+      burstIps: burstIps.map((item: { ip: string; burstCount: number; windowStart: string; windowEnd: string }) => ({
         ip: item.ip,
         burstCount: item.burstCount,
         windowStart: item.windowStart,
@@ -551,7 +551,7 @@ export class DataCenterService {
         threatLevel: item.burstCount >= 100 ? 'critical' : item.burstCount >= 70 ? 'high' : 'medium'
       })),
       // 2. 登录接口监控结果
-      loginAttempts: loginAttempts.map(item => ({
+      loginAttempts: loginAttempts.map((item: { ip: string; count: number; failCount: number; lastAttempt: string }) => ({
         ip: item.ip,
         count: item.count,
         failCount: item.failCount,
@@ -560,7 +560,7 @@ export class DataCenterService {
         threatLevel: item.failCount >= 10 ? 'critical' : item.failCount >= 5 ? 'high' : 'medium'
       })),
       // 3. 连续失败检测结果
-      consecutiveFails: consecutiveFails.map(item => ({
+      consecutiveFails: consecutiveFails.map((item: { ip: string; consecutiveFails: number; lastFailTime: string; failModule: string }) => ({
         ip: item.ip,
         consecutiveFails: item.consecutiveFails,
         lastFailTime: item.lastFailTime,

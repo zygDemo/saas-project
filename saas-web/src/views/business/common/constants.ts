@@ -215,6 +215,46 @@ export const flowNodeStatusOptions: OptionConfig[] = [
   { label: '已完成', value: 90 }
 ]
 
+// ==================== 平台管理选项 ====================
+
+export const tenantStatusOptions = ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'EXPIRED'].map(toOption)
+
+export const packageBillingStatusOptions = ['ACTIVE', 'INACTIVE', 'ARCHIVED'].map(toOption)
+
+export const productTemplateStatusOptions = ['ACTIVE', 'INACTIVE', 'DRAFT'].map(toOption)
+
+export const thirdPartyServiceTypeOptions: OptionConfig[] = [
+  { label: '征信查询', value: 'CREDIT' },
+  { label: '身份核验', value: 'IDENTITY' },
+  { label: '车辆评估', value: 'CAR_VALUATION' },
+  { label: 'GPS定位', value: 'GPS' },
+  { label: '电子签约', value: 'E_SIGN' },
+  { label: '短信通知', value: 'SMS' },
+  { label: '支付通道', value: 'PAYMENT' },
+  { label: '其他', value: 'OTHER' }
+]
+
+export const thirdPartyStatusOptions = ['ACTIVE', 'INACTIVE', 'MAINTENANCE'].map(toOption)
+
+export const workOrderTypeOptions: OptionConfig[] = [
+  { label: '系统问题', value: 'SYSTEM' },
+  { label: '业务咨询', value: 'CONSULT' },
+  { label: '数据修正', value: 'DATA_FIX' },
+  { label: '权限申请', value: 'PERMISSION' },
+  { label: '功能需求', value: 'FEATURE' },
+  { label: '投诉建议', value: 'COMPLAINT' },
+  { label: '其他', value: 'OTHER' }
+]
+
+export const workOrderPriorityOptions: OptionConfig[] = [
+  { label: '低', value: 'LOW' },
+  { label: '中', value: 'MEDIUM' },
+  { label: '高', value: 'HIGH' },
+  { label: '紧急', value: 'URGENT' }
+]
+
+export const workOrderStatusOptions = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'REJECTED'].map(toOption)
+
 export const applicationStatusOptions = [
   'DRAFT',
   'SUBMITTED',
