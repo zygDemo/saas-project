@@ -4,8 +4,7 @@
 </template>
 
 <script setup lang="ts">
-  import Player from 'xgplayer'
-  import 'xgplayer/dist/index.min.css'
+  import { ref, onMounted, onBeforeUnmount } from 'vue'
 
   defineOptions({ name: 'ArtVideoPlayer' })
 
@@ -67,7 +66,12 @@
   }
 
   // 组件挂载时初始化播放器
-  onMounted(() => {
+  onMounted(async () => {
+    const [{ default: Player }] = await Promise.all([
+      import('xgplayer'),
+      import('xgplayer/dist/index.min.css')
+    ])
+
     playerInstance.value = new Player({
       id: props.playerId,
       lang: 'zh', // 设置界面语言为中文

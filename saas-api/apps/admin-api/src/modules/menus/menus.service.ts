@@ -2,7 +2,13 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { Prisma } from '@prisma/client'
 import { getRequiredTenantId } from '../../common/utils/helpers'
 import { PrismaService } from '../prisma/prisma.service'
+import { CacheService } from '../redis/cache.service'
 import { CreateMenuDto, CreatePermissionDto, UpdateMenuDto, UpdatePermissionDto } from './dto/menu.dto'
+
+/** 菜单缓存键前缀 */
+const CACHE_PREFIX = 'menu:'
+/** 菜单缓存 TTL（10 分钟） */
+const CACHE_TTL = 600
 
 type MenuWithRelations = Prisma.MenuGetPayload<{
   include: {
@@ -27,27 +33,35 @@ export interface AppRouteRecord {
 
 @Injectable()
 export class MenusService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService
+  ) {}
 
   async getMenuTree(roleCodes?: string[]): Promise<AppRouteRecord[]> {
-    const menus = await this.prisma.menu.findMany({
-      where: roleCodes?.length
-        ? {
-            roles: {
-              some: {
-                role: {
-                  code: { in: roleCodes },
-                  enabled: true
+    const tenantId = getRequiredTenantId()
+    const cacheKey = `${CACHE_PREFIX}${tenantId}:tree:${roleCodes?.join(',') || 'all'}`
+
+    return this.cache.getOrSet(cacheKey, async () => {
+      const menus = await this.prisma.menu.findMany({
+        where: roleCodes?.length
+          ? {
+              roles: {
+                some: {
+                  role: {
+                    code: { in: roleCodes },
+                    enabled: true
+                  }
                 }
               }
             }
-          }
-        : undefined,
-      include: menuInclude(roleCodes),
-      orderBy: [{ sort: 'asc' }, { id: 'asc' }]
-    })
+          : undefined,
+        include: menuInclude(roleCodes),
+        orderBy: [{ sort: 'asc' }, { id: 'asc' }]
+      })
 
-    return buildTree(menus)
+      return buildTree(menus)
+    }, CACHE_TTL)
   }
 
   async createMenu(dto: CreateMenuDto) {
@@ -74,6 +88,7 @@ export class MenusService {
     })
 
     await this.syncMenuRoles(menu.id, dto.roleCodes)
+    await this.invalidateCache()
     return this.getMenuById(menu.id)
   }
 
@@ -108,6 +123,7 @@ export class MenusService {
       await this.syncMenuRoles(id, dto.roleCodes)
     }
 
+    await this.invalidateCache()
     return this.getMenuById(id)
   }
 
@@ -116,6 +132,7 @@ export class MenusService {
     if (!menu) throw new NotFoundException('菜单不存在')
 
     await this.prisma.menu.update({ where: { id }, data: { deletedAt: new Date() } })
+    await this.invalidateCache()
     return { id }
   }
 
@@ -135,6 +152,7 @@ export class MenusService {
     })
 
     await this.syncPermissionRoles(permission.id, dto.roleCodes)
+    await this.invalidateCache()
     return this.getPermissionById(permission.id)
   }
 
@@ -157,6 +175,7 @@ export class MenusService {
       await this.syncPermissionRoles(id, dto.roleCodes)
     }
 
+    await this.invalidateCache()
     return this.getPermissionById(id)
   }
 
@@ -165,6 +184,7 @@ export class MenusService {
     if (!permission) throw new NotFoundException('权限不存在')
 
     await this.prisma.permission.update({ where: { id }, data: { deletedAt: new Date() } })
+    await this.invalidateCache()
     return { id }
   }
 
@@ -269,6 +289,12 @@ export class MenusService {
 
     const parent = await this.prisma.menu.findFirst({ where: { id: parentId } })
     if (!parent) throw new NotFoundException('上级菜单不存在')
+  }
+
+  /** 清除当前租户的所有菜单缓存 */
+  private async invalidateCache() {
+    const tenantId = getRequiredTenantId()
+    await this.cache.delByPrefix(CACHE_PREFIX, tenantId)
   }
 }
 

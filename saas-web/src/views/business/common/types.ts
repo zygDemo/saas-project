@@ -70,3 +70,67 @@ export type BusinessRouteMeta = {
 
 export type FormValue = string | number | boolean | Date | string[] | number[] | null | undefined
 export type FormModel = Record<string, FormValue>
+
+// 搜索表单项类型
+export type SearchFormItemType = 'input' | 'select' | 'number'
+
+export type SearchFormItem = {
+  key: string
+  label: string
+  type: SearchFormItemType
+  placeholder?: string
+  clearable?: boolean
+  props?: {
+    placeholder?: string
+    clearable?: boolean
+    filterable?: boolean
+    options?: OptionConfig[]
+  }
+}
+
+// 列检查项类型
+export type ColumnCheck = {
+  label: string
+  prop: string
+  checked: boolean
+}
+
+// 文件项类型
+export type FileItem = {
+  id?: number
+  fileName?: string
+  fileUrl?: string
+  fileSize?: number
+  fileType?: string
+  displayType?: 'image' | 'pdf' | 'video' | 'audio' | 'other'
+  createdAt?: string
+}
+
+// 阶段动作类型
+export type PhaseAction = {
+  name: string
+  label: string
+  type: 'primary' | 'success' | 'warning' | 'danger' | 'info'
+  visible: (row: Record<string, unknown>) => boolean
+}
+
+// 阶段配置类型
+export type PhaseConfig = {
+  code: number
+  name: string
+  nodes: number[]
+  actions: PhaseAction[]
+}
+
+// 节点字段定义类型
+export type NodeFieldDef = {
+  source?: string
+  label: string
+  fields: string[]
+}
+
+// 上传响应类型
+export type UploadResponse = {
+  url?: string
+  data?: { url?: string }
+}

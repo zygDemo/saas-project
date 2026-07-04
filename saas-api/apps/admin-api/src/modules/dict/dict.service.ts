@@ -4,11 +4,20 @@ import { PaginatedResponse } from '../../common/types/pagination'
 import { getRequiredTenantId, formatDate } from '../../common/utils/helpers'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
+import { CacheService } from '../redis/cache.service'
 import { CreateDictDataDto, CreateDictTypeDto, UpdateDictDataDto, UpdateDictTypeDto } from './dto/dict.dto'
+
+/** 字典缓存键前缀 */
+const CACHE_PREFIX = 'dict:'
+/** 字典选项缓存 TTL（10 分钟） */
+const CACHE_TTL = 600
 
 @Injectable()
 export class DictService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService
+  ) {}
 
   async getTypeList(query: Record<string, string | undefined>): Promise<PaginatedResponse<unknown>> {
     const tenantId = getRequiredTenantId()
@@ -38,21 +47,32 @@ export class DictService {
     const codes = normalizeCodes(codesText)
     if (!codes.length) return {}
 
-    const records = await this.findActiveOptions(codes)
-    const grouped: Record<string, DictOption[]> = {}
-    for (const item of records) {
-      const code = item.type.code
-      if (!grouped[code]) grouped[code] = []
-      grouped[code].push(mapDictOption(item))
-    }
-    return grouped
+    const tenantId = getRequiredTenantId()
+    const cacheKey = `${CACHE_PREFIX}${tenantId}:options:${codes.join(',')}`
+
+    return this.cache.getOrSet(cacheKey, async () => {
+      const records = await this.findActiveOptions(codes)
+      const grouped: Record<string, DictOption[]> = {}
+      for (const item of records) {
+        const code = item.type.code
+        if (!grouped[code]) grouped[code] = []
+        grouped[code].push(mapDictOption(item))
+      }
+      return grouped
+    }, CACHE_TTL)
   }
 
   async getOptionsByCode(code: string) {
     const codes = normalizeCodes(code)
     if (!codes.length) return []
-    const records = await this.findActiveOptions([codes[0]])
-    return records.map(mapDictOption)
+
+    const tenantId = getRequiredTenantId()
+    const cacheKey = `${CACHE_PREFIX}${tenantId}:options:${codes[0]}`
+
+    return this.cache.getOrSet(cacheKey, async () => {
+      const records = await this.findActiveOptions([codes[0]])
+      return records.map(mapDictOption)
+    }, CACHE_TTL)
   }
 
   async createType(dto: CreateDictTypeDto) {
@@ -70,6 +90,7 @@ export class DictService {
       include: { _count: { select: { items: true } } }
     })
 
+    await this.invalidateCache(tenantId)
     return mapDictType(item)
   }
 
@@ -91,6 +112,7 @@ export class DictService {
       include: { _count: { select: { items: true } } }
     })
 
+    await this.invalidateCache(tenantId)
     return mapDictType(updated)
   }
 
@@ -98,6 +120,7 @@ export class DictService {
     const tenantId = getRequiredTenantId()
     await this.findTypeOrThrow(tenantId, id)
     await this.prisma.dictType.update({ where: { id }, data: { deletedAt: new Date() } })
+    await this.invalidateCache(tenantId)
     return { id }
   }
 
@@ -145,6 +168,7 @@ export class DictService {
       include: { type: true }
     })
 
+    await this.invalidateCache(tenantId)
     return mapDictData(item)
   }
 
@@ -172,6 +196,7 @@ export class DictService {
       include: { type: true }
     })
 
+    await this.invalidateCache(tenantId)
     return mapDictData(updated)
   }
 
@@ -179,6 +204,7 @@ export class DictService {
     const tenantId = getRequiredTenantId()
     await this.findDataOrThrow(tenantId, id)
     await this.prisma.dictData.update({ where: { id }, data: { deletedAt: new Date() } })
+    await this.invalidateCache(tenantId)
     return { id }
   }
 
@@ -202,6 +228,11 @@ export class DictService {
   private async assertDataValueAvailable(tenantId: number, typeId: number, value: string, excludeId?: number) {
     const item = await this.prisma.dictData.findFirst({ where: { tenantId, typeId, value } })
     if (item && item.id !== excludeId) throw new ConflictException('Dict value already exists')
+  }
+
+  /** 清除当前租户的所有字典缓存 */
+  private async invalidateCache(tenantId: number) {
+    await this.cache.delByPrefix(CACHE_PREFIX, tenantId)
   }
 
   private async findActiveOptions(codes: string[]) {

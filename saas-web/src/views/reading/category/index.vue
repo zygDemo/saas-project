@@ -84,8 +84,7 @@
           <ElTreeSelect
             v-model="formData.parentId"
             :data="treeSelectData"
-            node-key="id"
-            :props="{ label: 'name', children: 'children' }"
+            :props="{ label: 'name', value: 'id', children: 'children' }"
             placeholder="请选择父分类（可选）"
             clearable
             check-strictly
@@ -123,6 +122,24 @@
 
   defineOptions({ name: 'ReadingCategory' })
 
+  // 类型定义
+  interface BookCategory {
+    id: number
+    name: string
+    parentId?: number | null
+    sort: number
+    status: number
+    createdAt: string
+    updatedAt: string
+    children?: BookCategory[]
+    _count?: { books: number }
+  }
+
+  interface CategoryQueryParams {
+    tree?: boolean
+    keyword?: string
+  }
+
   const showDialog = ref(false)
   const isEdit = ref(false)
   const editId = ref<number | null>(null)
@@ -132,8 +149,8 @@
   const searchKeyword = ref('')
   const selectedIds = ref<number[]>([])
 
-  const categoryList = ref<any[]>([])
-  const displayList = ref<any[]>([])
+  const categoryList = ref<BookCategory[]>([])
+  const displayList = ref<BookCategory[]>([])
 
   const formData = reactive({
     name: '',
@@ -152,7 +169,7 @@
       label: '书籍数量',
       width: 100,
       align: 'center' as const,
-      formatter: (row: any) =>
+      formatter: (row: BookCategory) =>
         h(ElTag, { type: 'primary', effect: 'plain' }, () => row._count?.books ?? 0)
     },
     {
@@ -160,7 +177,7 @@
       label: '状态',
       width: 100,
       align: 'center' as const,
-      formatter: (row: any) =>
+      formatter: (row: BookCategory) =>
         h(ElTag, { type: row.status === 1 ? 'success' : 'info' }, () =>
           row.status === 1 ? '启用' : '禁用'
         )
@@ -169,7 +186,7 @@
       prop: 'createdAt',
       label: '创建时间',
       width: 180,
-      formatter: (row: any) => formatDate(row.createdAt)
+      formatter: (row: BookCategory) => formatDate(row.createdAt)
     },
     {
       prop: 'operation',
@@ -177,7 +194,7 @@
       width: 200,
       fixed: 'right' as const,
       align: 'center' as const,
-      formatter: (row: any) =>
+      formatter: (row: BookCategory) =>
         h('div', [
           h(
             ElButton,
@@ -199,7 +216,7 @@
     return filterTreeNodes(categoryList.value, editId.value!)
   })
 
-  const filterTreeNodes = (nodes: any[], excludeId: number): any[] => {
+  const filterTreeNodes = (nodes: BookCategory[], excludeId: number): BookCategory[] => {
     return nodes
       .filter((n) => n.id !== excludeId)
       .map((n) => ({
@@ -217,10 +234,11 @@
   const loadCategories = async () => {
     isLoading.value = true
     try {
-      const res = (await getBookCategories({
+      const params: CategoryQueryParams = {
         tree: isTree.value,
         keyword: searchKeyword.value || undefined
-      })) as any
+      }
+      const res = await getBookCategories(params) as BookCategory[]
       const data = res || []
       categoryList.value = data
       displayList.value = data
@@ -240,7 +258,7 @@
     loadCategories()
   }
 
-  const handleSelectionChange = (rows: any[]) => {
+  const handleSelectionChange = (rows: BookCategory[]) => {
     selectedIds.value = rows.map((r) => r.id)
   }
 
@@ -255,9 +273,10 @@
       ElMessage.success(`${status === 1 ? '启用' : '禁用'}成功`)
       selectedIds.value = []
       loadCategories()
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error !== 'cancel') {
-        ElMessage.error(error?.response?.data?.message || '操作失败')
+        const message = error instanceof Error ? error.message : '操作失败'
+        ElMessage.error(message)
       }
     }
   }
@@ -274,7 +293,7 @@
     showDialog.value = true
   }
 
-  const handleEdit = (row: any) => {
+  const handleEdit = (row: BookCategory) => {
     isEdit.value = true
     editId.value = row.id
     Object.assign(formData, {
@@ -286,7 +305,7 @@
     showDialog.value = true
   }
 
-  const handleDelete = (row: any) => {
+  const handleDelete = (row: BookCategory) => {
     ElMessageBox.confirm(`确定删除分类"${row.name}"吗？`, '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
@@ -297,8 +316,9 @@
           await deleteBookCategory(row.id)
           ElMessage.success('删除成功')
           loadCategories()
-        } catch (error: any) {
-          ElMessage.error(error?.response?.data?.message || '删除失败')
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : '删除失败'
+          ElMessage.error(message)
         }
       })
       .catch(() => {})

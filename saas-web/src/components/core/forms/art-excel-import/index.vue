@@ -15,13 +15,18 @@
 </template>
 
 <script setup lang="ts">
-  import * as XLSX from 'xlsx'
   import type { UploadFile } from 'element-plus'
 
   defineOptions({ name: 'ArtExcelImport' })
 
+  /** 动态加载 xlsx（仅在导入时加载） */
+  async function loadXlsx() {
+    return await import('xlsx')
+  }
+
   // Excel 导入工具函数
   async function importExcel(file: File): Promise<Array<Record<string, unknown>>> {
+    const XLSX = await loadXlsx()
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
 

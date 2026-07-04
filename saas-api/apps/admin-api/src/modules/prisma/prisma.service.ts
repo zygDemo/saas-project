@@ -102,8 +102,8 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
               }
             }
 
-            // 软删除：查询类操作自动过滤 deletedAt
-            if (isSoftDeleteModel(model) && ['findFirst', 'findFirstOrThrow', 'findMany', 'count', 'aggregate', 'groupBy'].includes(operation)) {
+            // 软删除：查询类 + updateMany 操作自动过滤 deletedAt
+            if (isSoftDeleteModel(model) && ['findFirst', 'findFirstOrThrow', 'findMany', 'count', 'aggregate', 'groupBy', 'updateMany'].includes(operation)) {
               args = injectSoftDeleteFilter(args)
             }
 

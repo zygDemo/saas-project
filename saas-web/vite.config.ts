@@ -51,13 +51,11 @@ export default ({ mode }: { mode: string }) => {
     build: {
       target: 'es2015',
       outDir: 'dist',
-      chunkSizeWarningLimit: 2000,
+      chunkSizeWarningLimit: 1000,
       minify: 'terser',
       terserOptions: {
         compress: {
-          // 生产环境去除 console
           drop_console: true,
-          // 生产环境去除 debugger
           drop_debugger: true
         }
       },
@@ -65,6 +63,15 @@ export default ({ mode }: { mode: string }) => {
         warnOnError: true,
         exclude: [],
         include: ['src/views/**/*.vue']
+      },
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vue-vendor': ['vue', 'vue-router', 'pinia', 'vue-i18n'],
+            'element-plus': ['element-plus', '@element-plus/icons-vue'],
+            'echarts': ['echarts']
+          }
+        }
       }
     },
     plugins: [
@@ -92,35 +99,31 @@ export default ({ mode }: { mode: string }) => {
       }),
       // 压缩
       viteCompression({
-        verbose: false, // 是否在控制台输出压缩结果
-        disable: false, // 是否禁用
-        algorithm: 'gzip', // 压缩算法
-        ext: '.gz', // 压缩后的文件名后缀
-        threshold: 10240, // 只有大小大于该值的资源会被处理 10240B = 10KB
-        deleteOriginFile: false // 压缩后是否删除原文件
+        verbose: false,
+        disable: false,
+        algorithm: 'gzip',
+        ext: '.gz',
+        threshold: 10240,
+        deleteOriginFile: false
       }),
       createVersionFilePlugin(VITE_VERSION),
-      vueDevTools()
+      mode === 'development' && vueDevTools()
       // 打包分析
       // visualizer({
       //   open: true,
       //   gzipSize: true,
       //   brotliSize: true,
-      //   filename: 'dist/stats.html' // 分析图生成的文件名及路径
+      //   filename: 'dist/stats.html'
       // }),
     ],
-    // 依赖预构建：避免运行时重复请求与转换，提升首次加载速度
+    // 依赖预构建
     optimizeDeps: {
       include: [
         'echarts/core',
         'echarts/charts',
         'echarts/components',
         'echarts/renderers',
-        'xlsx',
-        'xgplayer',
         'crypto-js',
-        'file-saver',
-        'vue-img-cutter',
         'element-plus/es',
         'element-plus/es/components/*/style/css',
         'element-plus/es/components/*/style/index'

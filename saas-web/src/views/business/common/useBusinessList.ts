@@ -10,7 +10,7 @@ import {
   fetchBusinessUpdate
 } from '@/api/business'
 import { useUserStore } from '@/store/modules/user'
-import type { PageConfig, FieldConfig, FilterConfig, FormModel, FormValue, BusinessRouteMeta } from './types'
+import type { PageConfig, FieldConfig, FilterConfig, FormModel, FormValue, BusinessRouteMeta, ActionConfig, SearchFormItem, ColumnCheck, FileItem, PhaseAction, PhaseConfig, NodeFieldDef, OptionConfig } from './types'
 import {
   applicationNodeByPath, applicationPhaseByPath, phaseNodeTabsMap, phaseTitleMap,
   commonStatusMap,
@@ -40,8 +40,8 @@ export function useBusinessList() {
   const keyword = ref('')
   const status = ref('')
   const showActions = ref(true)
-  const searchFormModel = ref<Record<string, any>>({})
-  const columnChecks = ref<any[]>([])
+  const searchFormModel = ref<Record<string, FormValue>>({})
+  const columnChecks = ref<ColumnCheck[]>([])
   const records = ref<Record<string, unknown>[]>([])
   const currentRow = ref<Record<string, unknown> | null>(null)
   const detailVisible = ref(false)
@@ -50,7 +50,7 @@ export function useBusinessList() {
   const formMode = ref<'create' | 'edit'>('create')
   const formModel = reactive<FormModel>({})
   const actionModel = reactive<FormModel>({})
-  const activeAction = ref<any>(null)
+  const activeAction = ref<ActionConfig | null>(null)
   const actionRow = ref<Record<string, unknown> | null>(null)
   const pagination = ref({ current: 1, size: 20, total: 0 })
   const activeNodeTab = ref('all')
@@ -149,11 +149,11 @@ export function useBusinessList() {
       name: '预审阶段', 
       nodes: [1100, 1110, 1120, 1130, 1140, 1200, 1250],
       actions: [
-        { name: 'submit', label: '提交进件', type: 'primary', visible: (row: any) => ['DRAFT', 'PENDING_SUPPLEMENT'].includes(String(row.status)) },
-        { name: 'risk-pre-pass', label: '风控预审通过', type: 'success', visible: (row: any) => ['SUBMITTED', 'PENDING_RISK_PRE'].includes(String(row.status)) },
-        { name: 'risk-pre-reject', label: '风控预审拒绝', type: 'danger', visible: (row: any) => ['SUBMITTED', 'PENDING_RISK_PRE'].includes(String(row.status)) },
-        { name: 'funder-pre-pass', label: '资方预审通过', type: 'success', visible: (row: any) => String(row.status) === 'PENDING_FUNDER_PRE' },
-        { name: 'funder-pre-reject', label: '资方预审拒绝', type: 'danger', visible: (row: any) => String(row.status) === 'PENDING_FUNDER_PRE' }
+        { name: 'submit', label: '提交进件', type: 'primary', visible: (row: Record<string, unknown>) => ['DRAFT', 'PENDING_SUPPLEMENT'].includes(String(row.status)) },
+        { name: 'risk-pre-pass', label: '风控预审通过', type: 'success', visible: (row: Record<string, unknown>) => ['SUBMITTED', 'PENDING_RISK_PRE'].includes(String(row.status)) },
+        { name: 'risk-pre-reject', label: '风控预审拒绝', type: 'danger', visible: (row: Record<string, unknown>) => ['SUBMITTED', 'PENDING_RISK_PRE'].includes(String(row.status)) },
+        { name: 'funder-pre-pass', label: '资方预审通过', type: 'success', visible: (row: Record<string, unknown>) => String(row.status) === 'PENDING_FUNDER_PRE' },
+        { name: 'funder-pre-reject', label: '资方预审拒绝', type: 'danger', visible: (row: Record<string, unknown>) => String(row.status) === 'PENDING_FUNDER_PRE' }
       ]
     },
     { 
@@ -161,7 +161,7 @@ export function useBusinessList() {
       name: '补件阶段', 
       nodes: [1300, 1310, 1320, 1330, 1340, 1350],
       actions: [
-        { name: 'complete-supplement', label: '资料补充完成', type: 'primary', visible: (row: any) => ['PENDING_SUPPLEMENT', 'FUNDER_PRE_PASSED'].includes(String(row.status)) }
+        { name: 'complete-supplement', label: '资料补充完成', type: 'primary', visible: (row: Record<string, unknown>) => ['PENDING_SUPPLEMENT', 'FUNDER_PRE_PASSED'].includes(String(row.status)) }
       ]
     },
     { 
@@ -169,10 +169,10 @@ export function useBusinessList() {
       name: '风控审批', 
       nodes: [1400, 1450],
       actions: [
-        { name: 'approve', label: '初审/终审通过', type: 'success', visible: (row: any) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW'].includes(String(row.status)) },
-        { name: 'reject', label: '审批驳回', type: 'danger', visible: (row: any) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW', 'PENDING_FUNDER_REVIEW'].includes(String(row.status)) },
-        { name: 'supplement', label: '要求补件', type: 'warning', visible: (row: any) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW', 'PENDING_FUNDER_REVIEW'].includes(String(row.status)) },
-        { name: 'submit-funder-review', label: '提交资方审批', type: 'primary', visible: (row: any) => String(row.status) === 'FINAL_REVIEW_PASSED' }
+        { name: 'approve', label: '初审/终审通过', type: 'success', visible: (row: Record<string, unknown>) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW'].includes(String(row.status)) },
+        { name: 'reject', label: '审批驳回', type: 'danger', visible: (row: Record<string, unknown>) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW', 'PENDING_FUNDER_REVIEW'].includes(String(row.status)) },
+        { name: 'supplement', label: '要求补件', type: 'warning', visible: (row: Record<string, unknown>) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW', 'PENDING_FUNDER_REVIEW'].includes(String(row.status)) },
+        { name: 'submit-funder-review', label: '提交资方审批', type: 'primary', visible: (row: Record<string, unknown>) => String(row.status) === 'FINAL_REVIEW_PASSED' }
       ]
     },
     { 
@@ -180,9 +180,9 @@ export function useBusinessList() {
       name: '资方终审', 
       nodes: [1500],
       actions: [
-        { name: 'funder-pass', label: '资方通过', type: 'success', visible: (row: any) => String(row.status) === 'PENDING_FUNDER_REVIEW' },
-        { name: 'funder-reject', label: '资方拒绝', type: 'danger', visible: (row: any) => String(row.status) === 'PENDING_FUNDER_REVIEW' },
-        { name: 'start-signing', label: '发起签约', type: 'primary', visible: (row: any) => ['FINAL_REVIEW_PASSED', 'FUNDER_REVIEW_PASSED'].includes(String(row.status)) }
+        { name: 'funder-pass', label: '资方通过', type: 'success', visible: (row: Record<string, unknown>) => String(row.status) === 'PENDING_FUNDER_REVIEW' },
+        { name: 'funder-reject', label: '资方拒绝', type: 'danger', visible: (row: Record<string, unknown>) => String(row.status) === 'PENDING_FUNDER_REVIEW' },
+        { name: 'start-signing', label: '发起签约', type: 'primary', visible: (row: Record<string, unknown>) => ['FINAL_REVIEW_PASSED', 'FUNDER_REVIEW_PASSED'].includes(String(row.status)) }
       ]
     },
     { 
@@ -190,7 +190,7 @@ export function useBusinessList() {
       name: '签约阶段', 
       nodes: [1600, 1610, 1620, 1630, 1640, 1650, 1660],
       actions: [
-        { name: 'complete-signing', label: '签约完成', type: 'success', visible: (row: any) => ['PENDING_SIGN', 'SIGNING_PROGRESS'].includes(String(row.status)) }
+        { name: 'complete-signing', label: '签约完成', type: 'success', visible: (row: Record<string, unknown>) => ['PENDING_SIGN', 'SIGNING_PROGRESS'].includes(String(row.status)) }
       ]
     },
     { 
@@ -198,13 +198,13 @@ export function useBusinessList() {
       name: '请款放款', 
       nodes: [1700, 1800],
       actions: [
-        { name: 'submit-loan-request', label: '提交请款资料', type: 'primary', visible: (row: any) => ['SIGNED', 'PENDING_LOAN_REQUEST', 'LOAN_REQUEST_REJECTED'].includes(String(row.status)) },
-        { name: 'approve-loan-request', label: '请款审核通过', type: 'success', visible: (row: any) => String(row.status) === 'LOAN_REQUEST_REVIEWING' },
-        { name: 'reject-loan-request', label: '请款审核拒绝', type: 'danger', visible: (row: any) => String(row.status) === 'LOAN_REQUEST_REVIEWING' },
-        { name: 'gps-installed', label: 'GPS安装完成', type: 'success', visible: (row: any) => String(row.status) === 'PENDING_DISBURSEMENT' },
-        { name: 'mortgage-done', label: '抵押完成', type: 'success', visible: (row: any) => String(row.status) === 'PENDING_DISBURSEMENT' },
-        { name: 'request-disbursement', label: '提交资方放款', type: 'primary', visible: (row: any) => ['LOAN_REQUEST_APPROVED', 'PENDING_DISBURSEMENT'].includes(String(row.status)) },
-        { name: 'confirm-disbursement', label: '放款确认', type: 'success', visible: (row: any) => String(row.status) === 'PENDING_DISBURSEMENT' }
+        { name: 'submit-loan-request', label: '提交请款资料', type: 'primary', visible: (row: Record<string, unknown>) => ['SIGNED', 'PENDING_LOAN_REQUEST', 'LOAN_REQUEST_REJECTED'].includes(String(row.status)) },
+        { name: 'approve-loan-request', label: '请款审核通过', type: 'success', visible: (row: Record<string, unknown>) => String(row.status) === 'LOAN_REQUEST_REVIEWING' },
+        { name: 'reject-loan-request', label: '请款审核拒绝', type: 'danger', visible: (row: Record<string, unknown>) => String(row.status) === 'LOAN_REQUEST_REVIEWING' },
+        { name: 'gps-installed', label: 'GPS安装完成', type: 'success', visible: (row: Record<string, unknown>) => String(row.status) === 'PENDING_DISBURSEMENT' },
+        { name: 'mortgage-done', label: '抵押完成', type: 'success', visible: (row: Record<string, unknown>) => String(row.status) === 'PENDING_DISBURSEMENT' },
+        { name: 'request-disbursement', label: '提交资方放款', type: 'primary', visible: (row: Record<string, unknown>) => ['LOAN_REQUEST_APPROVED', 'PENDING_DISBURSEMENT'].includes(String(row.status)) },
+        { name: 'confirm-disbursement', label: '放款确认', type: 'success', visible: (row: Record<string, unknown>) => String(row.status) === 'PENDING_DISBURSEMENT' }
       ]
     },
     { 
@@ -212,7 +212,7 @@ export function useBusinessList() {
       name: '贷后阶段', 
       nodes: [1900],
       actions: [
-        { name: 'settle', label: '结清归档', type: 'success', visible: (row: any) => String(row.status) === 'DISBURSED' }
+        { name: 'settle', label: '结清归档', type: 'success', visible: (row: Record<string, unknown>) => String(row.status) === 'DISBURSED' }
       ]
     }
   ]
@@ -258,12 +258,12 @@ export function useBusinessList() {
 
     // 文件节点特殊处理：提取 files 数组并附加类型信息
     if (nodeCode === 1340 || nodeCode === 1130) {
-      const files = (row.files || []) as any[]
+      const files = (row.files || []) as FileItem[]
       if (!files.length) return []
       return [{
         prop: '_files',
         label: '文件资料',
-        value: files.map((f: any) => ({
+        value: files.map((f: FileItem) => ({
           ...f,
           displayType: getFileType(f.fileName || f.fileUrl || '')
         }))
@@ -323,7 +323,7 @@ export function useBusinessList() {
 
   // ==================== 搜索相关 ====================
   const statusFilterOptions = computed(() => {
-    const optionsMap: Record<string, any[]> = {
+    const optionsMap: Record<string, OptionConfig[]> = {
       org: orgStatusOptions,
       product: activeStatusOptions,
       funder: activeStatusOptions,
@@ -390,7 +390,7 @@ export function useBusinessList() {
   })
 
   const searchFormItems = computed(() => {
-    const items: any[] = []
+    const items: SearchFormItem[] = []
     const cfg = config.value
     if (cfg.keywordField) {
       items.push({ key: cfg.keywordField, label: '关键词', type: 'input', placeholder: cfg.keywordPlaceholder || '请输入关键词', clearable: true })
@@ -423,7 +423,7 @@ export function useBusinessList() {
     const pathModule = getRoutePathModule()
     const phaseCode = applicationPhaseByPath[pathModule]
     if (phaseCode) {
-      const result: Record<string, any> = { phaseCode }
+      const result: Record<string, unknown> = { phaseCode }
       if (activeNodeTab.value !== 'all') result.currentNode = Number(activeNodeTab.value)
       return result
     }
@@ -468,7 +468,7 @@ export function useBusinessList() {
   }
 
   // ==================== 搜索 ====================
-  function handleArtSearch(params: Record<string, any>) {
+  function handleArtSearch(params: Record<string, FormValue>) {
     const cfg = config.value
     keyword.value = cfg.keywordField && params[cfg.keywordField] ? String(params[cfg.keywordField]) : ''
     status.value = params.status ? String(params.status) : ''
@@ -561,7 +561,7 @@ export function useBusinessList() {
     return config.value.actions.filter((action) => !action.visible || action.visible(row))
   }
 
-  function openAction(row: Record<string, unknown>, action: any) {
+  function openAction(row: Record<string, unknown>, action: ActionConfig) {
     activeAction.value = action
     actionRow.value = row
     const defaults = action.defaults?.(row) || {}

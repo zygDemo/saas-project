@@ -3,7 +3,13 @@ import { ApplicationStatus, DisbursementStatus, Prisma, RepaymentStatus } from '
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
+import { CacheService } from '../redis/cache.service'
 import { AuditLogQueryDto, AuditLogStatsDto, DateRangeQueryDto } from './dto/data-center.dto'
+
+/** 数据中心缓存键前缀 */
+const CACHE_PREFIX = 'dcenter:'
+/** 统计数据缓存 TTL（5 分钟） */
+const STATS_CACHE_TTL = 300
 
 const PHASES = [
   { code: 1000, name: '预审阶段', nodes: [1100, 1110, 1120, 1130, 1140, 1200, 1250] },
@@ -27,9 +33,27 @@ const TERMINAL_REJECTED = [
 
 @Injectable()
 export class DataCenterService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService
+  ) {}
 
   async getStats(query: DateRangeQueryDto) {
+    const tenantId = this.currentTenantId()
+    const cacheKey = `${CACHE_PREFIX}${tenantId}:stats:${query.startAt || ''}:${query.endAt || ''}`
+
+    return this.cache.getOrSet(cacheKey, () => this.fetchStats(query), STATS_CACHE_TTL)
+  }
+
+  async getHeatmapData(query: DateRangeQueryDto) {
+    const tenantId = this.currentTenantId()
+    const cacheKey = `${CACHE_PREFIX}${tenantId}:heatmap:${query.startAt || ''}:${query.endAt || ''}`
+
+    return this.cache.getOrSet(cacheKey, () => this.fetchHeatmapData(query), STATS_CACHE_TTL)
+  }
+
+  /** 实际的统计数据查询（未缓存） */
+  private async fetchStats(query: DateRangeQueryDto) {
     const dateWhere = this.buildDateWhere(query, 'createdAt')
     const tenantWhere = this.tenantWhere()
     const appWhere = { ...tenantWhere, ...dateWhere }
@@ -188,7 +212,8 @@ export class DataCenterService {
     }
   }
 
-  async getHeatmapData(query: DateRangeQueryDto) {
+  /** 实际的热力图查询（未缓存） */
+  private async fetchHeatmapData(query: DateRangeQueryDto) {
     const tenantId = this.currentTenantId()
     const dateWhere = this.buildDateWhere(query, 'createdAt')
     const tenantWhere = tenantId ? { tenantId } : {}

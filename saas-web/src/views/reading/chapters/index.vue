@@ -7,7 +7,7 @@
           v-if="bookInfo.cover"
           :src="bookInfo.cover"
           class="w-12 h-16 object-cover rounded bg-gray-100"
-          @error="(e: any) => { e.target.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 64%22%3E%3Crect fill=%22%23e5e7eb%22 width=%2248%22 height=%2264%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%239ca3af%22 font-size=%2210%22%3E无图%3C/text%3E%3C/svg%3E'; e.target.onerror = null }"
+          @error="handleImageError"
           alt="封面"
         />
         <div>
@@ -113,6 +113,48 @@
 
   defineOptions({ name: 'ReadingChapters' })
 
+  // 类型定义
+  interface BookInfo {
+    id: number
+    title: string
+    author: string
+    cover?: string
+    wordCount: number
+    chapterCount: number
+    reviewCount: number
+    _count?: {
+      chapters: number
+      reviews: number
+    }
+  }
+
+  interface Chapter {
+    id: number
+    bookId: number
+    title: string
+    content?: string
+    wordCount: number
+    sort: number
+    isVip: boolean
+    price: number
+    createdAt: string
+    updatedAt: string
+  }
+
+  interface ChapterListResponse {
+    items: Chapter[]
+    total: number
+    page: number
+    pageSize: number
+  }
+
+  interface ChapterQueryParams {
+    bookId: number
+    keyword?: string
+    page: number
+    pageSize: number
+  }
+
   const route = useRoute()
   const bookId = computed(() => Number(route.params.bookId) || 0)
 
@@ -123,11 +165,11 @@
   const pageSize = ref(20)
   const total = ref(0)
 
-  const bookInfo = ref<any>(null)
-  const chapterList = ref<any[]>([])
+  const bookInfo = ref<BookInfo | null>(null)
+  const chapterList = ref<Chapter[]>([])
 
   const showContentDialog = ref(false)
-  const viewChapter = ref<any>(null)
+  const viewChapter = ref<Chapter | null>(null)
   const contentRef = ref<HTMLDivElement>()
 
   const resetContentScroll = () => {
@@ -154,8 +196,8 @@
   }))
 
   const selectedIds = ref<number[]>([])
-  const handleSelectionChange = (rows: any[]) => {
-    selectedIds.value = rows.map((r: any) => r.id)
+  const handleSelectionChange = (rows: Chapter[]) => {
+    selectedIds.value = rows.map((r) => r.id)
   }
 
   const handleBatchDelete = () => {
@@ -196,14 +238,14 @@
       label: '字数',
       width: 100,
       align: 'center' as const,
-      formatter: (row: any) => row.wordCount?.toLocaleString() || 0
+      formatter: (row: Chapter) => row.wordCount?.toLocaleString() || 0
     },
     {
       prop: 'isVip',
       label: 'VIP',
       width: 80,
       align: 'center' as const,
-      formatter: (row: any) =>
+      formatter: (row: Chapter) =>
         h(ElTag, { type: row.isVip ? 'warning' : 'info', effect: 'plain' }, () =>
           row.isVip ? 'VIP' : '免费'
         )
@@ -213,7 +255,7 @@
       label: '价格',
       width: 80,
       align: 'center' as const,
-      formatter: (row: any) => row.price || 0
+      formatter: (row: Chapter) => row.price || 0
     },
     {
       prop: 'operation',
@@ -221,7 +263,7 @@
       width: 200,
       fixed: 'right' as const,
       align: 'center' as const,
-      formatter: (row: any) =>
+      formatter: (row: Chapter) =>
         h('div', [
           h(
             ElButton,
@@ -253,10 +295,18 @@
     loadChapters()
   }
 
+  const handleImageError = (e: Event) => {
+    const target = e.target as HTMLImageElement
+    if (target) {
+      target.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 64%22%3E%3Crect fill=%22%23e5e7eb%22 width=%2248%22 height=%2264%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%239ca3af%22 font-size=%2210%22%3E无图%3C/text%3E%3C/svg%3E'
+      target.onerror = null
+    }
+  }
+
   const loadBookInfo = async () => {
     if (!bookId.value) return
     try {
-      const res = (await getBookById(bookId.value)) as any
+      const res = await getBookById(bookId.value) as BookInfo
       if (res) {
         if (res._count?.chapters !== undefined) {
           res.chapterCount = res._count.chapters
@@ -275,13 +325,13 @@
     if (!bookId.value) return
     loading.value = true
     try {
-      const params: any = {
+      const params: ChapterQueryParams = {
         bookId: bookId.value,
         page: currentPage.value,
         pageSize: pageSize.value
       }
       if (searchKeyword.value) params.keyword = searchKeyword.value
-      const res = (await getChapters(params)) as any
+      const res = await getChapters(params) as ChapterListResponse
       const list = Array.isArray(res?.items) ? res.items : []
       chapterList.value = list
       total.value = res?.total || list.length
@@ -297,9 +347,9 @@
     loadChapters()
   }
 
-  const handleView = async (row: any) => {
+  const handleView = async (row: Chapter) => {
     try {
-      const res = (await getChapterById(row.id)) as any
+      const res = await getChapterById(row.id) as Chapter
       viewChapter.value = res
       showContentDialog.value = true
     } catch {
@@ -318,7 +368,7 @@
     showEditDialog.value = true
   }
 
-  const handleEdit = async (row: any) => {
+  const handleEdit = async (row: Chapter) => {
     isEdit.value = true
     editId.value = row.id
     formData.title = row.title || ''
@@ -328,7 +378,7 @@
     formData.content = ''
     // 先加载完整章节内容，再打开对话框避免闪烁
     try {
-      const res = (await getChapterById(row.id)) as any
+      const res = await getChapterById(row.id) as Chapter
       formData.content = res?.content || ''
     } catch {
       // 加载内容失败不影响编辑其他字段
@@ -344,7 +394,7 @@
     saving.value = true
     try {
       if (isEdit.value) {
-        const data: any = {
+        const data: { title: string; sort: number; isVip: boolean; price: number; content?: string } = {
           title: formData.title,
           sort: formData.sort,
           isVip: formData.isVip,
@@ -366,14 +416,15 @@
       }
       showEditDialog.value = false
       loadChapters()
-    } catch (error: any) {
-      ElMessage.error(error?.response?.data?.message || (isEdit.value ? '编辑失败' : '新增失败'))
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : (isEdit.value ? '编辑失败' : '新增失败')
+      ElMessage.error(message)
     } finally {
       saving.value = false
     }
   }
 
-  const handleDelete = (row: any) => {
+  const handleDelete = (row: Chapter) => {
     ElMessageBox.confirm(`确定删除章节"${row.title}"吗？`, '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
@@ -384,8 +435,9 @@
           await deleteChapter(row.id)
           ElMessage.success('删除成功')
           loadChapters()
-        } catch (error: any) {
-          ElMessage.error(error?.response?.data?.message || '删除失败')
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : '删除失败'
+          ElMessage.error(message)
         }
       })
       .catch(() => {

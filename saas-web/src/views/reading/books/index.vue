@@ -87,7 +87,7 @@
         :pagination-options="paginationOptions"
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handlePageChange"
-        @selection-change="(rows: any[]) => selectedIds = rows.map((r: any) => r.id)"
+        @selection-change="handleSelectionChange"
       />
     </ElCard>
 
@@ -183,7 +183,7 @@
             v-if="formData.cover"
             :src="formData.cover"
             class="w-20 h-28 object-cover rounded mt-2"
-            @error="(e: any) => { e.target.style.display = 'none' }"
+            @error="handleImageError"
             alt="封面预览"
           />
         </ElFormItem>
@@ -270,13 +270,75 @@
   import { h } from 'vue'
   import { Search } from '@element-plus/icons-vue'
   import { getBooks, createBook, updateBook, deleteBook, getBookCategories, uploadTxtBook } from '@/api/reading'
-  import { ElMessage, ElMessageBox, ElTag, ElButton, ElSwitch } from 'element-plus'
+  import { ElMessage, ElMessageBox, ElTag, ElButton } from 'element-plus'
   import { useRouter } from 'vue-router'
   import ArtExcelExport from '@/components/core/forms/art-excel-export/index.vue'
   import { useUserStore } from '@/store/modules/user'
   import { API_BASE_URL } from '@/utils/http'
 
   defineOptions({ name: 'ReadingBooks' })
+
+  // 类型定义
+  interface BookCategory {
+    id: number
+    name: string
+    parentId?: number | null
+    sort?: number
+    status?: number
+    _count?: { books: number }
+  }
+
+  interface Book {
+    id: number
+    title: string
+    author: string
+    cover?: string
+    desc?: string
+    categoryId?: number | null
+    category?: BookCategory | null
+    isbn?: string
+    publisher?: string
+    publishDate?: string
+    wordCount: number
+    chapterCount: number
+    price: number
+    rating: number
+    readCount: number
+    status: number
+    isHot: boolean
+    isRecommend: boolean
+    isFree: boolean
+    isVip: boolean
+    isSerial: boolean
+    isFinished: boolean
+    tags?: string
+    createdAt: string
+    updatedAt: string
+  }
+
+  interface BookListResponse {
+    items: Book[]
+    total: number
+    page: number
+    pageSize: number
+  }
+
+  interface BookQueryParams {
+    keyword?: string
+    categoryId?: number
+    status?: number
+    isHot?: boolean
+    isRecommend?: boolean
+    isFinished?: boolean
+    page: number
+    pageSize: number
+  }
+
+  interface ExportColumnConfig {
+    title: string
+    width?: number
+    formatter?: (value: string | number, row: Book) => string
+  }
 
   const router = useRouter()
   const userStore = useUserStore()
@@ -292,8 +354,8 @@
   const pageSize = ref(20)
   const total = ref(0)
 
-  const categoryList = ref<any[]>([])
-  const bookList = ref<any[]>([])
+  const categoryList = ref<BookCategory[]>([])
+  const bookList = ref<Book[]>([])
 
   // 分页配置
   const pagination = computed(() => ({
@@ -310,7 +372,7 @@
   const showUploadDialog = ref(false)
   const uploading = ref(false)
   const txtUploadRef = ref()
-  const txtFileList = ref<any[]>([])
+  const txtFileList = ref<{ name: string; url?: string }[]>([])
   const txtFile = ref<File | null>(null)
   const uploadForm = reactive({
     title: '',
@@ -327,25 +389,25 @@
   const uploadHeaders = computed(() => ({ Authorization: `Bearer ${userStore.accessToken}` }))
 
   // Excel 导出列配置
-  const exportColumns = {
+  const exportColumns: Record<string, ExportColumnConfig> = {
     title: { title: '图书名称', width: 30 },
     author: { title: '作者', width: 15 },
-    wordCount: { title: '字数', width: 12, formatter: (_v: any, row: any) => formatWordCount(row.wordCount) },
+    wordCount: { title: '字数', width: 12, formatter: (_v, row) => formatWordCount(row.wordCount) },
     chapterCount: { title: '章节数', width: 10 },
     rating: { title: '评分', width: 8 },
-    readCount: { title: '阅读量', width: 12, formatter: (_v: any, row: any) => formatNumber(row.readCount) },
-    status: { title: '状态', width: 8, formatter: (_v: any, row: any) => row.status === 1 ? '上架' : '下架' },
-  } as Record<string, { title: string; width?: number; formatter?: (value: any, row: any) => string }>
+    readCount: { title: '阅读量', width: 12, formatter: (_v, row) => formatNumber(row.readCount) },
+    status: { title: '状态', width: 8, formatter: (_v, row) => row.status === 1 ? '上架' : '下架' },
+  }
 
   // 全量导出数据（去除分页限制，最多 10000 条）
-  const exportData = ref<any[]>([])
+  const exportData = ref<Book[]>([])
   const loadAllDataForExport = async () => {
     try {
-      const params: any = { page: 1, pageSize: 10000 }
+      const params: BookQueryParams = { page: 1, pageSize: 10000 }
       if (searchVal.value) params.keyword = searchVal.value
       if (categoryFilter.value) params.categoryId = categoryFilter.value
       if (statusFilter.value !== '') params.status = statusFilter.value
-      const res = (await getBooks(params)) as any
+      const res = await getBooks(params) as BookListResponse
       exportData.value = res?.items || []
     } catch {
       exportData.value = bookList.value
@@ -370,14 +432,14 @@
       prop: 'category.name',
       label: '分类',
       width: 100,
-      formatter: (row: any) => row.category?.name || '-'
+      formatter: (row: Book) => row.category?.name || '-'
     },
     {
       prop: 'wordCount',
       label: '字数',
       width: 100,
       align: 'center' as const,
-      formatter: (row: any) => formatWordCount(row.wordCount)
+      formatter: (row: Book) => formatWordCount(row.wordCount)
     },
     { prop: 'chapterCount', label: '章节', width: 80, align: 'center' as const },
     {
@@ -385,21 +447,21 @@
       label: '评分',
       width: 80,
       align: 'center' as const,
-      formatter: (row: any) => h('span', { class: 'text-orange-500' }, row.rating || '-')
+      formatter: (row: Book) => h('span', { class: 'text-orange-500' }, row.rating || '-')
     },
     {
       prop: 'readCount',
       label: '阅读量',
       width: 100,
       align: 'center' as const,
-      formatter: (row: any) => formatNumber(row.readCount)
+      formatter: (row: Book) => formatNumber(row.readCount)
     },
     {
       prop: 'status',
       label: '状态',
       width: 80,
       align: 'center' as const,
-      formatter: (row: any) =>
+      formatter: (row: Book) =>
         h(ElTag, { type: row.status === 1 ? 'success' : 'info' }, () =>
           row.status === 1 ? '上架' : '下架'
         )
@@ -409,7 +471,7 @@
       label: '热门',
       width: 70,
       align: 'center' as const,
-      formatter: (row: any) =>
+      formatter: (row: Book) =>
         row.isHot
           ? h(ElTag, { type: 'danger', size: 'small' }, () => '热')
           : h('span', null, '-')
@@ -419,7 +481,7 @@
       label: '推荐',
       width: 70,
       align: 'center' as const,
-      formatter: (row: any) =>
+      formatter: (row: Book) =>
         row.isRecommend
           ? h(ElTag, { type: 'warning', size: 'small' }, () => '荐')
           : h('span', null, '-')
@@ -430,7 +492,7 @@
       width: 200,
       fixed: 'right' as const,
       align: 'center' as const,
-      formatter: (row: any) =>
+      formatter: (row: Book) =>
         h('div', [
           h(
             ElButton,
@@ -482,7 +544,7 @@
   const loadBooks = async () => {
     isLoading.value = true
     try {
-      const params: any = {
+      const params: BookQueryParams = {
         page: currentPage.value,
         pageSize: pageSize.value
       }
@@ -490,7 +552,7 @@
       if (categoryFilter.value) params.categoryId = categoryFilter.value
       if (statusFilter.value !== '') params.status = statusFilter.value
 
-      const res = (await getBooks(params)) as any
+      const res = await getBooks(params) as BookListResponse
       bookList.value = res?.items || []
       total.value = res?.total || 0
     } catch (error) {
@@ -524,6 +586,10 @@
     loadBooks()
   }
 
+  const handleSelectionChange = (rows: Book[]) => {
+    selectedIds.value = rows.map((r) => r.id)
+  }
+
   const formatWordCount = (count: number) => {
     if (count >= 10000) return (count / 10000).toFixed(1) + '万'
     return count?.toString() || '0'
@@ -532,6 +598,11 @@
   const formatNumber = (num: number) => {
     if (num >= 10000) return (num / 10000).toFixed(1) + '万'
     return num?.toString() || '0'
+  }
+
+  const handleImageError = (e: Event) => {
+    const target = e.target as HTMLImageElement
+    if (target) target.style.display = 'none'
   }
 
   const openAddDialog = () => {
@@ -556,7 +627,7 @@
     showDialog.value = true
   }
 
-  const handleEdit = (row: any) => {
+  const handleEdit = (row: Book) => {
     isEdit.value = true
     editId.value = row.id
     Object.assign(formData, {
@@ -578,7 +649,7 @@
     showDialog.value = true
   }
 
-  const handleDelete = (row: any) => {
+  const handleDelete = (row: Book) => {
     ElMessageBox.confirm(`确定删除图书《${row.title}》吗？`, '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
@@ -596,7 +667,7 @@
       .catch(() => {})
   }
 
-  const handleChapters = (row: any) => {
+  const handleChapters = (row: Book) => {
     router.push(`/reading/chapters/${row.id}`)
   }
 
@@ -608,15 +679,11 @@
 
     saving.value = true
     try {
-      const payload = {
-        ...formData,
-        categoryId: formData.categoryId ?? undefined
-      }
       if (isEdit.value && editId.value) {
-        await updateBook(editId.value, payload)
+        await updateBook(editId.value, formData)
         ElMessage.success('编辑成功')
       } else {
-        await createBook(payload)
+        await createBook(formData)
         ElMessage.success('新增成功')
       }
       showDialog.value = false
@@ -629,7 +696,7 @@
   }
 
   // 封面图片上传成功回调
-  const handleCoverUploadSuccess = (response: any) => {
+  const handleCoverUploadSuccess = (response: { url?: string; data?: { url?: string } }) => {
     formData.cover = response?.url || response?.data?.url || ''
   }
 
@@ -672,9 +739,9 @@
     showUploadDialog.value = true
   }
 
-  const handleTxtFileChange = (file: any) => {
+  const handleTxtFileChange = (file: { raw: File; name: string }) => {
     txtFile.value = file.raw
-    txtFileList.value = [file]
+    txtFileList.value = [{ name: file.name }]
   }
 
   const handleTxtFileRemove = () => {
@@ -698,12 +765,13 @@
       if (uploadForm.tags) fd.append('tags', uploadForm.tags)
       if (uploadForm.chapterRegex) fd.append('chapterRegex', uploadForm.chapterRegex)
 
-      const res = await uploadTxtBook(fd) as any
+      const res = await uploadTxtBook(fd) as { title: string; chapterCount: number; totalWordCount: number }
       ElMessage.success(`创建成功：${res?.title}，共 ${res?.chapterCount} 章，${formatWordCount(res?.totalWordCount || 0)}`)
       showUploadDialog.value = false
       loadBooks()
-    } catch (error: any) {
-      ElMessage.error(error?.message || '上传失败')
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : '上传失败'
+      ElMessage.error(message)
     } finally {
       uploading.value = false
     }

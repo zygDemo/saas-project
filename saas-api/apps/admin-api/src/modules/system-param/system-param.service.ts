@@ -4,11 +4,20 @@ import { PaginatedResponse } from '../../common/types/pagination'
 import { getRequiredTenantId, formatDate } from '../../common/utils/helpers'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
+import { CacheService } from '../redis/cache.service'
 import { CreateSystemParamDto, UpdateSystemParamDto } from './dto/system-param.dto'
+
+/** 系统参数缓存键前缀 */
+const CACHE_PREFIX = 'sysparam:'
+/** 系统参数缓存 TTL（30 分钟，变更频率极低） */
+const CACHE_TTL = 1800
 
 @Injectable()
 export class SystemParamService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService
+  ) {}
 
   async getList(query: Record<string, string | undefined>): Promise<PaginatedResponse<unknown>> {
     const tenantId = getRequiredTenantId()
@@ -52,6 +61,7 @@ export class SystemParamService {
       }
     })
 
+    await this.invalidateCache(tenantId)
     return mapParam(item)
   }
 
@@ -76,6 +86,7 @@ export class SystemParamService {
       }
     })
 
+    await this.invalidateCache(tenantId)
     return mapParam(updated)
   }
 
@@ -83,23 +94,37 @@ export class SystemParamService {
     const tenantId = getRequiredTenantId()
     await this.findOrThrow(tenantId, id)
     await this.prisma.systemParam.update({ where: { id }, data: { deletedAt: new Date() } })
+    await this.invalidateCache(tenantId)
     return { id }
   }
 
   async getValueByKey(key: string): Promise<string | null> {
     const tenantId = getRequiredTenantId()
+    const cacheKey = `${CACHE_PREFIX}${tenantId}:val:${key}`
+
+    const cached = await this.cache.get<string>(cacheKey)
+    if (cached !== null) return cached
+
     const item = await this.prisma.systemParam.findFirst({
       where: { tenantId, key, status: 'ACTIVE', deletedAt: null }
     })
-    return item?.value ?? null
+    const value = item?.value ?? null
+
+    // 缓存结果（包括 null，防止缓存穿透）
+    await this.cache.set(cacheKey, value ?? '__NULL__', CACHE_TTL)
+    return value
   }
 
   async getByKeys(keys: string[]) {
     const tenantId = getRequiredTenantId()
-    const items = await this.prisma.systemParam.findMany({
-      where: { tenantId, key: { in: keys }, status: 'ACTIVE', deletedAt: null }
-    })
-    return items.map(mapParam)
+    const cacheKey = `${CACHE_PREFIX}${tenantId}:keys:${keys.sort().join(',')}`
+
+    return this.cache.getOrSet(cacheKey, async () => {
+      const items = await this.prisma.systemParam.findMany({
+        where: { tenantId, key: { in: keys }, status: 'ACTIVE', deletedAt: null }
+      })
+      return items.map(mapParam)
+    }, CACHE_TTL)
   }
 
   private async findOrThrow(tenantId: number, id: number) {
@@ -113,6 +138,11 @@ export class SystemParamService {
     if (existing && existing.id !== excludeId) {
       throw new ConflictException('参数键已存在')
     }
+  }
+
+  /** 清除当前租户的所有系统参数缓存 */
+  private async invalidateCache(tenantId: number) {
+    await this.cache.delByPrefix(CACHE_PREFIX, tenantId)
   }
 }
 

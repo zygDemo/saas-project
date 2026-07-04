@@ -19,12 +19,19 @@
 </template>
 
 <script setup lang="ts">
-  import * as XLSX from 'xlsx'
-  import FileSaver from 'file-saver'
   import { ref, computed, nextTick } from 'vue'
   import { Loading } from '@element-plus/icons-vue'
   import type { ButtonType } from 'element-plus'
   import { useThrottleFn } from '@vueuse/core'
+
+  /** 动态加载 xlsx（仅在导出时加载） */
+  async function loadXlsx() {
+    const [xlsxMod, fileSaverMod] = await Promise.all([
+      import('xlsx'),
+      import('file-saver')
+    ])
+    return { XLSX: xlsxMod, FileSaver: fileSaverMod.default }
+  }
 
   defineOptions({ name: 'ArtExcelExport' })
 
@@ -210,7 +217,7 @@
   }
 
   /** 计算列宽度 */
-  const calculateColumnWidths = (data: Record<string, string>[]): XLSX.ColInfo[] => {
+  const calculateColumnWidths = (data: Record<string, string>[]): { wch: number }[] => {
     if (data.length === 0) return []
 
     const sampleSize = Math.min(data.length, 100) // 只取前100行计算列宽
@@ -243,6 +250,7 @@
     sheetName: string
   ): Promise<void> => {
     try {
+      const { XLSX, FileSaver } = await loadXlsx()
       emit('export-progress', 10)
 
       // 处理数据

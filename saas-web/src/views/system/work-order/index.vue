@@ -281,10 +281,30 @@
   } from '@/api/db-ops'
 
   // ==================== 数据库运维 ====================
+
+  // 数据库运维类型定义
+  interface DbOpsResponse {
+    message: string
+    output?: string
+    results?: Record<string, unknown>
+  }
+
+  interface DbStatusInfo {
+    users: { count: number; status: string } | null
+    roles: { count: number; status: string } | null
+    menus: { count: number; status: string } | null
+  }
+
+  interface OpResult {
+    success: boolean
+    message: string
+    output: string
+  }
+
   const statusLoading = ref(false)
   const opLoading = ref('')
-  const opResult = ref<any>(null)
-  const dbStatus = reactive<Record<string, any>>({
+  const opResult = ref<OpResult | null>(null)
+  const dbStatus = reactive<DbStatusInfo>({
     users: null,
     roles: null,
     menus: null
@@ -293,7 +313,7 @@
   const loadDbStatus = async () => {
     statusLoading.value = true
     try {
-      const res: any = await getDbOpsStatus()
+      const res = await getDbOpsStatus() as DbStatusInfo
       Object.assign(dbStatus, res)
     } catch (e) {
       console.error('获取数据库状态失败', e)
@@ -309,11 +329,11 @@
     opLoading.value = 'migrate'
     opResult.value = null
     try {
-      const res: any = await runDbMigrate()
+      const res = await runDbMigrate() as DbOpsResponse
       opResult.value = { success: true, message: res.message, output: res.output }
       ElMessage.success(res.message)
       loadDbStatus()
-    } catch (e: any) {
+    } catch (e: unknown) {
       opResult.value = { success: false, message: '操作失败', output: e?.response?.data?.message || e.message }
       ElMessage.error('迁移失败')
     } finally {
@@ -328,11 +348,11 @@
     opLoading.value = 'seed'
     opResult.value = null
     try {
-      const res: any = await runDbSeed()
+      const res = await runDbSeed() as DbOpsResponse
       opResult.value = { success: true, message: res.message, output: res.output }
       ElMessage.success(res.message)
       loadDbStatus()
-    } catch (e: any) {
+    } catch (e: unknown) {
       opResult.value = { success: false, message: '操作失败', output: e?.response?.data?.message || e.message }
       ElMessage.error('种子数据执行失败')
     } finally {
@@ -347,11 +367,11 @@
     opLoading.value = 'sync-roles'
     opResult.value = null
     try {
-      const res: any = await runDbSyncRoles()
+      const res = await runDbSyncRoles() as DbOpsResponse
       opResult.value = { success: true, message: res.message, output: res.output }
       ElMessage.success(res.message)
       loadDbStatus()
-    } catch (e: any) {
+    } catch (e: unknown) {
       opResult.value = { success: false, message: '操作失败', output: e?.response?.data?.message || e.message }
       ElMessage.error('角色菜单同步失败')
     } finally {
@@ -368,7 +388,7 @@
     opLoading.value = 'run-all'
     opResult.value = null
     try {
-      const res: any = await runDbOpsAll()
+      const res = await runDbOpsAll() as DbOpsResponse
       opResult.value = {
         success: true,
         message: res.message,
@@ -376,7 +396,7 @@
       }
       ElMessage.success(res.message)
       loadDbStatus()
-    } catch (e: any) {
+    } catch (e: unknown) {
       opResult.value = { success: false, message: '操作失败', output: e?.response?.data?.message || e.message }
       ElMessage.error('全部执行失败')
     } finally {
@@ -385,6 +405,23 @@
   }
 
   // ==================== 工单管理 ====================
+
+  // 工单类型定义
+  interface WorkOrder {
+    id: string
+    title: string
+    type: string
+    status: 'pending' | 'processing' | 'completed'
+    priority: 'low' | 'medium' | 'high' | 'urgent'
+    assignee: string
+    creator: string
+    createdAt: string
+  }
+
+  interface UploadResponse {
+    url?: string
+    data?: { url?: string }
+  }
 
   // 搜索表单
   const searchForm = reactive({
@@ -558,22 +595,22 @@
   }
 
   // 指派
-  const handleAssign = (row: any) => {
+  const handleAssign = (row: WorkOrder) => {
     assignDialogVisible.value = true
   }
 
   // 处理
-  const handleProcess = (row: any) => {
+  const handleProcess = (row: WorkOrder) => {
     ElMessage.success('处理工单: ' + row.title)
   }
 
   // 查看详情
-  const handleView = (row: any) => {
+  const handleView = (row: WorkOrder) => {
     ElMessage.info('查看工单详情: ' + row.id)
   }
 
   // 删除
-  const handleDelete = (row: any) => {
+  const handleDelete = (row: WorkOrder) => {
     ElMessageBox.confirm('确定要删除该工单吗？', '提示', {
       type: 'warning'
     }).then(() => {
@@ -594,7 +631,7 @@
   }
 
   // 上传成功
-  const handleUploadSuccess = (response: any) => {
+  const handleUploadSuccess = (response: UploadResponse) => {
     ElMessage.success('上传成功')
   }
 
