@@ -46,7 +46,7 @@ async function bootstrap() {
     origin: allowAllCors ? true : allowedOrigins,
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID', 'X-Org-Id']
   })
   app.useGlobalPipes(
     new ValidationPipe({
