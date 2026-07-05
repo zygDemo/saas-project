@@ -17,6 +17,15 @@ import {
   MobilePostLoanController
 } from './mobile-business.controller'
 import { MobileBusinessService } from './mobile-business.service'
+import { MobileFileService } from './mobile-file.service'
+import { MobileCustomerService } from './mobile-customer.service'
+import { MobileVehicleService } from './mobile-vehicle.service'
+import { MobileCreditService } from './mobile-credit.service'
+import { MobileContactService } from './mobile-contact.service'
+import { MobileLeadService } from './mobile-lead.service'
+import { MobileSigningService } from './mobile-signing.service'
+import { MobileBankCardService } from './mobile-bank-card.service'
+import { MobilePostLoanService } from './mobile-post-loan.service'
 
 @Module({
   imports: [OcrModule, ProductModule, DictModule],
@@ -34,6 +43,18 @@ import { MobileBusinessService } from './mobile-business.service'
     MobileBankCardController,
     MobilePostLoanController
   ],
-  providers: [MobileBusinessService]
+  providers: [
+    MobileFileService,
+    MobileCustomerService,
+    MobileVehicleService,
+    MobileCreditService,
+    MobileContactService,
+    MobileLeadService,
+    MobileSigningService,
+    MobileBankCardService,
+    MobilePostLoanService,
+    MobileBusinessService
+  ],
+  exports: [MobileBusinessService]
 })
 export class MobileBusinessModule {}

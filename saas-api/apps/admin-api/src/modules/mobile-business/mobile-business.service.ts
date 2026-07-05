@@ -1,22 +1,10 @@
-import { hasValue } from '../../common/utils/helpers'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { getCurrentTenantId } from '../../common/tenant/tenant-context'
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { ApplicationStatus, Gender, Prisma } from '@prisma/client'
-import { RequestUser } from '../../common/types/request-user'
-import {
-  buildUploadUrl,
-  normalizeFileUrl,
-  normalizeApiPrefix,
-  resolveObjectKeyFromFileUrl
-} from '../../common/utils/file-url'
-import { createApplicationWithUniqueNo } from '../../common/utils/application-no'
-import { getPagination } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
-import { UploadedImageFile } from '../file/file.service'
-import { OcrObjectKeyDto } from '../ocr/dto/ocr.dto'
 import { OcrService } from '../ocr/ocr.service'
+import { RequestUser } from '../../common/types/request-user'
+import { OcrObjectKeyDto } from '../ocr/dto/ocr.dto'
+import { UploadedImageFile } from '../file/file.service'
 import {
   MobileCreditApplyDto,
   MobileCreditListQueryDto,
@@ -30,1673 +18,181 @@ import {
   MobileFollowUpDto,
   MobileSigningStartDto
 } from './dto/mobile-business.dto'
+import { MobileUploadResult } from './mobile-business.utils'
+import { MobileFileService } from './mobile-file.service'
+import { MobileCustomerService } from './mobile-customer.service'
+import { MobileVehicleService } from './mobile-vehicle.service'
+import { MobileCreditService } from './mobile-credit.service'
+import { MobileContactService } from './mobile-contact.service'
+import { MobileLeadService } from './mobile-lead.service'
+import { MobileSigningService } from './mobile-signing.service'
+import { MobileBankCardService } from './mobile-bank-card.service'
+import { MobilePostLoanService } from './mobile-post-loan.service'
 
-const IMAGE_UPLOAD_LIMIT = 10 * 1024 * 1024
-const SUCCESS_CREDIT_STATUSES = new Set<ApplicationStatus>([
-  ApplicationStatus.RISK_PRE_PASSED,
-  ApplicationStatus.FUNDER_PRE_PASSED,
-  ApplicationStatus.FINAL_REVIEW_PASSED,
-  ApplicationStatus.FUNDER_REVIEW_PASSED,
-  ApplicationStatus.LOAN_REQUEST_APPROVED,
-  ApplicationStatus.PENDING_SIGN,
-  ApplicationStatus.SIGNING_PROGRESS,
-  ApplicationStatus.SIGNED,
-  ApplicationStatus.PENDING_LOAN_REQUEST,
-  ApplicationStatus.LOAN_REQUEST_REVIEWING,
-  ApplicationStatus.PENDING_DISBURSEMENT,
-  ApplicationStatus.DISBURSED
-])
-const FAILED_CREDIT_STATUSES = new Set<ApplicationStatus>([
-  ApplicationStatus.RISK_PRE_REJECTED,
-  ApplicationStatus.FUNDER_PRE_REJECTED,
-  ApplicationStatus.FIRST_REVIEW_REJECTED,
-  ApplicationStatus.FINAL_REVIEW_REJECTED,
-  ApplicationStatus.FUNDER_REVIEW_REJECTED,
-  ApplicationStatus.LOAN_REQUEST_REJECTED,
-  ApplicationStatus.CANCELLED
-])
-const SIGN_STATUSES = new Set<ApplicationStatus>([
-  ApplicationStatus.PENDING_SIGN,
-  ApplicationStatus.SIGNING_PROGRESS,
-  ApplicationStatus.SIGNED
-])
-const DISBURSEMENT_STATUSES = new Set<ApplicationStatus>([
-  ApplicationStatus.LOAN_REQUEST_APPROVED,
-  ApplicationStatus.PENDING_DISBURSEMENT,
-  ApplicationStatus.DISBURSED
-])
-const PRE_AUDIT_STATUSES = new Set<ApplicationStatus>([
-  ApplicationStatus.SUBMITTED,
-  ApplicationStatus.PENDING_RISK_PRE,
-  ApplicationStatus.RISK_PRE_PASSED,
-  ApplicationStatus.PENDING_FUNDER_PRE,
-  ApplicationStatus.FUNDER_PRE_PASSED,
-  ApplicationStatus.PENDING_FIRST_REVIEW,
-  ApplicationStatus.FIRST_REVIEW_PASSED,
-  ApplicationStatus.PENDING_FINAL_REVIEW
-])
-const MOBILE_ENTRY_STORAGE_FIELDS = [
-  'nation',
-  'householdAddress',
-  'issuingAuthority',
-  'idCardValidFrom',
-  'idCardValidTo',
-  'idCardFront',
-  'idCardBack',
-  'ownerName',
-  'usageNature',
-  'sealInfo',
-  'engineNumber',
-  'registerDate',
-  'vehicleImgUrl',
-  'dwellingCondition',
-  'liveProvince',
-  'liveCity',
-  'liveDistrict',
-  'liveDetailedAddress',
-  'maritalStatus',
-  'monthlyIncome',
-  'childrenNum',
-  'education',
-  'degree',
-  'occupation',
-  'companyName',
-  'workingProvince',
-  'workingCity',
-  'workingDistrict',
-  'workingDetailedAddress',
-  'workingTelephone'
-]
-const MOBILE_ENTRY_STORAGE_ERROR =
-  '移动端进件字段尚未初始化，请执行 admin-api Prisma 迁移并重新启动服务'
-
-export interface MobileUploadResult {
-  url: string
-  fileUrl: string
-  previewUrl: string
-  fileName: string
-  objectKey: string
-  fileKey: string
-  mimeType: string
-  fileExt: string
-  fileSize: number
-  storageType: string
-  uploadedBy: number
-}
-
-
+/**
+ * Thin facade delegating to focused sub-services.
+ * Kept for backward compatibility — any external code importing
+ * MobileBusinessService continues to work unchanged.
+ */
 @Injectable()
 export class MobileBusinessService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
-    private readonly ocrService: OcrService
+    private readonly ocrService: OcrService,
+    private readonly fileService: MobileFileService,
+    private readonly customerService: MobileCustomerService,
+    private readonly vehicleService: MobileVehicleService,
+    private readonly creditService: MobileCreditService,
+    private readonly contactService: MobileContactService,
+    private readonly leadService: MobileLeadService,
+    private readonly signingService: MobileSigningService,
+    private readonly bankCardService: MobileBankCardService,
+    private readonly postLoanService: MobilePostLoanService
   ) {}
 
-  async upload(file: UploadedImageFile | undefined, user: RequestUser, headerOrgId?: number) {
-    if (!file) throw new BadRequestException('请选择要上传的文件')
-    if (!file.mimetype.startsWith('image/')) throw new BadRequestException('仅支持图片文件')
-    if (file.size > IMAGE_UPLOAD_LIMIT) throw new BadRequestException('图片大小不能超过 10MB')
-
-    const result = await this.saveImage(file, user)
-    const org = await this.getDefaultOrg(headerOrgId)
-    const createdFile = await this.createFileAsset({
-      orgId: org.id,
-      businessType: 'MOBILE',
-      businessId: user.sub,
-      categoryCode: 'IMAGE',
-      categoryName: '图片',
-      upload: result,
-      user
-    })
-    const responseData = createdFile || result
-    return responseData
+  // ==================== File ====================
+  upload(file: UploadedImageFile | undefined, user: RequestUser, headerOrgId?: number) {
+    return this.fileService.upload(file, user, headerOrgId)
   }
-
-  async uploadWithType(
-    file: UploadedImageFile | undefined,
-    body: Record<string, string>,
-    user: RequestUser,
-    headerOrgId?: number
-  ) {
-    if (!file) throw new BadRequestException('请选择要上传的文件')
-    const uploadResult = await this.saveImage(file, user)
-    const binding = await this.resolveFileBinding(body, user, headerOrgId)
-    const createdFile = await this.createFileAsset({
-      orgId: binding.orgId,
-      businessType: binding.businessType,
-      businessId: binding.businessId,
-      categoryCode: binding.categoryCode,
-      categoryName: binding.categoryName,
-      upload: uploadResult,
-      user
-    })
-    const responseData = createdFile || uploadResult
-    return responseData
+  uploadWithType(file: UploadedImageFile | undefined, body: Record<string, string>, user: RequestUser, headerOrgId?: number) {
+    return this.fileService.uploadWithType(file, body, user, headerOrgId)
   }
-
-  async getFileList(query: Record<string, string>, user: RequestUser) {
-    const fileAsset = this.getFileAssetModel()
-    if (!fileAsset) return []
-    const where = await this.buildFileWhere(query, user)
-    const files = await fileAsset.findMany({
-      where,
-      orderBy: { id: 'desc' }
-    })
-    return (files as Record<string, unknown>[]).map((file) => this.mapFileAsset(file))
+  getFileList(query: Record<string, string>, user: RequestUser) {
+    return this.fileService.getFileList(query, user)
   }
-
-  async getFileListByType(query: Record<string, string>, user: RequestUser) {
-    return this.getFileList({ ...query, fileType: query.fileType || query.categoryCode }, user)
+  getFileListByType(query: Record<string, string>, user: RequestUser) {
+    return this.fileService.getFileListByType(query, user)
   }
-
-  async deleteFile(id: number) {
-    if (!Number.isInteger(id) || id <= 0) throw new BadRequestException('文件ID不正确')
-    const fileAsset = this.getFileAssetModel()
-    if (!fileAsset?.update) return { id }
-    await fileAsset.update({ where: { id }, data: { status: 'INACTIVE' } })
-    return { id }
+  deleteFile(id: number) {
+    return this.fileService.deleteFile(id)
   }
-
   getProductFileList() {
-    return [
-      {
-        id: 1,
-        fileName: '个人资料相关',
-        children: [
-          {
-            fileCode: 'PFL001',
-            fileType: 'ID_CARD_FRONT',
-            fileName: '身份证人像面',
-            fileSort: 1,
-            requireFlag: 1,
-            acceptType: 'jpg|jpeg|png|webp'
-          },
-          {
-            fileCode: 'PFL002',
-            fileType: 'ID_CARD_BACK',
-            fileName: '身份证国徽面',
-            fileSort: 2,
-            requireFlag: 1,
-            acceptType: 'jpg|jpeg|png|webp'
-          }
-        ]
-      },
-      {
-        id: 2,
-        fileName: '车辆证明资料',
-        children: [
-          {
-            fileCode: 'PFL006',
-            fileType: 'VEHICLE_LICENSE',
-            fileName: '行驶证',
-            fileSort: 6,
-            requireFlag: 1,
-            acceptType: 'jpg|jpeg|png|webp'
-          },
-          {
-            fileCode: 'PFL008',
-            fileType: 'VEHICLE_IMAGE',
-            fileName: '车辆照片',
-            fileSort: 8,
-            requireFlag: 2,
-            acceptType: 'jpg|jpeg|png|webp'
-          }
-        ]
-      }
-    ]
+    return this.fileService.getProductFileList()
   }
 
+  // ==================== OCR ====================
   async getIdCardOcr(body: OcrObjectKeyDto = {}, file?: UploadedImageFile) {
     if (file) return this.ocrService.recognizeIdCard(file, body.side)
     return this.ocrService.recognizeIdCardByObjectKey(body)
   }
-
   async getVehicleOcr(body: OcrObjectKeyDto = {}, file?: UploadedImageFile) {
     if (file) return this.ocrService.recognizeVehicle(file)
     return this.ocrService.recognizeVehicleByObjectKey(body)
   }
 
-  async addOrUpdateUserBasic(dto: MobileIdCardInfoDto & Partial<MobileCustomerExtraDto>, user: RequestUser, headerOrgId?: number) {
-    return this.guardMobileEntryStorage(async () => {
-      const org = await this.getDefaultOrg(headerOrgId)
-      const customerByUuid = dto.uuid ? await this.findCustomerByUuid(dto.uuid) : null
-      const customerByPhone = customerByUuid
-        ? null
-        : await this.prisma.customer.findFirst({ where: { orgId: org.id, phone: dto.telephone } })
-      const data: Record<string, any> = {
-        orgId: customerByUuid?.orgId ?? customerByPhone?.orgId ?? org.id,
-        name: dto.personName,
-        phone: dto.telephone,
-        idCard: dto.personIdcard,
-        gender: this.mapGender(dto.gender),
-        birthDate: this.parseBirthDate(dto.personIdcard),
-        nation: dto.race,
-        householdAddress: dto.personAddress,
-        issuingAuthority: dto.personIssuingAuthority,
-        idCardValidFrom: dto.personValidDateStart,
-        idCardValidTo: dto.personValidDateEnd,
-        idCardFront: dto.idcardFront,
-        idCardBack: dto.idcardBack,
-        address: dto.personAddress,
-        status: 'ACTIVE'
-      }
-
-      // 客户补充信息字段映射
-      if (dto.dwellingCondition !== undefined) data.dwellingCondition = dto.dwellingCondition
-      if (dto.liveProvince !== undefined) data.liveProvince = dto.liveProvince
-      if (dto.liveCity !== undefined) data.liveCity = dto.liveCity
-      if (dto.liveDistrict !== undefined) data.liveDistrict = dto.liveDistrict
-      if (dto.liveDetailedAddress !== undefined) data.liveDetailedAddress = dto.liveDetailedAddress
-      if (
-        dto.liveAddress !== undefined &&
-        dto.liveDetailedAddress === undefined &&
-        !dto.liveProvince &&
-        !dto.liveCity &&
-        !dto.liveDistrict
-      ) {
-        data.liveDetailedAddress = dto.liveAddress
-      }
-      if (dto.marriage !== undefined) data.maritalStatus = dto.marriage
-      if (dto.personIncome !== undefined) data.monthlyIncome = dto.personIncome
-      if (dto.childrenNum !== undefined) data.childrenNum = dto.childrenNum
-      if (dto.education !== undefined) data.education = dto.education
-      if (dto.degree !== undefined) data.degree = dto.degree
-      if (dto.personOccupation !== undefined) data.occupation = dto.personOccupation
-      if (dto.workingName !== undefined) data.companyName = dto.workingName
-      if (dto.workingProvince !== undefined) data.workingProvince = dto.workingProvince
-      if (dto.workingCity !== undefined) data.workingCity = dto.workingCity
-      if (dto.workingDistrict !== undefined) data.workingDistrict = dto.workingDistrict
-      if (dto.workingDetailedAddress !== undefined) data.workingDetailedAddress = dto.workingDetailedAddress
-      if (dto.workingTelephone !== undefined) data.workingTelephone = dto.workingTelephone
-
-      const customer =
-        customerByUuid || customerByPhone
-          ? await this.prisma.customer.update({
-              where: { id: (customerByUuid || customerByPhone).id },
-              data
-            })
-          : await this.prisma.customer.create({ data })
-
-      await this.linkCustomerImages(customer, dto, user)
-
-      const mappedCustomer = this.mapCustomer(customer)
-      if (!dto.createOrder) return mappedCustomer
-
-      const application = await this.ensureCustomerDraftApplication(customer, user, {
-        businessType: dto.businessType
-      })
-      await this.linkApplicationFiles(application, customer)
-
-      return {
-        ...mappedCustomer,
-        creditOrderId: application.applicationNo,
-        applicationId: application.id,
-        currentNode: application.currentNode,
-        currentStatus: application.currentStatus
-      }
-    })
+  // ==================== Customer ====================
+  addOrUpdateUserBasic(dto: MobileIdCardInfoDto & Partial<MobileCustomerExtraDto>, user: RequestUser, headerOrgId?: number) {
+    return this.customerService.addOrUpdateUserBasic(dto, user, headerOrgId)
+  }
+  getUserBasic(uuid: string) {
+    return this.customerService.getUserBasic(uuid)
+  }
+  getUserList(query: MobileUserListQueryDto) {
+    return this.customerService.getUserList(query)
   }
 
-  async getUserBasic(uuid: string) {
-    return this.guardMobileEntryStorage(async () => {
-      const customer = await this.getCustomerByUuid(uuid)
-      return this.mapCustomer(customer)
-    })
+  // ==================== Vehicle ====================
+  addOrUpdateVehicle(dto: MobileVehicleInfoDto, user: RequestUser) {
+    return this.vehicleService.addOrUpdateVehicle(dto, user)
+  }
+  getVehicleInfo(uuid: string) {
+    return this.vehicleService.getVehicleInfo(uuid)
   }
 
-  async getUserList(query: MobileUserListQueryDto) {
-    return this.guardMobileEntryStorage(async () => {
-      const where: Record<string, unknown> = {}
-      if (query.personName) where.name = { contains: query.personName, mode: 'insensitive' }
-
-      const customers = await this.prisma.customer.findMany({
-        where,
-        orderBy: { id: 'desc' },
-        take: 100
-      })
-
-      const rows = customers.map((customer) => ({
-        ...this.mapCustomer(customer),
-        dataSource: query.dataSource ?? 2,
-        approval: 4,
-        updateTime: this.formatDateTime(customer.updatedAt)
-      }))
-
-      return {
-        code: 200,
-        msg: 'success',
-        data: rows,
-        rows,
-        total: customers.length
-      }
-    })
+  // ==================== Credit ====================
+  creditApply(dto: MobileCreditApplyDto, user: RequestUser) {
+    return this.creditService.creditApply(dto, user)
   }
-
-  async addOrUpdateVehicle(dto: MobileVehicleInfoDto, user: RequestUser) {
-    return this.guardMobileEntryStorage(async () => {
-      const customer = await this.getCustomerByUuid(dto.uuid)
-      const current = await this.prisma.vehicle.findFirst({
-        where: {
-          customerId: customer.id,
-          OR: [{ vin: dto.vehicleCode }, { plateNumber: dto.plateNumber }]
-        }
-      })
-      const data = {
-        customerId: customer.id,
-        vin: dto.vehicleCode,
-        plateNumber: dto.plateNumber,
-        brand: dto.vehicleBrand,
-        model: dto.vehicleModel,
-        ownerName: dto.vehicleOwner,
-        address: dto.address,
-        usageNature: dto.usageNature,
-        sealInfo: dto.sealInfo,
-        engineNumber: dto.engineNumber,
-        registerDate: this.parseDate(dto.registerDate),
-        vehicleImgUrl: dto.vehicleImgUrl,
-        color: dto.vehicleColor,
-        mileage: Number(dto.mileage),
-        purchasePrice: this.centToYuan(dto.purchasePrice),
-        isMortgaged: dto.isMortgage === 1,
-        mortgageInfo: dto.isMortgage === 1 ? '已抵押' : undefined
-      }
-
-      const vehicle = current
-        ? await this.prisma.vehicle.update({ where: { id: current.id }, data })
-        : await this.prisma.vehicle.create({ data })
-
-      if (dto.vehicleImgUrl) {
-        await this.createFileAsset({
-          orgId: customer.orgId,
-          businessType: 'VEHICLE',
-          businessId: vehicle.id,
-          categoryCode: 'VEHICLE_LICENSE',
-          categoryName: '行驶证',
-          reference: dto.vehicleImgUrl,
-          user
-        })
-      }
-
-      // 车辆信息属于"车辆信息"(1110)阶段，仅在节点低于1110时推进，不向后重置
-      const application = await this.findLatestDraftApplication(customer.id)
-      if (application && application.currentNode < 1110) {
-        await this.prisma.application.update({
-          where: { id: application.id },
-          data: { currentNode: 1110, currentStatus: 10 }
-        })
-      }
-
-      return this.mapVehicle(vehicle, dto.uuid)
-    })
+  updateCredit(dto: MobileCreditUpdateDto) {
+    return this.creditService.updateCredit(dto)
   }
-
-  async getVehicleInfo(uuid: string) {
-    return this.guardMobileEntryStorage(async () => {
-      const customer = await this.getCustomerByUuid(uuid)
-      const vehicle = await this.prisma.vehicle.findFirst({
-        where: { customerId: customer.id },
-        orderBy: { id: 'desc' }
-      })
-      if (!vehicle) return null
-      return this.mapVehicle(vehicle, uuid)
-    })
+  getCreditList(query: MobileCreditListQueryDto) {
+    return this.creditService.getCreditList(query)
   }
-
-  async creditApply(dto: MobileCreditApplyDto, user: RequestUser) {
-    const customer = await this.getCustomerByUuid(dto.uuid)
-    const product = await this.getDefaultProduct(customer.orgId)
-    const funder = await this.getDefaultFunder(customer.orgId)
-    const rate = product ? Number(product.minRate) : 0.006
-    const remarkParts = [
-      dto.businessType ? `businessType=${dto.businessType}` : undefined,
-      dto.orderType ? `orderType=${dto.orderType}` : undefined,
-      hasValue(dto.parkingFee) ? `parkingFee=${dto.parkingFee}` : undefined,
-      dto.vehicleStatus ? `vehicleStatus=${dto.vehicleStatus}` : undefined,
-      dto.garage ? `garage=${dto.garage}` : undefined,
-      dto.storeName ? `storeName=${dto.storeName}` : undefined,
-      dto.ownerName ? `ownerName=${dto.ownerName}` : undefined,
-      hasValue(dto.deposit) ? `deposit=${dto.deposit}` : undefined,
-      dto.remark
-    ].filter(Boolean)
-
-    let draftApplication = dto.creditOrderId
-      ? await this.findDraftApplicationByNo(customer.id, dto.creditOrderId)
-      : await this.findLatestDraftApplication(customer.id)
-
-    // 如果通过 creditOrderId 未找到草稿，回退到最新草稿
-    if (!draftApplication && dto.creditOrderId) {
-      draftApplication = await this.findLatestDraftApplication(customer.id)
-    }
-
-    // amount/periods 可选：有值时使用传入值，否则保留草稿原值，都没有则用默认值
-    const resolvedAmount = hasValue(dto.amount)
-      ? dto.amount
-      : draftApplication
-        ? Number(draftApplication.amount)
-        : 0
-    const resolvedTerm = hasValue(dto.periods)
-      ? dto.periods
-      : draftApplication
-        ? draftApplication.term
-        : product?.minTerm || 12
-
-    const applicationData = {
-      orgId: customer.orgId,
-      customerId: customer.id,
-      productId: product?.id,
-      funderId: funder?.id,
-      amount: resolvedAmount,
-      term: resolvedTerm,
-      rate,
-      repaymentMethod: product?.repaymentMethod || '等额本息',
-      status: ApplicationStatus.PENDING_RISK_PRE,
-      businessType: dto.businessType === 'pawn' ? 'PAWN' : 'CAR_LOAN',
-      currentNode: 1200,
-      currentStatus: 10,
-      creatorId: user.sub,
-      remark: remarkParts.join('；') || undefined
-    }
-
-    const application = draftApplication
-      ? await this.prisma.application.update({
-          where: { id: draftApplication.id },
-          data: applicationData
-        })
-      : await createApplicationWithUniqueNo((applicationNo) =>
-          this.prisma.application.create({
-            data: {
-              ...applicationData,
-              applicationNo
-            }
-          })
-        )
-
-    await this.linkApplicationFiles(application, customer)
-
-    return {
-      uuid: String(customer.id),
-      creditOrderId: application.applicationNo,
-      id: application.id,
-      status: this.mapCreditStatus(application.status),
-      businessNode: this.mapBusinessNode(application.status)
-    }
+  getCreditDetail(id: string | number) {
+    return this.creditService.getCreditDetail(id)
   }
-
-  async updateCredit(dto: MobileCreditUpdateDto) {
-    const application = await this.prisma.application.findFirst({
-      where: { applicationNo: dto.creditOrderId }
-    })
-    if (!application) throw new NotFoundException('授信申请不存在')
-    const updated = await this.prisma.application.update({
-      where: { id: application.id },
-      data: {
-        amount: hasValue(dto.amount) ? dto.amount : undefined,
-        term: hasValue(dto.periods) ? dto.periods : undefined,
-        remark: dto.remark ?? application.remark
-      }
-    })
-    return this.mapApplication(updated)
+  getCreditDetailByOrderId(creditOrderId: string) {
+    return this.creditService.getCreditDetailByOrderId(creditOrderId)
   }
-
-  async getCreditList(query: MobileCreditListQueryDto) {
-    const pagination = getPagination(query)
-    const where: Record<string, unknown> = {}
-    if (query.salesmanId) where.creatorId = query.salesmanId
-    if (query.businessNode) {
-      const status = this.statusFromBusinessNode(query.businessNode)
-      if (status) where.status = status
-    }
-
-    // 支持 status 参数（数字或字符串）
-    if (query.status !== undefined && query.status !== null) {
-      const statusMap: Record<number, string> = {
-        1: 'DRAFT',
-        2: 'PENDING_RISK_PRE',
-        3: 'PENDING_SUPPLEMENT',
-        4: 'PENDING_SIGN',
-        5: 'DISBURSED'
-      }
-      const numStatus = Number(query.status)
-      if (!Number.isNaN(numStatus) && statusMap[numStatus]) {
-        where.status = statusMap[numStatus]
-      } else if (typeof query.status === 'string') {
-        where.status = query.status
-      }
-    }
-
-    if (query.personName) {
-      where.customer = { name: { contains: query.personName, mode: 'insensitive' } }
-    }
-
-    const [records, total] = await this.prisma.$transaction([
-      this.prisma.application.findMany({
-        where,
-        skip: pagination.skip,
-        take: pagination.take,
-        orderBy: { id: 'desc' },
-        include: {
-          customer: true,
-          product: true
-        }
-      }),
-      this.prisma.application.count({ where })
-    ])
-
-    const rows = records.map((item) => this.mapApplication(item))
-
-    return {
-      code: 200,
-      msg: 'success',
-      data: rows,
-      rows,
-      total
-    }
-  }
-
-  async getCreditDetail(id: string | number) {
-    const application = await this.findApplication(id)
-    return this.mapApplication(application, true)
-  }
-
-  async getCreditDetailByOrderId(creditOrderId: string) {
-    const application = await this.findApplication(creditOrderId)
-    return this.mapApplication(application, true)
-  }
-
   getLoanBusinessNodes() {
-    return [
-      { code: 'INITIAL_AUDIT', name: '初审', description: '待业务初审' },
-      { code: 'PRE_AUDIT', name: '预审', description: '资料预审' },
-      { code: 'SUPPLEMENT_MATERIALS', name: '补充资料', description: '等待补充资料' },
-      { code: 'SIGN_CONTRACT', name: '签约', description: '等待签约' },
-      { code: 'LOAN_DISBURSEMENT', name: '放款', description: '等待放款' }
-    ]
+    return this.creditService.getLoanBusinessNodes()
   }
-
-  async getFlowConfigByNodeCode(nodeCode: string, businessType = 'CAR_LOAN') {
-    const config = await this.prisma.flowConfig.findFirst({
-      where: {
-        nodeCode,
-        businessType,
-        status: 'ACTIVE'
-      }
-    })
-    if (!config) return null
-
-    const ruleConfig = (config.ruleConfig as Record<string, unknown>) || {}
-    return {
-      id: config.id,
-      nodeCode: config.nodeCode,
-      nodeName: config.nodeName,
-      name: config.name,
-      requireMaterials: config.requireMaterials,
-      requireApproval: config.requireApproval,
-      autoPass: config.autoPass,
-      ruleConfig
-    }
+  getFlowConfigByNodeCode(nodeCode: string, businessType?: string) {
+    return this.creditService.getFlowConfigByNodeCode(nodeCode, businessType)
   }
-
-  async getFlowSteps(nodeCode: string, businessType = 'CAR_LOAN') {
-    const config = await this.getFlowConfigByNodeCode(nodeCode, businessType)
-    if (!config) return []
-
-    const ruleConfig = config.ruleConfig as Record<string, unknown>
-    return (ruleConfig?.steps as Array<Record<string, unknown>>) || []
+  getFlowSteps(nodeCode: string, businessType?: string) {
+    return this.creditService.getFlowSteps(nodeCode, businessType)
   }
-
   getStatisticsOverview() {
-    return {
-      todayLeads: 0,
-      pendingApproval: 0,
-      monthlyDeals: 0,
-      totalAmount: 0
-    }
+    return this.creditService.getStatisticsOverview()
   }
 
-  private async saveImage(file: UploadedImageFile, user: RequestUser): Promise<MobileUploadResult> {
-    const { randomUUID } = await import('crypto')
-    const { mkdir, writeFile } = await import('fs/promises')
-    const { extname, join } = await import('path')
-    const now = new Date()
-    const folder = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
-    const originalExt = extname(file.originalname).toLowerCase()
-    const extension = originalExt || this.mimeToExtension(file.mimetype)
-    const objectKey = `images/${folder}/${randomUUID()}${extension}`
-    const absolutePath = join(process.cwd(), 'uploads', objectKey)
-
-    await mkdir(join(process.cwd(), 'uploads', 'images', folder), { recursive: true })
-    await writeFile(absolutePath, file.buffer)
-
-    const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
-    const url = buildUploadUrl(objectKey, apiPrefix)
-    const fileName = this.decodeOriginalName(file.originalname)
-
-    return {
-      url,
-      fileUrl: url,
-      previewUrl: url,
-      fileName,
-      objectKey,
-      fileKey: objectKey,
-      mimeType: file.mimetype,
-      fileExt: extension.slice(1),
-      fileSize: file.size,
-      storageType: 'LOCAL',
-      uploadedBy: user.sub
-    }
+  // ==================== Contact ====================
+  addOrUpdateContact(dto: MobileContactDto) {
+    return this.contactService.addOrUpdateContact(dto)
+  }
+  getContacts(userUuid: string) {
+    return this.contactService.getContacts(userUuid)
+  }
+  deleteContact(id: number) {
+    return this.contactService.deleteContact(id)
   }
 
-  private async getDefaultOrg(orgId?: number) {
-    if (orgId && Number.isInteger(orgId) && orgId > 0) {
-      const headerOrg = await this.prisma.organization.findFirst({ where: { id: orgId } })
-      if (headerOrg) return headerOrg
-    }
-    const org = await this.prisma.organization.findFirst({ orderBy: { id: 'asc' } })
-    if (!org) throw new BadRequestException('请先配置机构')
-    return org
+  // ==================== Lead ====================
+  addSalesLead(dto: MobileSalesLeadDto, user: RequestUser, headerOrgId?: number) {
+    return this.leadService.addSalesLead(dto, user, headerOrgId)
+  }
+  addFollowUp(dto: MobileFollowUpDto, user: RequestUser) {
+    return this.leadService.addFollowUp(dto, user)
+  }
+  getFollowUpList(uuid: string) {
+    return this.leadService.getFollowUpList(uuid)
   }
 
-  private async getDefaultProduct(orgId: number) {
-    const active = await this.prisma.product.findFirst({
-      where: { orgId, status: 'ACTIVE' },
-      orderBy: { id: 'asc' }
-    })
-    if (active) return active
-    return this.prisma.product.findFirst({
-      where: { orgId },
-      orderBy: { id: 'asc' }
-    })
+  // ==================== Signing ====================
+  startFaceSign(dto: MobileSigningStartDto) {
+    return this.signingService.startFaceSign(dto)
+  }
+  startAuthContractSign(dto: MobileSigningStartDto) {
+    return this.signingService.startAuthContractSign(dto)
+  }
+  startContractSign(dto: MobileSigningStartDto) {
+    return this.signingService.startContractSign(dto)
+  }
+  getFaceSignDetail(creditOrderId: string) {
+    return this.signingService.getFaceSignDetail(creditOrderId)
+  }
+  getAuthContractDetail(creditOrderId: string) {
+    return this.signingService.getAuthContractDetail(creditOrderId)
+  }
+  getContractDetail(creditOrderId: string) {
+    return this.signingService.getContractDetail(creditOrderId)
   }
 
-  private async getDefaultFunder(orgId: number) {
-    return this.prisma.funder.findFirst({
-      where: { orgId, status: 'ACTIVE' },
-      orderBy: [{ priority: 'desc' }, { id: 'asc' }]
-    })
+  // ==================== Bank Card ====================
+  getBankCards(customerId: number) {
+    return this.bankCardService.getBankCards(customerId)
+  }
+  addBankCard(customerId: number, dto: { bankName: string; cardNo: string; cardType?: string; isDefault?: boolean }) {
+    return this.bankCardService.addBankCard(customerId, dto)
+  }
+  deleteBankCard(id: number) {
+    return this.bankCardService.deleteBankCard(id)
   }
 
-  private async findCustomerByUuid(uuid: string) {
-    const id = Number(uuid)
-    if (!Number.isInteger(id) || id <= 0) return null
-    return this.prisma.customer.findFirst({ where: { id } })
+  // ==================== Post Loan ====================
+  confirmAmount(applicationId: number, dto: { approvedAmount: number; term?: number; rate?: number }) {
+    return this.postLoanService.confirmAmount(applicationId, dto)
   }
-
-  private async getCustomerByUuid(uuid: string) {
-    const customer = await this.findCustomerByUuid(uuid)
-    if (!customer) throw new NotFoundException('客户信息不存在')
-    return customer
+  getRepaymentPlansMobile(applicationId: number) {
+    return this.postLoanService.getRepaymentPlansMobile(applicationId)
   }
-
-  private async findApplication(idOrNo: string | number) {
-    const numericId = Number(idOrNo)
-    const application =
-      Number.isInteger(numericId) && numericId > 0
-        ? await this.prisma.application.findFirst({
-            where: { id: numericId },
-            include: { customer: { include: { vehicles: true } }, product: true, funder: true }
-          })
-        : await this.prisma.application.findFirst({
-            where: { applicationNo: String(idOrNo) },
-            include: { customer: { include: { vehicles: true } }, product: true, funder: true }
-          })
-    if (!application) throw new NotFoundException('授信申请不存在')
-    return application
+  applyEarlyRepaymentMobile(applicationId: number, dto: { repayType?: string; amount: number; principal: number; interest: number; penalty?: number; reason?: string }) {
+    return this.postLoanService.applyEarlyRepaymentMobile(applicationId, dto)
   }
-
-  private async findLatestDraftApplication(customerId: number) {
-    return this.prisma.application.findFirst({
-      where: {
-        customerId,
-        status: ApplicationStatus.DRAFT
-      },
-      orderBy: { id: 'desc' }
-    })
-  }
-
-  private async findDraftApplicationByNo(customerId: number, applicationNo: string) {
-    return this.prisma.application.findFirst({
-      where: {
-        customerId,
-        applicationNo,
-        status: ApplicationStatus.DRAFT
-      }
-    })
-  }
-
-  private async ensureCustomerDraftApplication(
-    customer: any,
-    user: RequestUser,
-    options: { businessType?: string } = {}
-  ) {
-    const current = await this.findLatestDraftApplication(customer.id)
-    if (current) {
-      // 身份证信息属于"预审进件"(1100)阶段，仅在节点低于1100时推进，不向后重置
-      if (current.currentNode < 1100 || current.currentStatus !== 10) {
-        return this.prisma.application.update({
-          where: { id: current.id },
-          data: { currentNode: 1100, currentStatus: 10 }
-        })
-      }
-      return current
-    }
-
-    const product = await this.getDefaultProduct(customer.orgId)
-    const funder = await this.getDefaultFunder(customer.orgId)
-    const rate = product ? Number(product.minRate) : 0.006
-
-    return createApplicationWithUniqueNo((applicationNo) =>
-      this.prisma.application.create({
-        data: {
-          orgId: customer.orgId,
-          customerId: customer.id,
-          productId: product?.id,
-          funderId: funder?.id,
-          applicationNo,
-          amount: 0,
-          term: product?.minTerm || 12,
-          rate,
-          repaymentMethod: product?.repaymentMethod || '等额本息',
-          status: ApplicationStatus.DRAFT,
-          businessType: options.businessType === 'pawn' ? 'PAWN' : 'CAR_LOAN',
-          currentNode: 1100,
-          currentStatus: 10,
-          creatorId: user.sub,
-          remark: '移动端身份证信息提交自动创建订单草稿'
-        }
-      })
-    )
-  }
-
-  private mapCustomer(customer: any) {
-    // 组合省市区地址
-    const liveAddress = [customer.liveProvince, customer.liveCity, customer.liveDistrict]
-      .filter(Boolean)
-      .join("/");
-    const workingAddress = [customer.workingProvince, customer.workingCity, customer.workingDistrict]
-      .filter(Boolean)
-      .join("/");
-
-    return {
-      id: customer.id,
-      uuid: String(customer.id),
-      personName: customer.name,
-      telephone: customer.phone,
-      personIdcard: customer.idCard,
-      gender:
-        customer.gender === Gender.MALE ? 1 : customer.gender === Gender.FEMALE ? 2 : undefined,
-      nation: customer.nation,
-      race: customer.nation,
-      personAddress: customer.householdAddress || customer.address,
-      personIssuingAuthority: customer.issuingAuthority,
-      personValidDateStart: customer.idCardValidFrom,
-      personValidDateEnd: customer.idCardValidTo,
-      idcardFront: this.toFileUrl(customer.idCardFront),
-      idcardBack: this.toFileUrl(customer.idCardBack),
-      updateTime: this.formatDateTime(customer.updatedAt),
-      // 客户补充信息
-      dwellingCondition: customer.dwellingCondition,
-      liveAddress,
-      liveDetailedAddress: customer.liveDetailedAddress,
-      marriage: customer.maritalStatus,
-      personIncome: customer.monthlyIncome ? Number(customer.monthlyIncome) : undefined,
-      childrenNum: customer.childrenNum,
-      education: customer.education,
-      degree: customer.degree,
-      personOccupation: customer.occupation,
-      workingName: customer.companyName,
-      workingAddress,
-      workingDetailedAddress: customer.workingDetailedAddress,
-      workingTelephone: customer.workingTelephone
-    }
-  }
-
-  private mapVehicle(vehicle: any, uuid: string) {
-    return {
-      id: vehicle.id,
-      uuid,
-      vehicleImgUrl: this.toFileUrl(vehicle.vehicleImgUrl),
-      plateNumber: vehicle.plateNumber,
-      vehicleBrand: vehicle.brand,
-      vehicleModel: vehicle.model,
-      vehicleOwner: vehicle.ownerName,
-      address: vehicle.address,
-      usageNature: vehicle.usageNature,
-      sealInfo: vehicle.sealInfo,
-      engineNumber: vehicle.engineNumber,
-      registerDate: this.formatDateOnly(vehicle.registerDate),
-      vehicleCode: vehicle.vin,
-      mileage: vehicle.mileage,
-      purchasePrice: this.yuanToCent(vehicle.purchasePrice),
-      vehicleColor: vehicle.color,
-      isMortgage: vehicle.isMortgaged ? 1 : 2
-    }
-  }
-
-  private mapApplication(application: any, includeDetail = false) {
-    const customer = application.customer
-    const vehicle = customer?.vehicles?.[0] || customer?.vehicles?.at?.(0)
-    return {
-      id: application.id,
-      uuid: customer ? String(customer.id) : String(application.customerId),
-      creditOrderId: application.applicationNo,
-      name: customer?.name || '',
-      phone: customer?.phone || '',
-      status: this.mapCreditStatus(application.status),
-      businessNode: this.mapBusinessNode(application.status),
-      productName: application.product?.name,
-      periods: application.term,
-      pushQuota: Number(application.amount).toFixed(2),
-      passQuota: application.approvedAmount
-        ? Number(application.approvedAmount).toFixed(2)
-        : undefined,
-      validAmt: application.approvedAmount
-        ? Number(application.approvedAmount).toFixed(2)
-        : undefined,
-      currentNode: application.currentNode,
-      currentStatus: application.currentStatus,
-      remark: application.remark,
-      createTime: this.formatDateTime(application.createdAt),
-      updateTime: this.formatDateTime(application.updatedAt),
-      ...(includeDetail
-        ? {
-            vehicle: vehicle ? this.mapVehicle(vehicle, String(customer.id)) : undefined,
-            customer: customer ? this.mapCustomer(customer) : undefined
-          }
-        : {})
-    }
-  }
-
-  private async linkCustomerImages(customer: Record<string, unknown>, dto: MobileIdCardInfoDto, user: RequestUser) {
-    if (dto.idcardFront) {
-      await this.createFileAsset({
-        orgId: customer.orgId as number,
-        businessType: 'CUSTOMER',
-        businessId: customer.id as number,
-        categoryCode: 'ID_CARD_FRONT',
-        categoryName: '身份证人像面',
-        reference: dto.idcardFront,
-        user
-      })
-    }
-    if (dto.idcardBack) {
-      await this.createFileAsset({
-        orgId: customer.orgId as number,
-        businessType: 'CUSTOMER',
-        businessId: customer.id as number,
-        categoryCode: 'ID_CARD_BACK',
-        categoryName: '身份证国徽面',
-        reference: dto.idcardBack,
-        user
-      })
-    }
-  }
-
-  private async linkApplicationFiles(application: Record<string, unknown>, customer: Record<string, unknown>) {
-    const vehicles = await this.prisma.vehicle.findMany({
-      where: { customerId: customer.id },
-      select: { id: true }
-    })
-    const vehicleIds = vehicles.map((vehicle) => vehicle.id)
-    const fileAssets = (await this.getFileAssetModel()?.findMany?.({
-      where: {
-        OR: [
-          {
-            businessType: 'CUSTOMER',
-            businessId: customer.id,
-            categoryCode: { in: ['ID_CARD_FRONT', 'ID_CARD_BACK'] }
-          },
-          {
-            businessType: 'VEHICLE',
-            businessId: { in: vehicleIds },
-            categoryCode: 'VEHICLE_LICENSE'
-          }
-        ]
-      }
-    })) as Record<string, unknown>[] | undefined
-
-    if (!fileAssets?.length) return
-    await this.prisma.applicationFile.createMany({
-      data: fileAssets.map((file) => ({
-        applicationId: application.id,
-        fileType: file.categoryCode,
-        fileUrl: file.fileUrl,
-        fileName: file.fileName
-      }))
-    })
-  }
-
-  private async createFileAsset(params: {
-    orgId: number
-    businessType: string
-    businessId: number
-    categoryCode: string
-    categoryName: string
-    upload?: MobileUploadResult
-    reference?: string
-    user: RequestUser
-  }): Promise<Record<string, unknown> | null> {
-    const fileAsset = this.getFileAssetModel()
-    if (!fileAsset) return null
-
-    const reference = params.upload?.objectKey || params.reference || ''
-    const normalized = this.normalizeFileReference(reference)
-    const fileName = params.upload?.fileName || this.fileNameFromReference(reference)
-
-    try {
-      const created = await fileAsset.create({
-        data: {
-          orgId: params.orgId,
-          businessType: params.businessType,
-          businessId: params.businessId,
-          categoryCode: params.categoryCode,
-          categoryName: params.categoryName,
-          fileName,
-          fileUrl: params.upload?.url || normalized.url,
-          objectKey: params.upload?.objectKey || normalized.objectKey,
-          mimeType: params.upload?.mimeType,
-          fileExt: params.upload?.fileExt || this.extFromFileName(fileName),
-          fileSize: params.upload?.fileSize,
-          storageType: 'LOCAL',
-          status: 'ACTIVE',
-          uploadedBy: params.user.sub
-        }
-      })
-
-      // 同步创建 ApplicationFile 记录，使后台进件详情能关联到文件
-      if (params.businessType === 'APPLICATION' && params.businessId) {
-        try {
-          await this.prisma.applicationFile.create({
-            data: {
-              applicationId: params.businessId,
-              fileType: params.categoryCode,
-              fileUrl: params.upload?.url || normalized.url,
-              fileName
-            }
-          })
-        } catch {
-          // 忽略重复或关联失败，不影响主流程
-        }
-      }
-
-      return this.mapFileAsset(created as Record<string, unknown>)
-    } catch (error) {
-      if (this.isMissingFileAssetStorage(error)) return null
-      throw error
-    }
-  }
-
-  private getFileAssetModel() {
-    return (
-      this.prisma as unknown as {
-        fileAsset?: {
-          findMany(args: unknown): Promise<unknown[]>
-          create(args: unknown): Promise<unknown>
-          update(args: unknown): Promise<unknown>
-        }
-      }
-    ).fileAsset
-  }
-
-  private async resolveFileBinding(
-    body: Record<string, string>,
-    user: RequestUser,
-    headerOrgId?: number
-  ) {
-    const fileType = body.fileType || body.fileCode || body.categoryCode || 'IMAGE'
-    if (body.creditOrderId) {
-      const application = await this.findApplication(body.creditOrderId)
-      return {
-        orgId: application.orgId,
-        businessType: 'APPLICATION',
-        businessId: application.id,
-        categoryCode: fileType,
-        categoryName: this.resolveCategoryName(fileType)
-      }
-    }
-    if (body.uuid) {
-      const customer = await this.getCustomerByUuid(body.uuid)
-      return {
-        orgId: customer.orgId,
-        businessType: 'CUSTOMER',
-        businessId: customer.id,
-        categoryCode: fileType,
-        categoryName: this.resolveCategoryName(fileType)
-      }
-    }
-    const org = await this.getDefaultOrg(headerOrgId)
-    return {
-      orgId: org.id,
-      businessType: 'MOBILE',
-      businessId: user.sub,
-      categoryCode: fileType,
-      categoryName: this.resolveCategoryName(fileType)
-    }
-  }
-
-  private async buildFileWhere(query: Record<string, string>, user: RequestUser) {
-    const where: Record<string, unknown> = { status: 'ACTIVE' }
-    const categoryCode = query.categoryCode || query.fileType || query.fileCode
-    if (categoryCode) where.categoryCode = categoryCode
-    if (query.businessType) where.businessType = query.businessType
-    if (query.businessId) where.businessId = Number(query.businessId)
-
-    if (query.creditOrderId) {
-      const application = await this.findApplication(query.creditOrderId)
-      where.businessType = 'APPLICATION'
-      where.businessId = application.id
-      return where
-    }
-    if (query.uuid) {
-      const customer = await this.findCustomerByUuid(query.uuid)
-      if (customer) {
-        where.OR = [
-          { businessType: 'CUSTOMER', businessId: customer.id },
-          {
-            businessType: 'APPLICATION',
-            businessId: { in: await this.getCustomerApplicationIds(customer.id) }
-          },
-          {
-            businessType: 'VEHICLE',
-            businessId: { in: await this.getCustomerVehicleIds(customer.id) }
-          }
-        ]
-        return where
-      }
-    }
-
-    where.OR = [{ businessType: 'MOBILE', businessId: user.sub }, { uploadedBy: user.sub }]
-    return where
-  }
-
-  private async getCustomerApplicationIds(customerId: number) {
-    const applications = await this.prisma.application.findMany({
-      where: { customerId },
-      select: { id: true }
-    })
-    return applications.map((item) => item.id)
-  }
-
-  private async getCustomerVehicleIds(customerId: number) {
-    const vehicles = await this.prisma.vehicle.findMany({
-      where: { customerId },
-      select: { id: true }
-    })
-    return vehicles.map((item) => item.id)
-  }
-
-  private mapFileAsset(file: Record<string, unknown>) {
-    const fileUrl = normalizeFileUrl(file.fileUrl as string | null | undefined, this.config.get<string>('API_PREFIX', 'saas/api'))
-    return {
-      ...file,
-      url: fileUrl,
-      fileUrl,
-      previewUrl: fileUrl,
-      objectKey: file.objectKey,
-      fileKey: file.objectKey,
-      fileType: file.categoryCode,
-      fileCode: file.categoryCode,
-      name: file.fileName
-    }
-  }
-
-  private normalizeFileReference(reference: string) {
-    const apiPrefix = normalizeApiPrefix(this.config.get<string>('API_PREFIX', 'saas/api'))
-    if (!reference) return { url: '', objectKey: undefined }
-    const url = normalizeFileUrl(reference, apiPrefix)
-    return {
-      url,
-      objectKey: resolveObjectKeyFromFileUrl(reference, apiPrefix)
-    }
-  }
-
-  private toFileUrl(reference?: string | null) {
-    if (!reference) return ''
-    return this.normalizeFileReference(reference).url
-  }
-
-  private resolveCategoryName(fileType: string) {
-    const map: Record<string, string> = {
-      ID_CARD_FRONT: '身份证人像面',
-      ID_CARD_BACK: '身份证国徽面',
-      VEHICLE_LICENSE: '行驶证',
-      IMAGE: '图片'
-    }
-    return map[fileType] || fileType
-  }
-
-  private mapGender(gender?: number) {
-    if (gender === 1) return Gender.MALE
-    if (gender === 2) return Gender.FEMALE
-    return Gender.UNKNOWN
-  }
-
-  private parseBirthDate(idCard?: string) {
-    if (!idCard || idCard.length < 14) return undefined
-    const text = `${idCard.slice(6, 10)}-${idCard.slice(10, 12)}-${idCard.slice(12, 14)}`
-    return this.parseDate(text)
-  }
-
-  private parseDate(value?: string) {
-    if (!value) return undefined
-    const normalized = value.replace(/[./]/g, '-')
-    const date = new Date(normalized)
-    return Number.isNaN(date.getTime()) ? undefined : date
-  }
-
-  private formatDateOnly(value?: Date | string | null) {
-    if (!value) return ''
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return ''
-    const yyyy = date.getFullYear()
-    const mm = String(date.getMonth() + 1).padStart(2, '0')
-    const dd = String(date.getDate()).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd}`
-  }
-
-  private formatDateTime(value?: Date | string | null) {
-    if (!value) return ''
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return ''
-    const yyyy = date.getFullYear()
-    const mm = String(date.getMonth() + 1).padStart(2, '0')
-    const dd = String(date.getDate()).padStart(2, '0')
-    const hh = String(date.getHours()).padStart(2, '0')
-    const mi = String(date.getMinutes()).padStart(2, '0')
-    const ss = String(date.getSeconds()).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`
-  }
-
-  private centToYuan(value?: number) {
-    if (!hasValue(value)) return undefined
-    return Number(value) / 100
-  }
-
-  private yuanToCent(value?: Prisma.Decimal | number | null) {
-    if (!hasValue(value)) return undefined
-    return Math.round(Number(value) * 100)
-  }
-
-  private mapCreditStatus(status: ApplicationStatus) {
-    if (SUCCESS_CREDIT_STATUSES.has(status)) return 1
-    if (FAILED_CREDIT_STATUSES.has(status)) return 2
-    if (status === ApplicationStatus.PENDING_SUPPLEMENT) return 3
-    return 4
-  }
-
-  private mapBusinessNode(status: ApplicationStatus) {
-    if (status === ApplicationStatus.PENDING_SUPPLEMENT) return 'SUPPLEMENT_MATERIALS'
-    if (SIGN_STATUSES.has(status)) return 'SIGN_CONTRACT'
-    if (DISBURSEMENT_STATUSES.has(status)) return 'LOAN_DISBURSEMENT'
-    if (PRE_AUDIT_STATUSES.has(status)) return 'PRE_AUDIT'
-    return 'INITIAL_AUDIT'
-  }
-
-  private statusFromBusinessNode(node: string) {
-    const map: Record<string, ApplicationStatus> = {
-      INITIAL_AUDIT: ApplicationStatus.SUBMITTED,
-      PRE_AUDIT: ApplicationStatus.PENDING_RISK_PRE,
-      SUPPLEMENT_MATERIALS: ApplicationStatus.PENDING_SUPPLEMENT,
-      SIGN_CONTRACT: ApplicationStatus.PENDING_SIGN,
-      LOAN_DISBURSEMENT: ApplicationStatus.PENDING_DISBURSEMENT
-    }
-    return map[node]
-  }
-
-  private mimeToExtension(mimeType: string) {
-    const map: Record<string, string> = {
-      'image/jpeg': '.jpg',
-      'image/png': '.png',
-      'image/gif': '.gif',
-      'image/webp': '.webp',
-      'image/bmp': '.bmp'
-    }
-    return map[mimeType] || '.jpg'
-  }
-
-  private decodeOriginalName(fileName: string) {
-    try {
-      return Buffer.from(fileName, 'latin1').toString('utf8')
-    } catch {
-      return fileName
-    }
-  }
-
-  private fileNameFromReference(reference: string) {
-    return reference.split('?')[0].split('/').filter(Boolean).pop() || 'upload'
-  }
-
-  private extFromFileName(fileName: string) {
-    const ext = fileName.split('.').pop()
-    return ext && ext !== fileName ? ext : undefined
-  }
-
-  private async guardMobileEntryStorage<T>(action: () => Promise<T>) {
-    try {
-      return await action()
-    } catch (error) {
-      if (this.isMissingMobileEntryStorage(error)) {
-        throw new BadRequestException(MOBILE_ENTRY_STORAGE_ERROR)
-      }
-      throw error
-    }
-  }
-
-  private isMissingMobileEntryStorage(error: unknown) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return error.code === 'P2022'
-    }
-    const message = error instanceof Error ? error.message : ''
-    const isKnownField = MOBILE_ENTRY_STORAGE_FIELDS.some((field) => message.includes(field))
-    return (
-      isKnownField &&
-      (message.includes('Unknown argument') ||
-        message.includes('does not exist') ||
-        message.includes('not found') ||
-        message.includes('column'))
-    )
-  }
-
-  private isMissingFileAssetStorage(error: unknown) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return error.code === 'P2021' || error.code === 'P2022'
-    }
-    const message = error instanceof Error ? error.message : ''
-    return message.includes('FileAsset') || message.includes('fileAsset')
-  }
-
-  // ==================== 联系人管理 ====================
-
-  async addOrUpdateContact(dto: MobileContactDto) {
-    const customer = await this.getCustomerByUuid(dto.userUuid)
-    if (!customer) throw new NotFoundException('客户不存在')
-
-    const relationMap: Record<number, string> = {
-      1: '配偶',
-      2: '父母',
-      3: '子女',
-      4: '朋友',
-      5: '兄弟姐妹',
-      6: '亲戚',
-      7: '同事',
-      8: '其他'
-    }
-
-    const normalizedName = dto.contactName?.trim()
-    const normalizedPhone = dto.contactTelephone?.trim()
-    const normalizedRelation = dto.contactRelationship ? relationMap[dto.contactRelationship] : undefined
-
-    if (!normalizedName) throw new BadRequestException('联系人姓名不能为空')
-    if (!normalizedPhone) throw new BadRequestException('联系人手机号不能为空')
-    if (!normalizedRelation) throw new BadRequestException('联系人关系不正确')
-
-    const data = {
-      customerId: customer.id,
-      name: normalizedName,
-      relation: normalizedRelation,
-      phone: normalizedPhone,
-      isEmergency: dto.contactType === 2 || dto.contactType === 3
-    }
-
-    if (dto.id) {
-      // 校验联系人归属当前客户，防止跨租户篡改
-      const existing = await this.prisma.customerContact.findFirst({
-        where: { id: dto.id, customerId: customer.id }
-      })
-      if (!existing) throw new NotFoundException('联系人不存在')
-      return this.prisma.customerContact.update({
-        where: { id: dto.id },
-        data
-      })
-    }
-
-    return this.prisma.customerContact.create({ data })
-  }
-
-  async getContacts(userUuid: string) {
-    const customer = await this.getCustomerByUuid(userUuid)
-    if (!customer) return []
-
-    return this.prisma.customerContact.findMany({
-      where: { customerId: customer.id },
-      orderBy: { id: 'desc' }
-    })
-  }
-
-  async deleteContact(id: number) {
-    await this.prisma.customerContact.update({ where: { id }, data: { deletedAt: new Date() } })
-    return { code: 200, msg: 'success' }
-  }
-
-  // ==================== 销售线索 ====================
-
-  async addSalesLead(dto: MobileSalesLeadDto, user: RequestUser, headerOrgId?: number) {
-    const org = await this.getDefaultOrg(headerOrgId)
-
-    const customer = await this.prisma.customer.findFirst({
-      where: { orgId: org.id, phone: dto.telephone }
-    })
-
-    if (customer) {
-      return {
-        code: 200,
-        msg: 'success',
-        data: {
-          uuid: String(customer.id),
-          personName: customer.name,
-          telephone: customer.phone
-        }
-      }
-    }
-
-    const newCustomer = await this.prisma.customer.create({
-      data: {
-        orgId: org.id,
-        name: dto.personName,
-        phone: dto.telephone,
-        idCard: dto.idCard,
-        status: 'ACTIVE'
-      }
-    })
-
-    await this.prisma.lead.create({
-      data: {
-        orgId: org.id,
-        source: dto.source || 'SELF',
-        name: dto.personName,
-        phone: dto.telephone,
-        idCard: dto.idCard,
-        carBrand: dto.carBrand,
-        carModel: dto.carModel,
-        loanAmount: dto.loanAmount,
-        remark: dto.remark,
-        status: 'PENDING_ASSIGN',
-        createdBy: user.sub
-      }
-    })
-
-    return {
-      code: 200,
-      msg: 'success',
-      data: {
-        uuid: String(newCustomer.id),
-        personName: newCustomer.name,
-        telephone: newCustomer.phone
-      }
-    }
-  }
-
-  // ==================== 跟进记录 ====================
-
-  async addFollowUp(dto: MobileFollowUpDto, user: RequestUser) {
-    const customer = await this.getCustomerByUuid(dto.uuid)
-    if (!customer) throw new NotFoundException('客户不存在')
-
-    const lead = await this.prisma.lead.findFirst({
-      where: { phone: customer.phone, orgId: customer.orgId }
-    })
-
-    if (!lead) throw new NotFoundException('线索不存在')
-
-    const content = dto.content ?? dto.followContent
-    if (!content?.trim()) throw new BadRequestException('跟进内容不能为空')
-
-    const nextFollowAt = dto.nextFollowAt ?? dto.nextFollowTime
-
-    const followUp = await this.prisma.leadFollowUp.create({
-      data: {
-        leadId: lead.id,
-        followType: dto.followType || 'OTHER',
-        content,
-        nextFollowAt: nextFollowAt ? new Date(nextFollowAt) : undefined,
-        createdBy: user.sub
-      }
-    })
-
-    if (nextFollowAt) {
-      await this.prisma.lead.update({
-        where: { id: lead.id },
-        data: { nextFollowAt: new Date(nextFollowAt), status: 'FOLLOWING' }
-      })
-    }
-
-    return { code: 200, msg: 'success', data: followUp }
-  }
-
-  async getFollowUpList(uuid: string) {
-    const customer = await this.getCustomerByUuid(uuid)
-    if (!customer) return []
-
-    const lead = await this.prisma.lead.findFirst({
-      where: { phone: customer.phone }
-    })
-
-    if (!lead) return []
-
-    const records = await this.prisma.leadFollowUp.findMany({
-      where: { leadId: lead.id },
-      orderBy: { createdAt: 'desc' }
-    })
-
-    return { code: 200, msg: 'success', data: records }
-  }
-
-  // ==================== 签约管理 ====================
-
-  async startFaceSign(dto: MobileSigningStartDto) {
-    const application = await this.findApplicationByOrderId(dto.creditOrderId || '')
-    if (!application) throw new NotFoundException('订单不存在')
-
-    await this.prisma.application.update({
-      where: { id: application.id },
-      data: { status: 'SIGNING_PROGRESS' }
-    })
-
-    await this.prisma.signRecord.upsert({
-      where: { applicationId: application.id },
-      update: { status: 'SENT' },
-      create: {
-        tenantId: application.tenantId,
-        applicationId: application.id,
-        status: 'SENT'
-      }
-    })
-
-    return {
-      code: 200,
-      msg: 'success',
-      data: {
-        uuid: dto.uuid,
-        creditOrderId: dto.creditOrderId,
-        status: 'PROCESSING',
-        signUrl: dto.redirectUrl || ''
-      }
-    }
-  }
-
-  async startAuthContractSign(dto: MobileSigningStartDto) {
-    const application = await this.findApplicationByOrderId(dto.creditOrderId || '')
-    if (!application) throw new NotFoundException('订单不存在')
-
-    return {
-      code: 200,
-      msg: 'success',
-      data: {
-        uuid: dto.uuid,
-        creditOrderId: dto.creditOrderId,
-        status: 'PENDING',
-        signUrl: dto.redirectUrl || '',
-        callbackUrl: ''
-      }
-    }
-  }
-
-  async startContractSign(dto: MobileSigningStartDto) {
-    const application = await this.findApplicationByOrderId(dto.creditOrderId || '')
-    if (!application) throw new NotFoundException('订单不存在')
-
-    return {
-      code: 200,
-      msg: 'success',
-      data: {
-        uuid: dto.uuid,
-        creditOrderId: dto.creditOrderId,
-        status: 'PENDING',
-        signUrl: dto.redirectUrl || '',
-        callbackUrl: ''
-      }
-    }
-  }
-
-  async getFaceSignDetail(creditOrderId: string) {
-    const application = await this.findApplicationByOrderId(creditOrderId)
-    if (!application) throw new NotFoundException('订单不存在')
-
-    const signRecord = await this.prisma.signRecord.findFirst({
-      where: { applicationId: application.id }
-    })
-
-    return {
-      code: 200,
-      msg: 'success',
-      data: {
-        creditOrderId,
-        status: signRecord?.status || 'PENDING',
-        signedAt: signRecord?.signedAt
-      }
-    }
-  }
-
-  async getAuthContractDetail(creditOrderId: string) {
-    const application = await this.findApplicationByOrderId(creditOrderId)
-    if (!application) throw new NotFoundException('订单不存在')
-
-    const signRecord = await this.prisma.signRecord.findFirst({
-      where: { applicationId: application.id }
-    })
-
-    return {
-      code: 200,
-      msg: 'success',
-      data: {
-        creditOrderId,
-        status: signRecord?.status || 'PENDING',
-        contractUrl: signRecord?.contractUrl
-      }
-    }
-  }
-
-  async getContractDetail(creditOrderId: string) {
-    const application = await this.findApplicationByOrderId(creditOrderId)
-    if (!application) throw new NotFoundException('订单不存在')
-
-    const signRecord = await this.prisma.signRecord.findFirst({
-      where: { applicationId: application.id }
-    })
-
-    return {
-      code: 200,
-      msg: 'success',
-      data: {
-        creditOrderId,
-        status: signRecord?.status || 'PENDING',
-        contractUrl: signRecord?.contractUrl,
-        signedAt: signRecord?.signedAt
-      }
-    }
-  }
-
-  private async findApplicationByOrderId(creditOrderId: string) {
-    if (!creditOrderId) return null
-    return this.prisma.application.findFirst({
-      where: { applicationNo: creditOrderId }
-    })
-  }
-
-  /** 获取客户银行卡列表 */
-  async getBankCards(customerId: number) {
-    return this.prisma.bankCard.findMany({
-      where: { customerId },
-      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
-    })
-  }
-
-  /** 添加银行卡 */
-  async addBankCard(customerId: number, dto: { bankName: string; cardNo: string; cardType?: string; isDefault?: boolean }) {
-    // 如果设为默认，先取消其他默认
-    if (dto.isDefault) {
-      await this.prisma.bankCard.updateMany({
-        where: { customerId, isDefault: true },
-        data: { isDefault: false },
-      })
-    }
-    return this.prisma.bankCard.create({
-      data: {
-        customerId,
-        bankName: dto.bankName,
-        cardNo: dto.cardNo,
-        cardType: dto.cardType || 'DEBIT',
-        isDefault: dto.isDefault ?? false,
-      },
-    })
-  }
-
-  /** 删除银行卡 */
-  async deleteBankCard(id: number) {
-    return this.prisma.bankCard.delete({ where: { id } })
-  }
-
-  /** 额度确认（更新审批通过金额） */
-  async confirmAmount(applicationId: number, dto: { approvedAmount: number; term?: number; rate?: number }) {
-    return this.prisma.application.update({
-      where: { id: applicationId },
-      data: {
-        approvedAmount: dto.approvedAmount,
-        ...(dto.term && { term: dto.term }),
-        ...(dto.rate && { rate: dto.rate }),
-      },
-    })
-  }
-
-  /** 获取还款计划（移动端） */
-  async getRepaymentPlansMobile(applicationId: number) {
-    return this.prisma.repaymentPlan.findMany({
-      where: { applicationId },
-      orderBy: { period: 'asc' },
-      include: { records: { orderBy: { createdAt: 'desc' } } }
-    })
-  }
-
-  /** 提前还款申请（移动端） */
-  async applyEarlyRepaymentMobile(applicationId: number, dto: { repayType?: string; amount: number; principal: number; interest: number; penalty?: number; reason?: string }) {
-    return this.prisma.earlyRepayment.create({
-      data: {
-        tenantId: 1,
-        applicationId,
-        repayType: dto.repayType ?? 'FULL',
-        amount: dto.amount,
-        principal: dto.principal,
-        interest: dto.interest,
-        penalty: dto.penalty ?? 0,
-        reason: dto.reason
-      }
-    })
-  }
-
-  /** 获取申请详情（移动端） */
-  async getApplicationDetailMobile(id: number) {
-    const app = await this.prisma.application.findFirst({
-      where: { id },
-      include: {
-        customer: true,
-        product: true,
-        funder: true,
-        disbursement: true,
-        signRecord: true,
-        repaymentPlans: { orderBy: { period: 'asc' } }
-      }
-    })
-    if (!app) throw new NotFoundException('订单不存在')
-    return this.mapApplication(app, true)
+  getApplicationDetailMobile(id: number) {
+    return this.postLoanService.getApplicationDetailMobile(id)
   }
 }

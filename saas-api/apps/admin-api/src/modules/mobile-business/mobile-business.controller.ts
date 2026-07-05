@@ -33,6 +33,15 @@ import {
   MobileSigningStartDto
 } from './dto/mobile-business.dto'
 import { MobileBusinessService } from './mobile-business.service'
+import { MobileFileService } from './mobile-file.service'
+import { MobileCustomerService } from './mobile-customer.service'
+import { MobileVehicleService } from './mobile-vehicle.service'
+import { MobileCreditService } from './mobile-credit.service'
+import { MobileContactService } from './mobile-contact.service'
+import { MobileLeadService } from './mobile-lead.service'
+import { MobileSigningService } from './mobile-signing.service'
+import { MobileBankCardService } from './mobile-bank-card.service'
+import { MobilePostLoanService } from './mobile-post-loan.service'
 
 const IMAGE_UPLOAD_LIMIT = 10 * 1024 * 1024
 const OCR_IMAGE_UPLOAD_LIMIT = 8 * 1024 * 1024
@@ -76,7 +85,10 @@ function ocrImageUploadInterceptor() {
 @UseGuards(JwtAuthGuard)
 @Controller('m/file')
 export class MobileFileController {
-  constructor(private readonly service: MobileBusinessService) {}
+  constructor(
+    private readonly service: MobileBusinessService,
+    private readonly fileService: MobileFileService
+  ) {}
 
   @Post('upload')
   @ApiOperation({ summary: '移动端图片上传' })
@@ -95,7 +107,7 @@ export class MobileFileController {
     @CurrentUser() user: RequestUser,
     @Headers('x-org-id') orgId?: string
   ) {
-    return this.service.upload(file, user, orgId ? Number(orgId) : undefined)
+    return this.fileService.upload(file, user, orgId ? Number(orgId) : undefined)
   }
 
   @Post('uploadWithType')
@@ -108,31 +120,31 @@ export class MobileFileController {
     @CurrentUser() user: RequestUser,
     @Headers('x-org-id') orgId?: string
   ) {
-    return this.service.uploadWithType(file, body, user, orgId ? Number(orgId) : undefined)
+    return this.fileService.uploadWithType(file, body, user, orgId ? Number(orgId) : undefined)
   }
 
   @Get('getFileList')
   @ApiOperation({ summary: '移动端文件列表' })
   getFileList(@Query() query: Record<string, string>, @CurrentUser() user: RequestUser) {
-    return this.service.getFileList(query, user)
+    return this.fileService.getFileList(query, user)
   }
 
   @Get('getFileListByType')
   @ApiOperation({ summary: '移动端按类型文件列表' })
   getFileListByType(@Query() query: Record<string, string>, @CurrentUser() user: RequestUser) {
-    return this.service.getFileListByType(query, user)
+    return this.fileService.getFileListByType(query, user)
   }
 
   @Delete('deleteFile/:id')
   @ApiOperation({ summary: '移动端删除文件' })
   deleteFile(@Param('id') id: string) {
-    return this.service.deleteFile(Number(id))
+    return this.fileService.deleteFile(Number(id))
   }
 
   @Get('getProductFileList')
   @ApiOperation({ summary: '移动端产品资料清单' })
   getProductFileList() {
-    return this.service.getProductFileList()
+    return this.fileService.getProductFileList()
   }
 }
 
@@ -141,7 +153,10 @@ export class MobileFileController {
 @UseGuards(JwtAuthGuard)
 @Controller('m/user')
 export class MobileUserController {
-  constructor(private readonly service: MobileBusinessService) {}
+  constructor(
+    private readonly service: MobileBusinessService,
+    private readonly customerService: MobileCustomerService
+  ) {}
 
   @Post('addOrUpdateUserBasic')
   @ApiOperation({ summary: '保存身份证信息' })
@@ -150,7 +165,7 @@ export class MobileUserController {
     @CurrentUser() user: RequestUser,
     @Headers('x-org-id') orgId?: string
   ) {
-    return this.service.addOrUpdateUserBasic(dto, user, orgId ? Number(orgId) : undefined)
+    return this.customerService.addOrUpdateUserBasic(dto, user, orgId ? Number(orgId) : undefined)
   }
 
   @Post('addOrUpdateIdCardInfo')
@@ -160,13 +175,13 @@ export class MobileUserController {
     @CurrentUser() user: RequestUser,
     @Headers('x-org-id') orgId?: string
   ) {
-    return this.service.addOrUpdateUserBasic(dto, user, orgId ? Number(orgId) : undefined)
+    return this.customerService.addOrUpdateUserBasic(dto, user, orgId ? Number(orgId) : undefined)
   }
 
   @Get('getUserBasic')
   @ApiOperation({ summary: '获取身份证信息' })
   getUserBasic(@Query() query: MobileUuidQueryDto) {
-    return this.service.getUserBasic(query.uuid)
+    return this.customerService.getUserBasic(query.uuid)
   }
 
   @Post('getIdCardInfo')
@@ -196,7 +211,7 @@ export class MobileUserController {
   @Get('getUserList')
   @ApiOperation({ summary: '客户列表' })
   getUserList(@Query() query: MobileUserListQueryDto) {
-    return this.service.getUserList(query)
+    return this.customerService.getUserList(query)
   }
 }
 
@@ -205,18 +220,21 @@ export class MobileUserController {
 @UseGuards(JwtAuthGuard)
 @Controller('m/vehicle')
 export class MobileVehicleController {
-  constructor(private readonly service: MobileBusinessService) {}
+  constructor(
+    private readonly service: MobileBusinessService,
+    private readonly vehicleService: MobileVehicleService
+  ) {}
 
   @Post('addOrUpdateVehicle')
   @ApiOperation({ summary: '保存车辆信息' })
   addOrUpdateVehicle(@Body() dto: MobileVehicleInfoDto, @CurrentUser() user: RequestUser) {
-    return this.service.addOrUpdateVehicle(dto, user)
+    return this.vehicleService.addOrUpdateVehicle(dto, user)
   }
 
   @Get('getVehicleInfo')
   @ApiOperation({ summary: '获取车辆信息' })
   getVehicleInfo(@Query() query: MobileUuidQueryDto) {
-    return this.service.getVehicleInfo(query.uuid)
+    return this.vehicleService.getVehicleInfo(query.uuid)
   }
 
   @Post('getVehicleOcr')
@@ -242,36 +260,36 @@ export class MobileVehicleController {
 @UseGuards(JwtAuthGuard)
 @Controller('m/credit')
 export class MobileCreditController {
-  constructor(private readonly service: MobileBusinessService) {}
+  constructor(private readonly creditService: MobileCreditService) {}
 
   @Post('apply')
   @ApiOperation({ summary: '提交授信申请' })
   apply(@Body() dto: MobileCreditApplyDto, @CurrentUser() user: RequestUser) {
-    return this.service.creditApply(dto, user)
+    return this.creditService.creditApply(dto, user)
   }
 
   @Post('update')
   @ApiOperation({ summary: '修改授信申请' })
   update(@Body() dto: MobileCreditUpdateDto) {
-    return this.service.updateCredit(dto)
+    return this.creditService.updateCredit(dto)
   }
 
   @Get('getCreditList')
   @ApiOperation({ summary: '授信申请列表' })
   getCreditList(@Query() query: MobileCreditListQueryDto) {
-    return this.service.getCreditList(query)
+    return this.creditService.getCreditList(query)
   }
 
   @Get('getCreditDetail/:id')
   @ApiOperation({ summary: '授信申请详情' })
   getCreditDetail(@Param('id') id: string) {
-    return this.service.getCreditDetail(id)
+    return this.creditService.getCreditDetail(id)
   }
 
   @Get('getCreditDetailByOrderId/:creditOrderId')
   @ApiOperation({ summary: '按订单号获取授信申请详情' })
   getCreditDetailByOrderId(@Param('creditOrderId') creditOrderId: string) {
-    return this.service.getCreditDetailByOrderId(creditOrderId)
+    return this.creditService.getCreditDetailByOrderId(creditOrderId)
   }
 }
 
@@ -280,24 +298,24 @@ export class MobileCreditController {
 @UseGuards(JwtAuthGuard)
 @Controller('m/enum')
 export class MobileEnumController {
-  constructor(private readonly service: MobileBusinessService) {}
+  constructor(private readonly creditService: MobileCreditService) {}
 
   @Get('loanBusinessNodes')
   @ApiOperation({ summary: '贷款业务节点枚举' })
   getLoanBusinessNodes() {
-    return this.service.getLoanBusinessNodes()
+    return this.creditService.getLoanBusinessNodes()
   }
 
   @Get('flow-steps/:nodeCode')
   @ApiOperation({ summary: '获取流程节点步骤' })
   getFlowSteps(@Param('nodeCode') nodeCode: string, @Query('businessType') businessType?: string) {
-    return this.service.getFlowSteps(nodeCode, businessType)
+    return this.creditService.getFlowSteps(nodeCode, businessType)
   }
 
   @Get('flow-config/:nodeCode')
   @ApiOperation({ summary: '获取流程节点配置' })
   getFlowConfig(@Param('nodeCode') nodeCode: string, @Query('businessType') businessType?: string) {
-    return this.service.getFlowConfigByNodeCode(nodeCode, businessType)
+    return this.creditService.getFlowConfigByNodeCode(nodeCode, businessType)
   }
 }
 
@@ -306,12 +324,12 @@ export class MobileEnumController {
 @UseGuards(JwtAuthGuard)
 @Controller('m/statistics')
 export class MobileStatisticsController {
-  constructor(private readonly service: MobileBusinessService) {}
+  constructor(private readonly creditService: MobileCreditService) {}
 
   @Get('overview')
   @ApiOperation({ summary: '业务统计概览' })
   overview() {
-    return this.service.getStatisticsOverview()
+    return this.creditService.getStatisticsOverview()
   }
 }
 
@@ -320,24 +338,24 @@ export class MobileStatisticsController {
 @UseGuards(JwtAuthGuard)
 @Controller('m/user')
 export class MobileContactController {
-  constructor(private readonly service: MobileBusinessService) {}
+  constructor(private readonly contactService: MobileContactService) {}
 
   @Post('addOrUpdateContact')
   @ApiOperation({ summary: '新增/更新联系人' })
   addOrUpdateContact(@Body() dto: MobileContactDto) {
-    return this.service.addOrUpdateContact(dto)
+    return this.contactService.addOrUpdateContact(dto)
   }
 
   @Get('getContacts')
   @ApiOperation({ summary: '获取联系人列表' })
   getContacts(@Query('userUuid') userUuid: string) {
-    return this.service.getContacts(userUuid)
+    return this.contactService.getContacts(userUuid)
   }
 
   @Delete('deleteContact/:id')
   @ApiOperation({ summary: '删除联系人' })
   deleteContact(@Param('id') id: string) {
-    return this.service.deleteContact(Number(id))
+    return this.contactService.deleteContact(Number(id))
   }
 }
 
@@ -346,7 +364,7 @@ export class MobileContactController {
 @UseGuards(JwtAuthGuard)
 @Controller('m/salesLead')
 export class MobileSalesLeadController {
-  constructor(private readonly service: MobileBusinessService) {}
+  constructor(private readonly leadService: MobileLeadService) {}
 
   @Post('add')
   @ApiOperation({ summary: '新增销售线索' })
@@ -355,7 +373,7 @@ export class MobileSalesLeadController {
     @CurrentUser() user: RequestUser,
     @Headers('x-org-id') orgId?: string
   ) {
-    return this.service.addSalesLead(dto, user, orgId ? Number(orgId) : undefined)
+    return this.leadService.addSalesLead(dto, user, orgId ? Number(orgId) : undefined)
   }
 }
 
@@ -364,18 +382,18 @@ export class MobileSalesLeadController {
 @UseGuards(JwtAuthGuard)
 @Controller('m/clueFollowUp')
 export class MobileFollowUpController {
-  constructor(private readonly service: MobileBusinessService) {}
+  constructor(private readonly leadService: MobileLeadService) {}
 
   @Post('add')
   @ApiOperation({ summary: '新增跟进记录' })
   add(@Body() dto: MobileFollowUpDto, @CurrentUser() user: RequestUser) {
-    return this.service.addFollowUp(dto, user)
+    return this.leadService.addFollowUp(dto, user)
   }
 
   @Get('list/:uuid')
   @ApiOperation({ summary: '获取跟进列表' })
   list(@Param('uuid') uuid: string) {
-    return this.service.getFollowUpList(uuid)
+    return this.leadService.getFollowUpList(uuid)
   }
 }
 
@@ -386,88 +404,88 @@ export class MobileFollowUpController {
 @Controller('m/bank-card')
 @ApiTags('移动端-银行卡')
 export class MobileBankCardController {
-  constructor(private readonly service: MobileBusinessService) {}
+  constructor(private readonly bankCardService: MobileBankCardService) {}
 
   @Get('list')
   @ApiOperation({ summary: '获取客户银行卡列表' })
   getList(@Query('customerId') customerId: string) {
-    return this.service.getBankCards(Number(customerId))
+    return this.bankCardService.getBankCards(Number(customerId))
   }
 
   @Post('add')
   @ApiOperation({ summary: '添加银行卡' })
   add(@Body() dto: { customerId: number; bankName: string; cardNo: string; cardType?: string; isDefault?: boolean }) {
-    return this.service.addBankCard(dto.customerId, dto)
+    return this.bankCardService.addBankCard(dto.customerId, dto)
   }
 
   @Post('delete/:id')
   @ApiOperation({ summary: '删除银行卡' })
   remove(@Param('id') id: string) {
-    return this.service.deleteBankCard(Number(id))
+    return this.bankCardService.deleteBankCard(Number(id))
   }
 }
 
 @Controller('m/post-loan')
 @ApiTags('移动端-贷后管理')
 export class MobilePostLoanController {
-  constructor(private readonly service: MobileBusinessService) {}
+  constructor(private readonly postLoanService: MobilePostLoanService) {}
 
   @Get('repayment-plans/:applicationId')
   @ApiOperation({ summary: '获取还款计划' })
   getRepaymentPlans(@Param('applicationId') applicationId: string) {
-    return this.service.getRepaymentPlansMobile(Number(applicationId))
+    return this.postLoanService.getRepaymentPlansMobile(Number(applicationId))
   }
 
   @Post('early-repayment')
   @ApiOperation({ summary: '申请提前还款' })
   applyEarlyRepayment(@Body() dto: { applicationId: number; repayType?: string; amount: number; principal: number; interest: number; penalty?: number; reason?: string }) {
-    return this.service.applyEarlyRepaymentMobile(dto.applicationId, dto)
+    return this.postLoanService.applyEarlyRepaymentMobile(dto.applicationId, dto)
   }
 
   @Get('detail/:id')
   @ApiOperation({ summary: '获取订单详情' })
   getDetail(@Param('id') id: string) {
-    return this.service.getApplicationDetailMobile(Number(id))
+    return this.postLoanService.getApplicationDetailMobile(Number(id))
   }
 }
 
 @Controller('m/signing')
 export class MobileSigningController {
-  constructor(private readonly service: MobileBusinessService) {}
+  constructor(private readonly signingService: MobileSigningService) {}
 
   @Post('face/start')
   @ApiOperation({ summary: '发起人脸识别' })
   startFaceSign(@Body() dto: MobileSigningStartDto) {
-    return this.service.startFaceSign(dto)
+    return this.signingService.startFaceSign(dto)
   }
 
   @Post('contract/start')
   @ApiOperation({ summary: '发起授权书签署' })
   startAuthContractSign(@Body() dto: MobileSigningStartDto) {
-    return this.service.startAuthContractSign(dto)
+    return this.signingService.startAuthContractSign(dto)
   }
 
   @Post('loan/start')
   @ApiOperation({ summary: '发起合同签署' })
   startContractSign(@Body() dto: MobileSigningStartDto) {
-    return this.service.startContractSign(dto)
+    return this.signingService.startContractSign(dto)
   }
 
   @Get('face/detail/:creditOrderId')
   @ApiOperation({ summary: '获取人脸识别结果' })
   getFaceSignDetail(@Param('creditOrderId') creditOrderId: string) {
-    return this.service.getFaceSignDetail(creditOrderId)
+    return this.signingService.getFaceSignDetail(creditOrderId)
   }
 
   @Get('contract/detail/:creditOrderId')
   @ApiOperation({ summary: '获取授权书签约详情' })
   getAuthContractDetail(@Param('creditOrderId') creditOrderId: string) {
-    return this.service.getAuthContractDetail(creditOrderId)
+    return this.signingService.getAuthContractDetail(creditOrderId)
   }
 
   @Get('loan/detail/:creditOrderId')
   @ApiOperation({ summary: '获取合同签约详情' })
   getContractDetail(@Param('creditOrderId') creditOrderId: string) {
-    return this.service.getContractDetail(creditOrderId)
+    return this.signingService.getContractDetail(creditOrderId)
   }
 }
