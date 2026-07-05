@@ -1,4 +1,5 @@
 import request from '@/utils/http'
+import type { BasePageResponse, PageQuery } from '@/types/api/contract'
 
 export interface MonitorLogItem {
   id: number
@@ -28,14 +29,14 @@ export interface MonitorStats {
   to?: string
 }
 
-export function fetchMonitorLogs(params: Record<string, unknown>) {
-  return request.get<Api.Common.PaginatedResponse<MonitorLogItem>>({
+export function fetchMonitorLogs(params: PageQuery) {
+  return request.get<BasePageResponse<MonitorLogItem>>({
     url: '/monitor/logs',
     params,
   })
 }
 
-export function fetchMonitorStats(params?: Record<string, unknown>) {
+export function fetchMonitorStats(params?: PageQuery) {
   return request.get<MonitorStats>({
     url: '/monitor/stats',
     params,

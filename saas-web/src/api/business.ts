@@ -1,12 +1,11 @@
 import request from '@/utils/http'
+import type { BasePageResponse, PageQuery } from '@/types/api/contract'
 
-export interface BusinessQuery {
-  current?: number
-  size?: number
+export interface BusinessQuery extends PageQuery {
   [key: string]: unknown
 }
 
-export interface BusinessPage<T = Record<string, unknown>> {
+export interface BusinessPage<T = unknown> {
   records: T[]
   total: number
   current: number
@@ -47,24 +46,24 @@ export interface FlowConfigMeta {
   phases: Array<{ code: number; name: string; nodes: number[] }>
 }
 
-export function fetchBusinessList<T = Record<string, unknown>>(
+export function fetchBusinessList<T = unknown>(
   module: string,
   params: BusinessQuery,
   listApi = 'list'
 ) {
-  return request.get<BusinessPage<T>>({
+  return request.get<BasePageResponse<T>>({
     url: `/${module}/${listApi}`,
     params
   })
 }
 
-export function fetchBusinessDetail<T = Record<string, unknown>>(module: string, id: number) {
+export function fetchBusinessDetail<T = unknown>(module: string, id: number) {
   return request.get<T>({
     url: `/${module}/${id}`
   })
 }
 
-export function fetchBusinessCreate<T = Record<string, unknown>>(
+export function fetchBusinessCreate<T = unknown>(
   module: string,
   data: Record<string, unknown>
 ) {
@@ -74,7 +73,7 @@ export function fetchBusinessCreate<T = Record<string, unknown>>(
   })
 }
 
-export function fetchBusinessUpdate<T = Record<string, unknown>>(
+export function fetchBusinessUpdate<T = unknown>(
   module: string,
   id: number,
   data: Record<string, unknown>
@@ -91,7 +90,7 @@ export function fetchBusinessDelete(module: string, id: number) {
   })
 }
 
-export function fetchBusinessAction<T = Record<string, unknown>>(
+export function fetchBusinessAction<T = unknown>(
   url: string,
   data?: Record<string, unknown>
 ) {
@@ -114,14 +113,14 @@ export function fetchInitDefaultFlowConfig(params: { orgId: number; businessType
   })
 }
 
-export function fetchApplicationLifecycle<T = Record<string, unknown>>(id: number) {
+export function fetchApplicationLifecycle<T = unknown>(id: number) {
   return request.get<T[]>({
     url: `/application/lifecycle/${id}`
   })
 }
 
-export function fetchApplicationFlowList<T = Record<string, unknown>>(params: BusinessQuery) {
-  return request.get<BusinessPage<T>>({
+export function fetchApplicationFlowList<T = unknown>(params: BusinessQuery) {
+  return request.get<BasePageResponse<T>>({
     url: '/application/flow-list',
     params
   })

@@ -91,6 +91,7 @@ export const useReadingStore = defineStore(
     const readingProgress = ref<ReadingProgress[]>([]);
     const totalReadCount = ref(15);
     const todayReadMinutes = ref(42);
+    const purchasedChapters = ref<Record<string, Set<string>>>({});
 
     const bookshelfCount = computed(() => bookshelf.value.length);
 
@@ -178,6 +179,21 @@ export const useReadingStore = defineStore(
 
     const getReadingProgress = (bookId: string | number) => {
       return readingProgress.value.find((item) => item.bookId === String(bookId));
+    };
+
+    const hasPurchasedChapter = (bookId: string | number, chapterId: string | number) => {
+      const bookKey = String(bookId);
+      const chapterKey = String(chapterId);
+      return !!purchasedChapters.value[bookKey]?.has(chapterKey);
+    };
+
+    const markChapterPurchased = (bookId: string | number, chapterId: string | number, _title?: string) => {
+      const bookKey = String(bookId);
+      const chapterKey = String(chapterId);
+      if (!purchasedChapters.value[bookKey]) {
+        purchasedChapters.value[bookKey] = new Set();
+      }
+      purchasedChapters.value[bookKey].add(chapterKey);
     };
 
     const downloadBook = (bookId: string | number, bookInfo?: Partial<ReadingBookItem>) => {
@@ -269,6 +285,8 @@ export const useReadingStore = defineStore(
       updateBookProgress,
       saveReadingProgress,
       getReadingProgress,
+      hasPurchasedChapter,
+      markChapterPurchased,
       downloadBook,
       pauseDownload,
       resumeDownload,

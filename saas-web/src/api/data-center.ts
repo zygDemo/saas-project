@@ -1,5 +1,5 @@
 import request from '@/utils/http'
-import type { BusinessPage, BusinessQuery } from './business'
+import type { BasePageResponse, PageQuery } from '@/types/api/contract'
 
 export interface DataCenterStats {
   overview: Record<string, number>
@@ -46,14 +46,14 @@ export interface HeatmapData {
   maxValue: number
 }
 
-export function fetchDataCenterStats(params: Record<string, unknown>) {
+export function fetchDataCenterStats(params: PageQuery) {
   return request.get<DataCenterStats>({
     url: '/data-center/stats',
     params
   })
 }
 
-export function fetchHeatmapData(params?: Record<string, unknown>) {
+export function fetchHeatmapData(params?: PageQuery) {
   return request.get<HeatmapData>({
     url: '/data-center/heatmap',
     params
@@ -61,13 +61,13 @@ export function fetchHeatmapData(params?: Record<string, unknown>) {
 }
 
 export function fetchAuditLogs(params: BusinessQuery) {
-  return request.get<BusinessPage<AuditLogItem>>({
+  return request.get<BasePageResponse<AuditLogItem>>({
     url: '/data-center/audit-logs',
     params
   })
 }
 
-export function fetchAuditLogStats(params?: Record<string, unknown>) {
+export function fetchAuditLogStats(params?: PageQuery) {
   return request.get<AuditLogStats>({
     url: '/data-center/audit-log/stats',
     params

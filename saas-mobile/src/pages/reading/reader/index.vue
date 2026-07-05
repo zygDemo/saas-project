@@ -1031,13 +1031,59 @@ const showChapterList = () => {
 };
 
 const jumpToChapter = async (chapter: Chapter) => {
-  chapterId.value = chapter.id;
-  currentPage.value = 0;
-  showChapterPopup.value = false;
-  checkBookmarkStatus();
-  chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
-  debouncedSaveProgress();
+  if (await validateChapterAccess(chapter)) {
+    chapterId.value = chapter.id;
+    currentPage.value = 0;
+    showChapterPopup.value = false;
+    checkBookmarkStatus();
+    chapterContent.value = await loadChapterContent(bookId.value, chapter.id);
+    debouncedSaveProgress();
+  }
 };
+
+const readChapter = (chapter: Chapter) => {
+  validateChapterAccess(chapter).then((allowed) => {
+    if (!allowed) return;
+    uni.navigateTo({
+      url: `/pages/reading/reader/index?bookId=${bookId.value}&chapterId=${chapter.id}`,
+    });
+  });
+};
+
+async function validateChapterAccess(chapter: Chapter): Promise<boolean> {
+  if (!chapter.isVip) return true;
+  const hasPurchased = readingStore.hasPurchasedChapter(bookId.value, chapter.id);
+  if (hasPurchased) return true;
+  uni.showModal({
+    title: 'VIP 章节',
+    content: '该章节为 VIP 付费内容，是否前往购买？',
+    confirmText: '去购买',
+    cancelText: '取消',
+    success: (res) => {
+      if (res.confirm) {
+        handlePurchaseChapter(chapter);
+      }
+    },
+  });
+  return false;
+}
+
+async function handlePurchaseChapter(chapter: Chapter) {
+  try {
+    uni.showLoading({ title: '处理中...' });
+    // TODO: 接入真实购买接口；此处先写入本地已购标记用于验证流程
+    readingStore.markChapterPurchased(bookId.value, chapter.id, chapter.title);
+    uni.hideLoading();
+    uni.showToast({ title: '购买成功，已解锁章节', icon: 'success' });
+    chapterContent.value = await loadChapterContent(bookId.value, chapter.id);
+    currentPage.value = 0;
+    checkBookmarkStatus();
+    debouncedSaveProgress();
+  } catch (e) {
+    uni.hideLoading();
+    uni.showToast({ title: '购买失败，请重试', icon: 'none' });
+  }
+}
 
 const toggleNightMode = () => {
   isNightMode.value = !isNightMode.value;
