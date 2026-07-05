@@ -4,7 +4,7 @@ import type { Page, Locator } from '@playwright/test'
  * 登录页面对象
  */
 export class LoginPage {
-  private page: Page
+  page: Page
   usernameInput: Locator
   passwordInput: Locator
   loginButton: Locator
@@ -17,16 +17,15 @@ export class LoginPage {
   }
 
   async goto() {
-    await this.page.goto('/pages/auth/login')
-    await this.page.waitForLoadState('networkidle')
-    await this.page.waitForTimeout(1000)
+    await this.page.goto('pages/auth/login')
+    await this.page.waitForTimeout(3000)
   }
 
   async login(username: string, password: string) {
     await this.usernameInput.fill(username)
     await this.passwordInput.fill(password)
     await this.loginButton.click()
-    await this.page.waitForTimeout(2000)
+    await this.page.waitForTimeout(5000)
   }
 
   async loginAsAdmin() {
@@ -34,7 +33,6 @@ export class LoginPage {
   }
 
   async isLoggedIn(): Promise<boolean> {
-    const path = await this.page.evaluate(() => window.location.pathname)
-    return !path.includes('login')
+    return await this.page.locator('text="首页"').first().isVisible()
   }
 }

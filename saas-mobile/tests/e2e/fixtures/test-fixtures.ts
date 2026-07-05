@@ -3,9 +3,6 @@ import { LoginPage } from '../pages/login.page'
 import { OrderListPage } from '../pages/order-list.page'
 import { IdInfoFormPage, CarInfoFormPage, ApplySubmitFormPage } from '../pages/form.page'
 
-/**
- * 测试 fixtures - 自动注入页面对象
- */
 type TestFixtures = {
   loginPage: LoginPage
   orderListPage: OrderListPage
@@ -16,33 +13,44 @@ type TestFixtures = {
 }
 
 export const test = base.extend<TestFixtures>({
-  loginPage: async ({ page }: { page: Page }, use: (r: LoginPage) => Promise<void>) => {
+  loginPage: async ({ page }, use) => {
     await use(new LoginPage(page))
   },
 
-  orderListPage: async ({ page }: { page: Page }, use: (r: OrderListPage) => Promise<void>) => {
+  orderListPage: async ({ page }, use) => {
     await use(new OrderListPage(page))
   },
 
-  idInfoFormPage: async ({ page }: { page: Page }, use: (r: IdInfoFormPage) => Promise<void>) => {
+  idInfoFormPage: async ({ page }, use) => {
     await use(new IdInfoFormPage(page))
   },
 
-  carInfoFormPage: async ({ page }: { page: Page }, use: (r: CarInfoFormPage) => Promise<void>) => {
+  carInfoFormPage: async ({ page }, use) => {
     await use(new CarInfoFormPage(page))
   },
 
-  applySubmitFormPage: async ({ page }: { page: Page }, use: (r: ApplySubmitFormPage) => Promise<void>) => {
+  applySubmitFormPage: async ({ page }, use) => {
     await use(new ApplySubmitFormPage(page))
   },
 
   /**
    * 已登录的页面 fixture
+   * 先访问首页，检查是否已登录，否则执行登录
    */
-  loggedInPage: async ({ page }: { page: Page }, use: (r: Page) => Promise<void>) => {
-    const loginPage = new LoginPage(page)
-    await loginPage.goto()
-    await loginPage.loginAsAdmin()
+  loggedInPage: async ({ page }, use) => {
+    await page.goto('pages/index/index')
+    await page.waitForTimeout(3000)
+
+    // 检查是否需要登录
+    const isLoggedIn = await page.locator('text="首页"').first().isVisible()
+    if (!isLoggedIn) {
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await page.waitForTimeout(2000)
+      await loginPage.loginAsAdmin()
+      await page.waitForTimeout(3000)
+    }
+
     await use(page)
   },
 })

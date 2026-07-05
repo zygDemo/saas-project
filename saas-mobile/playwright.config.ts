@@ -6,24 +6,23 @@ import { defineConfig, devices } from '@playwright/test'
  */
 export default defineConfig({
   testDir: './tests/e2e',
-  fullyParallel: false, // 移动端测试建议串行执行
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 1,
+  retries: 0, // 不重试
   workers: 1,
   reporter: [
     ['html', { outputFolder: 'tests/e2e-report' }],
     ['list'],
   ],
-  timeout: 60000, // 每个测试超时 60 秒
+  timeout: 60000,
   expect: {
     timeout: 10000,
   },
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5173/saas/mobile/',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    // 模拟移动端视口
     viewport: { width: 375, height: 812 },
     deviceScaleFactor: 3,
     isMobile: true,
@@ -40,10 +39,6 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: 'pnpm dev:h5',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  // 不自动启动 dev server，重用已有的
+  webServer: undefined,
 })
