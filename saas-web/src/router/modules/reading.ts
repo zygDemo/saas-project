@@ -20,8 +20,7 @@ export const readingRoutes: AppRouteRecord = {
         keepAlive: true
       }
     },
-        {
-          {
+    {
       path: 'dashboard',
       name: 'ReadingDashboard',
       component: '/reading/dashboard/index',
