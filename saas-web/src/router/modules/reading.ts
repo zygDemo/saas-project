@@ -11,16 +11,6 @@ export const readingRoutes: AppRouteRecord = {
   },
   children: [
     {
-      path: 'notes',
-      name: 'ReadingNotes',
-      component: '/reading/notes/index',
-      meta: {
-        title: '阅读笔记',
-        icon: 'ri:sticky-note-line',
-        keepAlive: true
-      }
-    },
-    {
       path: 'dashboard',
       name: 'ReadingDashboard',
       component: '/reading/dashboard/index',
@@ -30,7 +20,8 @@ export const readingRoutes: AppRouteRecord = {
         keepAlive: true
       }
     },
-          path: 'bookshelf',
+    {
+      path: 'bookshelf',
       name: 'ReadingBookshelf',
       component: '/reading/bookshelf/index',
       meta: {
@@ -67,6 +58,16 @@ export const readingRoutes: AppRouteRecord = {
           { title: '编辑', authMark: 'edit' },
           { title: '删除', authMark: 'delete' }
         ]
+      }
+    },
+    {
+      path: 'notes',
+      name: 'ReadingNotes',
+      component: '/reading/notes/index',
+      meta: {
+        title: '阅读笔记',
+        icon: 'ri:sticky-note-line',
+        keepAlive: true
       }
     },
     {
