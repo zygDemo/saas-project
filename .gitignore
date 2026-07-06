@@ -47,3 +47,6 @@ AGENTS.md
 CODEBUDDY.md
 CLAUDE.md
 .zed/CONVENTIONS.md
+
+# Generated OpenAPI spec
+saas-api/apps/admin-api/openapi/
