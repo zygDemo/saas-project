@@ -143,6 +143,7 @@ model Tenant {
   userBookshelves   UserBookshelf[]
   readingProgresses ReadingProgress[]
   bookReviews       BookReview[]
+  readingNotes ReadingNote[]
   systemParams      SystemParam[]
   announcements     Announcement[]
   collectionRecords CollectionRecord[]
@@ -1013,6 +1014,7 @@ model Book {
   bookshelves UserBookshelf[]
   progress    ReadingProgress[]
   reviews     BookReview[]
+    readingNotes ReadingNote[]
 
   @@index([tenantId])
   @@index([categoryId])
@@ -1040,6 +1042,7 @@ model BookChapter {
 
   @@unique([bookId, sort])
   @@index([tenantId])
+  readingNotes ReadingNote[]
   @@index([bookId])
   deletedAt    DateTime?
 }
@@ -1103,6 +1106,31 @@ model BookReview {
   @@index([userId])
   @@index([bookId])
 }
+
+model ReadingNote {
+  id         Int      @id @default(autoincrement())
+  tenantId   Int
+  userId     Int
+  bookId     Int
+  chapterId  Int
+  highlight  String?  @db.Text // 高亮文本
+  note       String?  @db.Text // 笔记内容
+  color      String   @default("#FFEB3B") // 高亮颜色
+  startPos   Int      @default(0) // 高亮起始位置
+  endPos     Int      @default(0) // 高亮结束位置
+  status     Int      @default(1) // 状态 1:正常 0:隐藏
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  book      Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapter   BookChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  @@index([tenantId])
+  @@index([userId])
+  @@index([bookId])
+  @@index([chapterId])
+  deletedAt  DateTime?
+}
+
 // ========== 系统参数管理 ==========
 model SystemParam {
   id        Int      @id @default(autoincrement())

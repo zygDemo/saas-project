@@ -36,6 +36,9 @@ import {
   ReviewQueryDto,
   UpdateReviewStatusDto,
   UploadTxtBookDto,
+  CreateReadingNoteDto,
+  UpdateReadingNoteDto,
+  NoteQueryDto,
 } from './dto/reading.dto';
 
 @ApiTags('读书模块')
@@ -276,4 +279,46 @@ export class ReadingController {
   async getRecommendBooks(@Request() req: RequestUser, @Query('limit') limit?: string) {
     return this.readingService.getRecommendBooks(req.tenantId, limit ? Number(limit) : undefined);
   }
+
+
+  // ==================== 阅读笔记/高亮 ====================
+
+  @Get('notes')
+  @ApiOperation({ summary: '获取当前用户的笔记列表' })
+  async getNotes(@Request() req: RequestUser, @Query() query: NoteQueryDto) {
+    return this.readingService.getNotes(req.tenantId, req.sub, query);
+  }
+
+  @Get('notes/chapter/:bookId/:chapterId')
+  @ApiOperation({ summary: '获取指定章节的笔记' })
+  async getNotesByChapter(
+    @Request() req: RequestUser,
+    @Param('bookId') bookId: number,
+    @Param('chapterId') chapterId: number,
+  ) {
+    return this.readingService.getNotesByChapter(req.tenantId, req.sub, +bookId, +chapterId);
+  }
+
+  @Post('notes')
+  @ApiOperation({ summary: '创建笔记/高亮' })
+  async createNote(@Request() req: RequestUser, @Body() dto: CreateReadingNoteDto) {
+    return this.readingService.createNote(req.tenantId, req.sub, dto);
+  }
+
+  @Put('notes/:id')
+  @ApiOperation({ summary: '更新笔记' })
+  async updateNote(
+    @Param('id') id: number,
+    @Request() req: RequestUser,
+    @Body() dto: UpdateReadingNoteDto,
+  ) {
+    return this.readingService.updateNote(+id, req.tenantId, req.sub, dto);
+  }
+
+  @Delete('notes/:id')
+  @ApiOperation({ summary: '删除笔记' })
+  async deleteNote(@Param('id') id: number, @Request() req: RequestUser) {
+    return this.readingService.deleteNote(+id, req.tenantId, req.sub);
+  }
+
 }

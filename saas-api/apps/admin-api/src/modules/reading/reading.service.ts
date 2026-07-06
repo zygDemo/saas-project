@@ -17,6 +17,9 @@ import {
   CreateReviewDto,
   ReviewQueryDto,
   UpdateReviewStatusDto,
+  CreateReadingNoteDto,
+  UpdateReadingNoteDto,
+  NoteQueryDto,
 } from './dto/reading.dto';
 
 type ReadingReviewRow = Prisma.BookReviewGetPayload<{
@@ -948,4 +951,84 @@ export class ReadingService {
       rating: Number(item.rating),
     }));
   }
+
+
+  // ==================== 阅读笔记/高亮 ====================
+
+  async getNotes(tenantId: number, userId: number, query?: NoteQueryDto) {
+    const where: Record<string, unknown> = { tenantId, userId, deletedAt: null };
+    if (query?.bookId) where.bookId = query.bookId;
+    if (query?.chapterId) where.chapterId = query.chapterId;
+
+    const page = query?.page || 1;
+    const pageSize = query?.pageSize || 20;
+
+    const [items, total] = await Promise.all([
+      this.prisma.readingNote.findMany({
+        where,
+        include: {
+          book: { select: { id: true, title: true, cover: true } },
+          chapter: { select: { id: true, title: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.readingNote.count({ where }),
+    ]);
+
+    return { items, total, page, pageSize };
+  }
+
+  async createNote(tenantId: number, userId: number, dto: CreateReadingNoteDto) {
+    return this.prisma.readingNote.create({
+      data: {
+        tenantId,
+        userId,
+        bookId: dto.bookId,
+        chapterId: dto.chapterId,
+        highlight: dto.highlight || null,
+        note: dto.note || null,
+        color: dto.color || '#FFEB3B',
+        startPos: dto.startPos || 0,
+        endPos: dto.endPos || 0,
+      },
+    });
+  }
+
+  async updateNote(id: number, tenantId: number, userId: number, dto: UpdateReadingNoteDto) {
+    const note = await this.prisma.readingNote.findFirst({
+      where: { id, tenantId, userId, deletedAt: null },
+    });
+    if (!note) throw new NotFoundException('笔记不存在');
+
+    return this.prisma.readingNote.update({
+      where: { id },
+      data: {
+        ...(dto.note !== undefined && { note: dto.note }),
+        ...(dto.color !== undefined && { color: dto.color }),
+        ...(dto.status !== undefined && { status: dto.status }),
+      },
+    });
+  }
+
+  async deleteNote(id: number, tenantId: number, userId: number) {
+    const note = await this.prisma.readingNote.findFirst({
+      where: { id, tenantId, userId, deletedAt: null },
+    });
+    if (!note) throw new NotFoundException('笔记不存在');
+
+    return this.prisma.readingNote.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  async getNotesByChapter(tenantId: number, userId: number, bookId: number, chapterId: number) {
+    return this.prisma.readingNote.findMany({
+      where: { tenantId, userId, bookId, chapterId, deletedAt: null, status: 1 },
+      orderBy: { startPos: 'asc' },
+    });
+  }
+
 }

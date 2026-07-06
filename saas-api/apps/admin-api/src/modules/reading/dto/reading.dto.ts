@@ -409,3 +409,82 @@ export class UploadTxtBookDto {
   @IsString()
   chapterRegex?: string;
 }
+
+
+// ==================== 阅读笔记/高亮 ====================
+
+export class CreateReadingNoteDto {
+  @ApiProperty({ description: '书籍ID' })
+  @IsNumber()
+  bookId: number;
+
+  @ApiProperty({ description: '章节ID' })
+  @IsNumber()
+  chapterId: number;
+
+  @ApiPropertyOptional({ description: '高亮文本' })
+  @IsOptional()
+  @IsString()
+  highlight?: string;
+
+  @ApiPropertyOptional({ description: '笔记内容' })
+  @IsOptional()
+  @IsString()
+  note?: string;
+
+  @ApiPropertyOptional({ description: '高亮颜色', default: '#FFEB3B' })
+  @IsOptional()
+  @IsString()
+  color?: string;
+
+  @ApiPropertyOptional({ description: '高亮起始位置', default: 0 })
+  @IsOptional()
+  @IsNumber()
+  startPos?: number;
+
+  @ApiPropertyOptional({ description: '高亮结束位置', default: 0 })
+  @IsOptional()
+  @IsNumber()
+  endPos?: number;
+}
+
+export class UpdateReadingNoteDto {
+  @ApiPropertyOptional({ description: '笔记内容' })
+  @IsOptional()
+  @IsString()
+  note?: string;
+
+  @ApiPropertyOptional({ description: '高亮颜色' })
+  @IsOptional()
+  @IsString()
+  color?: string;
+
+  @ApiPropertyOptional({ description: '状态 1:正常 0:隐藏' })
+  @IsOptional()
+  @IsNumber()
+  status?: number;
+}
+
+export class NoteQueryDto {
+  @ApiPropertyOptional({ description: '书籍ID' })
+  @IsOptional()
+  @IsNumber()
+  bookId?: number;
+
+  @ApiPropertyOptional({ description: '章节ID' })
+  @IsOptional()
+  @IsNumber()
+  chapterId?: number;
+
+  @ApiPropertyOptional({ description: '页码', default: 1 })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  page?: number;
+
+  @ApiPropertyOptional({ description: '每页数量', default: 20 })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  pageSize?: number;
+}

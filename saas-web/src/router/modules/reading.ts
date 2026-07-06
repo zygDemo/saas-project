@@ -11,7 +11,27 @@ export const readingRoutes: AppRouteRecord = {
   },
   children: [
     {
-      path: 'bookshelf',
+      path: 'notes',
+      name: 'ReadingNotes',
+      component: '/reading/notes/index',
+      meta: {
+        title: '阅读笔记',
+        icon: 'ri:sticky-note-line',
+        keepAlive: true
+      }
+    },
+        {
+          {
+      path: 'dashboard',
+      name: 'ReadingDashboard',
+      component: '/reading/dashboard/index',
+      meta: {
+        title: '阅读统计',
+        icon: 'ri:bar-chart-2-line',
+        keepAlive: true
+      }
+    },
+          path: 'bookshelf',
       name: 'ReadingBookshelf',
       component: '/reading/bookshelf/index',
       meta: {

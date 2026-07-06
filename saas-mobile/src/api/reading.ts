@@ -12,6 +12,7 @@ import type {
   BookshelfItem,
   ReadingStatistics,
   ReviewItem,
+  NoteItem,
   ReviewListResult,
 } from "@/types/api/contract";
 
@@ -27,6 +28,7 @@ export type {
   BookshelfItem,
   ReadingStatistics,
   ReviewItem,
+  NoteItem,
   ReviewListResult,
 }
 
@@ -91,5 +93,21 @@ export function useReadingApi() {
     /** 提交书籍评价 */
     createReview: (data: { bookId: number | string; rating: number; content?: string }) =>
       http.post<ApiResponse<ReviewItem>>("/reading/reviews", data),
-  };
+  
+      // 笔记/高亮
+      getNotes: (params?: { bookId?: number | string; chapterId?: number | string; page?: number; pageSize?: number }) =>
+        http.get<ApiResponse<{ items: NoteItem[]; total: number }>>('/reading/notes', params),
+
+      getNotesByChapter: (bookId: number | string, chapterId: number | string) =>
+        http.get<ApiResponse<NoteItem[]>>(`/reading/notes/chapter/${bookId}/${chapterId}`),
+
+      createNote: (data: { bookId: number | string; chapterId: number | string; highlight?: string; note?: string; color?: string; startPos?: number; endPos?: number }) =>
+        http.post<ApiResponse<NoteItem>>('/reading/notes', data),
+
+      updateNote: (id: number | string, data: { note?: string; color?: string }) =>
+        http.put<ApiResponse<unknown>>(`/reading/notes/${id}`, data),
+
+      deleteNote: (id: number | string) =>
+        http.delete<ApiResponse<unknown>>(`/reading/notes/${id}`),
+    };
 }

@@ -1043,6 +1043,27 @@ async function seedAllMenus(tenantId: number) {
     sort: 555,
     keepAlive: true
   })
+
+  const readingNotes = await upsertMenu(tenantId, {
+    parentId: reading.id,
+    path: 'notes',
+    name: 'ReadingNotes',
+    component: '/reading/notes/index',
+    title: '阅读笔记',
+    icon: 'ri:sticky-note-line',
+    sort: 556,
+    keepAlive: true
+  })
+  const readingDashboard = await upsertMenu(tenantId, {
+    parentId: reading.id,
+    path: 'dashboard',
+    name: 'ReadingDashboard',
+    component: '/reading/dashboard/index',
+    title: '阅读统计',
+    icon: 'ri:bar-chart-2-line',
+    sort: 557,
+    keepAlive: true
+  })
   const readingChapters = await upsertMenu(tenantId, {
     parentId: reading.id,
     path: 'chapters/:bookId',
@@ -1233,6 +1254,7 @@ async function seedAllMenus(tenantId: number) {
             ]
           }
         },
+
         {
           parentId: orgConfigRoot.id,
           name: {
@@ -1336,6 +1358,8 @@ async function seedAllMenus(tenantId: number) {
     readingCategory,
     readingComment,
     readingCrawler,
+    readingNotes,
+    readingDashboard,
     tenantMgmt,
     org,
     dept,
@@ -1425,6 +1449,8 @@ async function seedAllMenus(tenantId: number) {
     readingCategory,
     readingComment,
     readingCrawler,
+    readingNotes,
+    readingDashboard,
     readingChapters,
     business,
     businessPrecheck,

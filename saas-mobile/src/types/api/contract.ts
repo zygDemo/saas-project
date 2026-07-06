@@ -163,3 +163,20 @@ export interface ReviewListResult {
   page: number
   pageSize: number
 }
+
+
+export interface NoteItem {
+  id: number
+  bookId: number
+  chapterId: number
+  highlight?: string
+  note?: string
+  color: string
+  startPos: number
+  endPos: number
+  status: number
+  createdAt: string
+  updatedAt: string
+  book?: { id: number; title: string; cover?: string }
+  chapter?: { id: number; title: string }
+}

@@ -301,3 +301,47 @@ export function resumeCrawlTask(taskId: string) {
 export function cancelCrawlTask(taskId: string) {
   return request.post({ url: `/crawler/cancel/${taskId}` })
 }
+
+
+// ==================== 阅读笔记/高亮 ====================
+
+/** 获取当前用户的笔记列表 */
+export function getReadingNotes(params?: {
+  bookId?: number
+  chapterId?: number
+  page?: number
+  pageSize?: number
+}) {
+  return request.get({ url: '/reading/notes', params })
+}
+
+/** 获取指定章节的笔记 */
+export function getNotesByChapter(bookId: number, chapterId: number) {
+  return request.get({ url: `/reading/notes/chapter/${bookId}/${chapterId}` })
+}
+
+/** 创建笔记/高亮 */
+export function createReadingNote(data: {
+  bookId: number
+  chapterId: number
+  highlight?: string
+  note?: string
+  color?: string
+  startPos?: number
+  endPos?: number
+}) {
+  return request.post({ url: '/reading/notes', data })
+}
+
+/** 更新笔记 */
+export function updateReadingNote(
+  id: number,
+  data: { note?: string; color?: string; status?: number },
+) {
+  return request.put({ url: `/reading/notes/${id}`, data, showSuccessMessage: true })
+}
+
+/** 删除笔记 */
+export function deleteReadingNote(id: number) {
+  return request.del({ url: `/reading/notes/${id}`, showSuccessMessage: true })
+}

@@ -18,6 +18,9 @@
       </view>
       <text class="toolbar-title">{{ currentChapter?.title || "" }}</text>
       <view class="toolbar-right">
+      <view class="toolbar-btn" @click="showNotePopup = true">
+        <u-icon name="edit-pen" color="#fff" size="40" />
+      </view>
         <u-icon
           name="share"
           color="#fff"
@@ -461,6 +464,58 @@ function loadSettings() {
 }
 
 const readingApi = useReadingApi();
+
+// 笔记相关状态
+const showNotePopup = ref(false);
+const selectedText = ref('');
+const noteContent = ref('');
+const noteColor = ref('#FFEB3B');
+const noteStartPos = ref(0);
+const noteEndPos = ref(0);
+const chapterNotes = ref<any[]>([]);
+const noteColors = ['#FFEB3B', '#FF9800', '#F44336', '#4CAF50', '#2196F3', '#9C27B0'];
+
+// 加载当前章节的笔记
+async function loadChapterNotes() {
+  try {
+    const res = await readingApi.getNotesByChapter(bookId.value, chapterId.value);
+    chapterNotes.value = Array.isArray(res) ? res : (res?.data || []);
+  } catch { chapterNotes.value = []; }
+}
+
+// 创建笔记/高亮
+async function saveNote() {
+  if (!selectedText.value && !noteContent.value) return;
+  try {
+    await readingApi.createNote({
+      bookId: bookId.value,
+      chapterId: chapterId.value,
+      highlight: selectedText.value || undefined,
+      note: noteContent.value || undefined,
+      color: noteColor.value,
+      startPos: noteStartPos.value,
+      endPos: noteEndPos.value,
+    });
+    uni.showToast({ title: '笔记已保存', icon: 'success' });
+    showNotePopup.value = false;
+    selectedText.value = '';
+    noteContent.value = '';
+    loadChapterNotes();
+  } catch { uni.showToast({ title: '保存失败', icon: 'none' }); }
+}
+
+// 长按选择文本创建高亮
+function onLongPress(e: any) {
+  // #ifdef H5
+  const selection = window.getSelection?.();
+  if (selection && selection.toString().trim()) {
+    selectedText.value = selection.toString().trim();
+    showNotePopup.value = true;
+  }
+  // #endif
+}
+
+
 const readingStore = useReadingStore();
 const showToolbar = ref(false);
 const showChapterPopup = ref(false);
@@ -626,7 +681,28 @@ async function loadChapterContent(
   return content;
 }
 
-const currentChapter = computed(() => {
+
+// 章节预加载：加载当前章节后，后台预加载前后各1章
+async function preloadAdjacentChapters(targetBookId: string, targetChapterId: string) {
+  const idx = chapterList.value.findIndex((c) => c.id === targetChapterId);
+  if (idx === -1) return;
+  const toPreload: string[] = [];
+  if (idx > 0) toPreload.push(chapterList.value[idx - 1].id);
+  if (idx < chapterList.value.length - 1) toPreload.push(chapterList.value[idx + 1].id);
+  for (const cid of toPreload) {
+    const cached = getCachedChapter(targetBookId, cid);
+    if (!cached) {
+      try {
+        const detail = await readingApi.getChapterDetail(cid);
+        const c = detail?.data?.content || '';
+        const t = detail?.data?.title || '';
+        if (c) cacheChapter(targetBookId, cid, c, t);
+      } catch { /* 静默失败，不影响阅读 */ }
+    }
+  }
+}
+
+    const currentChapter = computed(() => {
   return (
     chapterList.value.find((c) => c.id === chapterId.value) ||
     chapterList.value[0]
@@ -809,6 +885,9 @@ const prevChapter = async () => {
   currentPage.value = 0;
   checkBookmarkStatus();
   chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
+    // 预加载相邻章节
+    preloadAdjacentChapters(bookId.value, chapterId.value);
+    loadChapterNotes();
   debouncedSaveProgress();
 };
 
@@ -819,6 +898,9 @@ const nextChapter = async () => {
   currentPage.value = 0;
   checkBookmarkStatus();
   chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
+    // 预加载相邻章节
+    preloadAdjacentChapters(bookId.value, chapterId.value);
+    loadChapterNotes();
   debouncedSaveProgress();
 };
 
@@ -899,13 +981,19 @@ onLoad(async (options) => {
         chapterId.value = savedChapterId;
       }
       if (!chapterId.value && allItems.length) {
-        chapterId.value = String(allItems[0].id);
+        
+    // 进入全屏阅读模式
+    try { uni.hideStatusBar?.(); } catch {}
+    chapterId.value = String(allItems[0].id);
       }
 
       if (chapterId.value) {
         isContentLoading.value = true;
         try {
           chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
+    // 预加载相邻章节
+    preloadAdjacentChapters(bookId.value, chapterId.value);
+    loadChapterNotes();
           // 恢复保存的页码
           if (savedPage > 0) {
             currentPage.value = Math.min(savedPage, Math.max(currentPages.value.length - 1, 0));
@@ -937,6 +1025,8 @@ const toggleToolbar = () => {
 };
 
 const goBack = () => {
+  // 退出全屏阅读模式
+  try { uni.showStatusBar?.(); } catch {}
   uni.navigateBack();
 };
 
@@ -973,6 +1063,9 @@ const onScrollToLower = async () => {
       const nextIdx = currentChapterIndex.value + 1;
       chapterId.value = chapterList.value[nextIdx].id;
       chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
+    // 预加载相邻章节
+    preloadAdjacentChapters(bookId.value, chapterId.value);
+    loadChapterNotes();
       // 滚动到新章节顶部
       resetScrollToTop();
       checkBookmarkStatus();
@@ -1005,6 +1098,9 @@ const onPageChange = async (changeEvent: { current: number; detail?: { current?:
       chapterId.value = chapterList.value[nextIdx].id;
       currentPage.value = 0;
       chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
+    // 预加载相邻章节
+    preloadAdjacentChapters(bookId.value, chapterId.value);
+    loadChapterNotes();
       checkBookmarkStatus();
       debouncedSaveProgress();
     } catch (err) {
@@ -2103,4 +2199,49 @@ uni.onWindowResize(() => {
     padding: 12rpx 80rpx;
   }
 }
+
+.note-popup {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.note-popup-content {
+  width: 85%;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 32rpx;
+}
+.note-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+.note-popup-title { font-size: 32rpx; font-weight: 600; }
+.selected-text { background: #f5f5f5; padding: 16rpx; border-radius: 8rpx; margin-bottom: 20rpx; }
+.selected-label { font-size: 24rpx; color: #999; }
+.selected-content { font-size: 28rpx; margin-top: 8rpx; display: block; }
+.color-picker { margin-bottom: 20rpx; }
+.color-label { font-size: 24rpx; color: #666; margin-bottom: 12rpx; display: block; }
+.color-options { display: flex; gap: 16rpx; }
+.color-dot { width: 48rpx; height: 48rpx; border-radius: 50%; border: 3rpx solid transparent; }
+.color-dot.active { border-color: #333; transform: scale(1.1); }
+.note-textarea {
+  width: 100%;
+  min-height: 160rpx;
+  border: 1rpx solid #e0e0e0;
+  border-radius: 8rpx;
+  padding: 16rpx;
+  font-size: 28rpx;
+  margin-bottom: 24rpx;
+}
+.note-actions { display: flex; gap: 20rpx; justify-content: flex-end; }
+.note-btn { padding: 12rpx 40rpx; border-radius: 8rpx; font-size: 28rpx; border: none; }
+.note-btn.cancel { background: #f5f5f5; color: #666; }
+.note-btn.save { background: var(--u-type-primary, #2979ff); color: #fff; }
+.toolbar-btn { padding: 8rpx 16rpx; }
 </style>

@@ -20,6 +20,7 @@ export type {
   BookshelfItem,
   ReadingStatistics,
   ReviewItem,
+  NoteItem,
   ReviewListResult,
 } from "@/types/api/contract";
 export * from "./business";
