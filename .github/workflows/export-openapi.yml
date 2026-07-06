@@ -35,6 +35,10 @@ jobs:
         working-directory: saas-api
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma Client
+        working-directory: saas-api/apps/admin-api
+        run: npx prisma generate
+
       - name: Build admin-api
         working-directory: saas-api
         run: pnpm build
