@@ -483,21 +483,18 @@ function getEntryStepDone(code) {
     if (stepStatus === "PENDING" || stepStatus === "IN_PROGRESS") return false;
   }
 
-  // 2. 以接口 flowNodes 为准：根据 currentNode 与节点 nodeCode 的大小判断
+  // 2. 根据 currentNode 与 ENTRY_NODE_MAP 的节点数值比较（不依赖 flowNodes 异步数据）
   const stepNodeCode = ENTRY_NODE_MAP[code];
-  if (stepNodeCode && flowNodes.value.length > 0) {
-    const node = flowNodes.value.find((n) => Number(n.nodeCode) === stepNodeCode);
-    if (node) {
-      // 并行子节点：如果当前节点已超过父节点，所有子节点视为已完成
-      if (node.parentNode) {
+  if (stepNodeCode) {
+    // 查 flowNodes 判断是否并行子节点（已加载时）
+    if (flowNodes.value.length > 0) {
+      const node = flowNodes.value.find((n) => Number(n.nodeCode) === stepNodeCode);
+      if (node?.parentNode) {
+        // 并行子节点：父节点已过 或 自身节点已过 → 已完成
         return isNodeDone(node.parentNode) || isNodeDone(stepNodeCode);
       }
-      return isNodeDone(stepNodeCode);
     }
-  }
-
-  // 3. 兜底：无 flowNodes 数据时仍用节点数值比较
-  if (stepNodeCode) {
+    // 顺序节点：直接比较
     return isNodeDone(stepNodeCode);
   }
 
