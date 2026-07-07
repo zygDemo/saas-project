@@ -66,10 +66,31 @@ export default ({ mode }: { mode: string }) => {
       },
       rollupOptions: {
         output: {
-          manualChunks: {
-            'vue-vendor': ['vue', 'vue-router', 'pinia', 'vue-i18n'],
-            'element-plus': ['element-plus', '@element-plus/icons-vue'],
-            'echarts': ['echarts']
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined
+
+            if (id.includes('/echarts@') || id.includes('/zrender@')) return 'vendor-echarts'
+            if (id.includes('/element-plus@') || id.includes('/@element-plus+icons-vue@')) {
+              return 'vendor-element-plus'
+            }
+            if (id.includes('/vue@') || id.includes('/@vue+')) return 'vendor-vue-core'
+            if (id.includes('/vue-router@') || id.includes('/pinia@') || id.includes('/vue-i18n@')) {
+              return 'vendor-vue-router'
+            }
+            if (id.includes('/@vueuse+')) return 'vendor-vueuse'
+            if (id.includes('/xlsx@')) return 'vendor-xlsx'
+            if (id.includes('/lodash-es@')) return 'vendor-lodash'
+            if (id.includes('/crypto-js@') || id.includes('/axios@')) return 'vendor-utils'
+            if (id.includes('/@wangeditor+') || id.includes('/@transloadit+')) return 'vendor-editor'
+            if (id.includes('/mockjs@')) return 'vendor-mock'
+            if (id.includes('/animejs@') || id.includes('/gsap@') || id.includes('/three@')) {
+              return 'vendor-visual'
+            }
+            if (id.includes('/dayjs@') || id.includes('/nprogress@') || id.includes('/mitt@')) {
+              return 'vendor-runtime'
+            }
+
+            return undefined
           }
         }
       }
@@ -134,7 +155,7 @@ export default ({ mode }: { mode: string }) => {
         // sass variable and mixin
         scss: {
           additionalData: `
-            @use "@styles/core/el-light.scss" as *; 
+            @use "@styles/core/el-light.scss" as *;
             @use "@styles/core/mixin.scss" as *;
           `
         }

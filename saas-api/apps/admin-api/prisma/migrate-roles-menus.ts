@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 角色与菜单数据迁移脚本
  *
  * 用途：将 PRD 定义的 9 类角色 + 45 个菜单项同步到数据库
@@ -118,6 +118,7 @@ async function main() {
       parentKey: 'Platform',
       path: 'tenant',
       name: 'TenantMgmt',
+      component: bp,
       title: '租户机构管理',
       icon: 'ri:building-2-line',
       sort: 21,
@@ -127,6 +128,7 @@ async function main() {
       parentKey: 'Platform',
       path: 'package-billing',
       name: 'PackageBilling',
+      component: bp,
       title: '套餐与计费',
       icon: 'ri:money-dollar-circle-line',
       sort: 22,
@@ -136,6 +138,7 @@ async function main() {
       parentKey: 'Platform',
       path: 'product-template',
       name: 'ProductTemplate',
+      component: bp,
       title: '产品与资方模板',
       icon: 'ri:file-copy-line',
       sort: 23,
@@ -145,6 +148,7 @@ async function main() {
       parentKey: 'Platform',
       path: 'supervision',
       name: 'PlatformSupervision',
+      component: bp,
       title: '平台业务监管',
       icon: 'ri:eye-line',
       sort: 24,
@@ -154,6 +158,7 @@ async function main() {
       parentKey: 'Platform',
       path: 'third-party',
       name: 'ThirdPartyService',
+      component: bp,
       title: '第三方服务管理',
       icon: 'ri:plug-line',
       sort: 25,
@@ -163,6 +168,7 @@ async function main() {
       parentKey: 'Platform',
       path: 'work-order',
       name: 'WorkOrder',
+      component: bp,
       title: '运营工单中心',
       icon: 'ri:customer-service-2-line',
       sort: 26,
@@ -182,6 +188,7 @@ async function main() {
       parentKey: 'Platform',
       path: 'org',
       name: 'Org',
+      component: bp,
       title: '机构管理',
       icon: 'ri:building-line',
       sort: 61,
@@ -191,6 +198,7 @@ async function main() {
       parentKey: 'Platform',
       path: 'dept',
       name: 'Dept',
+      component: bp,
       title: '部门管理',
       icon: 'ri:organization-chart',
       sort: 62,
@@ -200,6 +208,7 @@ async function main() {
       parentKey: 'Platform',
       path: 'product',
       name: 'Product',
+      component: bp,
       title: '产品配置',
       icon: 'ri:file-list-line',
       sort: 63,
@@ -209,6 +218,7 @@ async function main() {
       parentKey: 'Platform',
       path: 'funder',
       name: 'Funder',
+      component: bp,
       title: '资方配置',
       icon: 'ri:bank-line',
       sort: 64,
@@ -290,6 +300,7 @@ async function main() {
       parentKey: 'System',
       path: 'region',
       name: 'RegionMgmt',
+      component: bp,
       title: '地区管理',
       icon: 'ri:map-pin-line',
       sort: 45,
@@ -319,6 +330,7 @@ async function main() {
       parentKey: 'System',
       path: 'msg-template',
       name: 'MsgTemplate',
+      component: bp,
       title: '消息模板',
       icon: 'ri:mail-send-line',
       sort: 48,
@@ -328,6 +340,7 @@ async function main() {
       parentKey: 'System',
       path: 'sys-param',
       name: 'SysParam',
+      component: '/system/sys-param',
       title: '系统参数',
       icon: 'ri:settings-line',
       sort: 49,
@@ -337,6 +350,7 @@ async function main() {
       parentKey: 'System',
       path: 'notice',
       name: 'Notice',
+      component: bp,
       title: '公告管理',
       icon: 'ri:notification-line',
       sort: 50,
@@ -366,16 +380,6 @@ async function main() {
     },
     {
       parentKey: 'System',
-      path: 'sys-param',
-      name: 'SystemParam',
-      component: '/system/sys-param',
-      title: '系统参数',
-      icon: 'ri:settings-3-line',
-      sort: 53,
-      keepAlive: true
-    },
-    {
-      parentKey: 'System',
       path: 'announcement',
       name: 'Announcement',
       component: '/system/announcement',
@@ -401,6 +405,7 @@ async function main() {
       parentKey: 'Business',
       path: 'lead',
       name: 'Lead',
+      component: bp,
       title: '线索管理',
       icon: 'ri:customer-service-line',
       sort: 66,
@@ -408,8 +413,9 @@ async function main() {
     },
     {
       parentKey: 'Business',
-      path: 'pre-review',
-      name: 'PreReview',
+      path: 'precheck',
+      name: 'BusinessPrecheck',
+      component: bp,
       title: '预审阶段',
       icon: 'ri:search-line',
       sort: 67,
@@ -418,7 +424,8 @@ async function main() {
     {
       parentKey: 'Business',
       path: 'supplement',
-      name: 'Supplement',
+      name: 'BusinessSupplement',
+      component: bp,
       title: '补件阶段',
       icon: 'ri:file-edit-line',
       sort: 68,
@@ -426,83 +433,92 @@ async function main() {
     },
     {
       parentKey: 'Business',
-      path: 'approval',
-      name: 'Approval',
+      path: 'risk-approval',
+      name: 'BusinessRiskApproval',
+      component: bp,
       title: '风控审批',
       icon: 'ri:shield-check-line',
+      sort: 69,
+      keepAlive: true
+    },
+    {
+      parentKey: 'Business',
+      path: 'funder-final',
+      name: 'BusinessFunderFinal',
+      component: bp,
+      title: '资方终审',
+      icon: 'ri:bank-line',
       sort: 70,
       keepAlive: true
     },
     {
       parentKey: 'Business',
-      path: 'funder-review',
-      name: 'FunderReview',
-      title: '资方终审',
-      icon: 'ri:bank-line',
+      path: 'signing',
+      name: 'BusinessSigning',
+      component: bp,
+      title: '客户签约',
+      icon: 'ri:pen-nib-line',
       sort: 71,
       keepAlive: true
     },
     {
       parentKey: 'Business',
-      path: 'signing',
-      name: 'Signing',
-      title: '客户签约',
-      icon: 'ri:pen-nib-line',
-      sort: 72,
-      keepAlive: true
-    },
-    {
-      parentKey: 'Business',
       path: 'disbursement',
-      name: 'Disbursement',
+      name: 'BusinessDisbursement',
+      component: bp,
       title: '请款放款',
       icon: 'ri:money-cny-circle-line',
-      sort: 73,
+      sort: 72,
       keepAlive: true
     },
     {
       parentKey: 'Business',
       path: 'repayment',
       name: 'BusinessRepayment',
+      component: bp,
       title: '还款管理',
       icon: 'ri:money-cny-circle-line',
-      sort: 75,
+      sort: 74,
       keepAlive: true
     },
     {
       parentKey: 'Business',
       path: 'disbursement-mgmt',
       name: 'BusinessDisbursementMgmt',
+      component: bp,
       title: '放款管理',
       icon: 'ri:bank-card-line',
-      sort: 76,
+      sort: 75,
       keepAlive: true
     },
     {
       parentKey: 'Business',
       path: 'post-loan',
-      name: 'PostLoan',
+      name: 'BusinessPostLoan',
+      component: bp,
       title: '贷后阶段',
       icon: 'ri:refund-line',
-      sort: 74,
+      sort: 73,
       keepAlive: true
     },
     {
       parentKey: 'Business',
       path: 'order-query',
       name: 'BusinessOrderQuery',
+      component: bp,
       title: '综合查询',
       icon: 'ri:search-eye-line',
-      sort: 75,
+      sort: 76,
       keepAlive: true
     },
     {
       parentKey: 'Business',
       path: 'reports',
       name: 'Reports',
+      component: bp,
       title: '报表统计',
       icon: 'ri:pie-chart-line',
-      sort: 76,
+      sort: 77,
       keepAlive: true
     }
   ]
@@ -549,12 +565,6 @@ async function main() {
   // 清理已经废弃的历史菜单，避免继续出现在后端菜单模式的真实侧边栏中
   console.log('\n--- 清理废弃菜单 ---')
   const obsoleteMenuNames = [
-    'BusinessPrecheck',
-    'BusinessSupplement',
-    'BusinessRiskApproval',
-    'BusinessFunderFinal',
-    'BusinessSigning',
-    'BusinessDisbursement',
     'Customer',
     'PreEntry',
     'Application',
@@ -568,7 +578,15 @@ async function main() {
     'FunderFinal',
     'DisbursementNode',
     'PawnBusiness',
-    'OrgConfig'
+    'OrgConfig',
+    'PreReview',
+    'Supplement',
+    'Approval',
+    'FunderReview',
+    'Signing',
+    'Disbursement',
+    'PostLoan',
+    'SystemParam'
   ]
 
   const obsoleteMenus = await prisma.menu.findMany({
@@ -609,45 +627,45 @@ async function main() {
     'Funder'
   )
   const dataCenterIds = filterIds('DataCenter', 'DataStats', 'AuditLog')
-  const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter', 'SystemWorkOrder', 'SystemParam', 'Announcement', 'MobileConfig')
+  const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'FileManage', 'UserCenter', 'SystemWorkOrder', 'SysParam', 'Announcement', 'MobileConfig')
   const bizCoreIds = filterIds(
     'Business',
     'Lead',
-    'PreReview',
-    'Supplement',
-    'Approval',
-    'FunderReview',
-    'Signing',
-    'Disbursement',
-    'PostLoan',
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessRiskApproval',
+    'BusinessFunderFinal',
+    'BusinessSigning',
+    'BusinessDisbursement',
+    'BusinessPostLoan',
     'Reports'
   )
-  const bizApprovalIds = filterIds('Business', 'Lead', 'PreReview', 'Supplement', 'Approval', 'FunderReview')
+  const bizApprovalIds = filterIds('Business', 'Lead', 'BusinessPrecheck', 'BusinessSupplement', 'BusinessRiskApproval', 'BusinessFunderFinal')
   const bizFinanceIds = filterIds(
     'Business',
     'Lead',
-    'PreReview',
-    'Supplement',
-    'Approval',
-    'FunderReview',
-    'Signing',
-    'Disbursement',
-    'PostLoan',
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessRiskApproval',
+    'BusinessFunderFinal',
+    'BusinessSigning',
+    'BusinessDisbursement',
+    'BusinessPostLoan',
     'Reports'
   )
-  const bizCsIds = filterIds('Business', 'Lead', 'PreReview', 'Supplement', 'Approval', 'FunderReview', 'Signing', 'Disbursement', 'PostLoan', 'Reports')
+  const bizCsIds = filterIds('Business', 'Lead', 'BusinessPrecheck', 'BusinessSupplement', 'BusinessRiskApproval', 'BusinessFunderFinal', 'BusinessSigning', 'BusinessDisbursement', 'BusinessPostLoan', 'Reports')
   const bizManagerIds = filterIds(
     'Platform',
     'Business',
     'FlowConfig',
     'Lead',
-    'PreReview',
-    'Supplement',
-    'Approval',
-    'FunderReview',
-    'Signing',
-    'Disbursement',
-    'PostLoan',
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessRiskApproval',
+    'BusinessFunderFinal',
+    'BusinessSigning',
+    'BusinessDisbursement',
+    'BusinessPostLoan',
     'Reports'
   )
   const bizAdminIds = filterIds(
@@ -655,13 +673,13 @@ async function main() {
     'Business',
     'FlowConfig',
     'Lead',
-    'PreReview',
-    'Supplement',
-    'Approval',
-    'FunderReview',
-    'Signing',
-    'Disbursement',
-    'PostLoan',
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessRiskApproval',
+    'BusinessFunderFinal',
+    'BusinessSigning',
+    'BusinessDisbursement',
+    'BusinessPostLoan',
     'Reports'
   )
 
@@ -677,13 +695,13 @@ async function main() {
       ...filterIds(
         'Business',
         'Lead',
-        'PreReview',
-        'Supplement',
-        'Approval',
-        'FunderReview',
-        'Signing',
-        'Disbursement',
-        'PostLoan',
+        'BusinessPrecheck',
+        'BusinessSupplement',
+        'BusinessRiskApproval',
+        'BusinessFunderFinal',
+        'BusinessSigning',
+        'BusinessDisbursement',
+        'BusinessPostLoan',
         'Reports'
       ),
       ...filterIds('WorkOrder')
@@ -734,13 +752,13 @@ async function main() {
     'Funder',
     'FlowConfig',
     'Lead',
-    'PreReview',
-    'Supplement',
-    'Approval',
-    'FunderReview',
-    'Signing',
-    'Disbursement',
-    'PostLoan',
+    'BusinessPrecheck',
+    'BusinessSupplement',
+    'BusinessRiskApproval',
+    'BusinessFunderFinal',
+    'BusinessSigning',
+    'BusinessDisbursement',
+    'BusinessPostLoan',
     'Reports',
     'Menus',
     'DictMgmt',
@@ -749,7 +767,7 @@ async function main() {
     'MsgTemplate',
     'Notice',
     'SystemWorkOrder',
-    'SystemParam',
+    'SysParam',
     'Announcement',
     'MobileConfig'
   ]

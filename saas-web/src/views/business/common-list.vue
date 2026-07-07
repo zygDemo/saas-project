@@ -363,6 +363,8 @@
   import { useRoute } from 'vue-router'
   import { ElTag, ElButton, ElSpace } from 'element-plus'
   import { useBusinessList } from './common/useBusinessList'
+  import { fileGroupFiles, isFileGroup, resolveHeaderStats } from './common/detailHelpers'
+  import type { FileGalleryItem } from './common/detailHelpers'
 
   const {
     loading,
@@ -418,42 +420,14 @@
 
   const route = useRoute()
   type ElementTagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
-  interface FileGalleryItem {
-    id: string | number
-    displayType?: 'image' | 'pdf' | 'video' | 'audio' | 'other' | string
-    fileUrl?: string
-    fileTypeName?: string
-    fileName?: string
-  }
-
   // ==================== 详情增强 ====================
   const hasPhaseTabs = computed(() => phaseNodeTabs.value.length > 0)
 
   // 详情抽屉 header 统计项（数据驱动）
-  const headerStats = computed(() => {
-    const row = currentRow.value || {}
-    return [
-      { label: '申请金额', value: `¥${row.amount || '-'}`, highlight: true },
-      { label: '期限', value: `${row.term || '-'}个月` },
-      { label: '年利率', value: row.rate ? `${(Number(row.rate) * 100).toFixed(2)}%` : '-' },
-      { label: '还款方式', value: row.repaymentMethod || '-' },
-      { label: '创建人', value: row.creatorName || '-' },
-      { label: '车牌号', value: row.plateNumber || '-' },
-      { label: '当前节点', value: row.currentNodeName || '-' }
-    ]
-  })
+  const headerStats = computed(() => resolveHeaderStats(currentRow.value || {}))
   const tagTypes = new Set<ElementTagType>(['primary', 'success', 'warning', 'info', 'danger'])
   const normalizeTagType = (value: unknown): ElementTagType => {
     return tagTypes.has(value as ElementTagType) ? (value as ElementTagType) : 'info'
-  }
-
-  const isFileGroup = (group: { fields: Array<{ prop?: string; value?: unknown }> }) => {
-    return group.fields.length === 1 && group.fields[0].prop === '_files'
-  }
-
-  const fileGroupFiles = (group: { fields: Array<{ value?: unknown }> }): FileGalleryItem[] => {
-    const value = group.fields[0]?.value
-    return Array.isArray(value) ? (value as FileGalleryItem[]) : []
   }
 
   // ArtTable columns 配置（依赖 render function，保留在 .vue 中）
@@ -594,14 +568,21 @@
   const filePreviewUrl = ref('')
   const filePreviewType = ref<'image' | 'pdf' | 'video' | 'audio' | 'other'>('other')
 
-  function previewFile(file: { url?: string; name?: string; fileUrl?: string }) {
-    filePreviewUrl.value = file.fileUrl
-    filePreviewType.value = file.displayType
-    if (file.displayType === 'video' || file.displayType === 'audio') {
+  function previewFile(file: FileGalleryItem) {
+    const fileUrl = file.fileUrl || ''
+    filePreviewUrl.value = fileUrl
+    filePreviewType.value = normalizePreviewType(file.displayType)
+    if (filePreviewType.value === 'video' || filePreviewType.value === 'audio') {
       filePreviewVisible.value = true
-    } else {
-      window.open(file.fileUrl, '_blank')
+    } else if (fileUrl) {
+      window.open(fileUrl, '_blank')
     }
+  }
+
+  function normalizePreviewType(value: FileGalleryItem['displayType']) {
+    return ['image', 'pdf', 'video', 'audio', 'other'].includes(String(value))
+      ? (value as 'image' | 'pdf' | 'video' | 'audio' | 'other')
+      : 'other'
   }
 </script>
 
