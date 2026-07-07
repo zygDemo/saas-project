@@ -552,13 +552,9 @@ async function handleStartFaceSign() {
         currentStep.value = 4;
         uni.showToast({ title: "授信认证完成", icon: "success" });
 
-        // 跳转到申请进度页
+        // 返回订单详情页
         setTimeout(() => {
-          uni.redirectTo({
-            url: buildRoute(APP_ROUTES.carloan.precheck.applyProgress, {
-              creditOrderId: orderId,
-            }),
-          });
+          uni.navigateBack();
         }, 800);
       } else {
         uni.showToast({ title: "授信申请失败", icon: "none" });
