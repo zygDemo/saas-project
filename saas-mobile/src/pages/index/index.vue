@@ -365,7 +365,7 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
     var(--u-type-primary, #4f7cff) 52%,
     var(--u-type-primary-disabled, #8ea7ff) 100%
   );
-  border-radius: 0 0 40rpx 40rpx;
+  border-radius: 0 0 32rpx 32rpx;
   box-shadow: 0 18rpx 40rpx rgba(var(--u-type-primary-rgb, 79, 124, 255), 0.22);
 }
 
@@ -453,9 +453,9 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   gap: 12rpx;
   background: rgba(255, 255, 255, 0.96);
   border: 1rpx solid rgba(226, 232, 240, 0.9);
-  border-radius: 18rpx;
-  padding: 20rpx 24rpx;
-  box-shadow: 0 10rpx 28rpx rgba(30, 41, 59, 0.06);
+  border-radius: 16rpx;
+  padding: 16rpx 24rpx;
+  box-shadow: 4rpx 4rpx 12rpx rgba(30, 41, 59, 0.06), -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.9);
 }
 
 .notice-text {
@@ -472,7 +472,7 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   align-items: center;
   justify-content: space-between;
   gap: 18rpx;
-  margin-bottom: 20rpx;
+  margin-bottom: 16rpx;
 }
 
 .section-head--compact {
@@ -529,7 +529,7 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 .service-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 18rpx;
+  gap: 16rpx;
 }
 
 .service-card {
@@ -537,12 +537,12 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   min-height: 236rpx;
   background: #fff;
   border: 1rpx solid #e8edf5;
-  border-radius: 22rpx;
-  padding: 28rpx 22rpx 24rpx;
+  border-radius: 24rpx;
+  padding: 24rpx 20rpx 20rpx;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  box-shadow: 0 10rpx 28rpx rgba(26, 29, 41, 0.05);
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
   overflow: hidden;
 
@@ -568,11 +568,11 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   z-index: 1;
   width: 82rpx;
   height: 82rpx;
-  border-radius: 20rpx;
+  border-radius: 16rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 22rpx;
+  margin-bottom: 16rpx;
 }
 
 .icon-carloan {
@@ -672,7 +672,7 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   border: 1rpx solid #e8edf5;
   border-radius: 22rpx;
   padding: 26rpx 24rpx 24rpx;
-  box-shadow: 0 10rpx 28rpx rgba(26, 29, 41, 0.05);
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
 }
 
 .shortcut-grid {
@@ -724,8 +724,8 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   gap: 12rpx;
   background: rgba(var(--u-type-primary-rgb, 79, 124, 255), 0.06);
   border: 1rpx solid rgba(var(--u-type-primary-rgb, 79, 124, 255), 0.16);
-  border-radius: 18rpx;
-  padding: 20rpx 24rpx;
+  border-radius: 16rpx;
+  padding: 16rpx 24rpx;
   transition: opacity 0.2s;
 
   &:active {

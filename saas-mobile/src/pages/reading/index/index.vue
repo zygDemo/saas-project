@@ -869,7 +869,7 @@ const refreshRecommend = () => {
   border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
   padding: 30rpx 20rpx;
-  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255,255,255,0.8);
   position: relative;
   z-index: 2;
 }
@@ -995,7 +995,7 @@ const refreshRecommend = () => {
   border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
   padding: 24rpx;
-  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255,255,255,0.8);
 }
 
 .recommend-cover-wrap {
@@ -1113,7 +1113,7 @@ const refreshRecommend = () => {
   border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
   padding: 24rpx;
-  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255,255,255,0.8);
 }
 
 /* 搜索栏 */
@@ -1124,9 +1124,10 @@ const refreshRecommend = () => {
 .search-input-wrap {
   display: flex;
   align-items: center;
-  background: #f6f8fb;
-  border: 1rpx solid #edf2f7;
-  border-radius: 18rpx;
+  background: linear-gradient(180deg, #f0f2f5 0%, #f8fafc 100%);
+  border: 1rpx solid #e0e4ea;
+  box-shadow: inset 2rpx 2rpx 4rpx rgba(0,0,0,0.04);
+  border-radius: 16rpx;
   padding: 16rpx 24rpx;
   gap: 12rpx;
 }
@@ -1501,6 +1502,7 @@ const refreshRecommend = () => {
   border: 1rpx solid rgba(255, 255, 255, 0.28);
   border-radius: 16rpx;
   background: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 2rpx 6rpx rgba(0,0,0,0.06);
   backdrop-filter: blur(12px);
 
   text {
@@ -1538,7 +1540,7 @@ const refreshRecommend = () => {
 
 .recent-cover,
 .book-cover {
-  box-shadow: 0 8rpx 18rpx rgba(17, 24, 39, 0.12);
+  box-shadow: 4rpx 4rpx 12rpx rgba(17, 24, 39, 0.12), -2rpx -2rpx 6rpx rgba(255,255,255,0.6);
 }
 
 @media (prefers-color-scheme: dark) {

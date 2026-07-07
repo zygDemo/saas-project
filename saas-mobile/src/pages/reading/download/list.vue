@@ -243,7 +243,7 @@ const goBookStore = () => {
   border-radius: 24rpx;
   padding: 30rpx 24rpx;
   margin-bottom: 28rpx;
-  box-shadow: var(--app-shadow-card, 0 10rpx 30rpx rgba(26, 29, 41, 0.06));
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255,255,255,0.8);
 }
 
 .stat-item {
@@ -405,8 +405,8 @@ const goBookStore = () => {
   padding: 90rpx 32rpx;
   background: rgba(255, 255, 255, 0.86);
   border: 1rpx solid var(--app-border, #e8edf5);
-  border-radius: 28rpx;
-  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
+  border-radius: 24rpx;
+  box-shadow: 4rpx 4rpx 12rpx rgba(26,29,41,0.06), -2rpx -2rpx 8rpx rgba(255,255,255,0.8), 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
 }
 
 .empty-text {

@@ -1167,7 +1167,7 @@ const viewMore = (type: string) => {
   display: flex;
   align-items: center;
   background: #fff;
-  border-radius: 18rpx;
+  border-radius: 16rpx;
   padding: 16rpx 24rpx;
   gap: 12rpx;
   flex: 1;
@@ -1265,7 +1265,7 @@ const viewMore = (type: string) => {
   height: 240rpx;
   border-radius: 22rpx;
   overflow: hidden;
-  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255,255,255,0.8);
 }
 
 .banner-item {
@@ -1312,7 +1312,7 @@ const viewMore = (type: string) => {
   margin: 0 24rpx 20rpx;
   border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
-  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255,255,255,0.8);
 }
 
 .function-item {
@@ -1455,7 +1455,7 @@ const viewMore = (type: string) => {
   width: 200rpx;
   height: 280rpx;
   border-radius: 14rpx;
-  box-shadow: 0 8rpx 20rpx rgba(26, 29, 41, 0.1);
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.08), -2rpx -2rpx 6rpx rgba(255,255,255,0.6);
 }
 
 .hot-badge {
@@ -1516,7 +1516,7 @@ const viewMore = (type: string) => {
   width: 180rpx;
   height: 240rpx;
   border-radius: 14rpx;
-  box-shadow: 0 8rpx 20rpx rgba(26, 29, 41, 0.1);
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.08), -2rpx -2rpx 6rpx rgba(255,255,255,0.6);
 }
 
 .free-title {
@@ -1549,7 +1549,7 @@ const viewMore = (type: string) => {
   margin: 0 24rpx;
   border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
-  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255,255,255,0.8);
 }
 
 .rank-item {
@@ -1659,7 +1659,7 @@ const viewMore = (type: string) => {
   border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 18rpx;
   overflow: hidden;
-  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255,255,255,0.8);
 }
 
 .booklist-cover-wrap {
@@ -1820,7 +1820,7 @@ const viewMore = (type: string) => {
   border-radius: 22rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
-  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255,255,255,0.8);
 }
 
 .book-cover {

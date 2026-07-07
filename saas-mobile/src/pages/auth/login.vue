@@ -350,7 +350,7 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   background: #fff;
   border-radius: 24rpx;
   padding: 48rpx 40rpx 40rpx;
-  box-shadow: 0 8rpx 40rpx rgba(26, 29, 41, 0.06);
+  box-shadow: 6rpx 6rpx 16rpx rgba(26, 29, 41, 0.08), -3rpx -3rpx 10rpx rgba(255,255,255,0.9);
 }
 
 .form-header {
