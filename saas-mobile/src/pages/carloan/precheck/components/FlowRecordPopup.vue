@@ -75,7 +75,7 @@
           <view class="flow-record__content">
             <view class="flow-record__row">
               <text class="flow-record__node">{{
-                getNodeLabel(item.currentNode)
+                item.currentNodeName || getNodeLabel(item.currentNode)
               }}</text>
               <text class="flow-record__status" :class="statusClass(item)">
                 {{ item.approvalStatus || "处理中" }}
@@ -107,6 +107,7 @@ import { computed } from "vue";
 
 interface FlowRecordItem {
   currentNode: string;
+  currentNodeName?: string;
   approvalStatus: string;
   approveName?: string;
   approvalTime?: string;
@@ -146,7 +147,7 @@ function isPending(item: FlowRecordItem) {
 }
 
 function isPass(item: FlowRecordItem) {
-  return ["通过", "完成", "成功", "已办结"].some((text) =>
+  return ["通过", "完成", "成功", "已办结", "已完成"].some((text) =>
     item.approvalStatus?.includes(text),
   );
 }
