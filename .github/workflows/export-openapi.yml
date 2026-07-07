@@ -69,7 +69,7 @@ jobs:
           echo "Debug: IMPORT_URL=$IMPORT_URL"
           echo "Debug: APIFOX_BASE_URL=$APIFOX_BASE_URL"
           echo "Debug: APIFOX_PROJECT_ID=$APIFOX_PROJECT_ID"
-          STATUS=$(curl -s -o /tmp/apifox-response.json -w "%{http_code}" \
+          STATUS=$(curl -sL -o /tmp/apifox-response.json -w "%{http_code}" \
             -X POST "$IMPORT_URL" \
             -H "Authorization: Bearer $APIFOX_TOKEN" \
             -H "Content-Type: application/json" \
