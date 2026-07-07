@@ -198,6 +198,7 @@ async function handleSubmit() {
   try {
     const res = await businessApi.creditApply({
       uuid,
+      creditOrderId: carloanStore.pageContext.creditOrderId || undefined,
       amount: Number(loanInfo.amount),
       periods: Number(loanInfo.periods),
       // 典当特有字段（后端支持扩展参数）
