@@ -73,9 +73,11 @@ async function loadProductList() {
   try {
     const res = await businessApi.getProductList();
     if (res && res.code === 200 && res.data) {
+      // 后端返回分页格式 {records: [...], total: N}
+      const list = Array.isArray(res.data) ? res.data : (res.data.records || []);
       // 保存完整产品数据
-      productList.value = res.data;
-      productOptions.value = res.data.map((item) => ({
+      productList.value = list;
+      productOptions.value = list.map((item) => ({
         label: item.productName || item.name || String(item),
         value: String(item.id || item.productCode || item.productName),
       }));
@@ -193,9 +195,11 @@ async function loadDictData() {
   try {
     const res = await businessApi.getDictDataList("loan_purpose");
     if (res && res.code === 200 && res.data) {
-      loanPurposeOptions.value = res.data.map((item) => ({
-        label: item.dictLabel || item.name || String(item),
-        value: item.dictValue || item.value || String(item),
+      // 后端返回 {label, value} 格式
+      const list = Array.isArray(res.data) ? res.data : [];
+      loanPurposeOptions.value = list.map((item) => ({
+        label: item.label || item.dictLabel || item.name || String(item),
+        value: item.value || item.dictValue || String(item),
       }));
     }
   } catch (e) {
@@ -320,6 +324,19 @@ async function handleSave() {
 async function handleNext() {
   const success = await saveOrderInfo();
   if (!success) return;
+
+  // 更新订单信息补件状态为已补充
+  if (carloanStore.pageContext.creditOrderId) {
+    try {
+      await businessApi.updateSupplementStatus({
+        creditOrderId: carloanStore.pageContext.creditOrderId,
+        field: 'isSupplementOrder',
+        value: 1
+      });
+    } catch (e) {
+      console.error("更新补件状态失败:", e);
+    }
+  }
 
   const supplementRouteQuery = buildSupplementRouteQuery({
     uuid: carloanStore.pageContext.uuid,

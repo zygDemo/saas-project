@@ -305,9 +305,10 @@ export class MobileVehicleInfoDto {
   @IsString()
   vehicleImgUrl?: string
 
-  @ApiProperty({ description: '车牌号码' })
+  @ApiPropertyOptional({ description: '车牌号码' })
+  @IsOptional()
   @IsString()
-  plateNumber: string
+  plateNumber?: string
 
   @ApiPropertyOptional({ description: '车辆品牌' })
   @IsOptional()
@@ -318,9 +319,10 @@ export class MobileVehicleInfoDto {
   @IsString()
   vehicleModel: string
 
-  @ApiProperty({ description: '所属人姓名' })
+  @ApiPropertyOptional({ description: '所属人姓名' })
+  @IsOptional()
   @IsString()
-  vehicleOwner: string
+  vehicleOwner?: string
 
   @ApiPropertyOptional({ description: '住址' })
   @IsOptional()
@@ -516,6 +518,34 @@ export class MobileCreditApplyDto {
   @IsNumber()
   @Min(0)
   deposit?: number
+
+  @ApiPropertyOptional({ description: '贷款用途' })
+  @IsOptional()
+  @IsString()
+  loanPurpose?: string
+
+  @ApiPropertyOptional({ description: '产品ID' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  productId?: number
+
+  @ApiPropertyOptional({ description: '还款方式' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  repaymentMethod?: number
+
+  @ApiPropertyOptional({ description: '执行利率' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  executeRate?: number
+
+  @ApiPropertyOptional({ description: '申请ID' })
+  @IsOptional()
+  @IsString()
+  id?: string
 }
 
 export class MobileCreditUpdateDto extends PartialType(MobileCreditApplyDto) {

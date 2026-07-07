@@ -811,6 +811,10 @@ model Application {
   sourceLeadId       Int? // 来源线索
   supplementReason   String? // 补件原因
   supplementDeadline DateTime? // 补件截止时间
+  isSupplementCustomer Int? @default(0) // 客户资料补件状态: 0-未知 1-已补充 2-待补充
+  isSupplementVehicle  Int? @default(0) // 车辆资料补件状态
+  isSupplementOrder    Int? @default(0) // 订单信息补件状态
+  isSupplementFile     Int? @default(0) // 文件信息补件状态
   approvedAmount     Decimal?          @db.Decimal(15, 2) // 审批通过金额
   approvedTerm       Int? // 审批通过期限
   approvedRate       Decimal?          @db.Decimal(5, 4) // 审批通过利率

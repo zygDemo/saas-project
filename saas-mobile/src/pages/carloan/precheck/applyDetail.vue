@@ -508,6 +508,8 @@ function getEntryStepDone(code) {
   }
 
   if (code === "ID_CARD" || code === "CUSTOMER_SUPPLEMENT") {
+    // 补件状态优先
+    if (code === "CUSTOMER_SUPPLEMENT" && detail.value?.isSupplementCustomer === 1) return true;
     return Boolean(
       entryProgress.value?.ID_CARD === 1 ||
       detailUuid.value ||
@@ -521,6 +523,8 @@ function getEntryStepDone(code) {
     );
   }
   if (code === "VEHICLE" || code === "VEHICLE_SUPPLEMENT") {
+    // 补件状态优先
+    if (code === "VEHICLE_SUPPLEMENT" && detail.value?.isSupplementVehicle === 1) return true;
     return Boolean(
       detail.value?.vehicle?.plateNumber ||
       detail.value?.plateNumber ||
@@ -528,6 +532,8 @@ function getEntryStepDone(code) {
     );
   }
   if (code === "APPLICATION" || code === "ORDER_SUPPLEMENT") {
+    // 补件状态优先
+    if (code === "ORDER_SUPPLEMENT" && detail.value?.isSupplementOrder === 1) return true;
     return Boolean(
       detail.value?.periods || detail.value?.pushQuota || detail.value?.amount,
     );
@@ -544,6 +550,8 @@ function getEntryStepDone(code) {
     );
   }
   if (code === "FILE_SUPPLEMENT") {
+    // 补件状态优先
+    if (detail.value?.isSupplementFile === 1) return true;
     return Boolean(
       detail.value?.fileCount ||
       detail.value?.attachmentCount ||
@@ -659,7 +667,7 @@ function goStageStep(item) {
       detailRouteQuery,
     ),
     authSign: buildRoute(
-      APP_ROUTES.carloan.signing.authSign,
+      APP_ROUTES.carloan.signing.videoFaceSign,
       detailRouteQuery,
     ),
     idInfoSupplement: buildRoute(

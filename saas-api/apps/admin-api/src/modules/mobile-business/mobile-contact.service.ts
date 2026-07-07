@@ -57,7 +57,7 @@ export class MobileContactService {
     if (!customer) return []
 
     return this.prisma.customerContact.findMany({
-      where: { customerId: customer.id },
+      where: { customerId: customer.id, deletedAt: null },
       orderBy: { id: 'desc' }
     })
   }

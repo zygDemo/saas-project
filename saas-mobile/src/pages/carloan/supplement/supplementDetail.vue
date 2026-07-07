@@ -90,7 +90,7 @@
 
 <script setup>
 import { ref, computed } from "vue";
-import { onLoad } from "@dcloudio/uni-app";
+import { onLoad, onShow } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { $u } from "uview-pro";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
@@ -124,6 +124,13 @@ const suppStatus = ref({
 onLoad((options) => {
   creditOrderId.value = options?.creditOrderId || "";
   uuidVal.value = options?.uuid || "";
+  if (creditOrderId.value) {
+    loadCreditDetail();
+  }
+});
+
+// 页面显示时刷新数据（从子页面返回时）
+onShow(() => {
   if (creditOrderId.value) {
     loadCreditDetail();
   }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ApplicationStatus } from '@prisma/client'
 import { hasValue } from '../../common/utils/helpers'
@@ -119,8 +119,29 @@ export class MobileCreditService {
       data: {
         amount: hasValue(dto.amount) ? dto.amount : undefined,
         term: hasValue(dto.periods) ? dto.periods : undefined,
+        purpose: hasValue(dto.loanPurpose) ? dto.loanPurpose : undefined,
+        productId: hasValue(dto.productId) ? dto.productId : undefined,
+        repaymentMethod: hasValue(dto.repaymentMethod) ? String(dto.repaymentMethod) : undefined,
+        rate: hasValue(dto.executeRate) ? dto.executeRate : undefined,
         remark: dto.remark ?? application.remark
       }
+    })
+    const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
+    return mapApplication(updated, apiPrefix)
+  }
+
+  async updateSupplementStatus(creditOrderId: string, field: string, value: number) {
+    const application = await this.prisma.application.findFirst({
+      where: { applicationNo: creditOrderId }
+    })
+    if (!application) throw new NotFoundException('授信申请不存在')
+
+    const validFields = ['isSupplementCustomer', 'isSupplementVehicle', 'isSupplementOrder', 'isSupplementFile']
+    if (!validFields.includes(field)) throw new BadRequestException('无效的字段名')
+
+    const updated = await this.prisma.application.update({
+      where: { id: application.id },
+      data: { [field]: value }
     })
     const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
     return mapApplication(updated, apiPrefix)

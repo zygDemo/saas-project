@@ -113,7 +113,7 @@ const STEP_META_MAP = {
     icon: "edit-pen",
     iconClass: "card-icon-sign",
     desc: "签署授权书，授权资方查询征信等",
-    route: APP_ROUTES.carloan.signing.authSign,
+    route: APP_ROUTES.carloan.signing.videoFaceSign,
   },
   PENDING_PRECHECK: {
     icon: "clock",

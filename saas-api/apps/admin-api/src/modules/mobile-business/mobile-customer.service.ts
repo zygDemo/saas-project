@@ -44,6 +44,7 @@ export class MobileCustomerService {
       if (dto.liveProvince !== undefined) data.liveProvince = dto.liveProvince
       if (dto.liveCity !== undefined) data.liveCity = dto.liveCity
       if (dto.liveDistrict !== undefined) data.liveDistrict = dto.liveDistrict
+      if (dto.liveDetailedAddress !== undefined) data.liveDetailedAddress = dto.liveDetailedAddress
       if (
         dto.liveAddress !== undefined &&
         dto.liveDetailedAddress === undefined &&

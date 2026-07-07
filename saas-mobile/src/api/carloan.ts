@@ -483,6 +483,9 @@ export function useCarloanApi() {
     /** 修改授信申请 */
     updateCredit: (data: Record<string, unknown>) =>
       http.post<ApiResponse<CreditListItem>>("/m/credit/update", data),
+    /** 更新补件子节点状态 */
+    updateSupplementStatus: (data: { creditOrderId: string; field: string; value: number }) =>
+      http.post<ApiResponse<CreditListItem>>("/m/credit/updateSupplementStatus", data),
     /** 获取产品列表 */
     getProductList: () => http.get("/product/list"),
     /** 获取客户身份信息详情 */

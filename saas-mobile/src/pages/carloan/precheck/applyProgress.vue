@@ -74,7 +74,17 @@
                 />
               </view>
               <text class="step-desc">{{ step.desc }}</text>
-              <text v-if="step.time" class="step-time">{{ step.time }}</text>
+              <view v-if="step.approver || step.time" class="step-meta">
+                <text v-if="step.approver" class="step-approver">
+                  操作人：{{ step.approver }}
+                </text>
+                <text v-if="step.time" class="step-time">
+                  {{ step.time }}
+                </text>
+              </view>
+              <text v-if="step.reason" class="step-reason">
+                备注：{{ step.reason }}
+              </text>
             </view>
           </view>
         </view>
@@ -136,7 +146,7 @@
   </app-page>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
@@ -285,14 +295,39 @@ const info = ref({
   repaymentMethod: "",
   status: "",
   submittedAt: "",
+  id: "",
+  uuid: "",
 });
+
+// 流程记录
+interface FlowRecordItem {
+  currentNode: string;
+  currentNodeName?: string;
+  approvalStatus: string;
+  approveName?: string;
+  approvalTime?: string;
+  approvalReason?: string;
+}
+
+const flowRecords = ref<FlowRecordItem[]>([]);
 
 // ── 计算属性 ──
 const statusText = computed(
-  () => STATUS_TEXT[info.value.status] || info.value.status || "未知",
+  () => (STATUS_TEXT as any)[info.value.status] || info.value.status || "未知",
 );
-const statusType = computed(() => STATUS_TYPE[info.value.status] || "primary");
+const statusType = computed(() => (STATUS_TYPE as any)[info.value.status] || "primary");
 const statusIdx = computed(() => ORDER.indexOf(info.value.status));
+
+// 步骤定义 → 流程节点编码映射
+const STEP_NODE_MAP: Record<string, string> = {
+  SUBMITTED: "1100",
+  PENDING_RISK_PRE: "1200",
+  PENDING_FIRST_REVIEW: "1400",
+  PENDING_FINAL_REVIEW: "1500",
+  PENDING_FUNDER_REVIEW: "1600",
+  PENDING_SIGN: "1700",
+  PENDING_DISBURSEMENT: "1900",
+};
 
 const steps = computed(() => {
   const s = info.value.status;
@@ -304,9 +339,9 @@ const steps = computed(() => {
 
     if (s === def.at) {
       status = "current";
-    } else if (REJECT_AT[s] === def.at) {
+    } else if ((REJECT_AT as any)[s] === def.at) {
       status = "rejected";
-    } else if (REJECT_AT[s] && defIdx < ORDER.indexOf(REJECT_AT[s])) {
+    } else if ((REJECT_AT as any)[s] && defIdx < ORDER.indexOf((REJECT_AT as any)[s])) {
       status = "done";
     } else if (curIdx > defIdx) {
       status = "done";
@@ -321,13 +356,22 @@ const steps = computed(() => {
             ? "已拒绝"
             : "";
 
+    // 匹配流程记录
+    const nodeCode = STEP_NODE_MAP[def.at];
+    const record = flowRecords.value.find(
+      (r) => r.currentNode === nodeCode || r.currentNode === def.at,
+    );
+
     return {
       key: def.key,
       title: def.title,
       desc: def.desc,
       status,
       tag,
-      time: def.timeKey ? info.value[def.timeKey] || "" : "",
+      time: record?.approvalTime || (def.timeKey ? (info.value as any)[def.timeKey] || "" : ""),
+      approver: record?.approveName || "",
+      reason: record?.approvalReason || "",
+      recordStatus: record?.approvalStatus || "",
     };
   });
 });
@@ -355,14 +399,14 @@ const canSupplement = computed(
   () => info.value.status === "PENDING_SUPPLEMENT",
 );
 
-function tagType(status) {
+function tagType(status: string) {
   if (status === "done") return "success";
   if (status === "rejected") return "error";
   if (status === "current") return "primary";
   return "info";
 }
 
-function formatMoney(val) {
+function formatMoney(val: number | string) {
   const num = Number(val);
   if (!num && num !== 0) return "—";
   return num.toLocaleString("zh-CN", { minimumFractionDigits: 0 });
@@ -373,7 +417,8 @@ async function loadDetail() {
   loading.value = true;
   try {
     const res = await businessApi.getCreditDetailByOrderId(creditOrderId.value);
-    const d = res?.data || res || {};
+    const raw = res?.data || res || {};
+    const d = (raw as any).data || raw;
     if (!d.id && !d.creditOrderId) return;
     Object.assign(info.value, {
       customerName: d.customerName || d.personName || d.name || "",
@@ -389,7 +434,21 @@ async function loadDetail() {
       repaymentMethod: d.repaymentMethod || "",
       status: d.status || "",
       submittedAt: d.submittedAt || d.createTime || "",
+      id: d.id ? String(d.id) : "",
+      uuid: d.uuid || "",
     });
+
+    // 获取流程记录
+    const orderId = d.id;
+    if (orderId) {
+      try {
+        const lifecycleRes = await businessApi.getLifecycle(orderId);
+        const records = (lifecycleRes?.data || lifecycleRes || []) as FlowRecordItem[];
+        flowRecords.value = Array.isArray(records) ? records : [];
+      } catch (e) {
+        console.warn("获取流程记录失败:", e);
+      }
+    }
   } catch (e) {
     console.warn("获取申请详情失败:", e);
     uni.showToast({ title: "获取详情失败", icon: "none" });
@@ -627,10 +686,31 @@ onLoad((options) => {
   margin-top: 6rpx;
 }
 
+.step-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx 18rpx;
+  margin-top: 8rpx;
+}
+
+.step-approver {
+  font-size: 22rpx;
+  color: #666;
+}
+
 .step-time {
   font-size: 22rpx;
   color: #b0b0b0;
+}
+
+.step-reason {
+  font-size: 22rpx;
+  color: #e6a23c;
   margin-top: 6rpx;
+  background: #fdf6ec;
+  padding: 8rpx 12rpx;
+  border-radius: 8rpx;
+  display: block;
 }
 
 // ── 审批详情 ──

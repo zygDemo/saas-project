@@ -336,6 +336,9 @@ export function mapApplication(application: any, apiPrefix: string, includeDetai
     status: mapCreditStatus(application.status),
     businessNode: mapBusinessNode(application.status),
     productName: application.product?.name,
+    productId: application.productId,
+    executeRate: application.rate ? Number(application.rate) : undefined,
+    repaymentMethod: application.repaymentMethod,
     periods: application.term,
     pushQuota: Number(application.amount).toFixed(2),
     passQuota: application.approvedAmount
@@ -347,6 +350,12 @@ export function mapApplication(application: any, apiPrefix: string, includeDetai
     currentNode: application.currentNode,
     currentStatus: application.currentStatus,
     remark: application.remark,
+    supplementReason: application.supplementReason,
+    supplementDeadline: application.supplementDeadline,
+    isSupplementCustomer: application.isSupplementCustomer || 0,
+    isSupplementVehicle: application.isSupplementVehicle || 0,
+    isSupplementOrder: application.isSupplementOrder || 0,
+    isSupplementFile: application.isSupplementFile || 0,
     approvalRemark: latestApproval?.opinion,
     approvals: includeDetail
       ? approvals.map((item: any) => ({

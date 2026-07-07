@@ -274,6 +274,12 @@ export class MobileCreditController {
     return this.creditService.updateCredit(dto)
   }
 
+  @Post('updateSupplementStatus')
+  @ApiOperation({ summary: '更新补件子节点状态' })
+  updateSupplementStatus(@Body() dto: { creditOrderId: string; field: string; value: number }) {
+    return this.creditService.updateSupplementStatus(dto.creditOrderId, dto.field, dto.value)
+  }
+
   @Get('getCreditList')
   @ApiOperation({ summary: '授信申请列表' })
   getCreditList(@Query() query: MobileCreditListQueryDto) {

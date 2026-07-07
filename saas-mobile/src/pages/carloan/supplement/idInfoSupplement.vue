@@ -271,11 +271,29 @@ async function loadContacts() {
   try {
     const res = await businessApi.getContacts(carloanStore.pageContext.uuid);
     if (res && res.code === 200 && res.data) {
-      contactList.value = Array.isArray(res.data) ? res.data : [];
+      const list = Array.isArray(res.data) ? res.data : [];
+      // 后端字段 → 前端字段映射
+      contactList.value = list.map((item) => ({
+        id: item.id,
+        contactType: item.isEmergency ? 2 : 1,
+        contactName: item.name || "",
+        contactTelephone: item.phone || "",
+        contactIdcard: item.idCard || "",
+        contactRelationship: mapRelationToCode(item.relation),
+      }));
     }
   } catch (e) {
     console.error("加载联系人列表失败", e);
   }
+}
+
+/** 后端关系文字 → 前端关系编码 */
+function mapRelationToCode(relation) {
+  const map = {
+    "配偶": "1", "父母": "2", "子女": "3", "朋友": "4",
+    "兄弟姐妹": "5", "亲戚": "6", "同事": "7", "其他": "8",
+  };
+  return map[relation] || "";
 }
 
 // ========== 联系人操作 ==========
@@ -692,6 +710,19 @@ async function handleSave() {
 async function handleNext() {
   const success = await saveCustomerInfo();
   if (!success) return;
+
+  // 更新客户资料补件状态为已补充
+  if (carloanStore.pageContext.creditOrderId) {
+    try {
+      await businessApi.updateSupplementStatus({
+        creditOrderId: carloanStore.pageContext.creditOrderId,
+        field: 'isSupplementCustomer',
+        value: 1
+      });
+    } catch (e) {
+      console.error("更新补件状态失败:", e);
+    }
+  }
 
   const supplementRouteQuery = buildSupplementRouteQuery({
     uuid: carloanStore.pageContext.uuid,

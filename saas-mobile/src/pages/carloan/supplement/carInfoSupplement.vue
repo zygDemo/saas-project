@@ -474,6 +474,7 @@ async function queryVehicleModel() {
 interface SupplementSubmitData {
   uuid: string;
   creditOrderId?: string;
+  plateNumber?: string;
   vehicleBrand?: string;
   vehicleModel?: string;
   vehicleCode?: string;
@@ -494,6 +495,7 @@ const submitData = reactive<SupplementSubmitData>({
 function updateSubmitData() {
   submitData.uuid = carloanStore.pageContext.uuid;
   submitData.creditOrderId = creditOrderId.value || undefined;
+  submitData.plateNumber = form.plateNumber || undefined;
   submitData.vehicleBrand = form.vehicleBrand || undefined;
   submitData.vehicleModel = form.vehicleModel || undefined;
   submitData.vehicleCode = form.vehicleCode || undefined;
@@ -568,6 +570,19 @@ async function handleSave() {
 async function handleNext() {
   const success = await saveVehicleInfo();
   if (!success) return;
+
+  // 更新车辆资料补件状态为已补充
+  if (creditOrderId.value) {
+    try {
+      await businessApi.updateSupplementStatus({
+        creditOrderId: creditOrderId.value,
+        field: 'isSupplementVehicle',
+        value: 1
+      });
+    } catch (e) {
+      console.error("更新补件状态失败:", e);
+    }
+  }
 
   const supplementRouteQuery = buildSupplementRouteQuery({
     uuid: carloanStore.pageContext.uuid,

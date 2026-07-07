@@ -649,6 +649,18 @@ async function handleSubmit() {
 
   try {
     loading.value = true;
+    // 更新文件信息补件状态为已补充
+    if (carloanStore.pageContext.creditOrderId) {
+      try {
+        await businessApi.updateSupplementStatus({
+          creditOrderId: carloanStore.pageContext.creditOrderId,
+          field: 'isSupplementFile',
+          value: 1
+        });
+      } catch (e) {
+        console.error("更新文件补件状态失败:", e);
+      }
+    }
     await businessApi.completeSupplement(applicationId.value);
     $u.toast("提交成功", "success");
     setTimeout(() => {
