@@ -148,6 +148,8 @@ const flowRecordVisible = ref(false);
 const flowRecordLoading = ref(false);
 const flowRecordList = ref([]);
 const activeFlowTab = ref("precheck");
+const flowSteps = ref([]);
+const flowConfig = ref({});
 let detailId = "";
 
 function safeDecode(value) {
@@ -253,6 +255,24 @@ function normalizeDetailPayload(payload = {}) {
   };
 }
 
+async function loadFlowConfig(nodeCode) {
+  if (!nodeCode) return;
+  try {
+    const [stepsRes, configRes] = await Promise.all([
+      businessApi.getFlowSteps(nodeCode),
+      businessApi.getFlowConfig(nodeCode),
+    ]);
+    if (stepsRes?.code === 200 && stepsRes?.data) {
+      flowSteps.value = stepsRes.data;
+    }
+    if (configRes?.code === 200 && configRes?.data) {
+      flowConfig.value = configRes.data;
+    }
+  } catch (err) {
+    console.warn("获取流程节点配置失败:", err);
+  }
+}
+
 async function loadDetail() {
   const creditOrderId = carloanStore.pageContext.creditOrderId;
   const fallback = buildRouteFallbackDetail();
@@ -279,6 +299,8 @@ async function loadDetail() {
     if (detail.value?.uuid && !carloanStore.pageContext.uuid) {
       carloanStore.pageContext.uuid = String(detail.value.uuid);
     }
+    // 加载流程节点配置
+    await loadFlowConfig(detail.value.nodeCode);
   } catch (err) {
     console.warn("获取订单详情失败:", err);
     detail.value = hasDetailPayload(fallback) ? fallback : null;
@@ -416,7 +438,44 @@ const stageEntryItems = computed(() => {
   return precheckEntryItems;
 });
 
+// 入口步骤 code → 流程节点 code 映射
+const ENTRY_NODE_MAP = {
+  ID_CARD: 1100,
+  VEHICLE: 1110,
+  APPLICATION: 1120,
+  AUTH_SIGN: 1130,
+  PENDING_PRECHECK: 1140,
+  CUSTOMER_SUPPLEMENT: 1310,
+  VEHICLE_SUPPLEMENT: 1320,
+  ORDER_SUPPLEMENT: 1330,
+  FILE_SUPPLEMENT: 1340,
+  PENDING_SUPPLEMENT: 1350,
+  CONFIRM_AMOUNT: 1610,
+  BIND_CARD: 1620,
+  SIGN_CONTRACT: 1630,
+  GPS_APPOINTMENT: 1640,
+  MORTGAGE: 1650,
+};
+
 function getEntryStepDone(code) {
+  // 优先使用接口返回的流程配置状态
+  if (flowConfig.value && flowConfig.value.stepStatus) {
+    const stepStatus = flowConfig.value.stepStatus[code];
+    if (stepStatus === "COMPLETED" || stepStatus === "DONE") {
+      return true;
+    }
+    if (stepStatus === "PENDING" || stepStatus === "IN_PROGRESS") {
+      return false;
+    }
+  }
+
+  // 根据当前流程节点判断：当前节点 > 步骤对应节点 → 该步骤已完成
+  const stepNodeCode = ENTRY_NODE_MAP[code];
+  const currentNodeNum = Number(currentNodeCode.value);
+  if (stepNodeCode && Number.isFinite(currentNodeNum) && currentNodeNum > stepNodeCode) {
+    return true;
+  }
+
   if (code === "ID_CARD" || code === "CUSTOMER_SUPPLEMENT") {
     return Boolean(
       entryProgress.value?.ID_CARD === 1 ||
