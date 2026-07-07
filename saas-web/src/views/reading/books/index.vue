@@ -1,76 +1,38 @@
 <template>
-  <div class="page-content !mb-5">
-    <div class="flex items-center justify-between mb-5">
-      <h1 class="text-2xl font-medium">{{ $t('menus.reading.books') }}</h1>
-      <div class="flex gap-2">
-        <ElButton
-          v-if="selectedIds.length > 0"
-          type="danger"
-          @click="handleBatchDelete"
-        >
-          批量删除 ({{ selectedIds.length }})
-        </ElButton>
-        <ArtExcelExport
-          :data="exportData"
-          filename="图书列表"
-          sheet-name="图书"
-          :auto-index="true"
-          index-column-title="序号"
-          button-text="导出 Excel"
-          :disabled="isLoading"
-          :columns="exportColumns"
-        />
-        <ElButton @click="openUploadDialog" v-auth="'add'">上传 TXT</ElButton>
-        <ElButton type="primary" @click="openAddDialog" v-auth="'add'">新增图书</ElButton>
-      </div>
-    </div>
+  <ReadingPageShell
+    title="图书管理"
+    description="维护图书基础信息、分类、章节入口与 TXT 快速入库。"
+    icon="ri:book-open-line"
+  >
+    <template #actions>
+      <ElButton v-if="selectedIds.length > 0" type="danger" @click="handleBatchDelete">
+        批量删除 ({{ selectedIds.length }})
+      </ElButton>
+      <ArtExcelExport
+        :data="exportData"
+        filename="图书列表"
+        sheet-name="图书"
+        :auto-index="true"
+        index-column-title="序号"
+        button-text="导出 Excel"
+        :disabled="isLoading"
+        :columns="exportColumns"
+      />
+      <ElButton @click="openUploadDialog" v-auth="'add'">上传 TXT</ElButton>
+      <ElButton type="primary" @click="openAddDialog" v-auth="'add'">新增图书</ElButton>
+    </template>
 
-    <!-- 搜索栏 -->
-    <ElRow :gutter="10" class="mb-5">
-      <ElCol :lg="6" :md="8" :sm="12" :xs="24">
-        <ElInput
-          v-model="searchVal"
-          :prefix-icon="Search"
-          clearable
-          placeholder="搜索图书名称/作者"
-          @keyup.enter="handleSearch"
-        />
-      </ElCol>
-      <ElCol :lg="6" :md="8" :sm="12" :xs="24">
-        <ElSelect
-          v-model="categoryFilter"
-          placeholder="选择分类"
-          clearable
-          class="w-full"
-          @change="handleSearch"
-        >
-          <ElOption v-for="cat in categoryList" :key="cat.id" :label="cat.name" :value="cat.id" />
-        </ElSelect>
-      </ElCol>
-      <ElCol :lg="6" :md="8" :sm="12" :xs="24">
-        <ElSelect
-          v-model="statusFilter"
-          placeholder="选择状态"
-          clearable
-          class="w-full"
-          @change="handleSearch"
-        >
-          <ElOption label="上架" :value="1" />
-          <ElOption label="下架" :value="0" />
-        </ElSelect>
-      </ElCol>
-      <ElCol :lg="6" :md="8" :sm="12" :xs="24">
-        <ElButton type="primary" @click="handleSearch">
-          <ElIcon class="mr-1"><Search /></ElIcon>
-          搜索
-        </ElButton>
-        <ElButton @click="handleReset">重置</ElButton>
-      </ElCol>
-    </ElRow>
+    <ArtSearchBar
+      v-model="searchForm"
+      :items="searchItems"
+      :span="6"
+      :show-expand="false"
+      @search="handleSearch"
+      @reset="handleReset"
+    />
 
-    <!-- 图书列表 -->
     <ElCard class="art-table-card">
-      <ArtTableHeader :loading="isLoading" @refresh="loadBooks">
+      <ArtTableHeader :loading="isLoading" @refresh="loadBooks" layout="refresh,size,fullscreen,columns,settings">
         <template #left>
           <ElSpace wrap>
             <ElButton @click="openUploadDialog" v-auth="'add'">上传 TXT</ElButton>
@@ -90,7 +52,6 @@
         @selection-change="handleSelectionChange"
       />
     </ElCard>
-
     <!-- 新增/编辑图书弹窗 -->
     <ElDialog v-model="showDialog" :title="isEdit ? '编辑图书' : '新增图书'" width="700px">
       <ElForm :model="formData" label-width="100px">
@@ -263,12 +224,12 @@
         <ElButton type="primary" @click="handleUploadTxt" :loading="uploading">上传并创建</ElButton>
       </template>
     </ElDialog>
-  </div>
+</ReadingPageShell>
 </template>
 
 <script setup lang="ts">
+  import ReadingPageShell from '../components/ReadingPageShell.vue'
   import { h } from 'vue'
-  import { Search } from '@element-plus/icons-vue'
   import { getBooks, createBook, updateBook, deleteBook, getBookCategories, uploadTxtBook } from '@/api/reading'
   import { ElMessage, ElMessageBox, ElTag, ElButton } from 'element-plus'
   import { useRouter } from 'vue-router'
@@ -342,9 +303,11 @@
 
   const router = useRouter()
   const userStore = useUserStore()
-  const searchVal = ref('')
-  const categoryFilter = ref<number | ''>('')
-  const statusFilter = ref<number | ''>('')
+  const searchForm = reactive<{ keyword: string; categoryId: number | ''; status: number | '' }>({
+    keyword: '',
+    categoryId: '',
+    status: ''
+  })
   const showDialog = ref(false)
   const isEdit = ref(false)
   const editId = ref<number | null>(null)
@@ -404,9 +367,9 @@
   const loadAllDataForExport = async () => {
     try {
       const params: BookQueryParams = { page: 1, pageSize: 10000 }
-      if (searchVal.value) params.keyword = searchVal.value
-      if (categoryFilter.value) params.categoryId = categoryFilter.value
-      if (statusFilter.value !== '') params.status = statusFilter.value
+      if (searchForm.keyword) params.keyword = searchForm.keyword
+      if (searchForm.categoryId) params.categoryId = searchForm.categoryId
+      if (searchForm.status !== '') params.status = searchForm.status
       const res = await getBooks(params) as BookListResponse
       exportData.value = res?.items || []
     } catch {
@@ -548,9 +511,9 @@
         page: currentPage.value,
         pageSize: pageSize.value
       }
-      if (searchVal.value) params.keyword = searchVal.value
-      if (categoryFilter.value) params.categoryId = categoryFilter.value
-      if (statusFilter.value !== '') params.status = statusFilter.value
+      if (searchForm.keyword) params.keyword = searchForm.keyword
+      if (searchForm.categoryId) params.categoryId = searchForm.categoryId
+      if (searchForm.status !== '') params.status = searchForm.status
 
       const res = await getBooks(params) as BookListResponse
       bookList.value = res?.items || []
@@ -567,10 +530,43 @@
     loadBooks()
   }
 
+  const searchItems = computed(() => [
+    {
+      label: '关键词',
+      key: 'keyword',
+      type: 'input',
+      placeholder: '搜索图书名称 / 作者',
+      clearable: true
+    },
+    {
+      label: '分类',
+      key: 'categoryId',
+      type: 'select',
+      props: {
+        placeholder: '选择分类',
+        clearable: true,
+        options: categoryList.value.map((cat) => ({ label: cat.name, value: cat.id }))
+      }
+    },
+    {
+      label: '状态',
+      key: 'status',
+      type: 'select',
+      props: {
+        placeholder: '选择状态',
+        clearable: true,
+        options: [
+          { label: '上架', value: 1 },
+          { label: '下架', value: 0 }
+        ]
+      }
+    }
+  ])
+
   const handleReset = () => {
-    searchVal.value = ''
-    categoryFilter.value = ''
-    statusFilter.value = ''
+    searchForm.keyword = ''
+    searchForm.categoryId = ''
+    searchForm.status = ''
     currentPage.value = 1
     loadBooks()
   }

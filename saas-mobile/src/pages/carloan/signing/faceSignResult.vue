@@ -292,6 +292,7 @@ import { closeBrowser } from "@/composables/useCloseBrowser";
 import { toFilePreviewUrl } from "@/common/file-url";
 import { APP_ROUTES, buildHashRoute, buildRoute } from "@/common/navigation";
 import { buildNavTitleQuery, buildSignRouteQuery } from "@/common/carloan-route-query";
+import { getBaseUrl, getExtraParams, getHashQuery, getNowTime, safeDecode } from "./signing-url";
 
 // ========== 常量 ==========
 
@@ -309,6 +310,9 @@ const DEFAULT_FILES = [
   { name: "担保合同.pdf", status: "已签署", signed: true },
   { name: "服务协议.pdf", status: "已签署", signed: true },
 ] as const;
+
+const SIGN_PROGRESS_STORAGE_KEY = "SIGN_PROGRESS_MAP";
+const ENTRY_PROGRESS_STORAGE_KEY = "ENTRY_PROGRESS_MAP";
 
 // ========== 类型定义 ==========
 
@@ -403,58 +407,6 @@ onLoad((options) => {
     loadResultData(merged);
   }
 });
-
-/** 从 window.location.hash 解析所有查询参数（H5） */
-function getHashQuery(): Record<string, string> {
-  const result: Record<string, string> = {};
-  // #ifdef H5
-  try {
-    const hash = window.location.hash || "";
-    const idx = hash.indexOf("?");
-    if (idx === -1) return result;
-    hash
-      .slice(idx + 1)
-      .split("&")
-      .forEach((pair) => {
-        const eq = pair.indexOf("=");
-        if (eq > -1) {
-          result[safeDecode(pair.slice(0, eq))] = safeDecode(
-            pair.slice(eq + 1),
-          );
-        }
-      });
-  } catch {
-    /* ignore */
-  }
-  // #endif
-  return result;
-}
-
-/** 获取三方追加的额外参数（H5 从 hash 提取，非 H5 返回空） */
-function getExtraParams(): Record<string, string> {
-  // #ifdef H5
-  try {
-    const hash = window.location.hash;
-    if (!hash) return {};
-    const parts = hash.split("?");
-    if (parts.length < 3) return {};
-    const qs = parts.slice(2).join("?");
-    const params: Record<string, string> = {};
-    qs.split("&").forEach((pair) => {
-      const i = pair.indexOf("=");
-      if (i > 0) {
-        params[safeDecode(pair.slice(0, i))] = safeDecode(pair.slice(i + 1));
-      }
-    });
-    return params;
-  } catch {
-    return {};
-  }
-  // #endif
-  // #ifndef H5
-  return {};
-  // #endif
-}
 
 function resolvePageMode(mode: string, title: string, creditOrderId: string) {
   if (mode === "credit" || mode === "faceSign") return mode;
@@ -660,6 +612,35 @@ function parsePassed(val: unknown): boolean | undefined {
   return undefined;
 }
 
+function saveAuthSignProgress() {
+  const key = customerInfo.creditOrderId || callbackCreditOrderId.value;
+  if (!key) return;
+
+  const signProgressMap = uni.getStorageSync(SIGN_PROGRESS_STORAGE_KEY) || {};
+  signProgressMap[key] = {
+    ...(signProgressMap[key] || {}),
+    status: "SIGNED",
+    uuid: callbackUuid.value,
+    customerName: customerInfo.name,
+    customerPhone: customerInfo.phone,
+    updatedAt: Date.now(),
+  };
+  uni.setStorageSync(SIGN_PROGRESS_STORAGE_KEY, signProgressMap);
+
+  const entryProgressMap = uni.getStorageSync(ENTRY_PROGRESS_STORAGE_KEY) || {};
+  entryProgressMap[key] = {
+    ...(entryProgressMap[key] || {}),
+    AUTH_SIGN: 1,
+  };
+  if (callbackUuid.value) {
+    entryProgressMap[callbackUuid.value] = {
+      ...(entryProgressMap[callbackUuid.value] || {}),
+      AUTH_SIGN: 1,
+    };
+  }
+  uni.setStorageSync(ENTRY_PROGRESS_STORAGE_KEY, entryProgressMap);
+}
+
 // ========== 通用：查询签约详情 ==========
 
 type SignStatus = "success" | "processing" | "fail";
@@ -734,6 +715,9 @@ async function handleAuthCallback(
     contractSigned.value = isThirdSign ? isSignSuccess : true;
     contractFiles.value = [...DEFAULT_FILES];
   }
+  if (contractSigned.value) {
+    saveAuthSignProgress();
+  }
   pageFinalize("授权书签署结果");
 }
 
@@ -799,38 +783,6 @@ function formatAmount(val: string): string {
   return num % 1 === 0 ? num.toLocaleString("zh-CN") : num.toFixed(2);
 }
 
-function safeDecode(value: string) {
-  let decoded = String(value ?? "").replace(/\+/g, " ");
-  for (let i = 0; i < 3; i += 1) {
-    try {
-      const next = decodeURIComponent(decoded);
-      if (next === decoded) break;
-      decoded = next;
-    } catch {
-      break;
-    }
-  }
-  return decoded;
-}
-
-function getNowTime() {
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
-    now.getDate(),
-  )} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-}
-
-function getBaseUrl() {
-  // #ifdef H5
-  if (typeof window !== "undefined") {
-    return `${window.location.origin}${window.location.pathname}`;
-  }
-  // #endif
-  return "";
-}
-
-/** 面签模式：发起合同签署 */
 async function handleContractSign() {
   if (signingLoading.value) return;
   signingLoading.value = true;
@@ -934,6 +886,7 @@ async function handleSignContract() {
     }
 
     if (signUrl) {
+      saveAuthSignProgress();
       confirm("即将跳转到授权书签署页面，是否继续？", () => {
         window.location.href = signUrl;
       });

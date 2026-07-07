@@ -93,20 +93,35 @@ const formItems = [
   },
 ];
 
+function applyRouteForm(query = {}) {
+  const amount = query.amount || query.pushQuota || "";
+  if (amount !== "") {
+    form.amount = String(amount);
+  }
+  if (query.periods !== undefined && query.periods !== "") {
+    form.periods = Number(query.periods);
+  }
+}
+
 onLoad((query) => {
-    carloanStore.syncFromRouteQuery(query);
+  const previousContext = { ...carloanStore.pageContext };
+  carloanStore.syncFromRouteQuery(query);
   // 从详情页传入的 uuid 保存到 sessionStore，供提交使用
   if (query.uuid) {
     carloanStore.pageContext.uuid = query.uuid;
     sessionStore.setOrderInfo({ uuid: query.uuid });
+  } else if (previousContext.uuid) {
+    carloanStore.pageContext.uuid = previousContext.uuid;
+    sessionStore.setOrderInfo({ uuid: previousContext.uuid });
   }
   isEditMode.value = query.fromEntry === "1";
-  carloanStore.pageContext.creditOrderId = query.creditOrderId || "";
-  carloanStore.pageContext.customerName = query.name || "";
-  carloanStore.pageContext.customerPhone = query.phone || "";
+  carloanStore.pageContext.creditOrderId = query.creditOrderId || previousContext.creditOrderId || "";
+  carloanStore.pageContext.customerName = query.name || previousContext.customerName || "";
+  carloanStore.pageContext.customerPhone = query.phone || previousContext.customerPhone || "";
   if (carloanStore.pageContext.creditOrderId) {
     sessionStore.setOrderInfo({ creditOrderId: carloanStore.pageContext.creditOrderId });
   }
+  applyRouteForm(query);
 });
 
 const doSubmit = async () => {
@@ -160,6 +175,10 @@ const doSubmit = async () => {
       const progressMap = uni.getStorageSync("ENTRY_PROGRESS_MAP") || {};
       progressMap[progressKey] = progressMap[progressKey] || {};
       progressMap[progressKey].APPLICATION = 1;
+      if (carloanStore.pageContext.uuid && carloanStore.pageContext.uuid !== progressKey) {
+        progressMap[carloanStore.pageContext.uuid] = progressMap[carloanStore.pageContext.uuid] || {};
+        progressMap[carloanStore.pageContext.uuid].APPLICATION = 1;
+      }
       uni.setStorageSync("ENTRY_PROGRESS_MAP", progressMap);
     }
     $u.toast("申请已提交！", "success");

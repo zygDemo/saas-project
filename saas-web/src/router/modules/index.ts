@@ -1,37 +1,25 @@
 import { AppRouteRecord } from '@/types/router'
-import { businessRoutes } from './business'
-import { orgConfigRoutes } from './org-config'
-import { operationCenterRoutes } from './operation-center'
 import { dashboardRoutes } from './dashboard'
+import { platformRoutes } from './platform'
+import { orgConfigRoutes } from './org-config'
 import { dataCenterRoutes } from './data-center'
-import { templateRoutes } from './template'
-import { widgetsRoutes } from './widgets'
-import { examplesRoutes } from './examples'
 import { systemRoutes } from './system'
-import { articleRoutes } from './article'
-import { resultRoutes } from './result'
-import { exceptionRoutes } from './exception'
-import { safeguardRoutes } from './safeguard'
-import { helpRoutes } from './help'
+import { operationCenterRoutes } from './operation-center'
 import { readingRoutes } from './reading'
+import { businessRoutes } from './business'
 
 /**
- * 导出所有模块化路由
+ * 默认菜单路由
+ * 与 prisma/seed.ts、prisma/migrate-roles-menus.ts 保持一致：
+ * 仪表盘 / 平台管理 / 机构配置 / 数据中心 / 系统管理 / 运营中心 / 读书管理 / 车贷业务
  */
 export const routeModules: AppRouteRecord[] = [
   dashboardRoutes,
-  businessRoutes,
+  platformRoutes,
   orgConfigRoutes,
-  operationCenterRoutes,
   dataCenterRoutes,
-  templateRoutes,
-  widgetsRoutes,
-  examplesRoutes,
   systemRoutes,
-  articleRoutes,
-  resultRoutes,
-  exceptionRoutes,
-  safeguardRoutes,
+  operationCenterRoutes,
   readingRoutes,
-  ...helpRoutes
+  businessRoutes
 ]

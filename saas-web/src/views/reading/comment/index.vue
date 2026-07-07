@@ -1,39 +1,20 @@
 <template>
-  <div class="page-content !mb-5">
-    <div class="flex items-center justify-between mb-5">
-      <h1 class="text-2xl font-medium">{{ $t('menus.reading.comment') }}</h1>
-    </div>
+  <ReadingPageShell
+    title="评论管理"
+    description="审核和维护用户书评，快速定位待处理内容。"
+    icon="ri:chat-3-line"
+  >
+    <ArtSearchBar
+      v-model="searchForm"
+      :items="searchItems"
+      :span="8"
+      :show-expand="false"
+      @search="handleSearch"
+      @reset="handleReset"
+    />
 
-    <!-- 搜索栏 -->
-    <ElRow :gutter="10" class="mb-5">
-      <ElCol :lg="6" :md="8" :sm="12" :xs="24">
-        <ElInput
-          v-model="searchVal"
-          :prefix-icon="Search"
-          clearable
-          placeholder="搜索评论内容"
-          @keyup.enter="handleSearch"
-        />
-      </ElCol>
-      <ElCol :lg="4" :md="6" :sm="12" :xs="24">
-        <ElSelect v-model="statusFilter" placeholder="审核状态" clearable class="w-full">
-          <ElOption label="待审核" :value="0" />
-          <ElOption label="已通过" :value="1" />
-          <ElOption label="已驳回" :value="2" />
-        </ElSelect>
-      </ElCol>
-      <ElCol :lg="4" :md="6" :sm="12" :xs="24">
-        <ElButton type="primary" @click="handleSearch">
-          <ElIcon class="mr-1"><Search /></ElIcon>
-          搜索
-        </ElButton>
-        <ElButton @click="handleReset">重置</ElButton>
-      </ElCol>
-    </ElRow>
-
-    <!-- 表格 -->
     <ElCard class="art-table-card">
-      <ArtTableHeader :loading="isLoading" @refresh="loadReviews">
+      <ArtTableHeader :loading="isLoading" @refresh="loadReviews" layout="refresh,size,fullscreen,columns,settings">
         <template #left>
           <ElSpace wrap>
             <ElButton type="primary" @click="handleSearch">刷新</ElButton>
@@ -51,42 +32,37 @@
         @pagination:current-change="handlePageChange"
       />
     </ElCard>
-
     <!-- 评论详情弹窗 -->
     <ElDrawer v-model="showDetail" title="评论详情" size="500px">
       <template v-if="currentComment">
-        <div class="mb-4">
-          <span class="text-sm text-g-500">图书：</span>
-          <span>{{ currentComment.bookName }}</span>
-        </div>
-        <div class="mb-4">
-          <span class="text-sm text-g-500">用户：</span>
-          <span>{{ currentComment.username }}</span>
-        </div>
-        <div class="mb-4">
-          <span class="text-sm text-g-500">评论时间：</span>
-          <span>{{ currentComment.createTime }}</span>
-        </div>
-        <div class="mb-4">
-          <span class="text-sm text-g-500">状态：</span>
-          <ElTag
-            :type="currentComment.status === 'approved' ? 'success' : currentComment.status === 'pending' ? 'warning' : 'danger'"
-          >
-            {{ currentComment.status === 'approved' ? '已通过' : currentComment.status === 'pending' ? '待审核' : '已驳回' }}
-          </ElTag>
+        <div class="comment-detail__meta">
+          <span class="comment-detail__label">图书</span>
+          <span class="comment-detail__value">{{ currentComment.bookName }}</span>
+          <span class="comment-detail__label">用户</span>
+          <span class="comment-detail__value">{{ currentComment.username }}</span>
+          <span class="comment-detail__label">评论时间</span>
+          <span class="comment-detail__value">{{ currentComment.createTime }}</span>
+          <span class="comment-detail__label">状态</span>
+          <span class="comment-detail__value">
+            <ElTag
+              :type="currentComment.status === 'approved' ? 'success' : currentComment.status === 'pending' ? 'warning' : 'danger'"
+            >
+              {{ currentComment.status === 'approved' ? '已通过' : currentComment.status === 'pending' ? '待审核' : '已驳回' }}
+            </ElTag>
+          </span>
         </div>
         <div>
-          <span class="text-sm text-g-500 block mb-2">评论内容：</span>
-          <p class="p-3 bg-g-50 rounded">{{ currentComment.content }}</p>
+          <div class="comment-detail__label mb-2">评论内容</div>
+          <div class="comment-detail__content">{{ currentComment.content }}</div>
         </div>
       </template>
     </ElDrawer>
-  </div>
+</ReadingPageShell>
 </template>
 
 <script setup lang="ts">
+  import ReadingPageShell from '../components/ReadingPageShell.vue'
   import { h } from 'vue'
-  import { Search } from '@element-plus/icons-vue'
   import { getBookReviews, updateReviewStatus, deleteReview } from '@/api/reading'
   import { ElMessage, ElMessageBox, ElTag, ElButton } from 'element-plus'
 
@@ -126,8 +102,10 @@
     response?: { data?: { message?: string } }
   }
 
-  const searchVal = ref('')
-  const statusFilter = ref<number | undefined>(undefined)
+  const searchForm = reactive<{ keyword: string; status?: number }>({
+    keyword: '',
+    status: undefined
+  })
   const isLoading = ref(false)
   const currentPage = ref(1)
   const pageSize = ref(20)
@@ -223,8 +201,8 @@
     isLoading.value = true
     try {
       const params: ReviewQueryParams = { page: currentPage.value, pageSize: pageSize.value }
-      if (searchVal.value) params.keyword = searchVal.value
-      if (statusFilter.value !== undefined) params.status = statusFilter.value
+      if (searchForm.keyword) params.keyword = searchForm.keyword
+      if (searchForm.status !== undefined) params.status = searchForm.status
       const res = (await getBookReviews(params)) as unknown as ReviewApiResponse
       commentList.value = (res?.items || []).map((item: ReviewApiItem) => ({
         id: item.id,
@@ -247,9 +225,33 @@
     loadReviews()
   }
 
+  const searchItems = computed(() => [
+    {
+      label: '评论内容',
+      key: 'keyword',
+      type: 'input',
+      placeholder: '搜索评论内容',
+      clearable: true
+    },
+    {
+      label: '审核状态',
+      key: 'status',
+      type: 'select',
+      props: {
+        placeholder: '审核状态',
+        clearable: true,
+        options: [
+          { label: '待审核', value: 0 },
+          { label: '已通过', value: 1 },
+          { label: '已驳回', value: 2 }
+        ]
+      }
+    }
+  ])
+
   const handleReset = () => {
-    searchVal.value = ''
-    statusFilter.value = undefined
+    searchForm.keyword = ''
+    searchForm.status = undefined
     currentPage.value = 1
     loadReviews()
   }
@@ -310,12 +312,50 @@
   }
 
   // 监听筛选条件变化
-  watch(statusFilter, () => {
-    currentPage.value = 1
-    loadReviews()
-  })
+  watch(
+    () => searchForm.status,
+    () => {
+      currentPage.value = 1
+      loadReviews()
+    }
+  )
 
   onMounted(() => {
     loadReviews()
   })
 </script>
+
+
+<style scoped>
+  .comment-detail__meta {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 10px 12px;
+    margin-bottom: 18px;
+    padding: 14px;
+    background: var(--el-fill-color-extra-light);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
+  }
+
+  .comment-detail__label {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .comment-detail__value {
+    min-width: 0;
+    font-size: 13px;
+    color: var(--el-text-color-primary);
+  }
+
+  .comment-detail__content {
+    padding: 14px;
+    line-height: 1.7;
+    color: var(--el-text-color-primary);
+    white-space: pre-wrap;
+    background: var(--el-fill-color-lighter);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
+  }
+</style>

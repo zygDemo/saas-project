@@ -13,12 +13,16 @@ import { Prisma } from '@prisma/client'
 import { PrismaService } from '../../modules/prisma/prisma.service'
 
 const MAX_PAYLOAD_LENGTH = 2000
+const AUDIT_LOG_RETENTION_DAYS = 3
+const AUDIT_LOG_RETENTION_MS = AUDIT_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000
+const AUDIT_LOG_CLEANUP_INTERVAL_MS = 60 * 60 * 1000
 const SENSITIVE_KEYS = ['authorization', 'password', 'token', 'refreshtoken', 'accessToken']
 const SKIP_AUDIT_PATHS = ['/data-center/audit-logs', '/health']
 
 @Injectable()
 export class RequestLoggerInterceptor implements NestInterceptor {
   private readonly logger = new Logger('HTTP')
+  private lastAuditCleanupAt = 0
 
   constructor(private readonly prisma?: PrismaService) {}
 
@@ -37,9 +41,9 @@ export class RequestLoggerInterceptor implements NestInterceptor {
         this.logRequest(request, apiCode, Date.now() - startedAt, data)
       }),
       catchError((error) => {
-        // 正确识别非 HttpException 的错误状态码
+        // 正确识别非 HttpException 的错误状态码，并保留可排查的异常信息
         const statusCode = resolveErrorStatus(error)
-        this.logRequest(request, statusCode, Date.now() - startedAt, error?.response)
+        this.logRequest(request, statusCode, Date.now() - startedAt, normalizeErrorPayload(error))
         return throwError(() => error)
       })
     )
@@ -81,6 +85,8 @@ export class RequestLoggerInterceptor implements NestInterceptor {
   ) {
     if (!this.prisma) return
 
+    this.cleanupExpiredAuditLogs()
+
     const url = request.originalUrl || request.url
     if (SKIP_AUDIT_PATHS.some((path) => url.includes(path))) return
 
@@ -111,6 +117,31 @@ export class RequestLoggerInterceptor implements NestInterceptor {
         } as Prisma.OperationLogCreateInput
       })
       .catch((error) => this.logger.warn(`Audit log write failed: ${error?.message || error}`))
+  }
+
+
+  private cleanupExpiredAuditLogs() {
+    if (!this.prisma) return
+
+    const now = Date.now()
+    if (now - this.lastAuditCleanupAt < AUDIT_LOG_CLEANUP_INTERVAL_MS) return
+    this.lastAuditCleanupAt = now
+
+    const cutoff = new Date(now - AUDIT_LOG_RETENTION_MS)
+    void this.prisma.operationLog
+      .deleteMany({
+        where: {
+          createdAt: { lt: cutoff }
+        }
+      })
+      .then((result: { count: number }) => {
+        if (result.count > 0) {
+          this.logger.log(
+            `Audit log retention cleaned ${result.count} records older than ${AUDIT_LOG_RETENTION_DAYS} days`
+          )
+        }
+      })
+      .catch((error) => this.logger.warn(`Audit log cleanup failed: ${error?.message || error}`))
   }
 
   private resolveModuleName(url: string) {
@@ -168,6 +199,26 @@ export class RequestLoggerInterceptor implements NestInterceptor {
   private isSensitiveKey(key: string) {
     const normalizedKey = key.toLowerCase()
     return SENSITIVE_KEYS.some((sensitiveKey) => normalizedKey.includes(sensitiveKey.toLowerCase()))
+  }
+}
+
+/** 保留异常关键信息，避免日志审计中的 500 响应为空 */
+function normalizeErrorPayload(error: unknown) {
+  const err = error as {
+    name?: string
+    message?: string
+    stack?: string
+    code?: string
+    response?: unknown
+  }
+
+  if (err?.response) return err.response
+
+  return {
+    name: err?.name || 'Error',
+    message: err?.message || String(error),
+    code: err?.code,
+    stack: err?.stack?.split('\n').slice(0, 6).join('\n')
   }
 }
 

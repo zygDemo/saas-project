@@ -5,8 +5,8 @@ export const systemRoutes: AppRouteRecord = {
   name: 'System',
   component: '/index/index',
   meta: {
-    title: 'menus.system.title',
-    icon: 'ri:user-3-line',
+    title: '系统管理',
+    icon: 'ri:settings-3-line',
     roles: ['R_SUPER', 'R_ADMIN']
   },
   children: [
@@ -15,7 +15,7 @@ export const systemRoutes: AppRouteRecord = {
       name: 'User',
       component: '/system/user',
       meta: {
-        title: 'menus.system.user',
+        title: '用户管理',
         icon: 'ri:user-line',
         keepAlive: true,
         roles: ['R_SUPER', 'R_ADMIN']
@@ -26,7 +26,7 @@ export const systemRoutes: AppRouteRecord = {
       name: 'Role',
       component: '/system/role',
       meta: {
-        title: 'menus.system.role',
+        title: '角色管理',
         icon: 'ri:user-settings-line',
         keepAlive: true,
         roles: ['R_SUPER']
@@ -37,7 +37,7 @@ export const systemRoutes: AppRouteRecord = {
       name: 'Menus',
       component: '/system/menu',
       meta: {
-        title: 'menus.system.menu',
+        title: '菜单管理',
         icon: 'ri:menu-line',
         keepAlive: true,
         roles: ['R_SUPER'],

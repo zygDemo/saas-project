@@ -53,6 +53,10 @@ export const APP_ROUTES = {
       signGpsAppointment: "/pages/carloan/signing/signGpsAppointment",
       signMortgage: "/pages/carloan/signing/signMortgage",
     },
+    postloan: {
+      loanConfirm: "/pages/carloan/postloan/loanConfirm",
+      repaymentPlan: "/pages/carloan/postloan/repaymentPlan",
+    },
   },
   food: {
     home: "/pages/food/index/index",

@@ -28,7 +28,7 @@ function orderPhaseRoute(
       icon,
       keepAlive: true,
       roles: visibleRoles,
-      businessModule: name,
+      businessModule: path,
       defaultQuery: { phaseCode }
     }
   }
@@ -40,11 +40,11 @@ export const businessRoutes: AppRouteRecord = {
   component: '/index/index',
   meta: {
     title: '车贷业务',
-    icon: 'ri:briefcase-4-line',
+    icon: 'ri:briefcase-line',
     roles
   },
   children: [
-    orderPhaseRoute('lead', 'Lead', '线索管理', 'ri:user-search-line', 900, [
+    orderPhaseRoute('lead', 'Lead', '线索管理', 'ri:customer-service-line', 900, [
       'R_SUPER',
       'R_ADMIN',
       'R_SALES_MANAGER',
@@ -86,17 +86,11 @@ export const businessRoutes: AppRouteRecord = {
       'R_FINANCE',
       'R_SALES_MANAGER'
     ]),
-    orderPhaseRoute('post-loan', 'BusinessPostLoan', '贷后阶段', 'ri:refund-2-line', 1900, [
+    orderPhaseRoute('post-loan', 'BusinessPostLoan', '贷后阶段', 'ri:refund-line', 1900, [
       'R_SUPER',
       'R_ADMIN',
       'R_FINANCE',
       'R_CS_COLLECTION'
-    ]),
-    orderPhaseRoute('reports', 'Reports', '报表统计', 'ri:bar-chart-box-line', 1900, [
-      'R_SUPER',
-      'R_ADMIN',
-      'R_FINANCE',
-      'R_SALES_MANAGER'
     ]),
     {
       path: 'repayment',
@@ -119,7 +113,7 @@ export const businessRoutes: AppRouteRecord = {
         icon: 'ri:bank-card-line',
         keepAlive: true,
         roles,
-        businessModule: 'disbursement'
+        businessModule: 'disbursement-mgmt'
       }
     },
     {
@@ -134,6 +128,12 @@ export const businessRoutes: AppRouteRecord = {
         businessModule: 'order-query',
         defaultQuery: { phaseCode: 1000 }
       }
-    }
+    },
+    orderPhaseRoute('reports', 'Reports', '报表统计', 'ri:pie-chart-line', 1900, [
+      'R_SUPER',
+      'R_ADMIN',
+      'R_FINANCE',
+      'R_SALES_MANAGER'
+    ])
   ]
 }

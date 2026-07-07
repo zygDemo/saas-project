@@ -427,41 +427,18 @@ import { computed, ref, watch } from "vue";
 import { onLoad, onShareAppMessage, onUnload } from "@dcloudio/uni-app";
 import { useReadingApi, type ChapterLiteItem, type ReadingStatistics } from "@/api/reading";
 import { useReadingStore } from "@/stores/reading";
-
-// 本地存储 key
-const STORAGE_KEY = "reader_settings";
-const BOOKMARK_STORAGE_KEY = "reader_bookmarks";
-const CHAPTER_CACHE_PREFIX = "reader_ch_cache_";
-const MAX_CACHED_CHAPTERS = 50;
-
-interface Chapter {
-  id: string;
-  title: string;
-  isVip: boolean;
-  content?: string;
-}
-
-interface Bookmark {
-  id: string;
-  chapterId: string;
-  chapterTitle: string;
-  content: string;
-  page: number;
-  time: number;
-}
-
-// 从本地存储读取设置
-function loadSettings() {
-  try {
-    const saved = uni.getStorageSync(STORAGE_KEY);
-    if (saved) {
-      return JSON.parse(saved);
-    }
-  } catch {
-    // ignore
-  }
-  return null;
-}
+import {
+  bgColors,
+  cacheChapter,
+  formatBookmarkTime,
+  getCachedChapter,
+  loadBookmarks,
+  loadSettings,
+  saveBookmarkList,
+  STORAGE_KEY,
+  type Bookmark,
+  type Chapter,
+} from "./reader-helpers";
 
 const readingApi = useReadingApi();
 
@@ -541,17 +518,6 @@ const totalChapters = ref(0);
 const touchStartX = ref(0);
 const touchStartY = ref(0);
 
-const bgColors = [
-  { value: "default", color: "#f5f0e6", name: "默认" },
-  { value: "warm", color: "#efe5d5", name: "暖纸" },
-  { value: "green", color: "#dce8d4", name: "护眼" },
-  { value: "blue", color: "#dce4ee", name: "淡蓝" },
-  { value: "pink", color: "#f0dcd8", name: "粉色" },
-  { value: "yellow", color: "#eee0c4", name: "羊皮" },
-  { value: "gray", color: "#e6e6e6", name: "浅灰" },
-  { value: "dark", color: "#1e1e1e", name: "暗黑" },
-];
-
 const bgColorStyle = computed(() => {
   const color = bgColors.find((c) => c.value === bgColor.value);
   return color?.color || "#f5f0e6";
@@ -559,104 +525,10 @@ const bgColorStyle = computed(() => {
 
 const chapterList = ref<Chapter[]>([]);
 
-// 从本地存储加载书签
-function loadBookmarks(): Bookmark[] {
-  try {
-    const saved = uni.getStorageSync(BOOKMARK_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch {
-    // ignore
-  }
-  return [];
-}
-
 const bookmarks = ref<Bookmark[]>(loadBookmarks());
 
 function saveBookmarks() {
-  try {
-    uni.setStorageSync(BOOKMARK_STORAGE_KEY, JSON.stringify(bookmarks.value));
-  } catch {
-    // ignore
-  }
-}
-
-// ==================== 章节内容离线缓存 ====================
-
-interface ChapterCacheEntry {
-  content: string;
-  title: string;
-  time: number;
-}
-
-/** 获取章节缓存 key */
-function getChapterCacheKey(bookId: string, chapterId: string): string {
-  return `${CHAPTER_CACHE_PREFIX}${bookId}_${chapterId}`;
-}
-
-/** 从缓存中读取章节 */
-function getCachedChapter(bookId: string, chapterId: string): ChapterCacheEntry | null {
-  try {
-    const raw = uni.getStorageSync(getChapterCacheKey(bookId, chapterId));
-    if (raw) {
-      const entry = JSON.parse(raw) as ChapterCacheEntry;
-      // 缓存 7 天有效
-      if (Date.now() - entry.time < 7 * 24 * 60 * 60 * 1000) {
-        return entry;
-      }
-      // 过期则删除
-      uni.removeStorageSync(getChapterCacheKey(bookId, chapterId));
-    }
-  } catch {
-    // ignore
-  }
-  return null;
-}
-
-/** 清理最旧的缓存条目 */
-function trimChapterCache() {
-  try {
-    const keys: string[] = uni.getStorageInfoSync().keys.filter((k) =>
-      k.startsWith(CHAPTER_CACHE_PREFIX),
-    );
-    if (keys.length > MAX_CACHED_CHAPTERS) {
-      // 按时间排序，删除最旧的
-      const entries = keys
-        .map((k) => {
-          try {
-            const raw = uni.getStorageSync(k);
-            const entry = JSON.parse(raw) as ChapterCacheEntry;
-            return { key: k, time: entry.time || 0 };
-          } catch {
-            return { key: k, time: 0 };
-          }
-        })
-        .sort((a, b) => a.time - b.time);
-
-      const toRemove = entries.slice(0, entries.length - MAX_CACHED_CHAPTERS);
-      toRemove.forEach((e) => uni.removeStorageSync(e.key));
-    }
-  } catch {
-    // ignore
-  }
-}
-
-/** 缓存章节内容 */
-function cacheChapter(bookId: string, chapterId: string, content: string, title: string) {
-  if (!content || !bookId || !chapterId) return;
-  try {
-    const entry: ChapterCacheEntry = {
-      content,
-      title,
-      time: Date.now(),
-    };
-    uni.setStorageSync(getChapterCacheKey(bookId, chapterId), JSON.stringify(entry));
-    trimChapterCache();
-  } catch {
-    // 存储空间不足时静默失败
-  }
+  saveBookmarkList(bookmarks.value);
 }
 
 /** 加载章节内容：优先缓存，否则调用 API */
@@ -983,7 +855,9 @@ onLoad(async (options) => {
       if (!chapterId.value && allItems.length) {
         
     // 进入全屏阅读模式
-    try { uni.hideStatusBar?.(); } catch {}
+    try {
+      (uni as unknown as { hideStatusBar?: () => void }).hideStatusBar?.();
+    } catch {}
     chapterId.value = String(allItems[0].id);
       }
 
@@ -1026,7 +900,9 @@ const toggleToolbar = () => {
 
 const goBack = () => {
   // 退出全屏阅读模式
-  try { uni.showStatusBar?.(); } catch {}
+  try {
+    (uni as unknown as { showStatusBar?: () => void }).showStatusBar?.();
+  } catch {}
   uni.navigateBack();
 };
 
@@ -1277,18 +1153,6 @@ const jumpToBookmark = (bookmark: Bookmark) => {
   showBookmarkPopup.value = false;
   checkBookmarkStatus();
   debouncedSaveProgress();
-};
-
-const formatBookmarkTime = (timestamp: number) => {
-  const now = Date.now();
-  const diff = now - timestamp;
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "刚刚";
-  if (minutes < 60) return `${minutes}分钟前`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}小时前`;
-  const days = Math.floor(hours / 24);
-  return `${days}天前`;
 };
 
 const toggleListenMode = () => {

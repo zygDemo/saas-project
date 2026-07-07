@@ -1,39 +1,90 @@
 <template>
-  <u-popup :modelValue="visible" mode="bottom" :round="16" :closeable="true" @update:modelValue="onInput">
+  <u-popup
+    :modelValue="visible"
+    mode="bottom"
+    :border-radius="24"
+    :closeable="true"
+    close-icon-pos="top-right"
+    @update:model-value="onInput"
+  >
     <view class="flow-record-popup">
       <view class="flow-record-header">
-        <view class="flow-record-header__bar" />
-        <text class="flow-record-title">流程记录</text>
-        <text v-if="records.length > 0" class="flow-record-header__count">
-          {{ records.length }} 条记录
-        </text>
+        <view class="flow-record-header__handle" />
+        <view class="flow-record-header__main">
+          <view class="flow-record-header__icon">
+            <u-icon name="map" size="34" color="#fff" />
+          </view>
+          <view class="flow-record-header__text">
+            <text class="flow-record-title">流程进展</text>
+            <text class="flow-record-subtitle">{{ headerSubtitle }}</text>
+          </view>
+        </view>
+        <view v-if="records.length > 0" class="flow-record-summary">
+          <view class="flow-record-summary__item">
+            <text class="flow-record-summary__num">{{ records.length }}</text>
+            <text class="flow-record-summary__label">节点</text>
+          </view>
+          <view class="flow-record-summary__item">
+            <text class="flow-record-summary__num">{{ doneCount }}</text>
+            <text class="flow-record-summary__label">完成</text>
+          </view>
+        </view>
       </view>
+
       <view v-if="loading" class="flow-record-loading">
         <u-loading mode="circle" />
-        <text class="flow-record-loading__text">加载中...</text>
+        <text class="flow-record-loading__text">正在加载进展...</text>
       </view>
+
       <view v-else-if="records.length === 0" class="flow-record-empty">
         <u-empty mode="list" text="暂无流程记录" />
       </view>
-      <view v-else class="flow-record__container">
+
+      <scroll-view v-else scroll-y class="flow-record__container">
         <view
           v-for="(item, idx) in records"
           :key="idx"
           class="flow-record-item"
-          :class="{
-            'flow-record-item--first': idx === 0,
-            'flow-record-item--last': idx === records.length - 1,
-          }"
+          :class="[
+            recordStateClass(item),
+            {
+              'flow-record-item--first': idx === 0,
+              'flow-record-item--last': idx === records.length - 1,
+            },
+          ]"
         >
-          <view class="flow-record__dot" :class="dotClass(item)" />
+          <view class="flow-record__rail">
+            <view class="flow-record__line flow-record__line--top" />
+            <view class="flow-record__dot" :class="dotClass(item)">
+              <u-icon
+                v-if="isPass(item)"
+                name="checkbox-mark"
+                size="22"
+                color="#fff"
+              />
+              <u-icon
+                v-else-if="isReject(item)"
+                name="close"
+                size="22"
+                color="#fff"
+              />
+              <text v-else class="flow-record__dot-text">{{ idx + 1 }}</text>
+            </view>
+            <view class="flow-record__line flow-record__line--bottom" />
+          </view>
           <view class="flow-record__content">
-            <view class="flow-record__header">
-              <text class="flow-record__node">{{ getNodeLabel(item.currentNode) }}</text>
+            <view class="flow-record__row">
+              <text class="flow-record__node">{{
+                getNodeLabel(item.currentNode)
+              }}</text>
               <text class="flow-record__status" :class="statusClass(item)">
-                {{ item.approvalStatus }}
+                {{ item.approvalStatus || "处理中" }}
               </text>
             </view>
-            <view v-if="item.approveName || item.approvalTime" class="flow-record__meta">
+            <view
+              v-if="item.approveName || item.approvalTime"
+              class="flow-record__meta"
+            >
               <text v-if="item.approveName" class="flow-record__approver">
                 {{ item.approveName }}
               </text>
@@ -46,12 +97,14 @@
             </text>
           </view>
         </view>
-      </view>
+      </scroll-view>
     </view>
   </u-popup>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+
 interface FlowRecordItem {
   currentNode: string;
   approvalStatus: string;
@@ -60,7 +113,7 @@ interface FlowRecordItem {
   approvalReason?: string;
 }
 
-defineProps<{
+const props = defineProps<{
   visible: boolean;
   loading: boolean;
   records: FlowRecordItem[];
@@ -75,50 +128,160 @@ function onInput(val: boolean) {
   emit("update:visible", val);
 }
 
+const doneCount = computed(
+  () => props.records.filter((item) => isPass(item)).length,
+);
+
+const headerSubtitle = computed(() => {
+  if (props.loading) return "同步最新处理节点";
+  if (!props.records.length) return "暂无可展示的处理记录";
+  const latest = props.records[0];
+  return `${props.getNodeLabel(latest.currentNode)} · ${latest.approvalStatus || "处理中"}`;
+});
+
+function isPending(item: FlowRecordItem) {
+  return ["待处理", "处理中", "待审核"].some((text) =>
+    item.approvalStatus?.includes(text),
+  );
+}
+
+function isPass(item: FlowRecordItem) {
+  return ["通过", "完成", "成功", "已办结"].some((text) =>
+    item.approvalStatus?.includes(text),
+  );
+}
+
+function isReject(item: FlowRecordItem) {
+  return ["拒绝", "驳回", "失败", "退回"].some((text) =>
+    item.approvalStatus?.includes(text),
+  );
+}
+
 function dotClass(item: FlowRecordItem) {
-  if (item.approvalStatus === "待处理") return "dot-pending";
-  if (item.approvalStatus.includes("通过") || item.approvalStatus === "完成") return "dot-pass";
-  if (item.approvalStatus.includes("拒绝")) return "dot-reject";
+  if (isPending(item)) return "dot-pending";
+  if (isPass(item)) return "dot-pass";
+  if (isReject(item)) return "dot-reject";
   return "dot-default";
 }
 
 function statusClass(item: FlowRecordItem) {
-  if (item.approvalStatus === "待处理") return "status-pending";
-  if (item.approvalStatus.includes("通过") || item.approvalStatus === "完成") return "status-pass";
-  if (item.approvalStatus.includes("拒绝")) return "status-reject";
+  if (isPending(item)) return "status-pending";
+  if (isPass(item)) return "status-pass";
+  if (isReject(item)) return "status-reject";
   return "status-default";
+}
+
+function recordStateClass(item: FlowRecordItem) {
+  if (isPending(item)) return "flow-record-item--pending";
+  if (isPass(item)) return "flow-record-item--pass";
+  if (isReject(item)) return "flow-record-item--reject";
+  return "flow-record-item--default";
 }
 </script>
 
 <style lang="scss" scoped>
 .flow-record-popup {
-  padding: 24rpx 0;
+  min-height: 420rpx;
+  max-height: 86vh;
+  overflow: hidden;
+  border-radius: 28rpx 28rpx 0 0;
+  padding: 18rpx 0 calc(26rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(
+    180deg,
+    rgba(235, 245, 255, 0.96) 0%,
+    rgba(248, 251, 255, 0.98) 38%,
+    #ffffff 100%
+  );
 }
 
 .flow-record-header {
   display: flex;
-  align-items: center;
-  gap: 12rpx;
-  padding: 0 24rpx 20rpx;
+  flex-direction: column;
+  gap: 20rpx;
+  padding: 0 30rpx 24rpx;
 }
 
-.flow-record-header__bar {
-  width: 8rpx;
-  height: 28rpx;
-  background: #4f7cff;
-  border-radius: 4rpx;
+.flow-record-header__handle {
+  align-self: center;
+  width: 72rpx;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: #dce3ef;
+}
+
+.flow-record-header__main {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  width: 100%;
+}
+
+.flow-record-header__icon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 22rpx;
+  background: linear-gradient(135deg, #4f7cff, #41c6a8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12rpx 24rpx rgba(67, 124, 255, 0.22);
+}
+
+.flow-record-header__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
 }
 
 .flow-record-title {
-  font-size: 32rpx;
-  font-weight: 700;
+  font-size: 36rpx;
+  font-weight: 800;
   color: #1a1d29;
+  line-height: 1.2;
 }
 
-.flow-record-header__count {
+.flow-record-subtitle {
   font-size: 24rpx;
   color: #8b93a7;
-  margin-left: auto;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flow-record-summary {
+  display: flex;
+  width: 100%;
+  padding: 18rpx 0;
+  border-radius: 18rpx;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1rpx solid rgba(226, 235, 246, 0.95);
+}
+
+.flow-record-summary__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  & + & {
+    border-left: 1rpx solid #edf2f8;
+  }
+}
+
+.flow-record-summary__num {
+  font-size: 34rpx;
+  font-weight: 800;
+  color: #2f68e8;
+  line-height: 1.1;
+}
+
+.flow-record-summary__label {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #8b93a7;
 }
 
 .flow-record-loading {
@@ -126,7 +289,7 @@ function statusClass(item: FlowRecordItem) {
   align-items: center;
   justify-content: center;
   gap: 12rpx;
-  padding: 40rpx 0;
+  padding: 96rpx 0 110rpx;
   color: #86909c;
 }
 
@@ -137,121 +300,213 @@ function statusClass(item: FlowRecordItem) {
 
 .flow-record-empty {
   text-align: center;
-  padding: 40rpx 0;
+  padding: 72rpx 0 90rpx;
   color: #86909c;
   font-size: 26rpx;
 }
 
 .flow-record__container {
-  padding: 0 24rpx 40rpx;
-  max-height: 80vh;
-  overflow-y: auto;
+  max-height: 58vh;
+  padding: 4rpx 28rpx 8rpx;
+  box-sizing: border-box;
 }
 
 .flow-record-item {
-  display: flex;
-  gap: 20rpx;
-  padding: 24rpx 0;
+  display: grid;
+  grid-template-columns: 74rpx minmax(0, 1fr);
+  column-gap: 12rpx;
+  min-height: 126rpx;
   position: relative;
+}
 
-  &:not(:last-child)::after {
-    content: "";
-    position: absolute;
-    left: 16rpx;
-    top: 56rpx;
-    bottom: 0;
-    width: 2rpx;
-    background-color: #f0f0f0;
-  }
+.flow-record__rail {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 126rpx;
+}
+
+.flow-record__line {
+  width: 4rpx;
+  flex: 1;
+  min-height: 26rpx;
+  background: linear-gradient(
+    180deg,
+    rgba(75, 122, 255, 0.22),
+    rgba(38, 198, 168, 0.22)
+  );
+}
+
+.flow-record__line--top {
+  border-radius: 999rpx 999rpx 0 0;
+}
+
+.flow-record__line--bottom {
+  border-radius: 0 0 999rpx 999rpx;
+}
+
+.flow-record-item--first .flow-record__line--top,
+.flow-record-item--last .flow-record__line--bottom {
+  opacity: 0;
 }
 
 .flow-record__dot {
-  width: 32rpx;
-  height: 32rpx;
+  width: 54rpx;
+  height: 54rpx;
   border-radius: 50%;
-  flex-shrink: 0;
-  margin-top: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 18rpx rgba(31, 45, 86, 0.14);
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -10rpx;
+    border-radius: 50%;
+    border: 2rpx solid rgba(64, 150, 255, 0.12);
+  }
 
   &.dot-pending {
-    background-color: #e5e6eb;
-    border: 4rpx solid #c9cdd1;
+    background: #fff8ed;
+    color: #f59e0b;
+    border: 4rpx solid #ffe3b7;
   }
+
   &.dot-pass {
-    background-color: #00b42a;
-    border: 4rpx solid #86e8ab;
+    background: linear-gradient(135deg, #20c997, #3ecf8e);
+    border: 4rpx solid #d9f8ea;
   }
+
   &.dot-reject {
-    background-color: #f53f3f;
-    border: 4rpx solid #ffb3b3;
+    background: linear-gradient(135deg, #ff6b6b, #f53f3f);
+    border: 4rpx solid #ffe0e0;
   }
+
   &.dot-default {
-    background-color: #168cff;
-    border: 4rpx solid #b1d4ff;
+    background: linear-gradient(135deg, #4f7cff, #168cff);
+    border: 4rpx solid #dbe8ff;
   }
+}
+
+.flow-record__dot-text {
+  font-size: 22rpx;
+  font-weight: 800;
+  color: currentColor;
+  line-height: 1;
 }
 
 .flow-record__content {
-  flex: 1;
   min-width: 0;
+  align-self: center;
+  margin: 10rpx 0 18rpx;
+  padding: 22rpx 22rpx 20rpx;
+  border-radius: 18rpx;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1rpx solid rgba(226, 235, 246, 0.96);
+  box-shadow: 0 8rpx 22rpx rgba(31, 45, 86, 0.055);
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: -10rpx;
+    top: 34rpx;
+    width: 18rpx;
+    height: 18rpx;
+    background: inherit;
+    border-left: 1rpx solid rgba(226, 235, 246, 0.96);
+    border-bottom: 1rpx solid rgba(226, 235, 246, 0.96);
+    transform: rotate(45deg);
+  }
 }
 
-.flow-record__header {
+.flow-record-item--pass .flow-record__content {
+  border-color: rgba(32, 201, 151, 0.22);
+}
+
+.flow-record-item--reject .flow-record__content {
+  border-color: rgba(245, 63, 63, 0.22);
+}
+
+.flow-record-item--pending .flow-record__content {
+  border-color: rgba(245, 158, 11, 0.24);
+}
+
+.flow-record__row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12rpx;
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
 }
 
 .flow-record__node {
+  flex: 1;
+  min-width: 0;
   font-size: 30rpx;
-  font-weight: 600;
+  font-weight: 800;
   color: #1d2129;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .flow-record__status {
-  font-size: 24rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 8rpx;
+  flex-shrink: 0;
+  font-size: 22rpx;
+  font-weight: 700;
+  height: 42rpx;
+  line-height: 42rpx;
+  padding: 0 16rpx;
+  border-radius: 999rpx;
 
   &.status-pending {
-    background-color: #f7f8fa;
-    color: #86909c;
+    background: #fff4df;
+    color: #f59e0b;
   }
+
   &.status-pass {
-    background-color: #f2fcf4;
-    color: #00b42a;
+    background: #eafaf2;
+    color: #18a66f;
   }
+
   &.status-reject {
-    background-color: #fff1f0;
-    color: #f53f3f;
+    background: #fff0f0;
+    color: #e34d59;
   }
+
   &.status-default {
-    background-color: #f2f3ff;
-    color: #168cff;
+    background: #eef4ff;
+    color: #2f68e8;
   }
 }
 
 .flow-record__meta {
   display: flex;
-  justify-content: space-between;
-  gap: 16rpx;
-  margin-bottom: 8rpx;
+  flex-wrap: wrap;
+  gap: 10rpx 18rpx;
+  margin-bottom: 12rpx;
 }
 
 .flow-record__approver,
 .flow-record__time {
   font-size: 24rpx;
   color: #86909c;
+  line-height: 1.35;
 }
 
 .flow-record__reason {
-  font-size: 26rpx;
+  display: block;
+  font-size: 25rpx;
   color: #4e5969;
-  line-height: 1.5;
-  padding: 12rpx;
-  background-color: #f7f8fa;
-  border-radius: 8rpx;
+  line-height: 1.6;
+  padding: 16rpx 18rpx;
+  background: #f7f9fc;
+  border-radius: 16rpx;
   white-space: pre-wrap;
   word-break: break-word;
 }

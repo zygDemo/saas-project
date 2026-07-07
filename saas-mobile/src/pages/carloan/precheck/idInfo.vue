@@ -144,9 +144,10 @@ const idInfo = reactive({
 });
 const isEditMode = ref(false);
 const fromEntry = ref(false);
-const fetchUserBasic = async () => {
+const fetchUserBasic = async (uuid = carloanStore.pageContext.uuid) => {
+  if (!uuid) return;
   try {
-    const res = await businessApi.getUserBasic(carloanStore.pageContext.uuid);
+    const res = await businessApi.getUserBasic(uuid);
     if (res?.code === 200 && res.data) {
       const data = res.data;
       Object.assign(idInfo, {
@@ -169,19 +170,20 @@ const fetchUserBasic = async () => {
 };
 
 onLoad((query) => {
-    carloanStore.syncFromRouteQuery(query);
-  carloanStore.pageContext.uuid = query.uuid || "";
+  const previousContext = { ...carloanStore.pageContext };
+  carloanStore.syncFromRouteQuery(query);
+  carloanStore.pageContext.uuid = query.uuid || previousContext.uuid || "";
   isPawnMode.value = query.businessType === "pawn";
-  isEditMode.value = !!query.uuid;
+  isEditMode.value = !!carloanStore.pageContext.uuid;
   fromEntry.value = query.fromEntry === "1";
-  carloanStore.pageContext.creditOrderId = query.creditOrderId || "";
-  carloanStore.pageContext.customerName = query.name || "";
-  carloanStore.pageContext.customerPhone = query.phone || "";
+  carloanStore.pageContext.creditOrderId = query.creditOrderId || previousContext.creditOrderId || "";
+  carloanStore.pageContext.customerName = query.name || previousContext.customerName || "";
+  carloanStore.pageContext.customerPhone = query.phone || previousContext.customerPhone || "";
 });
 
 onMounted(() => {
   if (carloanStore.pageContext.uuid) {
-    fetchUserBasic();
+    fetchUserBasic(carloanStore.pageContext.uuid);
   }
 });
 

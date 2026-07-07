@@ -1,25 +1,24 @@
 <template>
-  <div class="page-content !mb-5">
-    <h1 class="text-2xl font-medium mb-5">{{ $t('menus.reading.bookshelf') }}</h1>
+  <ReadingPageShell
+    title="书架管理"
+    description="统一查看已入库图书的上架状态、阅读热度与章节维护入口。"
+    icon="ri:book-2-line"
+  >
+    <template #actions>
+      <ElButton type="primary" @click="$router.push('/reading/books')">管理图书</ElButton>
+    </template>
 
-    <ElRow justify="space-between" :gutter="10" class="mb-5">
-      <ElCol :lg="6" :md="8" :sm="12" :xs="24">
-        <ElInput
-          v-model="searchVal"
-          :prefix-icon="Search"
-          clearable
-          placeholder="搜索书名/作者"
-          @keyup.enter="handleSearch"
-        />
-      </ElCol>
-      <ElCol :lg="6" :md="8" :sm="12" :xs="24" style="display: flex; justify-content: end">
-        <ElButton type="primary" @click="$router.push('/reading/books')">管理图书</ElButton>
-      </ElCol>
-    </ElRow>
+    <ArtSearchBar
+      v-model="searchForm"
+      :items="searchItems"
+      :span="8"
+      :show-expand="false"
+      @search="handleSearch"
+      @reset="handleReset"
+    />
 
-    <!-- 表格 -->
     <ElCard class="art-table-card">
-      <ArtTableHeader :loading="isLoading" @refresh="loadBooks">
+      <ArtTableHeader :loading="isLoading" @refresh="loadBooks" layout="refresh,size,fullscreen,columns,settings">
         <template #left>
           <ElSpace wrap>
             <ElButton type="primary" @click="$router.push('/reading/books')">管理图书</ElButton>
@@ -37,12 +36,12 @@
         @pagination:current-change="handlePageChange"
       />
     </ElCard>
-  </div>
+  </ReadingPageShell>
 </template>
 
 <script setup lang="ts">
+  import ReadingPageShell from '../components/ReadingPageShell.vue'
   import { h } from 'vue'
-  import { Search } from '@element-plus/icons-vue'
   import { getBooks } from '@/api/reading'
   import { ElMessage, ElTag, ElButton, ElImage } from 'element-plus'
   import { useRouter } from 'vue-router'
@@ -74,7 +73,7 @@
   }
 
   const router = useRouter()
-  const searchVal = ref('')
+  const searchForm = reactive({ keyword: '' })
   const isLoading = ref(false)
   const currentPage = ref(1)
   const pageSize = ref(20)
@@ -183,7 +182,7 @@
     isLoading.value = true
     try {
       const params: BookListParams = { page: currentPage.value, pageSize: pageSize.value }
-      if (searchVal.value) params.keyword = searchVal.value
+      if (searchForm.keyword) params.keyword = searchForm.keyword
       const res = (await getBooks(params)) as unknown as BookListResponse
       bookshelfList.value = res?.items || []
       total.value = res?.total || 0
@@ -194,7 +193,23 @@
     }
   }
 
+  const searchItems = computed(() => [
+    {
+      label: '关键词',
+      key: 'keyword',
+      type: 'input',
+      placeholder: '搜索书名 / 作者',
+      clearable: true
+    }
+  ])
+
   const handleSearch = () => {
+    currentPage.value = 1
+    loadBooks()
+  }
+
+  const handleReset = () => {
+    searchForm.keyword = ''
     currentPage.value = 1
     loadBooks()
   }

@@ -1,6 +1,7 @@
 import { AppRouteRecord } from '@/types/router'
 
 const roles = ['R_SUPER', 'R_ADMIN', 'R_OPERATION']
+const superAdminRoles = ['R_SUPER']
 
 export const operationCenterRoutes: AppRouteRecord = {
   path: '/operation-center',
@@ -46,7 +47,12 @@ export const operationCenterRoutes: AppRouteRecord = {
       path: 'work-order',
       name: 'SystemWorkOrder',
       component: '/system/work-order',
-      meta: { title: '系统工单管理', icon: 'ri:customer-service-2-line', keepAlive: true, roles }
+      meta: {
+        title: '系统工单管理',
+        icon: 'ri:customer-service-2-line',
+        keepAlive: true,
+        roles: superAdminRoles
+      }
     }
   ]
 }

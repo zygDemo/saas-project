@@ -1,6 +1,25 @@
 <template>
   <layout :active-tab="1" nav-title="订单" show-tabbar tabbar-scope="carloan">
     <view class="order-list-page">
+      <view v-if="false" class="order-hero">
+        <view class="order-hero__main">
+          <text class="order-hero__eyebrow">CAR LOAN</text>
+          <text class="order-hero__title">订单中心</text>
+          <text class="order-hero__desc">跟进预审、补件、签约等业务节点</text>
+        </view>
+        <view class="order-hero__stats">
+          <view class="order-hero__stat">
+            <text class="order-hero__num">{{ totalCountLabel }}</text>
+            <text class="order-hero__label">全部订单</text>
+          </view>
+          <view class="order-hero__divider" />
+          <view class="order-hero__stat">
+            <text class="order-hero__num">{{ loadedCountLabel }}</text>
+            <text class="order-hero__label">当前展示</text>
+          </view>
+        </view>
+      </view>
+
       <!-- 搜索栏 -->
       <view class="search-bar">
         <u-search
@@ -14,6 +33,15 @@
 
       <!-- 筛选区 -->
       <view class="filter-card">
+        <view class="filter-card__header">
+          <view>
+            <text class="filter-card__title">筛选订单</text>
+            <text class="filter-card__desc">{{ activeFilterLabel }}</text>
+          </view>
+          <view class="filter-card__chip">
+            <text>{{ loading ? "加载中" : "实时" }}</text>
+          </view>
+        </view>
         <!-- 业务节点 tabs -->
         <scroll-view scroll-x class="filter-scroll" :show-scrollbar="false">
           <view class="filter-tabs">
@@ -208,6 +236,17 @@ const nodeStatusFilterList = computed<FilterOption[]>(() => [
 const businessNodeCodeList = computed(() =>
   ORDER_NODE_OPTIONS.value.map((item) => item.value),
 );
+const totalCountLabel = computed(() => (total.value > 0 ? String(total.value) : "--"));
+const loadedCountLabel = computed(() => String(orderList.value.length));
+const activeFilterLabel = computed(() => {
+  const nodeLabel =
+    businessNodeFilterList.value.find((item) => item.value === currentBusinessNode.value)?.label ||
+    "全部";
+  const statusLabel =
+    nodeStatusFilterList.value.find((item) => item.value === currentNodeStatus.value)?.label ||
+    "全部状态";
+  return `${nodeLabel} · ${statusLabel}`;
+});
 
 // ---- 通用工具函数 ----
 
@@ -657,7 +696,9 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, var(--app-page-bg-soft, #f0f3ff) 0%, $bg-page 30%, #f8fafc 100%);
+  background:
+    radial-gradient(circle at 85% 0%, rgba(65, 198, 168, 0.18), transparent 34%),
+    linear-gradient(180deg, var(--app-page-bg-soft, #edf3ff) 0%, $bg-page 36%, #f8fafc 100%);
 }
 
 .order-list-scroll {
@@ -667,9 +708,86 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .list__inner {
-  padding: 24rpx 24rpx calc(32rpx + env(safe-area-inset-bottom));
+  padding: 22rpx 24rpx calc(32rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
   width: 100%;
+}
+
+/* ===== 顶部概览 ===== */
+.order-hero {
+  margin: 22rpx 24rpx 0;
+  padding: 30rpx;
+  border-radius: 28rpx;
+  background:
+    linear-gradient(135deg, rgba(67, 124, 255, 0.95), rgba(65, 198, 168, 0.9)),
+    #437cff;
+  box-shadow: 0 18rpx 38rpx rgba(67, 124, 255, 0.22);
+  color: #fff;
+  overflow: hidden;
+
+  &__main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__eyebrow {
+    font-size: 20rpx;
+    font-weight: 700;
+    letter-spacing: 0;
+    color: rgba(255, 255, 255, 0.72);
+    line-height: 1.3;
+  }
+
+  &__title {
+    margin-top: 8rpx;
+    font-size: 42rpx;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.25;
+  }
+
+  &__desc {
+    margin-top: 10rpx;
+    font-size: 24rpx;
+    color: rgba(255, 255, 255, 0.82);
+    line-height: 1.45;
+  }
+
+  &__stats {
+    margin-top: 28rpx;
+    padding: 20rpx 22rpx;
+    border-radius: 22rpx;
+    background: rgba(255, 255, 255, 0.16);
+    display: flex;
+    align-items: center;
+    backdrop-filter: blur(8rpx);
+  }
+
+  &__stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  &__num {
+    font-size: 38rpx;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.1;
+  }
+
+  &__label {
+    margin-top: 8rpx;
+    font-size: 22rpx;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  &__divider {
+    width: 1rpx;
+    height: 52rpx;
+    background: rgba(255, 255, 255, 0.24);
+  }
 }
 
 /* ===== 搜索栏 ===== */
@@ -678,8 +796,9 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   background: transparent;
 
   :deep(.u-search) {
-    box-shadow: 0 4rpx 18rpx rgba(26, 29, 41, 0.04);
-    border-radius: 18rpx;
+    box-shadow: 0 10rpx 24rpx rgba(31, 45, 86, 0.08);
+    border-radius: 20rpx;
+    overflow: hidden;
   }
 }
 
@@ -688,10 +807,55 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   margin: 0 24rpx 20rpx;
   padding: 0;
   background: $bg-surface;
-  border: 1rpx solid var(--app-border, #e8edf5);
-  border-radius: 22rpx;
-  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
+  border: 1rpx solid rgba(221, 228, 240, 0.9);
+  border-radius: 24rpx;
+  box-shadow: 0 12rpx 30rpx rgba(31, 45, 86, 0.07);
   overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20rpx;
+    padding: 24rpx 24rpx 6rpx;
+  }
+
+  &__title,
+  &__desc {
+    display: block;
+  }
+
+  &__title {
+    font-size: 30rpx;
+    font-weight: 800;
+    color: $text-main;
+    line-height: 1.3;
+  }
+
+  &__desc {
+    margin-top: 6rpx;
+    max-width: 480rpx;
+    font-size: 23rpx;
+    color: $text-hint;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__chip {
+    flex-shrink: 0;
+    padding: 8rpx 16rpx;
+    border-radius: 999rpx;
+    background: #eef7f4;
+
+    text {
+      font-size: 22rpx;
+      font-weight: 700;
+      color: #20a986;
+      line-height: 1;
+    }
+  }
 }
 
 .filter-scroll {
@@ -704,11 +868,11 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
 .filter-tabs {
   display: inline-flex;
-  padding: 18rpx 20rpx;
-  gap: 10rpx;
+  padding: 18rpx 24rpx;
+  gap: 12rpx;
 
   &--sub {
-    padding: 14rpx 20rpx 16rpx;
+    padding: 14rpx 24rpx 18rpx;
   }
 }
 
@@ -719,7 +883,7 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   gap: 6rpx;
   height: 56rpx;
   padding: 0 22rpx;
-  border-radius: 16rpx;
+  border-radius: 999rpx;
   background: #f6f8fb;
   border: 1rpx solid transparent;
   transition: all 0.2s $ease-out;
@@ -745,8 +909,9 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   &--on {
-    background: #eef3ff;
-    border-color: rgba($primary, 0.16);
+    background: #eaf1ff;
+    border-color: rgba($primary, 0.22);
+    box-shadow: 0 8rpx 18rpx rgba(67, 124, 255, 0.12);
 
     .filter-tab__label {
       color: $primary;
@@ -774,12 +939,12 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
 /* ===== 空状态 / 加载 ===== */
 .empty-state {
-  margin: 40rpx 0;
+  margin: 26rpx 0 40rpx;
   padding: 100rpx 40rpx;
   background: $bg-surface;
-  border: 1rpx solid var(--app-border, #e8edf5);
-  border-radius: 22rpx;
-  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
+  border: 1rpx solid rgba(221, 228, 240, 0.9);
+  border-radius: 24rpx;
+  box-shadow: 0 12rpx 30rpx rgba(31, 45, 86, 0.07);
 
   :deep(.u-empty__text) {
     color: $text-hint !important;
@@ -811,7 +976,7 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   width: 88rpx;
   height: 88rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4f7cff, #6366f1);
+  background: linear-gradient(135deg, #4f7cff, #41c6a8);
   display: flex;
   align-items: center;
   justify-content: center;

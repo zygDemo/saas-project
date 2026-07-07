@@ -1,14 +1,14 @@
 import { AppRouteRecord } from '@/types/router'
 
-const roles = ['R_SUPER', 'R_ADMIN']
+const roles = ['R_SUPER', 'R_ADMIN', 'R_OPERATION']
 
 export const dataCenterRoutes: AppRouteRecord = {
-  path: '/data-center',
+  path: '/datacenter',
   name: 'DataCenter',
   component: '/index/index',
   meta: {
-    title: 'menus.dataCenter.title',
-    icon: 'ri:database-2-line',
+    title: '数据中心',
+    icon: 'ri:bar-chart-box-line',
     roles
   },
   children: [
@@ -17,8 +17,8 @@ export const dataCenterRoutes: AppRouteRecord = {
       name: 'DataStats',
       component: '/data-center/stats',
       meta: {
-        title: 'menus.dataCenter.stats',
-        icon: 'ri:bar-chart-grouped-line',
+        title: '数据统计',
+        icon: 'ri:bar-chart-line',
         keepAlive: true,
         roles
       }
@@ -28,8 +28,8 @@ export const dataCenterRoutes: AppRouteRecord = {
       name: 'AuditLog',
       component: '/data-center/audit-log',
       meta: {
-        title: 'menus.dataCenter.auditLog',
-        icon: 'ri:file-shield-line',
+        title: '日志审计',
+        icon: 'ri:file-list-3-line',
         keepAlive: true,
         roles
       }

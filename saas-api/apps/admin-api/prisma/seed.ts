@@ -1,4 +1,4 @@
-﻿import { PrismaClient, UserStatus } from '@prisma/client'
+import { PrismaClient, UserStatus } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 import { LeadStatus, Prisma } from '@prisma/client'
 
@@ -548,8 +548,7 @@ async function main() {
     'PackageBilling',
     'ProductTemplate',
     'PlatformSupervision',
-    'ThirdPartyService',
-    'WorkOrder'
+    'ThirdPartyService'
   )
   const orgConfigIds = filterIds(
     'OrgConfigRoot',
@@ -577,8 +576,7 @@ async function main() {
     'FileManage',
     'FileConfig',
     'MsgTemplate',
-    'Notice',
-    'SystemWorkOrder'
+    'Notice'
   )
   const bizStageIds = filterIds(
     'Business',
@@ -589,6 +587,9 @@ async function main() {
     'BusinessFunderFinal',
     'BusinessSigning',
     'BusinessDisbursement',
+    'BusinessPostLoan',
+    'BusinessRepayment',
+    'BusinessDisbursementMgmt',
     'BusinessOrderQuery',
     'Reports'
   )
@@ -610,6 +611,9 @@ async function main() {
     'Business',
     'BusinessSigning',
     'BusinessDisbursement',
+    'BusinessPostLoan',
+    'BusinessRepayment',
+    'BusinessDisbursementMgmt',
     'BusinessOrderQuery',
     'Reports'
   )
@@ -626,6 +630,9 @@ async function main() {
     'BusinessFunderFinal',
     'BusinessSigning',
     'BusinessDisbursement',
+    'BusinessPostLoan',
+    'BusinessRepayment',
+    'BusinessDisbursementMgmt',
     'BusinessOrderQuery',
     'Reports'
   )
@@ -638,6 +645,9 @@ async function main() {
     'BusinessFunderFinal',
     'BusinessSigning',
     'BusinessDisbursement',
+    'BusinessPostLoan',
+    'BusinessRepayment',
+    'BusinessDisbursementMgmt',
     'BusinessOrderQuery',
     'Reports'
   )
@@ -945,7 +955,7 @@ async function seedAllMenus(tenantId: number) {
     parentId: system.id,
     path: 'sys-param',
     name: 'SysParam',
-    component: bp,
+    component: '/system/sys-param',
     title: '系统参数',
     icon: 'ri:settings-line',
     sort: 49,
@@ -1071,7 +1081,7 @@ async function seedAllMenus(tenantId: number) {
     component: '/reading/chapters/index',
     title: '章节管理',
     icon: 'ri:file-list-2-line',
-    sort: 556,
+    sort: 558,
     hidden: true
   })
 
@@ -1091,7 +1101,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '预审阶段',
     icon: 'ri:file-search-line',
-    sort: 28,
+    sort: 67,
     keepAlive: true
   })
   const businessSupplement = await upsertMenu(tenantId, {
@@ -1101,7 +1111,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '补件阶段',
     icon: 'ri:folder-upload-line',
-    sort: 29,
+    sort: 68,
     keepAlive: true
   })
   const businessRiskApproval = await upsertMenu(tenantId, {
@@ -1111,7 +1121,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '风控审批',
     icon: 'ri:shield-check-line',
-    sort: 30,
+    sort: 69,
     keepAlive: true
   })
   const businessFunderFinal = await upsertMenu(tenantId, {
@@ -1121,7 +1131,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '资方终审',
     icon: 'ri:bank-line',
-    sort: 65,
+    sort: 70,
     keepAlive: true
   })
   const businessSigning = await upsertMenu(tenantId, {
@@ -1131,7 +1141,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '客户签约',
     icon: 'ri:contract-line',
-    sort: 66,
+    sort: 71,
     keepAlive: true
   })
   const businessDisbursement = await upsertMenu(tenantId, {
@@ -1141,7 +1151,18 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '请款放款',
     icon: 'ri:money-cny-circle-line',
-    sort: 69,
+    sort: 72,
+    keepAlive: true
+  })
+
+  const businessPostLoan = await upsertMenu(tenantId, {
+    parentId: business.id,
+    path: 'post-loan',
+    name: 'BusinessPostLoan',
+    component: bp,
+    title: '贷后阶段',
+    icon: 'ri:refund-line',
+    sort: 73,
     keepAlive: true
   })
 
@@ -1152,7 +1173,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '还款管理',
     icon: 'ri:money-cny-circle-line',
-    sort: 71,
+    sort: 74,
     keepAlive: true
   })
 
@@ -1163,7 +1184,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '放款管理',
     icon: 'ri:bank-card-line',
-    sort: 72,
+    sort: 75,
     keepAlive: true
   })
   const org = await upsertMenu(tenantId, {
@@ -1213,7 +1234,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '线索管理',
     icon: 'ri:customer-service-line',
-    sort: 61,
+    sort: 66,
     keepAlive: true
   })
   const orderQuery = await upsertMenu(tenantId, {
@@ -1223,7 +1244,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '综合查询',
     icon: 'ri:search-eye-line',
-    sort: 67,
+    sort: 76,
     keepAlive: true
   })
   const reports = await upsertMenu(tenantId, {
@@ -1233,7 +1254,7 @@ async function seedAllMenus(tenantId: number) {
     component: bp,
     title: '报表统计',
     icon: 'ri:pie-chart-line',
-    sort: 70,
+    sort: 77,
     keepAlive: true
   })
 
@@ -1284,7 +1305,10 @@ async function seedAllMenus(tenantId: number) {
               'BusinessFunderFinal',
               'BusinessSigning',
               'BusinessDisbursement',
-                        'BusinessOrderQuery',
+              'BusinessPostLoan',
+              'BusinessRepayment',
+              'BusinessDisbursementMgmt',
+              'BusinessOrderQuery',
               'Reports'
             ]
           }
@@ -1340,7 +1364,10 @@ async function seedAllMenus(tenantId: number) {
               'BusinessFunderFinal',
               'BusinessSigning',
               'BusinessDisbursement',
-                        'BusinessOrderQuery',
+              'BusinessPostLoan',
+              'BusinessRepayment',
+              'BusinessDisbursementMgmt',
+              'BusinessOrderQuery',
               'Reports'
             ]
           }
@@ -1349,6 +1376,48 @@ async function seedAllMenus(tenantId: number) {
     },
     data: { hidden: false, hiddenTab: false }
   })
+
+  // 清理废弃菜单：seed 也必须删除旧菜单，避免本地重置/重新 seed 后把旧 Business/System 菜单留在数据库中
+  const obsoleteMenuNames = [
+    'Customer',
+    'PreEntry',
+    'Application',
+    'RiskPre',
+    'FunderPre',
+    'FirstReview',
+    'FinalReview',
+    'LoanRequest',
+    'OrderMgmt',
+    'Repayment',
+    'FunderFinal',
+    'DisbursementNode',
+    'PawnBusiness',
+    'OrgConfig',
+    'PreReview',
+    'Supplement',
+    'Approval',
+    'FunderReview',
+    'Signing',
+    'Disbursement',
+    'PostLoan',
+    'SystemParam',
+    'Announcement',
+    'MobileConfig'
+  ]
+  const obsoleteMenus = await prisma.menu.findMany({
+    where: { tenantId, name: { in: obsoleteMenuNames } },
+    select: { id: true, name: true, title: true }
+  })
+  if (obsoleteMenus.length > 0) {
+    const obsoleteMenuIds = obsoleteMenus.map((m) => m.id)
+    await prisma.rolePermission.deleteMany({
+      where: { permission: { menuId: { in: obsoleteMenuIds } } }
+    })
+    await prisma.permission.deleteMany({ where: { menuId: { in: obsoleteMenuIds } } })
+    await prisma.roleMenu.deleteMany({ where: { menuId: { in: obsoleteMenuIds } } })
+    const { count } = await prisma.menu.deleteMany({ where: { id: { in: obsoleteMenuIds } } })
+    console.log(`已清理废弃菜单 ${count} 个: ${obsoleteMenus.map((m) => m.name).join(', ')}`)
+  }
 
   // 初始化按钮权限
   const bizMenus = [
@@ -1379,6 +1448,7 @@ async function seedAllMenus(tenantId: number) {
     businessFunderFinal,
     businessSigning,
     businessDisbursement,
+    businessPostLoan,
     businessRepayment,
     businessDisbursementMgmt,
     orderQuery,
@@ -1459,6 +1529,7 @@ async function seedAllMenus(tenantId: number) {
     businessFunderFinal,
     businessSigning,
     businessDisbursement,
+    businessPostLoan,
     businessRepayment,
     businessDisbursementMgmt,
     lead,

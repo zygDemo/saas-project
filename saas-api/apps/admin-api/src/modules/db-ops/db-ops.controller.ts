@@ -9,7 +9,7 @@ import { DbStatusResponseDto, DbOpsResultResponseDto, DbOpsRunAllResponseDto } f
 @ApiTags('数据库运维')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@Roles('R_SUPER')
 @Controller('db-ops')
 export class DbOpsController {
   constructor(private readonly dbOpsService: DbOpsService) {}

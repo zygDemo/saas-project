@@ -1,6 +1,6 @@
 <template>
   <app-page :nav-title="pageTitle">
-    <view v-if="detail && isFlowDetailPage" class="pre-audit-detail-page">
+    <view v-if="detail" class="pre-audit-detail-page">
       <view class="pre-customer-card">
         <view class="pre-customer-header">
           <view class="pre-avatar">
@@ -10,6 +10,11 @@
             <text class="pre-customer-name">{{ customerDisplayName || "未命名客户" }}</text>
             <text class="pre-customer-phone">{{ customerDisplayPhone || "-" }}</text>
           </view>
+          <view class="pre-progress-btn" @click="handleProgress">
+            <u-icon name="map" size="28" color="var(--u-type-primary)" />
+            <text class="pre-progress-text">查看进展</text>
+            <u-icon name="arrow-right" size="24" color="#c4c7cc" />
+          </view>
         </view>
         <view v-if="orderNo" class="pre-order-row">
           <text class="pre-order-label">订单号</text>
@@ -17,36 +22,30 @@
         </view>
       </view>
 
-      <view class="pre-progress-card" @click="handleProgress">
-        <view class="pre-progress-card__left">
-          <u-icon name="map" size="30" color="var(--u-type-primary)" />
-          <text class="pre-progress-card__text">查看进展</text>
+      <scroll-view scroll-x class="pre-flow-scroll" :show-scrollbar="false">
+        <view class="pre-flow-tabs">
+          <view
+            v-for="tab in flowTabList"
+            :key="tab.value"
+            class="pre-flow-tab"
+            :class="{ 'pre-flow-tab--active': activeFlowTab === tab.value }"
+            @click="activeFlowTab = tab.value"
+          >
+            <text class="pre-flow-tab__label">{{ tab.label }}</text>
+            <view v-if="activeFlowTab === tab.value" class="pre-flow-tab__indicator" />
+          </view>
         </view>
-        <text class="pre-progress-card__arrow">›</text>
-      </view>
+      </scroll-view>
 
-      <view class="pre-flow-tabs">
-        <view
-          v-for="tab in flowTabList"
-          :key="tab.value"
-          class="pre-flow-tab"
-          :class="{ 'pre-flow-tab--active': activeFlowTab === tab.value }"
-          @click="activeFlowTab = tab.value"
-        >
-          <text class="pre-flow-tab__label">{{ tab.label }}</text>
-          <view v-if="activeFlowTab === tab.value" class="pre-flow-tab__indicator" />
-        </view>
-      </view>
-
-      <view class="pre-section-title">子步骤</view>
+      <view class="pre-section-title">{{ activeStageTitle }}事项</view>
 
       <view class="pre-supplement-list">
         <view
-          v-for="item in preAuditEntryItems"
+          v-for="item in stageEntryItems"
           :key="item.type"
           class="pre-supplement-card"
           :class="{ 'pre-supplement-card--submit': ['PENDING_PRECHECK', 'PENDING_SUPPLEMENT'].includes(item.code) }"
-          @click="goPreAuditStep(item)"
+          @click="goStageStep(item)"
         >
           <view class="pre-card-icon" :class="item.iconClass">
             <u-icon :name="item.icon" size="44" color="#fff" />
@@ -57,8 +56,8 @@
           </view>
           <view class="pre-card-status">
             <u-tag
-              :text="getPreAuditStepTag(item).text"
-              :type="getPreAuditStepTag(item).type"
+              :text="getStageStepTag(item).text"
+              :type="getStageStepTag(item).type"
               size="mini"
               plain
             />
@@ -79,7 +78,7 @@
       </view>
     </view>
 
-    <view v-else-if="detail" class="apply-detail-page">
+    <view v-if="false" class="apply-detail-page">
       <!-- 顶部状态卡片 -->
       <view
         class="status-header"
@@ -358,16 +357,39 @@
     <view v-if="!loading && !detail" class="empty-wrap">
       <u-empty text="暂无数据" mode="data" />
     </view>
+    <FlowRecordPopup
+      v-model:visible="flowRecordVisible"
+      :loading="flowRecordLoading"
+      :records="flowRecordList"
+      :get-node-label="businessNodeText"
+    />
   </app-page>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from "vue";
+import { computed, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildEntryRouteQuery, buildSignRouteQuery } from "@/common/carloan-route-query";
 import { useCarloanStore } from "@/stores/carloan";
+import FlowRecordPopup from "./components/FlowRecordPopup.vue";
+import {
+  approvalEntryItems,
+  businessNodeText,
+  disbursementEntryItems,
+  flowTabList,
+  formatDate,
+  formatQuota,
+  loanRequestEntryItems,
+  precheckEntryItems,
+  resolveFlowTabByNode,
+  resolvePageTitle,
+  signingEntryItems,
+  statusText,
+  statusType,
+  supplementEntryItems,
+} from "./applyDetail-flow";
 
 const carloanStore = useCarloanStore();
 const businessApi = useCarloanApi();
@@ -375,82 +397,131 @@ const businessApi = useCarloanApi();
 const detail = ref(null);
 const loading = ref(true);
 const submitting = ref(false);
+const flowRecordVisible = ref(false);
+const flowRecordLoading = ref(false);
+const flowRecordList = ref([]);
 const activeFlowTab = ref("precheck");
-const flowTabList = [
-  { label: "预审", value: "precheck" },
-  { label: "补件", value: "supplement" },
-  { label: "签约", value: "signing" },
-];
-let detailId = null;
-onLoad((query) => {
-    carloanStore.syncFromRouteQuery(query);
-  detailId = query.id;
-  carloanStore.pageContext.creditOrderId = query.creditOrderId || query.orderNo || "";
-  carloanStore.pageContext.uuid = query.uuid || "";
-  carloanStore.pageContext.nodeCode = query.nodeCode || "";
-  carloanStore.pageContext.customerName = query.customerName || query.name || "";
-  carloanStore.pageContext.customerPhone = query.customerPhone || query.phone || "";
-});
+let detailId = "";
 
-onMounted(() => {
-  if (carloanStore.pageContext.creditOrderId || detailId) {
-    fetchDetail();
+function safeDecode(value) {
+  let result = String(value || "").replace(/\+/g, " ");
+  for (let i = 0; i < 2; i += 1) {
+    try {
+      const decoded = decodeURIComponent(result);
+      if (decoded === result) break;
+      result = decoded;
+    } catch {
+      break;
+    }
   }
-});
+  return result;
+}
 
-async function fetchDetail() {
+function normalizeRouteQuery(options = {}) {
+  return Object.entries(options).reduce((query, [key, value]) => {
+    query[key] = safeDecode(value);
+    return query;
+  }, {});
+}
+
+function buildRouteFallbackDetail() {
+  return {
+    id: detailId,
+    creditOrderId: carloanStore.pageContext.creditOrderId,
+    orderNo: carloanStore.pageContext.creditOrderId,
+    name: carloanStore.pageContext.customerName,
+    customerName: carloanStore.pageContext.customerName,
+    phone: carloanStore.pageContext.customerPhone,
+    telephone: carloanStore.pageContext.customerPhone,
+    nodeCode: carloanStore.pageContext.nodeCode,
+  };
+}
+
+function hasDetailPayload(payload) {
+  return Boolean(
+    payload &&
+      (payload.id ||
+        payload.uuid ||
+        payload.customerUuid ||
+        payload.userUuid ||
+        payload.creditOrderId ||
+        payload.orderNo ||
+        payload.applicationNo ||
+        payload.name ||
+        payload.customerName),
+  );
+}
+
+function pickDetailUuid(payload = {}) {
+  return String(
+    payload.uuid ||
+      payload.customerUuid ||
+      payload.userUuid ||
+      payload.user?.uuid ||
+      payload.customer?.uuid ||
+      "",
+  );
+}
+
+function normalizeDetailPayload(payload = {}) {
+  const fallback = buildRouteFallbackDetail();
+  const uuid = pickDetailUuid(payload) || carloanStore.pageContext.uuid;
+  return {
+    ...fallback,
+    ...payload,
+    uuid,
+    id: payload.id || fallback.id,
+    creditOrderId:
+      payload.creditOrderId || payload.orderNo || payload.applicationNo || fallback.creditOrderId,
+    orderNo: payload.orderNo || payload.creditOrderId || payload.applicationNo || fallback.orderNo,
+    name: payload.name || payload.customerName || payload.personName || fallback.name,
+    customerName: payload.customerName || payload.name || payload.personName || fallback.customerName,
+    phone: payload.phone || payload.telephone || payload.mobile || fallback.phone,
+    telephone: payload.telephone || payload.phone || payload.mobile || fallback.telephone,
+    nodeCode: payload.nodeCode || payload.currentNode || payload.businessNode || fallback.nodeCode,
+  };
+}
+
+async function loadDetail() {
+  const creditOrderId = carloanStore.pageContext.creditOrderId;
+  const fallback = buildRouteFallbackDetail();
+
+  if (!creditOrderId && !detailId) {
+    detail.value = hasDetailPayload(fallback) ? fallback : null;
+    loading.value = false;
+    return;
+  }
+
   loading.value = true;
   try {
-    const res = carloanStore.pageContext.creditOrderId
-      ? await businessApi.getCreditDetailByOrderId(carloanStore.pageContext.creditOrderId)
-      : await businessApi.getCreditDetail(detailId);
-    if (res?.code === 200) {
-      // 详情接口返回结构可能是 res.data 或 res 本身
-      detail.value = res.data || {};
-      carloanStore.pageContext.uuid = res.data?.uuid || carloanStore.pageContext.uuid;
-      activeFlowTab.value = resolveFlowTabByNode(currentNodeCode.value);
+    let res = null;
+    if (creditOrderId) {
+      res = await businessApi.getCreditDetailByOrderId(creditOrderId);
+    } else if (detailId) {
+      res = await businessApi.getCreditDetail(detailId);
     }
-  } catch (e) {
-    console.error("获取详情失败", e);
-    uni.showToast({ title: "获取详情失败", icon: "none" });
+
+    const data = res?.data || res || {};
+    detail.value = normalizeDetailPayload(hasDetailPayload(data) ? data : fallback);
+    if (detail.value?.uuid && !carloanStore.pageContext.uuid) {
+      carloanStore.pageContext.uuid = String(detail.value.uuid);
+    }
+  } catch (err) {
+    console.warn("获取订单详情失败:", err);
+    detail.value = hasDetailPayload(fallback) ? fallback : null;
+    uni.showToast({ title: "获取详情失败，已显示基础信息", icon: "none" });
   } finally {
     loading.value = false;
   }
 }
 
-// 状态映射（与列表页一致：1成功/2失败/3重新推送/4待授信）
-const statusMap = {
-  1: { text: "授信成功", type: "success" },
-  2: { text: "授信失败", type: "error" },
-  3: { text: "重新推送", type: "warning" },
-  4: { text: "待授信", type: "info" },
-};
-
-// 业务节点中文映射
-const businessNodeMap = {
-  "1100": "预审进件",
-  "1200": "风控预审",
-  "1300": "资方预审",
-  INITIAL_AUDIT: "初审",
-  PRE_AUDIT: "预审",
-  SUPPLEMENT_MATERIALS: "补充资料",
-  SIGN_CONTRACT: "签约",
-  FACE_RECOGNITION: "人脸识别",
-  FACE_SIGN: "面签",
-  LOAN_DISBURSEMENT: "放款",
-};
-
-function statusText(val) {
-  return (statusMap[val] || {}).text || (val ? `状态${val}` : "未知");
-}
-
-function statusType(val) {
-  return (statusMap[val] || {}).type || "default";
-}
-
-function businessNodeText(val) {
-  return businessNodeMap[val] || val || "-";
-}
+onLoad((options = {}) => {
+  const query = normalizeRouteQuery(options);
+  detailId = query.id || "";
+  carloanStore.syncFromRouteQuery(query);
+  activeFlowTab.value = resolveFlowTabByNode(carloanStore.pageContext.nodeCode);
+  loadDetail();
+});
 
 const customerDisplayName = computed(() =>
   detail.value?.name ||
@@ -476,6 +547,30 @@ const orderNo = computed(() =>
   "",
 );
 
+const detailUuid = computed(() =>
+  carloanStore.pageContext.uuid ||
+    pickDetailUuid(detail.value || {}) ||
+    "",
+);
+
+const entryProgress = computed(() => {
+  try {
+    const progressMap = uni.getStorageSync("ENTRY_PROGRESS_MAP") || {};
+    return progressMap[orderNo.value] || progressMap[detailUuid.value] || {};
+  } catch {
+    return {};
+  }
+});
+
+const signProgress = computed(() => {
+  try {
+    const progressMap = uni.getStorageSync("SIGN_PROGRESS_MAP") || {};
+    return progressMap[orderNo.value] || progressMap[detailUuid.value] || {};
+  } catch {
+    return {};
+  }
+});
+
 const currentNodeCode = computed(() =>
   String(
     carloanStore.pageContext.nodeCode ||
@@ -485,19 +580,6 @@ const currentNodeCode = computed(() =>
       "",
   ),
 );
-
-function resolveFlowTabByNode(code) {
-  const text = String(code || "");
-  const numericCode = Number(text);
-  if (Number.isFinite(numericCode)) {
-    if (numericCode >= 1300 && numericCode <= 1350) return "supplement";
-    if (numericCode >= 1600 && numericCode <= 1660) return "signing";
-    return "precheck";
-  }
-  if (text === "SUPPLEMENT_MATERIALS") return "supplement";
-  if (["SIGN_CONTRACT", "PENDING_SIGN", "SIGNING_PROGRESS"].includes(text)) return "signing";
-  return "precheck";
-}
 
 const isPreAuditDetail = computed(() =>
   ["1100", "1200", "PRE_AUDIT", "INITIAL_AUDIT"].includes(
@@ -520,182 +602,46 @@ const isSigningDetail = computed(() => {
   );
 });
 
-const isFlowDetailPage = computed(
-  () => isPreAuditDetail.value || isSupplementDetail.value || isSigningDetail.value,
-);
-
-/** 根据节点状态获取页面标题 */
-const pageTitle = computed(() => {
+const isLoanRequestDetail = computed(() => {
   const code = currentNodeCode.value;
-  if (!code) return "订单详情";
-
   const numericCode = Number(code);
-  if (Number.isFinite(numericCode)) {
-    // 预审阶段：1100-1250
-    if (numericCode >= 1100 && numericCode <= 1250) return "预审阶段";
-    // 补件阶段：1300-1350
-    if (numericCode >= 1300 && numericCode <= 1350) return "补件阶段";
-    // 风控审批：1400-1450
-    if (numericCode >= 1400 && numericCode <= 1450) return "风控审批";
-    // 资方终审：1500
-    if (numericCode === 1500) return "资方终审";
-    // 签约阶段：1600-1660
-    if (numericCode >= 1600 && numericCode <= 1660) return "签约阶段";
-    // 请款放款：1700-1800
-    if (numericCode >= 1700 && numericCode <= 1800) return "请款放款";
-    // 贷后阶段：1900
-    if (numericCode === 1900) return "贷后阶段";
-  }
-
-  // 兼容旧的英文节点编码
-  if (["PRE_AUDIT", "INITIAL_AUDIT"].includes(code)) return "预审阶段";
-  if (code === "SUPPLEMENT_MATERIALS") return "补件阶段";
-  if (["SIGN_CONTRACT", "PENDING_SIGN", "SIGNING_PROGRESS"].includes(code)) return "签约阶段";
-
-  if (isSupplementDetail.value) return "补件阶段";
-  if (isSigningDetail.value) return "签约阶段";
-
-  return isPreAuditDetail.value ? "预审阶段" : "订单详情";
+  return (
+    (Number.isFinite(numericCode) && numericCode >= 1700 && numericCode <= 1799) ||
+    ["LOAN_REQUEST", "PENDING_LOAN_REQUEST"].includes(code)
+  );
 });
 
-const preAuditEntryItems = computed(() => {
-  if (activeFlowTab.value === "signing") {
-    return [
-      {
-        type: "signConfirmAmount",
-        code: "CONFIRM_AMOUNT",
-        title: "确认额度",
-        desc: "确认资方批复的贷款额度和利率",
-        icon: "rmb-circle",
-        iconClass: "pre-card-icon-customer",
-      },
-      {
-        type: "signBindCard",
-        code: "BIND_CARD",
-        title: "绑卡",
-        desc: "绑定收款银行卡",
-        icon: "card",
-        iconClass: "pre-card-icon-car",
-      },
-      {
-        type: "videoFaceSign",
-        code: "SIGN_CONTRACT",
-        title: "合同签约",
-        desc: "在线签署贷款合同",
-        icon: "edit-pen",
-        iconClass: "pre-card-icon-order",
-      },
-      {
-        type: "signGpsAppointment",
-        code: "GPS_APPOINTMENT",
-        title: "GPS安装预约",
-        desc: "预约GPS设备安装时间和地点",
-        icon: "map",
-        iconClass: "pre-card-icon-file",
-      },
-      {
-        type: "signMortgage",
-        code: "MORTGAGE",
-        title: "抵押办理",
-        desc: "预约或办理车辆抵押登记",
-        icon: "lock",
-        iconClass: "pre-card-icon-pending",
-      },
-    ];
-  }
+/** 根据节点状态获取页面标题 */
+const pageTitle = computed(() =>
+  resolvePageTitle(currentNodeCode.value, isPreAuditDetail.value ? "预审阶段" : "订单详情"),
+);
 
-  if (activeFlowTab.value === "supplement") {
-    return [
-      {
-        type: "idInfoSupplement",
-        code: "CUSTOMER_SUPPLEMENT",
-        title: "客户资料",
-        desc: "补充客户基本信息、联系方式等",
-        icon: "account",
-        iconClass: "pre-card-icon-customer",
-      },
-      {
-        type: "carInfoSupplement",
-        code: "VEHICLE_SUPPLEMENT",
-        title: "车辆资料",
-        desc: "补充车辆品牌、型号、年限等",
-        icon: "car",
-        iconClass: "pre-card-icon-car",
-      },
-      {
-        type: "orderInfoSupplement",
-        code: "ORDER_SUPPLEMENT",
-        title: "订单信息",
-        desc: "补充申请金额、期限、产品等",
-        icon: "order",
-        iconClass: "pre-card-icon-order",
-      },
-      {
-        type: "fileInfoSupplement",
-        code: "FILE_SUPPLEMENT",
-        title: "文件信息",
-        desc: "上传身份证、行驶证等材料",
-        icon: "edit-pen",
-        iconClass: "pre-card-icon-file",
-      },
-      {
-        type: "submitSupplement",
-        code: "PENDING_SUPPLEMENT",
-        title: "待提交",
-        desc: "资料补充完成后提交，进入下一环节",
-        icon: "clock",
-        iconClass: "pre-card-icon-pending",
-      },
-    ];
-  }
+const activeStageTitle = computed(
+  () => flowTabList.find((tab) => tab.value === activeFlowTab.value)?.label || "阶段",
+);
 
-  return [
-    {
-      type: "idInfo",
-      code: "ID_CARD",
-      title: "身份证信息",
-      desc: "完善客户身份、证件、联系方式等",
-      icon: "account",
-      iconClass: "pre-card-icon-customer",
-    },
-    {
-      type: "carInfo",
-      code: "VEHICLE",
-      title: "车辆信息",
-      desc: "完善车辆品牌、型号、年限等",
-      icon: "car",
-      iconClass: "pre-card-icon-car",
-    },
-    {
-      type: "applyInfo",
-      code: "APPLICATION",
-      title: "申请信息",
-      desc: "完善申请金额、期限、产品等",
-      icon: "order",
-      iconClass: "pre-card-icon-order",
-    },
-    {
-      type: "authSign",
-      code: "AUTH_SIGN",
-      title: "签署授权书",
-      desc: "签署授权书，授权资方查询征信等",
-      icon: "edit-pen",
-      iconClass: "pre-card-icon-file",
-    },
-    {
-      type: "submit",
-      code: "PENDING_PRECHECK",
-      title: "待预审",
-      desc: "资料确认完成后提交，进入预审流程",
-      icon: "clock",
-      iconClass: "pre-card-icon-pending",
-    },
-  ];
+const stageEntryItems = computed(() => {
+  if (activeFlowTab.value === "supplement") return supplementEntryItems;
+  if (activeFlowTab.value === "approval") return approvalEntryItems;
+  if (activeFlowTab.value === "signing") return signingEntryItems;
+  if (activeFlowTab.value === "loanRequest") return loanRequestEntryItems;
+  if (activeFlowTab.value === "disbursement") return disbursementEntryItems;
+  return precheckEntryItems;
 });
 
 function getEntryStepDone(code) {
   if (code === "ID_CARD" || code === "CUSTOMER_SUPPLEMENT") {
-    return Boolean(carloanStore.pageContext.uuid);
+    return Boolean(
+      entryProgress.value?.ID_CARD === 1 ||
+        detailUuid.value ||
+        detail.value?.personName ||
+        detail.value?.personIdcard ||
+        detail.value?.idCard ||
+        detail.value?.idcard ||
+        detail.value?.personIdCard ||
+        detail.value?.customer?.personIdcard ||
+        detail.value?.user?.personIdcard,
+    );
   }
   if (code === "VEHICLE" || code === "VEHICLE_SUPPLEMENT") {
     return Boolean(
@@ -708,7 +654,15 @@ function getEntryStepDone(code) {
     return Boolean(detail.value?.periods || detail.value?.pushQuota || detail.value?.amount);
   }
   if (code === "AUTH_SIGN") {
-    return detail.value?.isSignContract === 1;
+    return Boolean(
+      entryProgress.value?.AUTH_SIGN === 1 ||
+        signProgress.value?.status === "SIGNED" ||
+        detail.value?.isSignContract === 1 ||
+        detail.value?.signStatus === "SIGNED" ||
+        detail.value?.authSignStatus === "SIGNED" ||
+        detail.value?.authContractStatus === "SIGNED" ||
+        detail.value?.authStatus === "SIGNED",
+    );
   }
   if (code === "FILE_SUPPLEMENT") {
     return Boolean(
@@ -726,12 +680,18 @@ function getEntryStepDone(code) {
   return false;
 }
 
-function getPreAuditStepTag(item) {
+function getStageStepTag(item) {
   if (["PENDING_PRECHECK", "PENDING_SUPPLEMENT"].includes(item.code)) {
     return {
       text: allPreAuditStepsDone.value ? "待提交" : "待完善",
       type: allPreAuditStepsDone.value ? "info" : "warning",
     };
+  }
+  if (["APPROVAL_PROGRESS", "APPROVAL_LIST", "LOAN_REQUEST_PROGRESS", "DISBURSEMENT_PROGRESS", "REPAYMENT_PLAN"].includes(item.code)) {
+    return { text: "查看", type: "info" };
+  }
+  if (item.code === "LOAN_CONFIRM") {
+    return { text: isLoanRequestDetail.value ? "待确认" : "办理", type: "info" };
   }
   // 签约子步骤显示"待办理"
   if (["CONFIRM_AMOUNT", "BIND_CARD", "SIGN_CONTRACT", "GPS_APPOINTMENT", "MORTGAGE"].includes(item.code)) {
@@ -745,27 +705,34 @@ function getPreAuditStepTag(item) {
 }
 
 const allPreAuditStepsDone = computed(() =>
-  preAuditEntryItems.value
+  stageEntryItems.value
     .filter((item) => !["PENDING_PRECHECK", "PENDING_SUPPLEMENT"].includes(item.code))
     .every((item) => getEntryStepDone(item.code)),
 );
 
-function goPreAuditStep(item) {
+function goStageStep(item) {
   if (["PENDING_PRECHECK", "PENDING_SUPPLEMENT"].includes(item.code)) {
     handlePreAuditSubmit();
     return;
   }
+  if (["approvalProgress", "loanRequestProgress", "disbursementProgress"].includes(item.type)) {
+    handleProgress();
+    return;
+  }
 
   const detailRouteQuery = buildEntryRouteQuery({
-    uuid: carloanStore.pageContext.uuid,
+    uuid: detailUuid.value,
     creditOrderId: orderNo.value,
     name: customerDisplayName.value,
     phone: customerDisplayPhone.value,
+    amount: detail.value?.pushQuota || detail.value?.amount || "",
+    pushQuota: detail.value?.pushQuota || "",
+    periods: detail.value?.periods || "",
     fromEntry: 1,
   });
   const signRouteQuery = buildSignRouteQuery({
     creditOrderId: orderNo.value,
-    uuid: carloanStore.pageContext.uuid,
+    uuid: detailUuid.value,
     customerName: customerDisplayName.value,
     customerPhone: customerDisplayPhone.value,
   });
@@ -783,24 +750,78 @@ function goPreAuditStep(item) {
     videoFaceSign: buildRoute(APP_ROUTES.carloan.signing.videoFaceSign, signRouteQuery),
     signGpsAppointment: buildRoute(APP_ROUTES.carloan.signing.signGpsAppointment, signRouteQuery),
     signMortgage: buildRoute(APP_ROUTES.carloan.signing.signMortgage, signRouteQuery),
-  };
-  const url = urlMap[item.type];
-  if (url) {
-    uni.navigateTo({ url });
-  }
-}
-
-function handleProgress() {
-  uni.navigateTo({
-    url: buildRoute(APP_ROUTES.carloan.precheck.applyProgress, {
+    approvalProgress: buildRoute(APP_ROUTES.carloan.precheck.applyProgress, {
       id: detailId || detail.value?.id || "",
       creditOrderId: orderNo.value,
-      uuid: carloanStore.pageContext.uuid,
+      uuid: detailUuid.value,
       customerName: customerDisplayName.value,
       customerPhone: customerDisplayPhone.value,
       nodeCode: currentNodeCode.value,
     }),
-  });
+    approvalList: buildRoute(APP_ROUTES.carloan.approval.approvalList, detailRouteQuery),
+    loanConfirm: buildRoute(APP_ROUTES.carloan.postloan.loanConfirm, {
+      applicationId: detailId || detail.value?.id || "",
+      applicationNo: orderNo.value,
+      creditOrderId: orderNo.value,
+      uuid: detailUuid.value,
+      customerName: customerDisplayName.value,
+      customerPhone: customerDisplayPhone.value,
+    }),
+    loanRequestProgress: buildRoute(APP_ROUTES.carloan.precheck.applyProgress, {
+      id: detailId || detail.value?.id || "",
+      creditOrderId: orderNo.value,
+      uuid: detailUuid.value,
+      customerName: customerDisplayName.value,
+      customerPhone: customerDisplayPhone.value,
+      nodeCode: currentNodeCode.value,
+    }),
+    disbursementProgress: buildRoute(APP_ROUTES.carloan.precheck.applyProgress, {
+      id: detailId || detail.value?.id || "",
+      creditOrderId: orderNo.value,
+      uuid: detailUuid.value,
+      customerName: customerDisplayName.value,
+      customerPhone: customerDisplayPhone.value,
+      nodeCode: currentNodeCode.value,
+    }),
+    repaymentPlan: buildRoute(APP_ROUTES.carloan.postloan.repaymentPlan, {
+      applicationId: detailId || detail.value?.id || "",
+      applicationNo: orderNo.value,
+      creditOrderId: orderNo.value,
+      uuid: detailUuid.value,
+      customerName: customerDisplayName.value,
+      customerPhone: customerDisplayPhone.value,
+    }),
+  };
+  const url = urlMap[item.type];
+  if (url) {
+    uni.navigateTo({ url });
+    return;
+  }
+  uni.showToast({ title: "当前阶段请查看进展", icon: "none" });
+}
+
+async function handleProgress() {
+  const lifecycleId = detailId || detail.value?.id || detail.value?.applicationId || orderNo.value;
+  if (!lifecycleId) {
+    uni.showToast({ title: "缺少订单编号", icon: "none" });
+    return;
+  }
+  flowRecordVisible.value = true;
+  flowRecordLoading.value = true;
+  flowRecordList.value = [];
+  try {
+    const res = await businessApi.getLifecycle(String(lifecycleId));
+    if (res?.code === 200 && Array.isArray(res.data)) {
+      flowRecordList.value = res.data;
+      return;
+    }
+    throw new Error("接口返回异常");
+  } catch (err) {
+    console.warn("获取流程进展失败:", err);
+    uni.showToast({ title: "加载进展失败", icon: "none" });
+  } finally {
+    flowRecordLoading.value = false;
+  }
 }
 
 async function handlePreAuditSubmit() {
@@ -834,19 +855,6 @@ async function handlePreAuditSubmit() {
 }
 
 // 格式化额度（字符串类型，单位元）
-function formatQuota(val) {
-  if (!val && val !== "0") return "-";
-  const num = Number(val);
-  if (Number.isNaN(num)) return val;
-  return num >= 10000 ? `${(num / 10000).toFixed(2)}万` : `${num.toFixed(2)}元`;
-}
-
-// 格式化日期，去除时间部分
-function formatDate(val) {
-  if (!val) return "";
-  return val.split(" ")[0];
-}
-
 const goEdit = (type) => {
   const editPath = {
     客户信息: APP_ROUTES.carloan.precheck.idInfo,
@@ -874,29 +882,59 @@ const copyText = (text) => {
 <style lang="scss" scoped>
 .pre-audit-detail-page {
   min-height: 100vh;
-  padding: 32rpx 24rpx 56rpx;
-  background: linear-gradient(180deg, #f6f9ff 0%, #f8fbff 48%, #eef8fb 100%);
+  padding: 28rpx 24rpx 64rpx;
+  background:
+    linear-gradient(180deg, rgba(232, 244, 255, 0.9) 0%, rgba(248, 250, 252, 0.96) 34%, #f6f8fb 100%),
+    linear-gradient(135deg, rgba(38, 166, 154, 0.12), rgba(52, 120, 246, 0.1));
 }
 
 .pre-customer-card {
-  background: #fff;
-  border-radius: 24rpx;
-  padding: 34rpx 32rpx 30rpx;
-  box-shadow: 0 14rpx 34rpx rgba(52, 92, 140, 0.08);
-  margin-bottom: 40rpx;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 252, 255, 0.96) 100%);
+  border: 1rpx solid rgba(223, 232, 242, 0.9);
+  border-radius: 20rpx;
+  padding: 32rpx 30rpx 28rpx;
+  box-shadow: 0 12rpx 30rpx rgba(31, 45, 61, 0.06);
+  margin-bottom: 30rpx;
 }
 
 .pre-customer-header {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
-  gap: 24rpx;
+  gap: 22rpx;
+}
+
+.pre-progress-btn {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 14rpx 18rpx;
+  background: rgba(64, 150, 255, 0.08);
+  border-radius: 999rpx;
+  border: 1rpx solid rgba(64, 150, 255, 0.16);
+  flex-shrink: 0;
+  transition: transform 0.16s ease, background-color 0.16s ease;
+
+  &:active {
+    transform: scale(0.98);
+    background: rgba(64, 150, 255, 0.14);
+  }
+}
+
+.pre-progress-text {
+  font-size: 25rpx;
+  font-weight: 600;
+  color: var(--u-type-primary);
 }
 
 .pre-avatar {
-  width: 88rpx;
-  height: 88rpx;
+  width: 92rpx;
+  height: 92rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #60a5fa, var(--u-type-primary));
+  background: linear-gradient(135deg, #2f8cff 0%, #26a69a 100%);
   color: #fff;
   font-size: 38rpx;
   font-weight: 700;
@@ -904,6 +942,7 @@ const copyText = (text) => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 12rpx 24rpx rgba(47, 140, 255, 0.18);
 }
 
 .pre-customer-info {
@@ -911,160 +950,164 @@ const copyText = (text) => {
   flex-direction: column;
   gap: 8rpx;
   min-width: 0;
+  flex: 1;
 }
 
 .pre-customer-name {
-  font-size: 36rpx;
+  font-size: 38rpx;
   font-weight: 700;
-  color: #161b25;
+  color: #172033;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pre-customer-phone {
-  font-size: 28rpx;
-  color: #9aa3af;
+  font-size: 27rpx;
+  color: #687387;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pre-order-row {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
-  gap: 18rpx;
-  margin-top: 28rpx;
-  padding-top: 26rpx;
-  border-top: 1rpx solid #eef2f7;
+  gap: 16rpx;
+  margin-top: 26rpx;
+  padding: 20rpx 22rpx;
+  background: rgba(245, 248, 252, 0.86);
+  border-radius: 14rpx;
 }
 
 .pre-order-label {
-  font-size: 28rpx;
-  color: #a0a8b5;
+  font-size: 25rpx;
+  color: #8290a3;
+  flex-shrink: 0;
 }
 
 .pre-order-value {
   flex: 1;
   min-width: 0;
-  font-size: 28rpx;
-  color: #2f3747;
+  font-size: 25rpx;
+  color: #2b3445;
   word-break: break-all;
+  line-height: 1.35;
 }
 
-.pre-progress-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24rpx;
-  padding: 24rpx 28rpx;
-  background: #fff;
-  border-radius: 20rpx;
-  box-shadow: 0 10rpx 28rpx rgba(52, 92, 140, 0.06);
-
-  &:active {
-    transform: scale(0.99);
-    background: #fbfdff;
-  }
-}
-
-.pre-progress-card__left {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-}
-
-.pre-progress-card__text {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: var(--u-type-primary);
-}
-
-.pre-progress-card__arrow {
-  font-size: 36rpx;
-  line-height: 1;
-  color: var(--u-type-primary);
+.pre-flow-scroll {
+  width: 100%;
+  margin: 0 -24rpx 24rpx;
+  padding: 0 24rpx;
+  background: rgba(246, 248, 251, 0.96);
+  border-top: 1rpx solid rgba(229, 235, 244, 0.9);
+  border-bottom: 1rpx solid rgba(229, 235, 244, 0.9);
+  white-space: nowrap;
 }
 
 .pre-flow-tabs {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  margin-bottom: 28rpx;
-  padding: 0 24rpx;
-  background: #fff;
-  border-radius: 20rpx;
-  box-shadow: 0 10rpx 28rpx rgba(52, 92, 140, 0.06);
+  padding: 0;
+  min-width: 100%;
 }
 
 .pre-flow-tab {
   position: relative;
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   justify-content: center;
-  padding: 26rpx 0 24rpx;
+  min-width: 140rpx;
+  padding: 24rpx 14rpx 22rpx;
 }
 
 .pre-flow-tab__label {
-  font-size: 30rpx;
+  font-size: 29rpx;
   font-weight: 600;
-  color: #6b7280;
+  color: #647084;
+  line-height: 1.2;
 }
 
 .pre-flow-tab--active .pre-flow-tab__label {
-  color: var(--u-type-primary);
+  color: #1f6feb;
 }
 
 .pre-flow-tab__indicator {
   position: absolute;
   left: 50%;
   bottom: 0;
-  width: 52rpx;
+  width: 44rpx;
   height: 6rpx;
   border-radius: 8rpx;
-  background: var(--u-type-primary);
+  background: linear-gradient(90deg, #1f6feb, #26a69a);
   transform: translateX(-50%);
 }
 
 .pre-section-title {
   position: relative;
-  margin: 0 0 24rpx;
-  padding-left: 16rpx;
-  font-size: 32rpx;
+  margin: 0 0 20rpx;
+  padding-left: 18rpx;
+  font-size: 31rpx;
   font-weight: 700;
-  color: #5d6b7c;
+  color: #253247;
+  line-height: 1.25;
 
   &::before {
     content: "";
     position: absolute;
     left: 0;
-    top: 8rpx;
+    top: 5rpx;
     width: 6rpx;
-    height: 32rpx;
+    height: 34rpx;
     border-radius: 8rpx;
-    background: linear-gradient(180deg, #4aa3ff, #7cc2ff);
+    background: linear-gradient(180deg, #1f6feb, #26a69a);
   }
 }
 
 .pre-supplement-list {
   display: flex;
   flex-direction: column;
-  gap: 22rpx;
+  gap: 16rpx;
 }
 
 .pre-supplement-card {
-  min-height: 126rpx;
+  position: relative;
+  min-height: 120rpx;
   display: flex;
   align-items: center;
-  gap: 24rpx;
-  padding: 26rpx 24rpx;
-  background: #fff;
-  border-radius: 20rpx;
-  box-shadow: 0 10rpx 28rpx rgba(52, 92, 140, 0.06);
+  gap: 20rpx;
+  padding: 24rpx 22rpx;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1rpx solid rgba(226, 233, 242, 0.9);
+  border-radius: 16rpx;
+  box-shadow: 0 8rpx 20rpx rgba(31, 45, 61, 0.045);
+  transition: transform 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 28rpx;
+    bottom: 28rpx;
+    width: 5rpx;
+    border-radius: 0 8rpx 8rpx 0;
+    background: rgba(64, 150, 255, 0.18);
+  }
 
   &:active {
-    transform: scale(0.99);
+    transform: translateY(2rpx);
     background: #fbfdff;
+    border-color: rgba(64, 150, 255, 0.28);
   }
 }
 
 .pre-card-icon {
-  width: 84rpx;
-  height: 84rpx;
-  border-radius: 18rpx;
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 16rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1072,19 +1115,19 @@ const copyText = (text) => {
 }
 
 .pre-card-icon-customer {
-  background: linear-gradient(135deg, #60a5fa, #3478f6);
+  background: linear-gradient(135deg, #4f9cff, #1f6feb);
 }
 
 .pre-card-icon-car {
-  background: linear-gradient(135deg, #21c89a, #08a875);
+  background: linear-gradient(135deg, #2dd4bf, #0f9f84);
 }
 
 .pre-card-icon-order {
-  background: linear-gradient(135deg, #f8a21a, #ed8500);
+  background: linear-gradient(135deg, #f6b64b, #e88622);
 }
 
 .pre-card-icon-file {
-  background: linear-gradient(135deg, var(--u-type-primary), #7c3aed);
+  background: linear-gradient(135deg, #6772e5, #8b5cf6);
 }
 
 .pre-card-body {
@@ -1092,50 +1135,92 @@ const copyText = (text) => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8rpx;
+  gap: 7rpx;
 }
 
 .pre-card-title {
-  font-size: 32rpx;
+  font-size: 31rpx;
   font-weight: 700;
-  color: #111827;
+  color: #172033;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pre-card-desc {
-  font-size: 26rpx;
-  color: #9aa3af;
-  line-height: 1.35;
+  font-size: 25rpx;
+  color: #7b8797;
+  line-height: 1.42;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pre-card-status {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  min-height: 76rpx;
+
+  :deep(.u-tag) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 42rpx;
+    line-height: 42rpx;
+    padding: 0 14rpx;
+    border-radius: 999rpx;
+    font-weight: 600;
+  }
+
+  :deep(.u-tag__text) {
+    line-height: 1;
+  }
 }
 
 .pre-card-arrow {
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
+  align-self: center;
+  min-height: 76rpx;
 }
 
 .pre-supplement-card--submit {
-  align-items: flex-start;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 248, 255, 0.98));
+  border-color: rgba(64, 150, 255, 0.18);
 }
 
 .pre-supplement-card--submit .pre-card-icon {
-  opacity: 0;
-  pointer-events: none;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .pre-supplement-card--submit .pre-card-body {
-  padding-top: 4rpx;
+  padding-top: 0;
 }
 
 .pre-supplement-card--submit .pre-card-arrow {
+  align-items: center;
   gap: 16rpx;
+
+  :deep(.u-btn) {
+    height: 56rpx;
+    line-height: 56rpx;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12rpx;
+  }
 }
 
 .pre-card-icon-pending {
-  background: linear-gradient(135deg, #93c5fd, #60a5fa);
+  background: linear-gradient(135deg, #60a5fa, #26a69a);
 }
 
 .pre-action-area {

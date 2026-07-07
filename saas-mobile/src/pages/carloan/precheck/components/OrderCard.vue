@@ -1,9 +1,14 @@
 <template>
   <view class="card" @click="$emit('detail', order)">
     <view class="card__header">
-      <view class="card__name-wrap">
-        <text class="card__name">{{ order.name }}</text>
-        <view v-if="order.phone" class="card__phone">{{ order.phone }}</view>
+      <view class="card__customer">
+        <view class="card__avatar">
+          <text>{{ customerInitial }}</text>
+        </view>
+        <view class="card__name-wrap">
+          <text class="card__name">{{ order.name || "未命名客户" }}</text>
+          <view v-if="order.phone" class="card__phone">{{ order.phone }}</view>
+        </view>
       </view>
       <view
         v-if="order.nodeStatusLabel"
@@ -90,6 +95,11 @@ defineEmits<{
   (e: "flow-record", order: OrderListViewItem): void;
 }>();
 
+const customerInitial = computed(() => {
+  const name = props.order.name?.trim();
+  return name ? name.slice(0, 1) : "客";
+});
+
 const tags = computed(() => {
   const list: Array<{
     text: string;
@@ -118,19 +128,31 @@ $primary: #437cff;
 $green: #3ecf8e;
 $red: #f56c6c;
 $orange: #ff9f43;
+$purple: #6c63ff;
 
 .card {
-  margin-bottom: 22rpx;
+  position: relative;
+  margin-bottom: 24rpx;
   padding: 28rpx 28rpx 0;
-  background: $bg;
-  border: 1rpx solid var(--app-border, #e8edf5);
-  border-radius: 22rpx;
-  box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+  border: 1rpx solid rgba(221, 228, 240, 0.9);
+  border-radius: 24rpx;
+  box-shadow: 0 12rpx 34rpx rgba(31, 45, 86, 0.08);
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
   overflow: hidden;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 8rpx;
+    height: 100%;
+    background: linear-gradient(180deg, #4f7cff 0%, #41c6a8 100%);
+  }
 
   &:active {
     transform: scale(0.99);
@@ -141,6 +163,34 @@ $orange: #ff9f43;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
+    gap: 20rpx;
+  }
+
+  &__customer {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 18rpx;
+  }
+
+  &__avatar {
+    flex-shrink: 0;
+    width: 72rpx;
+    height: 72rpx;
+    border-radius: 22rpx;
+    background: linear-gradient(135deg, rgba($primary, 0.95), rgba(#41c6a8, 0.95));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10rpx 22rpx rgba(67, 124, 255, 0.22);
+
+    text {
+      font-size: 32rpx;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
   }
 
   &__name-wrap {
@@ -149,14 +199,17 @@ $orange: #ff9f43;
   }
 
   &__name {
-    font-size: 30rpx;
+    font-size: 32rpx;
     font-weight: 700;
     color: $text-main;
     line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__phone {
-    margin-top: 4rpx;
+    margin-top: 6rpx;
     font-size: 24rpx;
     color: $text-hint;
     line-height: 1.4;
@@ -164,10 +217,9 @@ $orange: #ff9f43;
 
   &__status {
     flex-shrink: 0;
-    margin-left: 16rpx;
-    margin-top: 4rpx;
-    padding: 4rpx 16rpx;
-    border-radius: 12rpx;
+    margin-top: 2rpx;
+    padding: 8rpx 18rpx;
+    border-radius: 999rpx;
     font-size: 22rpx;
     font-weight: 600;
     line-height: 1.4;
@@ -191,11 +243,11 @@ $orange: #ff9f43;
   }
 
   &__body {
-    margin-top: 20rpx;
-    padding: 20rpx;
-    background: #f8fafc;
+    margin-top: 24rpx;
+    padding: 22rpx;
+    background: rgba(246, 249, 253, 0.9);
     border: 1rpx solid #eef2f7;
-    border-radius: 16rpx;
+    border-radius: 18rpx;
   }
 
   &__row {
@@ -232,7 +284,7 @@ $orange: #ff9f43;
 
     &--primary {
       font-weight: 700;
-      color: $primary;
+      color: #2f68e8;
     }
   }
 
@@ -244,8 +296,8 @@ $orange: #ff9f43;
   }
 
   &__tag {
-    padding: 4rpx 14rpx;
-    border-radius: 10rpx;
+    padding: 6rpx 16rpx;
+    border-radius: 999rpx;
     font-size: 20rpx;
     font-weight: 500;
 
@@ -272,19 +324,26 @@ $orange: #ff9f43;
     align-items: center;
     justify-content: space-between;
     margin-top: 16rpx;
-    padding: 18rpx 0;
+    padding: 18rpx 0 20rpx;
     border-top: 1rpx solid $border;
+    gap: 16rpx;
   }
 
   &__time {
+    flex: 1;
+    min-width: 0;
     font-size: 22rpx;
     color: $text-light;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__actions {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
-    gap: 16rpx;
+    gap: 12rpx;
   }
 
   &__link {
@@ -297,14 +356,20 @@ $orange: #ff9f43;
   }
 
   &__btn {
-    padding: 10rpx 28rpx;
-    border-radius: 12rpx;
+    min-width: 92rpx;
+    height: 52rpx;
+    padding: 0 22rpx;
+    border-radius: 999rpx;
     border: 1rpx solid $border;
     background: $bg;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &--primary {
-      background: linear-gradient(135deg, #4f7cff, #6366f1);
+      background: linear-gradient(135deg, #4f7cff, $purple);
       border-color: $primary;
+      box-shadow: 0 8rpx 18rpx rgba(67, 124, 255, 0.24);
       .card__btn-text {
         color: #fff;
       }

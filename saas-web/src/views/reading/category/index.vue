@@ -1,44 +1,37 @@
 <template>
-  <div class="page-content !mb-5">
-    <div class="flex items-center justify-between mb-5">
-      <h1 class="text-2xl font-medium">{{ $t('menus.reading.category') }}</h1>
-      <div class="flex gap-2">
-        <ElButton
-          type="success"
-          @click="toggleTree"
-          :icon="isTree ? 'ri:list-check' : 'ri:git-branch-line'"
-        >
-          {{ isTree ? '列表视图' : '树形视图' }}
-        </ElButton>
-        <ElButton v-if="selectedIds.length > 0" type="warning" @click="handleBatchStatus(1)">
-          批量启用 ({{ selectedIds.length }})
-        </ElButton>
-        <ElButton v-if="selectedIds.length > 0" type="info" @click="handleBatchStatus(0)">
-          批量禁用 ({{ selectedIds.length }})
-        </ElButton>
-        <ElButton type="primary" @click="openAddDialog" v-auth="'add'">新增分类</ElButton>
-      </div>
-    </div>
-
-    <!-- 搜索 -->
-    <div class="mb-4">
-      <ElInput
-        v-model="searchKeyword"
-        placeholder="搜索分类名称"
-        clearable
-        style="width: 300px"
-        @clear="handleSearch"
-        @keyup.enter="handleSearch"
+  <ReadingPageShell
+    title="分类管理"
+    description="维护图书分类树，支持树形/列表视图切换与批量状态处理。"
+    icon="ri:folder-2-line"
+  >
+    <template #actions>
+      <ElButton
+        type="success"
+        @click="toggleTree"
+        :icon="isTree ? 'ri:list-check' : 'ri:git-branch-line'"
       >
-        <template #append>
-          <ElButton @click="handleSearch" icon="ri:search-line" />
-        </template>
-      </ElInput>
-    </div>
+        {{ isTree ? '列表视图' : '树形视图' }}
+      </ElButton>
+      <ElButton v-if="selectedIds.length > 0" type="warning" @click="handleBatchStatus(1)">
+        批量启用 ({{ selectedIds.length }})
+      </ElButton>
+      <ElButton v-if="selectedIds.length > 0" type="info" @click="handleBatchStatus(0)">
+        批量禁用 ({{ selectedIds.length }})
+      </ElButton>
+      <ElButton type="primary" @click="openAddDialog" v-auth="'add'">新增分类</ElButton>
+    </template>
 
-    <!-- 表格 -->
+    <ArtSearchBar
+      v-model="searchForm"
+      :items="searchItems"
+      :span="8"
+      :show-expand="false"
+      @search="handleSearch"
+      @reset="handleReset"
+    />
+
     <ElCard class="art-table-card">
-      <ArtTableHeader :loading="isLoading" @refresh="loadCategories">
+      <ArtTableHeader :loading="isLoading" @refresh="loadCategories" layout="refresh,size,fullscreen,columns,settings">
         <template #left>
           <ElSpace wrap>
             <ElButton
@@ -73,7 +66,6 @@
     <div class="flex justify-center mt-5">
       <ElEmpty v-if="displayList.length === 0 && !isLoading" description="暂无分类数据" />
     </div>
-
     <!-- 新增/编辑分类弹窗 -->
     <ElDialog v-model="showDialog" :title="isEdit ? '编辑分类' : '新增分类'" width="500px">
       <ElForm :model="formData" label-width="100px">
@@ -106,10 +98,11 @@
         <ElButton type="primary" @click="handleSave" :loading="saving">保存</ElButton>
       </template>
     </ElDialog>
-  </div>
+</ReadingPageShell>
 </template>
 
 <script setup lang="ts">
+  import ReadingPageShell from '../components/ReadingPageShell.vue'
   import { h } from 'vue'
   import {
     getBookCategories,
@@ -146,7 +139,7 @@
   const isLoading = ref(false)
   const saving = ref(false)
   const isTree = ref(false)
-  const searchKeyword = ref('')
+  const searchForm = reactive({ keyword: '' })
   const selectedIds = ref<number[]>([])
 
   const categoryList = ref<BookCategory[]>([])
@@ -236,7 +229,7 @@
     try {
       const params: CategoryQueryParams = {
         tree: isTree.value,
-        keyword: searchKeyword.value || undefined
+        keyword: searchForm.keyword.value || undefined
       }
       const res = await getBookCategories(params) as BookCategory[]
       const data = res || []
@@ -254,7 +247,22 @@
     loadCategories()
   }
 
+  const searchItems = computed(() => [
+    {
+      label: '分类名称',
+      key: 'keyword',
+      type: 'input',
+      placeholder: '搜索分类名称',
+      clearable: true
+    }
+  ])
+
   const handleSearch = () => {
+    loadCategories()
+  }
+
+  const handleReset = () => {
+    searchForm.keyword = ''
     loadCategories()
   }
 

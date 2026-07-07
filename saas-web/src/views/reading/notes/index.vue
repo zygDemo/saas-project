@@ -1,112 +1,248 @@
 <template>
-  <div class="page-content !mb-5">
-    <div class="flex items-center justify-between mb-5">
-      <h1 class="text-2xl font-medium">阅读笔记</h1>
-    </div>
+  <ReadingPageShell
+    title="阅读笔记"
+    description="管理用户在阅读过程中的高亮、批注和章节笔记。"
+    icon="ri:sticky-note-line"
+  >
+    <ArtSearchBar
+      v-model="searchForm"
+      :items="searchItems"
+      :span="8"
+      :show-expand="false"
+      @search="handleSearch"
+      @reset="handleReset"
+    />
 
-    <!-- 搜索栏 -->
-    <ElRow :gutter="10" class="mb-5">
-      <ElCol :lg="6" :md="8" :sm="12" :xs="24">
-        <ElInput
-          v-model="searchBookId"
-          clearable
-          placeholder="书籍ID筛选"
-          @keyup.enter="fetchNotes"
-        />
-      </ElCol>
-      <ElCol :lg="4" :md="6" :sm="8" :xs="24">
-        <ElButton type="primary" @click="fetchNotes">查询</ElButton>
-      </ElCol>
-    </ElRow>
+    <ElCard class="art-table-card">
+      <ArtTableHeader :loading="loading" @refresh="fetchNotes" layout="refresh,size,fullscreen,columns,settings" />
 
-    <!-- 笔记列表 -->
-    <ElTable :data="notes" border stripe v-loading="loading">
-      <ElTableColumn prop="id" label="ID" width="80" />
-      <ElTableColumn label="书籍" min-width="150">
-        <template #default="{ row }">
-          <div class="flex items-center gap-2">
-            <img v-if="row.book?.cover" :src="row.book.cover" class="w-8 h-10 object-cover rounded" />
-            <span>{{ row.book?.title || '-' }}</span>
-          </div>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn label="章节" width="150">
-        <template #default="{ row }">{{ row.chapter?.title || '-' }}</template>
-      </ElTableColumn>
-      <ElTableColumn label="高亮文本" min-width="200">
-        <template #default="{ row }">
-          <span v-if="row.highlight" class="text-sm" :style="{ backgroundColor: row.color + '40', padding: '2px 4px', borderRadius: '2px' }">
-            {{ row.highlight.length > 100 ? row.highlight.slice(0, 100) + '...' : row.highlight }}
-          </span>
-          <span v-else class="text-gray-400">-</span>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn label="笔记内容" min-width="200">
-        <template #default="{ row }">
-          <span v-if="row.note">{{ row.note.length > 100 ? row.note.slice(0, 100) + '...' : row.note }}</span>
-          <span v-else class="text-gray-400">-</span>
-        </template>
-      </ElTableColumn>
-      <ElTableColumn label="颜色" width="80">
-        <template #default="{ row }">
-          <div :style="{ width: '24px', height: '24px', backgroundColor: row.color, borderRadius: '4px', border: '1px solid #eee' }" />
-        </template>
-      </ElTableColumn>
-      <ElTableColumn prop="createdAt" label="创建时间" width="170" />
-      <ElTableColumn label="操作" width="120" fixed="right">
-        <template #default="{ row }">
-          <ElButton type="danger" link @click="handleDelete(row)">删除</ElButton>
-        </template>
-      </ElTableColumn>
-    </ElTable>
-
-    <!-- 分页 -->
-    <div class="mt-4 flex justify-end">
-      <ElPagination
-        v-model:current-page="page"
-        v-model:page-size="pageSize"
-        :total="total"
-        :page-sizes="[20, 50, 100]"
-        layout="total, sizes, prev, pager, next"
-        @size-change="fetchNotes"
-        @current-change="fetchNotes"
+      <ArtTable
+        :loading="loading"
+        :data="notes"
+        :columns="columns"
+        :pagination="pagination"
+        :pagination-options="paginationOptions"
+        @pagination:size-change="handleSizeChange"
+        @pagination:current-change="handleCurrentChange"
       />
-    </div>
-  </div>
+    </ElCard>
+  </ReadingPageShell>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import { getReadingNotes, deleteReadingNote } from '@/api/reading'
+  import { h } from 'vue'
+  import { ElButton, ElImage, ElMessageBox } from 'element-plus'
+  import { getReadingNotes, deleteReadingNote } from '@/api/reading'
+  import ReadingPageShell from '../components/ReadingPageShell.vue'
 
-const notes = ref<any[]>([])
-const loading = ref(false)
-const page = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
-const searchBookId = ref('')
+  defineOptions({ name: 'ReadingNotes' })
 
-async function fetchNotes() {
-  loading.value = true
-  try {
-    const res = await getReadingNotes({
-      bookId: searchBookId.value ? Number(searchBookId.value) : undefined,
-      page: page.value,
-      pageSize: pageSize.value,
-    })
-    notes.value = res.data?.items || []
-    total.value = res.data?.total || 0
-  } finally {
-    loading.value = false
+  interface ReadingNoteItem {
+    id: number
+    highlight?: string
+    note?: string
+    color?: string
+    createdAt?: string
+    book?: { title?: string; cover?: string }
+    chapter?: { title?: string }
   }
-}
 
-async function handleDelete(row: any) {
-  await ElMessageBox.confirm('确定删除该笔记？', '提示', { type: 'warning' })
-  await deleteReadingNote(row.id)
-  fetchNotes()
-}
+  const notes = ref<ReadingNoteItem[]>([])
+  const loading = ref(false)
+  const page = ref(1)
+  const pageSize = ref(20)
+  const total = ref(0)
+  const searchForm = reactive({ bookId: '' })
 
-onMounted(fetchNotes)
+  const searchItems = computed(() => [
+    {
+      label: '书籍 ID',
+      key: 'bookId',
+      type: 'input',
+      placeholder: '输入书籍 ID 筛选',
+      clearable: true
+    }
+  ])
+
+  const pagination = computed(() => ({
+    total: total.value,
+    current: page.value,
+    size: pageSize.value
+  }))
+
+  const paginationOptions = {
+    pageSizes: [20, 50, 100]
+  }
+
+  const previewText = (value?: string) => {
+    if (!value) return '-'
+    return value.length > 100 ? `${value.slice(0, 100)}...` : value
+  }
+
+  const columns = computed(() => [
+    { type: 'index' as const, width: 60, label: '序号', align: 'center' as const },
+    {
+      prop: 'book',
+      label: '书籍',
+      minWidth: 180,
+      formatter: (row: ReadingNoteItem) =>
+        h('div', { class: 'reading-note-book' }, [
+          row.book?.cover
+            ? h(ElImage, {
+                src: row.book.cover,
+                class: 'reading-note-cover',
+                previewSrcList: [row.book.cover],
+                previewTeleported: true
+              })
+            : h('div', { class: 'reading-note-cover reading-note-cover--empty' }, '无'),
+          h('span', { class: 'reading-note-title' }, row.book?.title || '-')
+        ])
+    },
+    {
+      prop: 'chapter',
+      label: '章节',
+      width: 160,
+      formatter: (row: ReadingNoteItem) => row.chapter?.title || '-'
+    },
+    {
+      prop: 'highlight',
+      label: '高亮文本',
+      minWidth: 240,
+      showOverflowTooltip: true,
+      formatter: (row: ReadingNoteItem) =>
+        row.highlight
+          ? h('span', { class: 'reading-note-highlight' }, previewText(row.highlight))
+          : h('span', { class: 'text-gray-400' }, '-')
+    },
+    {
+      prop: 'note',
+      label: '笔记内容',
+      minWidth: 240,
+      showOverflowTooltip: true,
+      formatter: (row: ReadingNoteItem) => previewText(row.note)
+    },
+    {
+      prop: 'color',
+      label: '颜色',
+      width: 80,
+      align: 'center' as const,
+      formatter: (row: ReadingNoteItem) =>
+        h('span', {
+          class: 'reading-note-color',
+          style: { backgroundColor: row.color || 'var(--el-color-warning-light-8)' }
+        })
+    },
+    { prop: 'createdAt', label: '创建时间', width: 180 },
+    {
+      prop: 'operation',
+      label: '操作',
+      width: 100,
+      fixed: 'right' as const,
+      align: 'center' as const,
+      formatter: (row: ReadingNoteItem) =>
+        h(
+          ElButton,
+          { type: 'danger', link: true, onClick: () => handleDelete(row) },
+          () => '删除'
+        )
+    }
+  ])
+
+  async function fetchNotes() {
+    loading.value = true
+    try {
+      const res = await getReadingNotes({
+        bookId: searchForm.bookId ? Number(searchForm.bookId) : undefined,
+        page: page.value,
+        pageSize: pageSize.value
+      })
+      notes.value = res.data?.items || []
+      total.value = res.data?.total || 0
+    } finally {
+      loading.value = false
+    }
+  }
+
+  function handleSearch() {
+    page.value = 1
+    fetchNotes()
+  }
+
+  function handleReset() {
+    searchForm.bookId = ''
+    page.value = 1
+    fetchNotes()
+  }
+
+  function handleSizeChange(val: number) {
+    pageSize.value = val
+    page.value = 1
+    fetchNotes()
+  }
+
+  function handleCurrentChange(val: number) {
+    page.value = val
+    fetchNotes()
+  }
+
+  async function handleDelete(row: ReadingNoteItem) {
+    await ElMessageBox.confirm('确定删除该笔记？', '提示', { type: 'warning' })
+    await deleteReadingNote(row.id)
+    fetchNotes()
+  }
+
+  onMounted(fetchNotes)
 </script>
+
+<style scoped>
+  :deep(.reading-note-book) {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 10px;
+  }
+
+  :deep(.reading-note-cover) {
+    width: 34px;
+    height: 46px;
+    flex: 0 0 34px;
+    overflow: hidden;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 5px;
+    object-fit: cover;
+    background: var(--el-fill-color-light);
+  }
+
+  :deep(.reading-note-cover--empty) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--el-text-color-secondary);
+  }
+
+  :deep(.reading-note-title) {
+    overflow: hidden;
+    color: var(--el-text-color-primary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :deep(.reading-note-highlight) {
+    display: inline-block;
+    max-width: 100%;
+    padding: 2px 6px;
+    color: var(--el-text-color-primary);
+    background: var(--el-color-warning-light-9);
+    border: 1px solid var(--el-color-warning-light-7);
+    border-radius: 4px;
+  }
+
+  :deep(.reading-note-color) {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--el-border-color);
+    border-radius: 6px;
+  }
+</style>

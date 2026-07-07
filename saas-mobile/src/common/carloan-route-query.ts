@@ -22,6 +22,9 @@ export interface CarloanEntryRouteQueryInput {
   creditOrderId?: RouteQueryValue;
   name?: RouteQueryValue;
   phone?: RouteQueryValue;
+  amount?: RouteQueryValue;
+  pushQuota?: RouteQueryValue;
+  periods?: RouteQueryValue;
   fromEntry?: RouteQueryValue;
   businessType?: RouteQueryValue;
 }

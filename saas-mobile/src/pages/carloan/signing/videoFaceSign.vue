@@ -292,6 +292,7 @@ import { useSessionStore } from "@/stores";
 import { closeBrowser } from "@/composables/useCloseBrowser";
 import { APP_ROUTES, buildHashRoute, buildRoute } from "@/common/navigation";
 import { buildNavTitleQuery } from "@/common/carloan-route-query";
+import { getBaseUrl, getHashQuery } from "./signing-url";
 
 const { confirmRef, confirm } = useConfirm();
 const sessionStore = useSessionStore();
@@ -300,6 +301,7 @@ const sessionStore = useSessionStore();
 
 const businessApi = useCarloanApi();
 const SIGN_PROGRESS_STORAGE_KEY = "SIGN_PROGRESS_MAP";
+const ENTRY_PROGRESS_STORAGE_KEY = "ENTRY_PROGRESS_MAP";
 
 function saveSignProgress(status) {
   if (!customerInfo.creditOrderId || !status) return;
@@ -313,56 +315,27 @@ function saveSignProgress(status) {
     updatedAt: Date.now(),
   };
   uni.setStorageSync(SIGN_PROGRESS_STORAGE_KEY, progressMap);
+
+  if (status === "SIGNED") {
+    const entryProgressMap = uni.getStorageSync(ENTRY_PROGRESS_STORAGE_KEY) || {};
+    entryProgressMap[customerInfo.creditOrderId] = {
+      ...(entryProgressMap[customerInfo.creditOrderId] || {}),
+      AUTH_SIGN: 1,
+    };
+    if (customerInfo.uuid) {
+      entryProgressMap[customerInfo.uuid] = {
+        ...(entryProgressMap[customerInfo.uuid] || {}),
+        AUTH_SIGN: 1,
+      };
+    }
+    uni.setStorageSync(ENTRY_PROGRESS_STORAGE_KEY, entryProgressMap);
+  }
 }
 
 const isCustomerRole = computed(() => {
   const roleTags = String(sessionStore.transferInfo?.roleTags || "");
   return roleTags === "客户" || roleTags.includes("客户");
 });
-
-/** 从 window.location.hash 解析查询参数 */
-function getHashQuery() {
-  const result = {};
-  // #ifdef H5
-  try {
-    const hash = window.location.hash || "";
-    const idx = hash.indexOf("?");
-    if (idx === -1) return result;
-    hash
-      .slice(idx + 1)
-      .split("&")
-      .forEach((pair) => {
-        const eq = pair.indexOf("=");
-        if (eq > -1) {
-          result[safeDecode(pair.slice(0, eq))] = safeDecode(pair.slice(eq + 1));
-        }
-      });
-  } catch {
-    /* ignore */
-  }
-  // #endif
-  return result;
-}
-
-function safeDecode(value) {
-  let decoded = String(value ?? "").replace(/\+/g, " ");
-  for (let i = 0; i < 3; i += 1) {
-    try {
-      const next = decodeURIComponent(decoded);
-      if (next === decoded) break;
-      decoded = next;
-    } catch {
-      break;
-    }
-  }
-  return decoded;
-}
-
-/** 获取当前环境的基础 URL */
-function getBaseUrl() {
-  if (typeof window === "undefined") return "";
-  return `${window.location.origin}${window.location.pathname}`;
-}
 
 const customerInfo = reactive({
   name: "",
@@ -419,9 +392,9 @@ const contractFiles = reactive([]);
 
 // ========== 生命周期 ==========
 
-onLoad(async () => {
+onLoad(async (options = {}) => {
   // H5 下直接从 hash 解析参数，避免 uni-app onLoad options 解析不全
-  const query = getHashQuery();
+  const query = { ...getHashQuery(), ...options };
 
   const uuid = query.uuid || "";
   const name = query.name || "";
@@ -441,7 +414,7 @@ onLoad(async () => {
   });
 
   // 必填校验
-  if (!uuid) {
+  if (!uuid && !orderId && !optCreditOrderId) {
     uni.showToast({ title: "参数错误，缺少 uuid", icon: "none" });
     setTimeout(() => uni.navigateBack(), 1500);
     return;
@@ -449,9 +422,11 @@ onLoad(async () => {
 
   // orderId 是进件记录 id，不等同于 creditOrderId；需先查详情拿真实授信单号
   let detailInfo = {};
-  if (!optCreditOrderId && orderId) {
+  if (orderId || optCreditOrderId) {
     try {
-      const detail = await fetchCreditDetail(orderId);
+      const detail = orderId
+        ? await fetchCreditDetail(orderId)
+        : await fetchCreditDetailByOrderId(optCreditOrderId);
       detailInfo = detail || {};
       // 获取签署记录ID
       if (detailInfo.signRecordId) {
@@ -462,8 +437,15 @@ onLoad(async () => {
     }
   }
 
+  const resolvedUuid = uuid || detailInfo.uuid || "";
+  if (!resolvedUuid) {
+    uni.showToast({ title: "参数错误，缺少 uuid", icon: "none" });
+    setTimeout(() => uni.navigateBack(), 1500);
+    return;
+  }
+
   loadCustomerInfo({
-    uuid,
+    uuid: resolvedUuid,
     name: detailInfo.customerName || detailInfo.name || name,
     phone: detailInfo.phone || detailInfo.telephone || phone,
     amount: detailInfo.amount || detailInfo.loanAmount || amount,
@@ -707,7 +689,7 @@ async function fetchCreditDetail(id) {
     telephone: data?.telephone || data?.phone,
     amount: data?.amount || data?.loanAmount || data?.creditAmount,
     loanAmount: data?.loanAmount || data?.amount,
-    uuid: data?.uuid || data?.userUuid,
+    uuid: data?.uuid || data?.customerUuid || data?.userUuid || data?.user?.uuid || data?.customer?.uuid,
     creditOrderId: data?.creditOrderId,
     orderId: data?.orderId || data?.creditOrderId || data?.id,
     signRecordId: data?.sign?.id || null,
@@ -715,6 +697,23 @@ async function fetchCreditDetail(id) {
 }
 
 /** 授信完成后手动签署授权书 */
+async function fetchCreditDetailByOrderId(creditOrderId) {
+  const res = await businessApi.getCreditDetailByOrderId(creditOrderId);
+  const data = res?.data || res;
+  return {
+    customerName: data?.customerName || data?.name || data?.personName,
+    name: data?.name || data?.customerName || data?.personName,
+    phone: data?.phone || data?.telephone || data?.mobile,
+    telephone: data?.telephone || data?.phone,
+    amount: data?.amount || data?.loanAmount || data?.creditAmount,
+    loanAmount: data?.loanAmount || data?.amount,
+    uuid: data?.uuid || data?.customerUuid || data?.userUuid || data?.user?.uuid || data?.customer?.uuid,
+    creditOrderId: data?.creditOrderId || data?.orderNo || creditOrderId,
+    orderId: data?.orderId || data?.creditOrderId || data?.id,
+    signRecordId: data?.sign?.id || data?.signRecordId || null,
+  };
+}
+
 async function handleSignContract() {
   if (signingLoading.value) return;
   signingLoading.value = true;
