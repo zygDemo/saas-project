@@ -545,6 +545,12 @@ export function useCarloanApi() {
         `/m/enum/flow-config/${nodeCode}`,
         businessType ? { businessType } : undefined,
       ),
+    /** 获取全部流程节点列表 */
+    getFlowNodes: (businessType?: string) =>
+      http.get<ApiResponse<Array<Record<string, unknown>>>>(
+        `/m/enum/flow-nodes`,
+        businessType ? { businessType } : undefined,
+      ),
     /** 获取线索列表（dataSource=2，支持客户姓名模糊查询） */
     getUserList: (params: { dataSource?: number; personName?: string }) =>
       http.get<ApiResponse<IdCardInfo[]>>("/m/user/getUserList", params),

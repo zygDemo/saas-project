@@ -150,6 +150,7 @@ const flowRecordList = ref([]);
 const activeFlowTab = ref("precheck");
 const flowSteps = ref([]);
 const flowConfig = ref({});
+const flowNodes = ref([]);
 let detailId = "";
 
 function safeDecode(value) {
@@ -258,15 +259,19 @@ function normalizeDetailPayload(payload = {}) {
 async function loadFlowConfig(nodeCode) {
   if (!nodeCode) return;
   try {
-    const [stepsRes, configRes] = await Promise.all([
+    const [stepsRes, configRes, nodesRes] = await Promise.all([
       businessApi.getFlowSteps(nodeCode),
       businessApi.getFlowConfig(nodeCode),
+      businessApi.getFlowNodes(),
     ]);
     if (stepsRes?.code === 200 && stepsRes?.data) {
       flowSteps.value = stepsRes.data;
     }
     if (configRes?.code === 200 && configRes?.data) {
       flowConfig.value = configRes.data;
+    }
+    if (nodesRes?.code === 200 && Array.isArray(nodesRes.data)) {
+      flowNodes.value = nodesRes.data;
     }
   } catch (err) {
     console.warn("获取流程节点配置失败:", err);
@@ -438,7 +443,7 @@ const stageEntryItems = computed(() => {
   return precheckEntryItems;
 });
 
-// 入口步骤 code → 流程节点 code 映射
+// 入口步骤 code → 流程节点 nodeCode 映射（以接口为准）
 const ENTRY_NODE_MAP = {
   ID_CARD: 1100,
   VEHICLE: 1110,
@@ -457,23 +462,43 @@ const ENTRY_NODE_MAP = {
   MORTGAGE: 1650,
 };
 
+/** 根据接口节点数据判断某个节点是否已完成 */
+function isNodeDone(nodeCode) {
+  const currentNodeNum = Number(currentNodeCode.value);
+  if (!Number.isFinite(currentNodeNum) || !nodeCode) return false;
+
+  // 顺序节点：当前节点 > 该节点 → 已完成
+  if (currentNodeNum > nodeCode) return true;
+  if (currentNodeNum < nodeCode) return false;
+
+  // currentNodeNum === nodeCode → 当前正在进行，未完成
+  return false;
+}
+
 function getEntryStepDone(code) {
-  // 优先使用接口返回的流程配置状态
+  // 1. 优先使用接口返回的 flowConfig.stepStatus
   if (flowConfig.value && flowConfig.value.stepStatus) {
     const stepStatus = flowConfig.value.stepStatus[code];
-    if (stepStatus === "COMPLETED" || stepStatus === "DONE") {
-      return true;
-    }
-    if (stepStatus === "PENDING" || stepStatus === "IN_PROGRESS") {
-      return false;
+    if (stepStatus === "COMPLETED" || stepStatus === "DONE") return true;
+    if (stepStatus === "PENDING" || stepStatus === "IN_PROGRESS") return false;
+  }
+
+  // 2. 以接口 flowNodes 为准：根据 currentNode 与节点 nodeCode 的大小判断
+  const stepNodeCode = ENTRY_NODE_MAP[code];
+  if (stepNodeCode && flowNodes.value.length > 0) {
+    const node = flowNodes.value.find((n) => Number(n.nodeCode) === stepNodeCode);
+    if (node) {
+      // 并行子节点：如果当前节点已超过父节点，所有子节点视为已完成
+      if (node.parentNode) {
+        return isNodeDone(node.parentNode) || isNodeDone(stepNodeCode);
+      }
+      return isNodeDone(stepNodeCode);
     }
   }
 
-  // 根据当前流程节点判断：当前节点 > 步骤对应节点 → 该步骤已完成
-  const stepNodeCode = ENTRY_NODE_MAP[code];
-  const currentNodeNum = Number(currentNodeCode.value);
-  if (stepNodeCode && Number.isFinite(currentNodeNum) && currentNodeNum > stepNodeCode) {
-    return true;
+  // 3. 兜底：无 flowNodes 数据时仍用节点数值比较
+  if (stepNodeCode) {
+    return isNodeDone(stepNodeCode);
   }
 
   if (code === "ID_CARD" || code === "CUSTOMER_SUPPLEMENT") {
