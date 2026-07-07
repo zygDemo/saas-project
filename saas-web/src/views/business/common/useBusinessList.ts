@@ -332,7 +332,7 @@ export function useBusinessList() {
     detailVisible.value = true
     const runtime = await ensurePhaseDetailRuntime()
     try {
-      const detail = await fetchBusinessDetail(config.value.api, Number(row.id))
+      const detail = await fetchBusinessDetail<Record<string, unknown>>(config.value.api, Number(row.id))
       const flat = flattenRelations(detail)
       // 显式保留 customer 等嵌套对象，避免被展开后丢失
       if (detail.customer) flat.customer = detail.customer
@@ -404,6 +404,7 @@ export function useBusinessList() {
 
   async function submitAction() {
     if (!activeAction.value || !actionRow.value) return
+    if (!activeAction.value.path) { ElMessage.warning('该操作未配置接口路径'); return }
     const error = validateRequired(actionFields.value, actionModel)
     if (error) { ElMessage.warning(error); return }
     submitting.value = true

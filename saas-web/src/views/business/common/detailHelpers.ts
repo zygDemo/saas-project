@@ -23,10 +23,10 @@ export function resolveHeaderStats(row: Record<string, unknown>): DetailHeaderSt
     { label: '申请金额', value: `¥${row.amount || '-'}`, highlight: true },
     { label: '期限', value: `${row.term || '-'}个月` },
     { label: '年利率', value: formatRate(row.rate) },
-    { label: '还款方式', value: row.repaymentMethod || '-' },
-    { label: '创建人', value: row.creatorName || '-' },
-    { label: '车牌号', value: row.plateNumber || '-' },
-    { label: '当前节点', value: row.currentNodeName || '-' }
+    { label: '还款方式', value: String(row.repaymentMethod || '-') },
+    { label: '创建人', value: String(row.creatorName || '-') },
+    { label: '车牌号', value: String(row.plateNumber || '-') },
+    { label: '当前节点', value: String(row.currentNodeName || '-') }
   ]
 }
 

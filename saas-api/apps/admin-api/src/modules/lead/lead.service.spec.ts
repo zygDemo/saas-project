@@ -20,7 +20,7 @@ describe('LeadService', () => {
     orgId: 1,
     name: '王五',
     phone: '13700137000',
-    status: LeadStatus.NEW,
+    status: LeadStatus.PENDING_ASSIGN,
     assigneeId: null,
     nextFollowAt: null,
     remark: null,
@@ -73,6 +73,7 @@ describe('LeadService', () => {
 
       const result = await service.create({
         orgId: 1,
+        source: '测试来源',
         name: '王五',
         phone: '13700137000',
         assigneeId: 1
@@ -86,7 +87,7 @@ describe('LeadService', () => {
       mockPrisma.organization.findFirst!.mockResolvedValue(null)
 
       await expect(
-        service.create({ orgId: 999, name: '王五', phone: '13700137000' })
+        service.create({ orgId: 999, source: '测试来源', name: '王五', phone: '13700137000' })
       ).rejects.toThrow('机构不存在')
     })
 
@@ -95,7 +96,7 @@ describe('LeadService', () => {
       mockPrisma.user.findFirst!.mockResolvedValue(null)
 
       await expect(
-        service.create({ orgId: 1, name: '王五', phone: '13700137000', assigneeId: 999 })
+        service.create({ orgId: 1, source: '测试来源', name: '王五', phone: '13700137000', assigneeId: 999 })
       ).rejects.toThrow('业务员不存在')
     })
   })
@@ -130,11 +131,11 @@ describe('LeadService', () => {
       mockPrisma.lead.count!.mockResolvedValue(0)
       mockPrisma.lead.findMany!.mockResolvedValue([])
 
-      await service.getList({ status: LeadStatus.NEW, current: 1, size: 10 })
+      await service.getList({ status: LeadStatus.PENDING_ASSIGN, current: 1, size: 10 })
 
       expect(mockPrisma.lead.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ status: LeadStatus.NEW })
+          where: expect.objectContaining({ status: LeadStatus.PENDING_ASSIGN })
         })
       )
     })

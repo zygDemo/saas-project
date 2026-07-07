@@ -40,7 +40,7 @@ export class SigningService extends BaseBusinessCrudService<CreateSigningDto, Up
     }
 
     // 使用事务同时更新签署记录和申请状态
-    const result = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx: any) => {
       // 更新签署记录为已签署
       const updatedSignRecord = await tx.signRecord.update({
         where: { id },

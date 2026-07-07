@@ -74,7 +74,7 @@ export class MobileConfigService {
       defaultModule: enabled.length === 1 ? enabled[0] : null,
       mobileMultiModule: user.mobileMultiModule ?? false,
       isMultiModule: enabled.length > 1,
-      roles: user.roles.map(r => ({ roleId: r.roleId, roleName: r.role.name })),
+      roles: user.roles.map((r: any) => ({ roleId: r.roleId, roleName: r.role.name })),
     };
   }
 

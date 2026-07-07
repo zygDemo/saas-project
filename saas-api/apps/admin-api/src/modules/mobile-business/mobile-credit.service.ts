@@ -249,7 +249,7 @@ export class MobileCreditService {
         ruleConfig: true,
       }
     })
-    return configs.map((c) => {
+    return configs.map((c: any) => {
       const ruleConfig = (c.ruleConfig as Record<string, unknown>) || {}
       return {
         id: c.id,

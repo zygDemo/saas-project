@@ -301,11 +301,12 @@ describe('applicationActions', () => {
     const process = applicationActions.find((a) => a.name === 'process')!
 
     it('generates correct path for different statuses', () => {
-      expect(process.path({ id: 1, status: 'PENDING_SUPPLEMENT' })).toBe('/application/1/complete-supplement')
-      expect(process.path({ id: 2, status: 'SUBMITTED' })).toBe('/application/2/risk-pre-pass')
-      expect(process.path({ id: 3, status: 'PENDING_RISK_PRE' })).toBe('/application/3/risk-pre-pass')
-      expect(process.path({ id: 4, status: 'PENDING_FUNDER_PRE' })).toBe('/application/4/funder-pre-pass')
-      expect(process.path({ id: 5, status: 'DRAFT' })).toBe('/application/5/submit')
+      const pathFn = process.path!
+      expect(pathFn({ id: 1, status: 'PENDING_SUPPLEMENT' })).toBe('/application/1/complete-supplement')
+      expect(pathFn({ id: 2, status: 'SUBMITTED' })).toBe('/application/2/risk-pre-pass')
+      expect(pathFn({ id: 3, status: 'PENDING_RISK_PRE' })).toBe('/application/3/risk-pre-pass')
+      expect(pathFn({ id: 4, status: 'PENDING_FUNDER_PRE' })).toBe('/application/4/funder-pre-pass')
+      expect(pathFn({ id: 5, status: 'DRAFT' })).toBe('/application/5/submit')
     })
 
     it('hidden for DISBURSED', () => {

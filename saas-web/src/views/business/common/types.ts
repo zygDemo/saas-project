@@ -39,7 +39,7 @@ export type FieldConfig = {
 export type ActionConfig = {
   name: string
   label: string
-  path: (row: Record<string, unknown>) => string
+  path?: (row: Record<string, unknown>) => string
   visible?: (row: Record<string, unknown>) => boolean
   fields?: FieldConfig[]
   defaults?: (row: Record<string, unknown>) => Record<string, unknown>

@@ -217,7 +217,7 @@ export const createSmartDebounce = <T extends (...args: unknown[]) => Promise<un
       timeoutId = setTimeout(async () => {
         try {
           const result = await fn(...args)
-          resolve(result)
+          resolve(result as ReturnType<T>)
         } catch (error) {
           reject(error)
         } finally {
@@ -250,7 +250,7 @@ export const createSmartDebounce = <T extends (...args: unknown[]) => Promise<un
       lastReject = null
       try {
         const result = await fn(...args)
-        resolve(result)
+        resolve(result as ReturnType<T>)
         return result
       } catch (error) {
         reject(error)

@@ -116,7 +116,7 @@ export class RequestLoggerInterceptor implements NestInterceptor {
           userAgent: request.headers['user-agent']
         } as Prisma.OperationLogCreateInput
       })
-      .catch((error) => this.logger.warn(`Audit log write failed: ${error?.message || error}`))
+      .catch((error: any) => this.logger.warn(`Audit log write failed: ${error?.message || error}`))
   }
 
 
@@ -141,7 +141,7 @@ export class RequestLoggerInterceptor implements NestInterceptor {
           )
         }
       })
-      .catch((error) => this.logger.warn(`Audit log cleanup failed: ${error?.message || error}`))
+      .catch((error: any) => this.logger.warn(`Audit log cleanup failed: ${error?.message || error}`))
   }
 
   private resolveModuleName(url: string) {

@@ -115,17 +115,17 @@ describe('CustomerService', () => {
         orgId: 1,
         name: '张三',
         phone: '13800138000',
-        contacts: [{ name: '李四', phone: '13900139000', relationship: '配偶' }],
+        contacts: [{ name: '李四', phone: '13900139000', relation: '配偶' }],
         vehicles: [{ plateNumber: '京A12345', brand: '宝马', model: 'X5' }],
-        bankCards: [{ bankName: '工商银行', cardNo: '622200000000', isDefault: true }]
+        bankCards: [{ bankName: '工商银行', cardNo: '622200000000', cardType: 'DEBIT', isDefault: true }]
       })
 
       expect(mockPrisma.customer.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            contacts: { create: [{ name: '李四', phone: '13900139000', relationship: '配偶' }] },
+            contacts: { create: [{ name: '李四', phone: '13900139000', relation: '配偶' }] },
             vehicles: { create: [{ plateNumber: '京A12345', brand: '宝马', model: 'X5' }] },
-            bankCards: { create: [{ bankName: '工商银行', cardNo: '622200000000', isDefault: true }] }
+            bankCards: { create: [{ bankName: '工商银行', cardNo: '622200000000', cardType: 'DEBIT', isDefault: true }] }
           })
         })
       )
@@ -225,13 +225,13 @@ describe('CustomerService', () => {
         customerId: 1,
         name: '李四',
         phone: '13900139000',
-        relationship: '配偶'
+        relation: '配偶'
       })
 
       const result = await service.addContact(1, {
         name: '李四',
         phone: '13900139000',
-        relationship: '配偶'
+        relation: '配偶'
       })
 
       expect(result.name).toBe('李四')
@@ -246,7 +246,7 @@ describe('CustomerService', () => {
       mockPrisma.customer.findFirst!.mockResolvedValue(null)
 
       await expect(
-        service.addContact(999, { name: '李四', phone: '13900139000', relationship: '配偶' })
+        service.addContact(999, { name: '李四', phone: '13900139000', relation: '配偶' })
       ).rejects.toThrow(NotFoundException)
     })
   })
@@ -293,6 +293,7 @@ describe('CustomerService', () => {
       const result = await service.addBankCard(1, {
         bankName: '工商银行',
         cardNo: '622200000000',
+        cardType: 'DEBIT',
         isDefault: true
       })
 
@@ -307,6 +308,7 @@ describe('CustomerService', () => {
       await service.addBankCard(1, {
         bankName: '建设银行',
         cardNo: '622700000000',
+        cardType: 'DEBIT',
         isDefault: true
       })
 
@@ -323,7 +325,7 @@ describe('CustomerService', () => {
       mockPrisma.bankCard.count!.mockResolvedValue(10)
 
       await expect(
-        service.addBankCard(1, { bankName: '招商银行', cardNo: '622500000000' })
+        service.addBankCard(1, { bankName: '招商银行', cardNo: '622500000000', cardType: 'DEBIT' })
       ).rejects.toThrow('银行卡数量已达上限')
     })
   })

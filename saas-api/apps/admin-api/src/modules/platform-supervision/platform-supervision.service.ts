@@ -41,8 +41,8 @@ export class PlatformSupervisionService {
       })
     ])
 
-    const appMap = new Map(appCounts.map((a) => [a.orgId, a._count.id]))
-    const leadMap = new Map(leadCounts.map((l) => [l.orgId, l._count.id]))
+    const appMap = new Map(appCounts.map((a: any) => [a.orgId, a._count.id]))
+    const leadMap = new Map(leadCounts.map((l: any) => [l.orgId, l._count.id]))
 
     const records = orgs.map((org) => ({
       orgName: org.name,
