@@ -317,6 +317,12 @@ export class MobileEnumController {
   getFlowConfig(@Param('nodeCode') nodeCode: string, @Query('businessType') businessType?: string) {
     return this.creditService.getFlowConfigByNodeCode(nodeCode, businessType)
   }
+
+  @Get('flow-nodes')
+  @ApiOperation({ summary: '获取全部流程节点列表' })
+  getFlowNodes(@Query('businessType') businessType?: string) {
+    return this.creditService.getFlowNodes(businessType)
+  }
 }
 
 @ApiTags('移动端统计')

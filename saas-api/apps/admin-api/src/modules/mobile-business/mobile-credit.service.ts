@@ -226,6 +226,42 @@ export class MobileCreditService {
     return (ruleConfig?.steps as Array<Record<string, unknown>>) || []
   }
 
+  async getFlowNodes(businessType = 'CAR_LOAN') {
+    const configs = await this.prisma.flowConfig.findMany({
+      where: { businessType, status: 'ACTIVE' },
+      orderBy: { nodeCode: 'asc' },
+      select: {
+        id: true,
+        nodeCode: true,
+        nodeName: true,
+        name: true,
+        requireMaterials: true,
+        requireApproval: true,
+        autoPass: true,
+        ruleConfig: true,
+      }
+    })
+    return configs.map((c) => {
+      const ruleConfig = (c.ruleConfig as Record<string, unknown>) || {}
+      return {
+        id: c.id,
+        nodeCode: c.nodeCode,
+        nodeName: c.nodeName,
+        name: c.name,
+        sort: ruleConfig.sort ?? Number(c.nodeCode),
+        phaseCode: ruleConfig.phaseCode,
+        phaseName: ruleConfig.phaseName,
+        parentNode: ruleConfig.parentNode ?? null,
+        parallel: ruleConfig.parallel ?? false,
+        required: ruleConfig.required ?? false,
+        requireMaterials: c.requireMaterials,
+        requireApproval: c.requireApproval,
+        autoPass: c.autoPass,
+        transitions: ruleConfig.transitions ?? [],
+      }
+    })
+  }
+
   getStatisticsOverview() {
     return {
       todayLeads: 0,
