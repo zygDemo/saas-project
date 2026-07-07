@@ -116,7 +116,7 @@
 
 <script setup>
 import { computed, ref } from "vue";
-import { onLoad } from "@dcloudio/uni-app";
+import { onLoad, onShow } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import {
@@ -314,12 +314,22 @@ async function loadDetail() {
   }
 }
 
+let initialLoaded = false;
+
 onLoad((options = {}) => {
   const query = normalizeRouteQuery(options);
   detailId = query.id || "";
   carloanStore.syncFromRouteQuery(query);
   activeFlowTab.value = resolveFlowTabByNode(carloanStore.pageContext.nodeCode);
   loadDetail();
+  initialLoaded = true;
+});
+
+onShow(() => {
+  // 从子页面返回时重新加载详情，获取最新 currentNode
+  if (initialLoaded) {
+    loadDetail();
+  }
 });
 
 const customerDisplayName = computed(
