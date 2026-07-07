@@ -1940,62 +1940,111 @@ export class ApplicationService extends BaseBusinessCrudService<
     const tenantId = getCurrentTenantId();
     const where = { id, tenantId };
 
-    // 获取订单基本信息 + 所有审批记录
     const application = await this.prisma.application.findFirst({
       where,
       include: {
         approvals: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: 'asc' },
           include: {
             approver: { select: { id: true, userName: true, nickName: true } },
           },
         },
-        // TODO: 未来可以补充节点提交记录（用户提交每个节点信息）
-        // 目前只有审批记录，足够展示核心生命周期
       },
     });
 
     if (!application) throw new NotFoundException('订单不存在');
 
-    // 将审批记录转换为要求的格式
-    // 按时间倒序排列，最新的在前面
-    const lifecycle = application.approvals.map((approval: { id: number; stage: string; action: string; createdAt: Date; approver: { userName?: string; nickName?: string } | null; opinion: string | null; amount: number | null }) => ({
-      id: approval.id,
-      currentNode: approval.stage,
-      nextNode: null, // TODO: 根据流程配置获取下一节点
-      approveName: approval.approver?.nickName || approval.approver?.userName || null,
-      approvalTime: this.formatDatetime(approval.createdAt),
-      approvalReason: approval.opinion || null,
-      reasonExternal: null,
-      rejectReason: approval.action === 'REJECT' ? (approval.opinion || null) : null,
-      rejectReasonSecond: null,
-      approvalStatus: this.mapApprovalActionToStatus(approval.action),
-      approvalCost: approval.amount || null,
-      aiReporTime: null,
-      aiReportStatus: null,
-      auditResults: null,
-    }));
+    // 获取全部流程节点配置（按 sort 排序）
+    const flowNodes = await this.prisma.flowConfig.findMany({
+      where: { businessType: 'CAR_LOAN', status: 'ACTIVE' },
+      orderBy: { nodeCode: 'asc' },
+      select: { nodeCode: true, nodeName: true, ruleConfig: true },
+    });
 
-    // 如果当前还有待处理节点，在开头添加一个待处理条目
-    // （因为它还没有审批记录）
-    if (application.currentNode && application.currentStatus === 10) {
-      lifecycle.unshift({
-        id: null,
-        currentNode: String(application.currentNode),
-        nextNode: null,
-        approveName: null,
-        approvalTime: null,
-        approvalReason: null,
-        reasonExternal: null,
-        rejectReason: null,
-        rejectReasonSecond: null,
-        approvalStatus: '待处理',
-        approvalCost: null,
-        aiReporTime: null,
-        aiReportStatus: null,
-        auditResults: null,
-      });
+    // 构建 nodeCode → nodeName 映射
+    const nodeNameMap: Record<string, string> = {};
+    const nodeSortMap: Record<string, number> = {};
+    for (const node of flowNodes) {
+      nodeNameMap[node.nodeCode] = node.nodeName;
+      const rc = (node.ruleConfig as Record<string, unknown>) || {};
+      nodeSortMap[node.nodeCode] = (rc.sort as number) || Number(node.nodeCode);
     }
+
+    // 构建审批记录索引：stage → 最新审批
+    const approvalByStage = new Map<string, typeof application.approvals[number]>();
+    for (const approval of application.approvals) {
+      approvalByStage.set(approval.stage, approval);
+    }
+
+    const currentNodeNum = Number(application.currentNode);
+    const currentNodeStr = String(application.currentNode || '');
+
+    // 遍历全部节点，只展示已到达的节点（nodeCode <= currentNode）
+    const lifecycle: Record<string, unknown>[] = [];
+
+    for (const node of flowNodes) {
+      const nodeNum = Number(node.nodeCode);
+      // 跳过并行子节点（有 parentNode 的）
+      const rc = (node.ruleConfig as Record<string, unknown>) || {};
+      if (rc.parentNode) continue;
+
+      // 只展示当前节点及之前的节点
+      if (nodeNum > currentNodeNum) continue;
+
+      const stage = node.nodeCode;
+      const approval = approvalByStage.get(stage);
+      const isCurrentNode = stage === currentNodeStr;
+      const isPending = isCurrentNode && application.currentStatus === 10;
+
+      if (approval) {
+        lifecycle.push({
+          id: approval.id,
+          currentNode: stage,
+          currentNodeName: nodeNameMap[stage] || stage,
+          nextNode: null,
+          approveName: approval.approver?.nickName || approval.approver?.userName || null,
+          approvalTime: this.formatDatetime(approval.createdAt),
+          approvalReason: approval.opinion || null,
+          rejectReason: approval.action === 'REJECT' ? (approval.opinion || null) : null,
+          approvalStatus: this.mapApprovalActionToStatus(approval.action),
+          approvalCost: approval.amount || null,
+        });
+      } else if (isPending) {
+        lifecycle.push({
+          id: null,
+          currentNode: stage,
+          currentNodeName: nodeNameMap[stage] || stage,
+          nextNode: null,
+          approveName: null,
+          approvalTime: null,
+          approvalReason: null,
+          rejectReason: null,
+          approvalStatus: '待处理',
+          approvalCost: null,
+        });
+      } else {
+        // 已经过的节点，没有审批记录（如客户提交、系统自动流转）
+        lifecycle.push({
+          id: null,
+          currentNode: stage,
+          currentNodeName: nodeNameMap[stage] || stage,
+          nextNode: null,
+          approveName: null,
+          approvalTime: application.createdAt ? this.formatDatetime(application.createdAt) : null,
+          approvalReason: null,
+          rejectReason: null,
+          approvalStatus: '已完成',
+          approvalCost: null,
+        });
+      }
+    }
+
+    // 按 sort 降序（最新在前）
+    lifecycle.sort((a, b) => {
+      const sa = nodeSortMap[String(a.currentNode)] || 0;
+      const sb = nodeSortMap[String(b.currentNode)] || 0;
+      return sb - sa;
+    });
 
     return lifecycle;
   }
