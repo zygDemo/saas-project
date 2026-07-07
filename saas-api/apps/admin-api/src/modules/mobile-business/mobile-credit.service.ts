@@ -40,45 +40,53 @@ export class MobileCreditService {
       dto.remark
     ].filter(Boolean)
 
-    let draftApplication = dto.creditOrderId
-      ? await findDraftApplicationByNo(this.prisma, customer.id, dto.creditOrderId)
+    // 有订单编号 → 查找已有订单（任意状态）；无订单编号 → 查找最新草稿
+    let existingApplication = dto.creditOrderId
+      ? await this.prisma.application.findFirst({
+          where: { customerId, applicationNo: dto.creditOrderId }
+        })
       : await findLatestDraftApplication(this.prisma, customer.id)
 
-    if (!draftApplication && dto.creditOrderId) {
-      draftApplication = await findLatestDraftApplication(this.prisma, customer.id)
-    }
+    const isUpdate = Boolean(existingApplication)
 
     const resolvedAmount = hasValue(dto.amount)
       ? dto.amount
-      : draftApplication
-        ? Number(draftApplication.amount)
+      : existingApplication
+        ? Number(existingApplication.amount)
         : 0
     const resolvedTerm = hasValue(dto.periods)
       ? dto.periods
-      : draftApplication
-        ? draftApplication.term
+      : existingApplication
+        ? existingApplication.term
         : product?.minTerm || 12
 
-    const applicationData = {
-      orgId: customer.orgId,
-      customerId: customer.id,
-      productId: product?.id,
-      funderId: funder?.id,
+    // 已提交的订单只更新金额/期数等资料字段，不覆盖状态和节点
+    const baseData = {
       amount: resolvedAmount,
       term: resolvedTerm,
       rate,
-      repaymentMethod: product?.repaymentMethod || '等额本息',
-      status: ApplicationStatus.PENDING_RISK_PRE,
-      businessType: dto.businessType === 'pawn' ? 'PAWN' : 'CAR_LOAN',
-      currentNode: 1200,
-      currentStatus: 10,
-      creatorId: user.sub,
       remark: remarkParts.join('；') || undefined
     }
 
-    const application = draftApplication
+    const applicationData = isUpdate
+      ? baseData
+      : {
+          ...baseData,
+          orgId: customer.orgId,
+          customerId: customer.id,
+          productId: product?.id,
+          funderId: funder?.id,
+          repaymentMethod: product?.repaymentMethod || '等额本息',
+          status: ApplicationStatus.PENDING_RISK_PRE,
+          businessType: dto.businessType === 'pawn' ? 'PAWN' : 'CAR_LOAN',
+          currentNode: 1200,
+          currentStatus: 10,
+          creatorId: user.sub,
+        }
+
+    const application = isUpdate
       ? await this.prisma.application.update({
-          where: { id: draftApplication.id },
+          where: { id: existingApplication.id },
           data: applicationData
         })
       : await createApplicationWithUniqueNo((applicationNo) =>
