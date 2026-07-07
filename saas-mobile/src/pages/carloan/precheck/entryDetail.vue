@@ -88,7 +88,6 @@ const uuidVal = ref("");
 const submitting = ref(false);
 const ENTRY_PROGRESS_STORAGE_KEY = "ENTRY_PROGRESS_MAP";
 const entryProgress = ref({});
-const flowSteps = ref([]);
 
 // 步骤图标和样式映射
 const STEP_META_MAP = {
@@ -130,30 +129,18 @@ onLoad(async (options) => {
   customerPhone.value = options?.phone || "";
   orderNo.value = options?.creditOrderId || "";
   loadEntryProgress();
-  await loadFlowSteps();
 });
 
-async function loadFlowSteps() {
-  try {
-    const res = await businessApi.getFlowSteps("1100");
-    if (res?.code === 200 && Array.isArray(res.data)) {
-      flowSteps.value = res.data;
-    }
-  } catch (err) {
-    console.error("获取流程步骤失败:", err);
-    // 使用默认步骤
-    flowSteps.value = [
-      { code: "ID_CARD", name: "身份证信息", sort: 1110 },
-      { code: "VEHICLE", name: "车辆信息", sort: 1120 },
-      { code: "APPLICATION", name: "申请信息", sort: 1130 },
-      { code: "AUTH_SIGN", name: "签署授权书", sort: 1140 },
-      { code: "PENDING_PRECHECK", name: "待预审", sort: 1150 },
-    ];
-  }
-}
+const flowSteps = [
+  { code: "ID_CARD", name: "身份证信息", sort: 1110 },
+  { code: "VEHICLE", name: "车辆信息", sort: 1120 },
+  { code: "APPLICATION", name: "申请信息", sort: 1130 },
+  { code: "AUTH_SIGN", name: "签署授权书", sort: 1140 },
+  { code: "PENDING_PRECHECK", name: "待预审", sort: 1150 },
+];
 
 const entryItems = computed(() => {
-  return flowSteps.value
+  return flowSteps
     .map((step) => {
       const meta = STEP_META_MAP[step.code] || {};
       return {

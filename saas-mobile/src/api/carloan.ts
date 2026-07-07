@@ -533,12 +533,6 @@ export function useCarloanApi() {
     /** 贷款业务节点枚举查询 */
     getLoanBusinessNodes: () =>
       http.get<ApiResponse<LoanBusinessNode[]>>("/m/enum/loanBusinessNodes"),
-    /** 获取流程节点步骤 */
-    getFlowSteps: (nodeCode: string, businessType?: string) =>
-      http.get<ApiResponse<Array<Record<string, unknown>>>>(
-        `/m/enum/flow-steps/${nodeCode}`,
-        businessType ? { businessType } : undefined,
-      ),
     /** 获取流程节点配置 */
     getFlowConfig: (nodeCode: string, businessType?: string) =>
       http.get<ApiResponse<Record<string, unknown>>>(

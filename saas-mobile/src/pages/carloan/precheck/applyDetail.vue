@@ -148,7 +148,6 @@ const flowRecordVisible = ref(false);
 const flowRecordLoading = ref(false);
 const flowRecordList = ref([]);
 const activeFlowTab = ref("precheck");
-const flowSteps = ref([]);
 const flowConfig = ref({});
 const flowNodes = ref([]);
 let detailId = "";
@@ -259,14 +258,10 @@ function normalizeDetailPayload(payload = {}) {
 async function loadFlowConfig(nodeCode) {
   if (!nodeCode) return;
   try {
-    const [stepsRes, configRes, nodesRes] = await Promise.all([
-      businessApi.getFlowSteps(nodeCode),
+    const [configRes, nodesRes] = await Promise.all([
       businessApi.getFlowConfig(nodeCode),
       businessApi.getFlowNodes(),
     ]);
-    if (stepsRes?.code === 200 && stepsRes?.data) {
-      flowSteps.value = stepsRes.data;
-    }
     if (configRes?.code === 200 && configRes?.data) {
       flowConfig.value = configRes.data;
     }
