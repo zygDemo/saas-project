@@ -325,6 +325,8 @@ export function mapVehicle(vehicle: any, uuid: string, apiPrefix: string) {
 export function mapApplication(application: any, apiPrefix: string, includeDetail = false) {
   const customer = application.customer
   const vehicle = customer?.vehicles?.[0] || customer?.vehicles?.at?.(0)
+  const approvals = Array.isArray(application.approvals) ? application.approvals : []
+  const latestApproval = approvals.find((item: any) => item?.opinion)
   return {
     id: application.id,
     uuid: customer ? String(customer.id) : String(application.customerId),
@@ -345,6 +347,16 @@ export function mapApplication(application: any, apiPrefix: string, includeDetai
     currentNode: application.currentNode,
     currentStatus: application.currentStatus,
     remark: application.remark,
+    approvalRemark: latestApproval?.opinion,
+    approvals: includeDetail
+      ? approvals.map((item: any) => ({
+          id: item.id,
+          stage: item.stage,
+          action: item.action,
+          opinion: item.opinion,
+          createdAt: formatDateTime(item.createdAt)
+        }))
+      : undefined,
     createTime: formatDateTime(application.createdAt),
     updateTime: formatDateTime(application.updatedAt),
     ...(includeDetail

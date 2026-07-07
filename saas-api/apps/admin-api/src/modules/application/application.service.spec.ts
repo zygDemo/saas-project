@@ -403,19 +403,38 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_RISK_PRE })
       )
-      mockPrisma.application.update!.mockResolvedValue({
-        ...makeApplication(),
-        status: ApplicationStatus.PENDING_FUNDER_PRE
-      })
+      mockPrisma.user.findFirst!.mockResolvedValue({ id: 1 } as any)
+
+      let txRef: ReturnType<typeof mockTx> | undefined
+      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+        txRef = mockTx()
+        txRef.application.update.mockResolvedValue({
+          ...makeApplication(),
+          status: ApplicationStatus.PENDING_FUNDER_PRE
+        })
+        return fn(txRef)
+      }) as any
 
       await service.riskPrePass(1, { reviewerId: 1, opinion: '通过' })
 
-      expect(mockPrisma.application.update).toHaveBeenCalledWith(
+      expect(txRef?.approvalRecord.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            applicationId: 1,
+            approverId: 1,
+            stage: 'RISK_PRE',
+            action: ApprovalAction.PASS,
+            opinion: '通过'
+          })
+        })
+      )
+      expect(txRef?.application.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             status: ApplicationStatus.PENDING_FUNDER_PRE,
             currentNode: 1250,
-            currentStatus: 10
+            currentStatus: 10,
+            remark: '通过'
           })
         })
       )
@@ -458,6 +477,97 @@ describe('ApplicationService', () => {
   // ═══════════════════════════════════════════════════════════════
   //  FUNDER PRE (资方预审)
   // ═══════════════════════════════════════════════════════════════
+  describe('riskPreRejectWithReviewer', () => {
+    it('风控预审拒绝带处理人时应创建拒绝审批记录', async () => {
+      mockPrisma.user.findFirst!.mockResolvedValue({ id: 1 } as any)
+      mockPrisma.application.findFirst!.mockResolvedValue(
+        makeApplication({ status: ApplicationStatus.PENDING_RISK_PRE, remark: null })
+      )
+
+      let txRef: ReturnType<typeof mockTx> | undefined
+      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+        txRef = mockTx()
+        txRef.application.update.mockResolvedValue({
+          ...makeApplication(),
+          status: ApplicationStatus.RISK_PRE_REJECTED,
+          remark: '征信不通过'
+        })
+        return fn(txRef)
+      }) as any
+
+      await service.riskPreReject(1, { reviewerId: 1, opinion: '征信不通过' })
+
+      expect(txRef?.approvalRecord.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            applicationId: 1,
+            approverId: 1,
+            stage: 'RISK_PRE',
+            action: ApprovalAction.REJECT,
+            opinion: '征信不通过'
+          })
+        })
+      )
+      expect(txRef?.application.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: ApplicationStatus.RISK_PRE_REJECTED,
+            currentNode: 1200,
+            currentStatus: 30,
+            remark: '征信不通过'
+          })
+        })
+      )
+    })
+  })
+
+  describe('riskPreReturn', () => {
+    it('风控预审驳回应创建退回记录并回到待预审节点', async () => {
+      mockPrisma.user.findFirst!.mockResolvedValue({ id: 1 } as any)
+      mockPrisma.application.findFirst!.mockResolvedValue(
+        makeApplication({ status: ApplicationStatus.PENDING_RISK_PRE })
+      )
+
+      let txRef: ReturnType<typeof mockTx> | undefined
+      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+        txRef = mockTx()
+        txRef.application.update.mockResolvedValue({
+          ...makeApplication(),
+          status: ApplicationStatus.SUBMITTED,
+          currentNode: 1140,
+          currentStatus: 40,
+          remark: '资料需要补充'
+        })
+        return fn(txRef)
+      }) as any
+
+      await service.riskPreReturn(1, { reviewerId: 1, opinion: '资料需要补充' })
+
+      expect(txRef?.approvalRecord.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            applicationId: 1,
+            approverId: 1,
+            stage: 'RISK_PRE',
+            action: ApprovalAction.RETURN,
+            opinion: '资料需要补充'
+          })
+        })
+      )
+      expect(txRef?.application.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1 },
+          data: expect.objectContaining({
+            status: ApplicationStatus.SUBMITTED,
+            currentNode: 1140,
+            currentStatus: 40,
+            remark: '资料需要补充'
+          })
+        })
+      )
+    })
+  })
+
   describe('funderPrePass', () => {
     it('资方预审通过应创建审批记录并流转到待补充', async () => {
       mockPrisma.user.findFirst!.mockResolvedValue({ id: 1 } as any)

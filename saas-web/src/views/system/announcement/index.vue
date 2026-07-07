@@ -364,12 +364,27 @@
     nextTick(() => formRef.value?.clearValidate())
   }
 
+  function buildSubmitPayload(targetStatus: 'DRAFT' | 'PUBLISHED') {
+    return {
+      title: form.title,
+      content: form.content,
+      type: form.type,
+      level: form.level,
+      status: targetStatus,
+      publishAt: form.publishAt || undefined,
+      expireAt: form.expireAt || undefined,
+      target: form.target || undefined,
+      topFlag: form.topFlag,
+      remark: form.remark || undefined
+    }
+  }
+
   async function handleSubmit(targetStatus: 'DRAFT' | 'PUBLISHED') {
     const valid = await formRef.value?.validate().catch(() => false)
     if (!valid) return
     submitting.value = true
     try {
-      const payload = { ...form, status: targetStatus }
+      const payload = buildSubmitPayload(targetStatus)
       if (form.id) await fetchUpdateAnnouncement(form.id, payload)
       else await fetchCreateAnnouncement(payload)
       ElMessage.success(targetStatus === 'PUBLISHED' ? '已保存并发布' : '草稿已保存')

@@ -54,11 +54,21 @@ export async function findApplication(
     Number.isInteger(numericId) && numericId > 0
       ? await prisma.application.findFirst({
           where: { id: numericId },
-          include: { customer: { include: { vehicles: true } }, product: true, funder: true }
+          include: {
+            customer: { include: { vehicles: true } },
+            product: true,
+            funder: true,
+            approvals: { orderBy: { createdAt: 'desc' }, take: 5 }
+          }
         })
       : await prisma.application.findFirst({
           where: { applicationNo: String(idOrNo) },
-          include: { customer: { include: { vehicles: true } }, product: true, funder: true }
+          include: {
+            customer: { include: { vehicles: true } },
+            product: true,
+            funder: true,
+            approvals: { orderBy: { createdAt: 'desc' }, take: 5 }
+          }
         })
   if (!application) throw new NotFoundException('授信申请不存在')
   return application

@@ -418,25 +418,50 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   async riskPrePass(id: number, dto: PrecheckActionDto) {
-    if (dto.reviewerId) await this.ensureRelatedExists(this.prisma.user, dto.reviewerId, '预审人不存在')
+    const reviewerId = this.resolvePrecheckReviewerId(dto)
+    if (reviewerId) await this.ensureRelatedExists(this.prisma.user, reviewerId, '预审人不存在')
+    if (reviewerId && dto.opinion?.trim()) {
+      return this.transitionWithApproval(
+        id,
+        [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE],
+        '当前状态不允许风控预审通过',
+        { approverId: reviewerId, stage: 'RISK_PRE', action: ApprovalAction.PASS, opinion: dto.opinion },
+        ApplicationStatus.PENDING_FUNDER_PRE,
+        { remark: dto.opinion }
+      )
+    }
     return this.atomicTransition(
       id,
       [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE],
       '当前状态不允许风控预审通过',
       {
         status: ApplicationStatus.PENDING_FUNDER_PRE,
-        ...flowPatch(ApplicationStatus.PENDING_FUNDER_PRE)
+        ...flowPatch(ApplicationStatus.PENDING_FUNDER_PRE),
+        remark: dto.opinion
       }
     )
   }
 
   async riskPreReject(id: number, dto: PrecheckActionDto) {
-    if (dto.reviewerId) await this.ensureRelatedExists(this.prisma.user, dto.reviewerId, '预审人不存在')
+    const reviewerId = this.resolvePrecheckReviewerId(dto)
+    if (reviewerId) await this.ensureRelatedExists(this.prisma.user, reviewerId, '预审人不存在')
+    if (!dto.opinion?.trim()) throw new BadRequestException('拒绝原因不能为空')
     const application = await this.findAndAssertStatus(
       id,
       [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE],
       '当前状态不允许风控预审拒绝'
     )
+    if (reviewerId) {
+      return this.transitionWithApproval(
+        id,
+        [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE],
+        '当前状态不允许风控预审拒绝',
+        { approverId: reviewerId, stage: 'RISK_PRE', action: ApprovalAction.REJECT, opinion: dto.opinion },
+        ApplicationStatus.RISK_PRE_REJECTED,
+        { remark: dto.opinion },
+        application
+      )
+    }
     return this.prisma.application.update({
       where: { id },
       data: {
@@ -445,6 +470,30 @@ export class ApplicationService extends BaseBusinessCrudService<
         remark: dto.opinion ?? application.remark
       }
     })
+  }
+
+  async riskPreReturn(id: number, dto: PrecheckActionDto) {
+    const reviewerId = this.resolvePrecheckReviewerId(dto)
+    if (!reviewerId) throw new BadRequestException('审批人不能为空')
+    if (!dto.opinion?.trim()) throw new BadRequestException('驳回备注不能为空')
+    await this.ensureRelatedExists(this.prisma.user, reviewerId, '预审人不存在')
+    await this.findAndAssertStatus(
+      id,
+      [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE],
+      '当前状态不允许风控预审驳回'
+    )
+    return this.transitionWithApproval(
+      id,
+      [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE],
+      '当前状态不允许风控预审驳回',
+      { approverId: reviewerId, stage: 'RISK_PRE', action: ApprovalAction.RETURN, opinion: dto.opinion },
+      ApplicationStatus.SUBMITTED,
+      {
+        currentNode: 1140,
+        currentStatus: 40,
+        remark: dto.opinion
+      }
+    )
   }
 
   async funderPrePass(id: number, dto: FunderReviewDto) {
@@ -1106,6 +1155,10 @@ export class ApplicationService extends BaseBusinessCrudService<
 
   private async ensureOrgExists(orgId: number) {
     await this.getScopedRelated(this.prisma.organization, orgId, '机构不存在')
+  }
+
+  private resolvePrecheckReviewerId(dto: PrecheckActionDto) {
+    return dto.reviewerId || dto.approverId
   }
 
   private async assertSameOrg(

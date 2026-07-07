@@ -386,7 +386,7 @@ export function useBusinessList() {
     activeAction.value = action
     actionRow.value = row
     const defaults = action.defaults?.(row) || {}
-    const operatorProps = ['approverId', 'createdBy']
+    const operatorProps = ['approverId', 'reviewerId', 'createdBy']
     for (const prop of operatorProps) {
       if (action.fields?.some((field: FieldConfig) => field.prop === prop) && defaults[prop] === undefined && currentUserId.value) {
         defaults[prop] = currentUserId.value

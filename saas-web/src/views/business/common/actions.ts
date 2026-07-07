@@ -86,10 +86,11 @@ export const applicationActions: ActionConfig[] = [
   {
     name: 'risk-pre-pass',
     label: '风控预审通过',
+    type: 'success',
     path: (row) => `/application/${row.id}/risk-pre-pass`,
     fields: [
-      { prop: 'reviewerId', label: '处理人ID', type: 'number' },
-      { prop: 'opinion', label: '风控预审意见', type: 'textarea' }
+      { prop: 'reviewerId', label: '处理人ID', type: 'number', required: true },
+      { prop: 'opinion', label: '审批备注', type: 'textarea', required: true }
     ],
     visible: (row) => ['SUBMITTED', 'PENDING_RISK_PRE'].includes(String(row.status))
   },
@@ -99,8 +100,19 @@ export const applicationActions: ActionConfig[] = [
     type: 'danger',
     path: (row) => `/application/${row.id}/risk-pre-reject`,
     fields: [
-      { prop: 'reviewerId', label: '处理人ID', type: 'number' },
-      { prop: 'opinion', label: '拒绝原因', type: 'textarea' }
+      { prop: 'reviewerId', label: '处理人ID', type: 'number', required: true },
+      { prop: 'opinion', label: '拒绝原因', type: 'textarea', required: true }
+    ],
+    visible: (row) => ['SUBMITTED', 'PENDING_RISK_PRE'].includes(String(row.status))
+  },
+  {
+    name: 'risk-pre-return',
+    label: '风控预审驳回',
+    type: 'warning',
+    path: (row) => `/application/${row.id}/risk-pre-return`,
+    fields: [
+      { prop: 'reviewerId', label: '处理人ID', type: 'number', required: true },
+      { prop: 'opinion', label: '驳回备注', type: 'textarea', required: true }
     ],
     visible: (row) => ['SUBMITTED', 'PENDING_RISK_PRE'].includes(String(row.status))
   },
@@ -299,3 +311,4 @@ export const applicationActions: ActionConfig[] = [
     visible: (row) => String(row.status) === 'DISBURSED'
   }
 ]
+
