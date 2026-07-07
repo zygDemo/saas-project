@@ -65,7 +65,7 @@ jobs:
         if: env.APIFOX_TOKEN != '' && env.APIFOX_PROJECT_ID != ''
         run: |
           OPENAPI_PATH="saas-api/apps/admin-api/openapi/openapi.json"
-          IMPORT_URL="$APIFOX_BASE_URL/api/v1/projects/$APIFOX_PROJECT_ID/imports/openapi"
+          IMPORT_URL="https://api.apifox.com/api/v1/projects/$APIFOX_PROJECT_ID/imports/openapi"
           echo "Debug: IMPORT_URL=$IMPORT_URL"
           echo "Debug: APIFOX_BASE_URL=$APIFOX_BASE_URL"
           echo "Debug: APIFOX_PROJECT_ID=$APIFOX_PROJECT_ID"
