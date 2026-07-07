@@ -20,7 +20,7 @@
  */
 
 /** 基础 API 响应结构 */
-export interface BaseResponse<T = unknown> {
+export interface ApiResponse<T = unknown> {
   /** 状态码 */
   code: number
   /** 消息 */
@@ -28,3 +28,6 @@ export interface BaseResponse<T = unknown> {
   /** 数据 */
   data: T
 }
+
+/** @deprecated 使用 ApiResponse 代替 */
+export type BaseResponse<T = unknown> = ApiResponse<T>

@@ -19,7 +19,7 @@ import { useUserStore } from '@/store/modules/user'
 import { ApiStatus } from './status'
 import { HttpError, handleError, showError, showSuccess } from './error'
 import { $t } from '@/locales'
-import { BaseResponse } from '@/types'
+import { ApiResponse } from '@/types'
 import { reportError, reportPerformance } from '@/utils/monitor/monitor'
 
 /** 请求配置常量 */
@@ -95,7 +95,7 @@ axiosInstance.interceptors.request.use(
 
 /** 响应拦截器 */
 axiosInstance.interceptors.response.use(
-  (response: AxiosResponse<BaseResponse>) => {
+  (response: AxiosResponse<ApiResponse>) => {
     const { code, msg } = response.data
     if (code === ApiStatus.success) {
       const startTime = (response.config as ExtendedAxiosRequestConfig & { __monitorStart?: number }).__monitorStart
@@ -210,7 +210,7 @@ function delay(ms: number) {
 /** 请求函数 */
 async function request<T = unknown>(config: ExtendedAxiosRequestConfig): Promise<T> {
   try {
-    const res = await axiosInstance.request<BaseResponse<T>>(config)
+    const res = await axiosInstance.request<ApiResponse<T>>(config)
 
     // 显示成功消息
     if (config.showSuccessMessage && res.data.msg) {

@@ -15,6 +15,8 @@ export interface ApiResponse<T = unknown> {
 /** 分页响应（records 形态） */
 export interface PageResult<T = unknown> {
   records?: T[]
+  /** 兼容部分后端接口返回 rows 而非 records */
+  rows?: T[]
   total?: number
   current?: number
   size?: number

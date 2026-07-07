@@ -2,10 +2,11 @@
  * 前后端共享的 API 响应契约
  *
  * 与后端 NestJS 统一接口结构对齐，供 saas-web API 客户端与页面复用。
- * 与现有 `src/types/common/response.ts` 的 `BaseResponse` 配合使用。
  */
 
-import type { BaseResponse } from '@/types/common/response'
+import type { ApiResponse } from '@/types/common/response'
+
+export type { ApiResponse }
 
 /** 分页响应（records 形态） */
 export interface BasePageResponse<T = unknown> {

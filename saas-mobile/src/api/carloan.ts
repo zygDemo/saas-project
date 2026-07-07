@@ -3,25 +3,9 @@ import {
   uploadFile as uploadByUni,
   uploadFileWithData,
 } from "@/common/http.interceptor";
+import type { ApiResponse, PageResult } from "@/types/api/contract";
 
-/** API 通用响应包装 */
-export interface ApiResponse<T = unknown> {
-  code: number;
-  msg?: string;
-  data?: T;
-  rows?: T;
-  total?: number;
-}
-
-export interface PageResult<T = unknown> {
-  records?: T[];
-  rows?: T[];
-  current?: number;
-  pageNum?: number;
-  size?: number;
-  pageSize?: number;
-  total?: number;
-}
+export type { ApiResponse, PageResult };
 
 export interface MobileUploadResult {
   id?: number;
