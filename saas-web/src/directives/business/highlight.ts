@@ -42,12 +42,88 @@
  */
 
 import { App, Directive } from 'vue'
-import hljs from 'highlight.js'
 
 export type HighlightDirective = Directive<HTMLElement>
 
+type HighlightInstance = {
+  highlightElement: (element: HTMLElement) => void
+  registerLanguage: (languageName: string, language: unknown) => void
+}
+
+let highlightPromise: Promise<HighlightInstance> | null = null
+
+async function getHighlight() {
+  if (!highlightPromise) {
+    highlightPromise = Promise.all([
+      import('highlight.js/lib/core'),
+      import('highlight.js/lib/languages/javascript'),
+      import('highlight.js/lib/languages/typescript'),
+      import('highlight.js/lib/languages/xml'),
+      import('highlight.js/lib/languages/json'),
+      import('highlight.js/lib/languages/bash'),
+      import('highlight.js/lib/languages/css'),
+      import('highlight.js/lib/languages/scss'),
+      import('highlight.js/lib/languages/less'),
+      import('highlight.js/lib/languages/java'),
+      import('highlight.js/lib/languages/go'),
+      import('highlight.js/lib/languages/rust'),
+      import('highlight.js/lib/languages/sql'),
+      import('highlight.js/lib/languages/yaml'),
+      import('highlight.js/lib/languages/markdown'),
+      import('highlight.js/lib/languages/plaintext')
+    ]).then(([
+      core,
+      javascript,
+      typescript,
+      xml,
+      json,
+      bash,
+      css,
+      scss,
+      less,
+      java,
+      go,
+      rust,
+      sql,
+      yaml,
+      markdown,
+      plaintext
+    ]) => {
+      const hljs = core.default as HighlightInstance
+      hljs.registerLanguage('javascript', javascript.default)
+      hljs.registerLanguage('js', javascript.default)
+      hljs.registerLanguage('typescript', typescript.default)
+      hljs.registerLanguage('ts', typescript.default)
+      hljs.registerLanguage('xml', xml.default)
+      hljs.registerLanguage('html', xml.default)
+      hljs.registerLanguage('vue', xml.default)
+      hljs.registerLanguage('json', json.default)
+      hljs.registerLanguage('bash', bash.default)
+      hljs.registerLanguage('shell', bash.default)
+      hljs.registerLanguage('sh', bash.default)
+      hljs.registerLanguage('css', css.default)
+      hljs.registerLanguage('scss', scss.default)
+      hljs.registerLanguage('less', less.default)
+      hljs.registerLanguage('java', java.default)
+      hljs.registerLanguage('go', go.default)
+      hljs.registerLanguage('rust', rust.default)
+      hljs.registerLanguage('sql', sql.default)
+      hljs.registerLanguage('yaml', yaml.default)
+      hljs.registerLanguage('yml', yaml.default)
+      hljs.registerLanguage('markdown', markdown.default)
+      hljs.registerLanguage('md', markdown.default)
+      hljs.registerLanguage('plaintext', plaintext.default)
+      hljs.registerLanguage('text', plaintext.default)
+      return hljs
+    })
+  }
+
+  return highlightPromise
+}
+
 // 高亮代码
-function highlightCode(block: HTMLElement) {
+async function highlightCode(block: HTMLElement) {
+  const hljs = await getHighlight()
   hljs.highlightElement(block)
 }
 
@@ -108,13 +184,13 @@ function markBlockAsProcessed(block: HTMLElement) {
 }
 
 // 处理单个代码块
-function processBlock(block: HTMLElement) {
+async function processBlock(block: HTMLElement) {
   if (isBlockProcessed(block)) {
     return
   }
 
   try {
-    highlightCode(block)
+    await highlightCode(block)
     insertLineNumbers(block)
     addCopyButton(block)
     markBlockAsProcessed(block)
@@ -124,7 +200,7 @@ function processBlock(block: HTMLElement) {
 }
 
 // 查找并处理所有代码块
-function processAllCodeBlocks(el: HTMLElement) {
+async function processAllCodeBlocks(el: HTMLElement) {
   const blocks = Array.from(el.querySelectorAll<HTMLElement>('pre code'))
   const unprocessedBlocks = blocks.filter((block) => !isBlockProcessed(block))
 
@@ -134,29 +210,29 @@ function processAllCodeBlocks(el: HTMLElement) {
 
   if (unprocessedBlocks.length <= 10) {
     // 如果代码块数量少于等于10，直接处理所有代码块
-    unprocessedBlocks.forEach((block) => processBlock(block))
+    await Promise.all(unprocessedBlocks.map((block) => processBlock(block)))
   } else {
     // 定义每次处理的代码块数
     const batchSize = 10
     let currentIndex = 0
 
-    const processBatch = () => {
+    const processBatch = async () => {
       const batch = unprocessedBlocks.slice(currentIndex, currentIndex + batchSize)
 
-      batch.forEach((block) => {
-        processBlock(block)
-      })
+      await Promise.all(batch.map((block) => processBlock(block)))
 
       // 更新索引并继续处理下一批
       currentIndex += batchSize
       if (currentIndex < unprocessedBlocks.length) {
         // 使用 requestAnimationFrame 确保下一帧再处理
-        requestAnimationFrame(processBatch)
+        requestAnimationFrame(() => {
+          void processBatch()
+        })
       }
     }
 
     // 开始处理第一批代码块
-    processBatch()
+    void processBatch()
   }
 }
 
@@ -165,7 +241,7 @@ function retryProcessing(el: HTMLElement, maxRetries: number = 3, delay: number 
   let retryCount = 0
 
   const tryProcess = () => {
-    processAllCodeBlocks(el)
+    void processAllCodeBlocks(el)
 
     // 检查是否还有未处理的代码块
     const remainingBlocks = Array.from(el.querySelectorAll<HTMLElement>('pre code')).filter(
@@ -185,7 +261,7 @@ function retryProcessing(el: HTMLElement, maxRetries: number = 3, delay: number 
 const highlightDirective: HighlightDirective = {
   mounted(el: HTMLElement) {
     // 立即尝试处理一次
-    processAllCodeBlocks(el)
+    void processAllCodeBlocks(el)
 
     // 延迟处理，确保 v-html 内容已经渲染
     setTimeout(() => {
@@ -213,7 +289,7 @@ const highlightDirective: HighlightDirective = {
       if (hasNewCodeBlocks) {
         // 延迟处理新添加的代码块
         setTimeout(() => {
-          processAllCodeBlocks(el)
+          void processAllCodeBlocks(el)
         }, 50)
       }
     })
@@ -231,7 +307,7 @@ const highlightDirective: HighlightDirective = {
   updated(el: HTMLElement) {
     // 当组件更新时，重新处理代码块
     setTimeout(() => {
-      processAllCodeBlocks(el)
+      void processAllCodeBlocks(el)
     }, 50)
   },
 

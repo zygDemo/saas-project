@@ -1,44 +1,40 @@
 <template>
   <div class="announcement-page art-full-height">
-    <ElCard class="art-table-card">
-      <template #header>
-        <div class="card-header">
-          <div>
-            <h3>公告管理</h3>
-            <p>发布和管理系统公告通知</p>
+    <div class="page-hero">
+      <div class="page-hero__icon">
+        <i class="ri-notification-3-line"></i>
+      </div>
+      <div class="page-hero__content">
+        <div class="page-hero__eyebrow">Operation Notice</div>
+        <h2>公告管理</h2>
+        <p>发布和管理系统公告通知，支持草稿、定时发布、置顶和到期控制。</p>
+      </div>
+      <div class="page-hero__actions">
+        <ElButton v-auth="'add'" type="primary" @click="openDialog()">
+          <ElIcon class="mr-1"><Plus /></ElIcon>新增公告
+        </ElButton>
+      </div>
+    </div>
+
+    <ArtSearchBar
+      v-model="searchModel"
+      :items="searchItems"
+      :span="6"
+      :show-expand="false"
+      @search="handleSearch"
+      @reset="resetSearch"
+    />
+
+    <ElCard class="art-table-card announcement-table-card">
+      <ArtTableHeader :loading="loading" layout="refresh,size,fullscreen,columns,settings" @refresh="loadData">
+        <template #left>
+          <div class="table-title">
+            <span>公告列表</span>
+            <ElTag effect="plain" size="small">共 {{ pagination.total }} 条</ElTag>
           </div>
-          <ElButton v-auth="'add'" type="primary" @click="openDialog()">
-            <ElIcon class="mr-1"><Plus /></ElIcon>新增公告
-          </ElButton>
-        </div>
-      </template>
+        </template>
+      </ArtTableHeader>
 
-      <!-- 搜索栏 -->
-      <ElForm :model="searchForm" class="search-form" inline>
-        <ElFormItem label="标题">
-          <ElInput v-model="searchForm.title" clearable placeholder="公告标题" style="width:200px" />
-        </ElFormItem>
-        <ElFormItem label="类型">
-          <ElSelect v-model="searchForm.type" clearable placeholder="全部" style="width:120px">
-            <ElOption label="通知" value="NOTICE" />
-            <ElOption label="公告" value="ANNOUNCEMENT" />
-            <ElOption label="警告" value="ALERT" />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem label="状态">
-          <ElSelect v-model="searchForm.status" clearable placeholder="全部" style="width:120px">
-            <ElOption label="草稿" value="DRAFT" />
-            <ElOption label="已发布" value="PUBLISHED" />
-            <ElOption label="已过期" value="EXPIRED" />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem>
-          <ElButton type="primary" @click="loadData">查询</ElButton>
-          <ElButton @click="resetSearch">重置</ElButton>
-        </ElFormItem>
-      </ElForm>
-
-      <!-- 表格 -->
       <ArtTable
         :loading="loading"
         :data="records"
@@ -53,89 +49,108 @@
     <ElDialog
       v-model="dialogVisible"
       :title="form.id ? '编辑公告' : '新增公告'"
-      width="700px"
+      width="760px"
       top="5vh"
+      class="announcement-dialog"
     >
-      <ElForm ref="formRef" :model="form" :rules="rules" label-width="90px">
+      <ElForm ref="formRef" :model="form" :rules="rules" label-width="92px" class="announcement-form">
+        <div class="form-section">基础信息</div>
         <ElFormItem label="公告标题" prop="title">
-          <ElInput v-model="form.title" placeholder="请输入公告标题" />
+          <ElInput v-model="form.title" maxlength="200" show-word-limit placeholder="请输入公告标题" />
         </ElFormItem>
         <ElRow :gutter="16">
-          <ElCol :span="12">
+          <ElCol :xs="24" :sm="12">
             <ElFormItem label="公告类型">
-              <ElSelect v-model="form.type" style="width: 100%">
-                <ElOption label="通知" value="NOTICE" />
-                <ElOption label="公告" value="ANNOUNCEMENT" />
-                <ElOption label="警告" value="ALERT" />
+              <ElSelect v-model="form.type" class="w-full">
+                <ElOption v-for="item in typeOptions" :key="item.value" :label="item.label" :value="item.value" />
               </ElSelect>
             </ElFormItem>
           </ElCol>
-          <ElCol :span="12">
+          <ElCol :xs="24" :sm="12">
             <ElFormItem label="重要程度">
-              <ElSelect v-model="form.level" style="width: 100%">
-                <ElOption label="普通" value="NORMAL" />
-                <ElOption label="重要" value="IMPORTANT" />
-                <ElOption label="紧急" value="URGENT" />
+              <ElSelect v-model="form.level" class="w-full">
+                <ElOption v-for="item in levelOptions" :key="item.value" :label="item.label" :value="item.value" />
               </ElSelect>
             </ElFormItem>
           </ElCol>
         </ElRow>
         <ElRow :gutter="16">
-          <ElCol :span="12">
+          <ElCol :xs="24" :sm="12">
             <ElFormItem label="发布时间">
               <ElDatePicker
                 v-model="form.publishAt"
                 type="datetime"
-                placeholder="选择发布时间"
+                placeholder="不填则发布时立即生效"
                 format="YYYY-MM-DD HH:mm:ss"
                 value-format="YYYY-MM-DD HH:mm:ss"
-                style="width: 100%"
+                class="w-full"
               />
             </ElFormItem>
           </ElCol>
-          <ElCol :span="12">
+          <ElCol :xs="24" :sm="12">
             <ElFormItem label="过期时间">
               <ElDatePicker
                 v-model="form.expireAt"
                 type="datetime"
-                placeholder="选择过期时间"
+                placeholder="不填则长期有效"
                 format="YYYY-MM-DD HH:mm:ss"
                 value-format="YYYY-MM-DD HH:mm:ss"
-                style="width: 100%"
+                class="w-full"
               />
             </ElFormItem>
           </ElCol>
         </ElRow>
-        <ElFormItem label="置顶">
-          <ElSwitch v-model="form.topFlag" />
-        </ElFormItem>
-        <ElFormItem label="公告内容">
-          <ElInput v-model="form.content" type="textarea" :rows="8" placeholder="请输入公告内容（支持HTML）" />
+        <ElRow :gutter="16">
+          <ElCol :xs="24" :sm="12">
+            <ElFormItem label="发布范围">
+              <ElInput v-model="form.target" maxlength="100" placeholder="如：全部用户 / 管理员 / 指定机构" />
+            </ElFormItem>
+          </ElCol>
+          <ElCol :xs="24" :sm="12">
+            <ElFormItem label="置顶展示">
+              <ElSwitch v-model="form.topFlag" active-text="置顶" inactive-text="普通" />
+            </ElFormItem>
+          </ElCol>
+        </ElRow>
+
+        <div class="form-section">公告内容</div>
+        <ElFormItem label="内容" prop="content">
+          <ElInput
+            v-model="form.content"
+            type="textarea"
+            :autosize="{ minRows: 8, maxRows: 14 }"
+            placeholder="请输入公告内容，支持 HTML 片段"
+          />
         </ElFormItem>
         <ElFormItem label="备注">
-          <ElInput v-model="form.remark" type="textarea" :rows="2" placeholder="可选" />
+          <ElInput v-model="form.remark" type="textarea" :rows="2" maxlength="500" show-word-limit placeholder="可选" />
         </ElFormItem>
       </ElForm>
       <template #footer>
         <ElButton @click="dialogVisible = false">取消</ElButton>
-        <ElButton type="primary" :loading="submitting" @click="handleSubmit('DRAFT')">保存草稿</ElButton>
-        <ElButton type="success" :loading="submitting" @click="handleSubmit('PUBLISHED')">保存并发布</ElButton>
+        <ElButton :loading="submitting" @click="handleSubmit('DRAFT')">保存草稿</ElButton>
+        <ElButton type="primary" :loading="submitting" @click="handleSubmit('PUBLISHED')">保存并发布</ElButton>
       </template>
     </ElDialog>
 
     <!-- 详情预览 -->
-    <ElDialog v-model="previewVisible" title="公告预览" width="680px">
+    <ElDialog v-model="previewVisible" title="公告预览" width="720px" class="announcement-preview-dialog">
       <div v-if="previewItem" class="announcement-preview">
         <div class="preview-header">
-          <h2>{{ previewItem.title }}</h2>
-          <div class="preview-meta">
-            <ElTag :type="getTypeTag(previewItem.type)" size="small">{{ getTypeLabel(previewItem.type) }}</ElTag>
-            <ElTag :type="getLevelTag(previewItem.level)" size="small">{{ getLevelLabel(previewItem.level) }}</ElTag>
-            <span class="preview-time">{{ previewItem.publishAt || previewItem.createTime }}</span>
+          <div>
+            <h2>{{ previewItem.title }}</h2>
+            <div class="preview-meta">
+              <ElTag :type="getTypeTag(previewItem.type)" size="small">{{ getTypeLabel(previewItem.type) }}</ElTag>
+              <ElTag :type="getLevelTag(previewItem.level)" size="small">{{ getLevelLabel(previewItem.level) }}</ElTag>
+              <ElTag :type="getStatusTag(previewItem.status)" size="small">{{ getStatusLabel(previewItem.status) }}</ElTag>
+            </div>
+          </div>
+          <div class="preview-time">
+            {{ previewItem.publishAt || previewItem.createTime }}
           </div>
         </div>
         <ElDivider />
-        <div class="preview-content" v-html="previewItem.content"></div>
+        <div class="preview-content" v-html="previewItem.content || '暂无内容'"></div>
       </div>
     </ElDialog>
   </div>
@@ -147,15 +162,18 @@
     fetchCreateAnnouncement,
     fetchUpdateAnnouncement,
     fetchPublishAnnouncement,
+    fetchUnpublishAnnouncement,
+    fetchExpireAnnouncement,
     fetchDeleteAnnouncement
   } from '@/api/system-manage'
-  import { ElMessage, ElMessageBox, ElTag, ElButton } from 'element-plus'
+  import { ElMessage, ElMessageBox, ElTag, ElButton, ElSpace } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
   import type { FormInstance, FormRules } from 'element-plus'
 
   defineOptions({ name: 'Announcement' })
 
   type AnnItem = Api.SystemManage.AnnouncementItem
+  type TagType = '' | 'info' | 'success' | 'warning' | 'danger'
 
   const loading = ref(false)
   const submitting = ref(false)
@@ -165,8 +183,32 @@
   const previewItem = ref<AnnItem | null>(null)
   const formRef = ref<FormInstance>()
 
-  const searchForm = reactive({ title: '', type: '', status: '' })
+  const searchModel = ref<Record<string, unknown>>({})
+  const searchForm = reactive({ title: '', type: '', level: '', status: '' })
   const pagination = reactive({ current: 1, size: 20, total: 0 })
+
+  const typeOptions = [
+    { label: '通知', value: 'NOTICE' },
+    { label: '公告', value: 'ANNOUNCEMENT' },
+    { label: '警告', value: 'ALERT' }
+  ]
+  const levelOptions = [
+    { label: '普通', value: 'NORMAL' },
+    { label: '重要', value: 'IMPORTANT' },
+    { label: '紧急', value: 'URGENT' }
+  ]
+  const statusOptions = [
+    { label: '草稿', value: 'DRAFT' },
+    { label: '已发布', value: 'PUBLISHED' },
+    { label: '已过期', value: 'EXPIRED' }
+  ]
+
+  const searchItems = computed(() => [
+    { key: 'title', label: '公告标题', type: 'input' as const, placeholder: '请输入公告标题', clearable: true },
+    { key: 'type', label: '类型', type: 'select' as const, props: { options: typeOptions, clearable: true, filterable: true } },
+    { key: 'level', label: '级别', type: 'select' as const, props: { options: levelOptions, clearable: true, filterable: true } },
+    { key: 'status', label: '状态', type: 'select' as const, props: { options: statusOptions, clearable: true, filterable: true } }
+  ])
 
   const form = reactive({
     id: 0,
@@ -177,60 +219,69 @@
     status: 'DRAFT',
     publishAt: '',
     expireAt: '',
+    target: '',
     topFlag: false,
     remark: ''
   })
 
   const rules: FormRules = {
-    title: [{ required: true, message: '请输入公告标题', trigger: 'blur' }]
+    title: [{ required: true, message: '请输入公告标题', trigger: 'blur' }],
+    content: [{ required: true, message: '请输入公告内容', trigger: 'blur' }]
   }
 
-  const getTypeTag = (t: string): '' | 'info' | 'success' | 'warning' | 'danger' => ({ NOTICE: 'info', ANNOUNCEMENT: '', ALERT: 'warning' } as Record<string, '' | 'info' | 'success' | 'warning' | 'danger'>)[t] || 'info'
-
-  const getLevelTag = (l: string): '' | 'info' | 'success' | 'warning' | 'danger' => ({ NORMAL: 'info', IMPORTANT: 'warning', URGENT: 'danger' } as Record<string, '' | 'info' | 'success' | 'warning' | 'danger'>)[l] || 'info'
+  const getTypeTag = (t: string): TagType => ({ NOTICE: 'info', ANNOUNCEMENT: '', ALERT: 'warning' } as Record<string, TagType>)[t] || 'info'
+  const getTypeLabel = (t: string) => ({ NOTICE: '通知', ANNOUNCEMENT: '公告', ALERT: '警告' }[t] || t)
+  const getLevelTag = (l: string): TagType => ({ NORMAL: 'info', IMPORTANT: 'warning', URGENT: 'danger' } as Record<string, TagType>)[l] || 'info'
   const getLevelLabel = (l: string) => ({ NORMAL: '普通', IMPORTANT: '重要', URGENT: '紧急' }[l] || l)
-  const getStatusTag = (s: string): '' | 'info' | 'success' | 'warning' | 'danger' => ({ DRAFT: 'info', PUBLISHED: 'success', EXPIRED: 'warning' } as Record<string, '' | 'info' | 'success' | 'warning' | 'danger'>)[s] || 'info'
+  const getStatusTag = (s: string): TagType => ({ DRAFT: 'info', PUBLISHED: 'success', EXPIRED: 'warning' } as Record<string, TagType>)[s] || 'info'
   const getStatusLabel = (s: string) => ({ DRAFT: '草稿', PUBLISHED: '已发布', EXPIRED: '已过期' }[s] || s)
 
   const columns = computed(() => [
-    { prop: 'title', label: '标题', minWidth: 200, showOverflowTooltip: true },
+    {
+      prop: 'title',
+      label: '公告标题',
+      minWidth: 240,
+      formatter: (row: AnnItem) =>
+        h('div', { class: 'announcement-title-cell' }, [
+          h('span', { class: 'announcement-title-cell__text' }, row.title),
+          row.topFlag ? h(ElTag, { type: 'danger', size: 'small', effect: 'plain' }, () => '置顶') : null
+        ])
+    },
     {
       prop: 'type',
       label: '类型',
-      width: 80,
+      width: 90,
       formatter: (row: AnnItem) => h(ElTag, { type: getTypeTag(row.type), size: 'small' }, () => getTypeLabel(row.type))
     },
     {
       prop: 'level',
       label: '级别',
-      width: 80,
+      width: 90,
       formatter: (row: AnnItem) => h(ElTag, { type: getLevelTag(row.level), size: 'small' }, () => getLevelLabel(row.level))
     },
     {
       prop: 'status',
       label: '状态',
-      width: 90,
+      width: 100,
       formatter: (row: AnnItem) => h(ElTag, { type: getStatusTag(row.status), size: 'small' }, () => getStatusLabel(row.status))
     },
-    {
-      prop: 'topFlag',
-      label: '置顶',
-      width: 70,
-      formatter: (row: AnnItem) => row.topFlag ? h(ElTag, { type: 'danger', size: 'small' }, () => '置顶') : h('span', '-')
-    },
-    { prop: 'viewCount', label: '阅读', width: 70 },
-    { prop: 'publishAt', label: '发布时间', width: 160 },
-    { prop: 'createTime', label: '创建时间', width: 160 },
+    { prop: 'target', label: '发布范围', width: 120, showOverflowTooltip: true },
+    { prop: 'viewCount', label: '阅读', width: 80, align: 'center' as const },
+    { prop: 'publishAt', label: '发布时间', width: 170 },
+    { prop: 'expireAt', label: '过期时间', width: 170 },
     {
       prop: 'operation',
       label: '操作',
-      width: 220,
+      width: 260,
       fixed: 'right' as const,
       formatter: (row: AnnItem) =>
-        h('div', [
+        h(ElSpace, { size: 4 }, () => [
           h(ElButton, { link: true, type: 'primary', onClick: () => handlePreview(row) }, () => '预览'),
-          row.status === 'DRAFT'
+          row.status !== 'PUBLISHED'
             ? h(ElButton, { link: true, type: 'success', onClick: () => handlePublish(row) }, () => '发布')
+            : h(ElButton, { link: true, type: 'warning', onClick: () => handleUnpublish(row) }, () => '撤回'),
+          row.status !== 'EXPIRED'
+            ? h(ElButton, { link: true, type: 'warning', onClick: () => handleExpire(row) }, () => '过期')
             : null,
           h(ElButton, { link: true, type: 'primary', onClick: () => openDialog(row) }, () => '编辑'),
           h(ElButton, { link: true, type: 'danger', onClick: () => handleDelete(row) }, () => '删除')
@@ -253,8 +304,20 @@
     }
   }
 
+  function handleSearch(params: Record<string, unknown>) {
+    Object.assign(searchForm, {
+      title: String(params.title || ''),
+      type: String(params.type || ''),
+      level: String(params.level || ''),
+      status: String(params.status || '')
+    })
+    pagination.current = 1
+    loadData()
+  }
+
   function resetSearch() {
-    Object.assign(searchForm, { title: '', type: '', status: '' })
+    searchModel.value = {}
+    Object.assign(searchForm, { title: '', type: '', level: '', status: '' })
     pagination.current = 1
     loadData()
   }
@@ -265,45 +328,51 @@
     loadData()
   }
 
-  function handleCurrentChange(page: number) {
-    pagination.current = page
+  function handleCurrentChange(current: number) {
+    pagination.current = current
     loadData()
   }
 
+  function resetForm() {
+    Object.assign(form, {
+      id: 0,
+      title: '',
+      content: '',
+      type: 'NOTICE',
+      level: 'NORMAL',
+      status: 'DRAFT',
+      publishAt: '',
+      expireAt: '',
+      target: '',
+      topFlag: false,
+      remark: ''
+    })
+  }
+
   function openDialog(row?: AnnItem) {
+    resetForm()
     if (row) {
       Object.assign(form, {
-        id: row.id,
-        title: row.title,
-        content: row.content || '',
-        type: row.type,
-        level: row.level,
-        status: row.status,
+        ...row,
         publishAt: row.publishAt || '',
         expireAt: row.expireAt || '',
-        topFlag: row.topFlag,
+        target: row.target || '',
         remark: row.remark || ''
-      })
-    } else {
-      Object.assign(form, {
-        id: 0, title: '', content: '', type: 'NOTICE', level: 'NORMAL',
-        status: 'DRAFT', publishAt: '', expireAt: '', topFlag: false, remark: ''
       })
     }
     dialogVisible.value = true
+    nextTick(() => formRef.value?.clearValidate())
   }
 
-  async function handleSubmit(targetStatus: string) {
+  async function handleSubmit(targetStatus: 'DRAFT' | 'PUBLISHED') {
     const valid = await formRef.value?.validate().catch(() => false)
     if (!valid) return
     submitting.value = true
     try {
       const payload = { ...form, status: targetStatus }
-      if (form.id) {
-        await fetchUpdateAnnouncement(form.id, payload)
-      } else {
-        await fetchCreateAnnouncement(payload)
-      }
+      if (form.id) await fetchUpdateAnnouncement(form.id, payload)
+      else await fetchCreateAnnouncement(payload)
+      ElMessage.success(targetStatus === 'PUBLISHED' ? '已保存并发布' : '草稿已保存')
       dialogVisible.value = false
       loadData()
     } finally {
@@ -322,6 +391,18 @@
     loadData()
   }
 
+  async function handleUnpublish(row: AnnItem) {
+    await ElMessageBox.confirm('确认撤回该公告并转为草稿吗？', '提示', { type: 'warning' })
+    await fetchUnpublishAnnouncement(row.id)
+    loadData()
+  }
+
+  async function handleExpire(row: AnnItem) {
+    await ElMessageBox.confirm('确认将该公告设为过期吗？', '提示', { type: 'warning' })
+    await fetchExpireAnnouncement(row.id)
+    loadData()
+  }
+
   async function handleDelete(row: AnnItem) {
     await ElMessageBox.confirm('确认删除该公告吗？', '提示', { type: 'warning' })
     await fetchDeleteAnnouncement(row.id)
@@ -332,46 +413,159 @@
 </script>
 
 <style scoped>
-  .card-header {
+  .announcement-page {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .page-hero {
+    display: flex;
+    gap: 14px;
     align-items: center;
+    padding: 18px 20px;
+    background: var(--el-bg-color);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 12px;
+    box-shadow: var(--el-box-shadow-lighter);
   }
-  .card-header h3 {
+
+  .page-hero__icon {
+    display: flex;
+    flex: 0 0 46px;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    font-size: 24px;
+    color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+    border-radius: 12px;
+  }
+
+  .page-hero__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .page-hero__eyebrow {
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--el-color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .page-hero h2 {
     margin: 0;
-    font-size: 16px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--el-text-color-primary);
   }
-  .card-header p {
-    margin: 4px 0 0;
+
+  .page-hero p {
+    margin: 6px 0 0;
     font-size: 13px;
     color: var(--el-text-color-secondary);
   }
-  .search-form {
-    margin-bottom: 16px;
+
+  .page-hero__actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
   }
+
+  .announcement-table-card :deep(.el-card__body) {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .table-title {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+
+  .announcement-title-cell {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .announcement-title-cell__text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .form-section {
+    padding: 12px 0 10px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+
+  .announcement-form {
+    max-height: 65vh;
+    padding-right: 10px;
+    overflow: auto;
+  }
+
   .announcement-preview {
     padding: 0 8px;
   }
+
+  .preview-header {
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+  }
+
   .preview-header h2 {
     margin: 0 0 12px;
     font-size: 20px;
     line-height: 1.4;
   }
+
   .preview-meta {
     display: flex;
-    align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
+    align-items: center;
   }
+
   .preview-time {
+    flex-shrink: 0;
     font-size: 13px;
     color: var(--el-text-color-secondary);
   }
+
   .preview-content {
     line-height: 1.8;
     color: var(--el-text-color-regular);
+    white-space: pre-wrap;
   }
+
   .preview-content :deep(img) {
     max-width: 100%;
     border-radius: 4px;
+  }
+
+  @media (max-width: 768px) {
+    .page-hero {
+      align-items: flex-start;
+    }
+
+    .page-hero__actions {
+      width: 100%;
+    }
   }
 </style>

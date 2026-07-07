@@ -47,6 +47,18 @@ export class AnnouncementController {
     return this.service.publish(id)
   }
 
+  @Post(':id/unpublish')
+  @ApiOperation({ summary: '撤回公告' })
+  unpublish(@Param('id', ParseIntPipe) id: number) {
+    return this.service.unpublish(id)
+  }
+
+  @Post(':id/expire')
+  @ApiOperation({ summary: '设为过期' })
+  expire(@Param('id', ParseIntPipe) id: number) {
+    return this.service.expire(id)
+  }
+
   @Post(':id/delete')
   @ApiOperation({ summary: '删除公告' })
   delete(@Param('id', ParseIntPipe) id: number) {

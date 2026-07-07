@@ -10,6 +10,13 @@ export class PrecheckActionDto {
   @Min(1)
   reviewerId?: number
 
+  @ApiPropertyOptional({ description: '审批人ID，兼容通用审批弹窗' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  approverId?: number
+
   @ApiPropertyOptional({ description: '预审意见' })
   @IsOptional()
   @IsString()

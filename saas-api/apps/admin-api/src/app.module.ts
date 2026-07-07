@@ -1,4 +1,4 @@
-﻿import { BullModule } from '@nestjs/bullmq'
+import { BullModule } from '@nestjs/bullmq'
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { resolve } from 'path'
@@ -36,6 +36,7 @@ import { DbOpsModule } from './modules/db-ops/db-ops.module'
 import { SystemParamModule } from './modules/system-param/system-param.module'
 import { MobileConfigModule } from './modules/mobile-config/mobile-config.module'
 import { AnnouncementModule } from './modules/announcement/announcement.module'
+import { MsgTemplateModule } from './modules/msg-template/msg-template.module'
 import { MonitorModule } from './modules/monitor/monitor.module'
 
 // 平台管理模块
@@ -103,6 +104,7 @@ const envFilePaths = [
     SystemParamModule,
     MobileConfigModule,
     AnnouncementModule,
+    MsgTemplateModule,
     // 平台管理模块
     PackagePlanModule,
     ProductTemplateModule,

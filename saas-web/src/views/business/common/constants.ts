@@ -56,7 +56,13 @@ export const commonStatusMap: Record<string, string> = {
   EXPIRED: '已过期',
   MALE: '男',
   FEMALE: '女',
-  UNKNOWN: '未知'
+  UNKNOWN: '未知',
+  OPEN: '待处理',
+  IN_PROGRESS: '处理中',
+  RESOLVED: '已解决',
+  CLOSED: '已关闭',
+  REJECTED: '已拒绝',
+  PUBLISHED: '已发布'
 }
 
 export function toOption(value: string): OptionConfig {
@@ -254,6 +260,26 @@ export const workOrderPriorityOptions: OptionConfig[] = [
 ]
 
 export const workOrderStatusOptions = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'REJECTED'].map(toOption)
+
+export const msgTemplateChannelOptions: OptionConfig[] = [
+  { label: '短信', value: 'SMS' },
+  { label: '站内信', value: 'APP' },
+  { label: '微信', value: 'WECHAT' },
+  { label: '邮件', value: 'EMAIL' },
+  { label: '系统消息', value: 'SYSTEM' }
+]
+
+export const msgTemplateSceneOptions: OptionConfig[] = [
+  { label: '通用通知', value: 'GENERAL' },
+  { label: '车贷预审', value: 'CARLOAN_PRECHECK' },
+  { label: '补件提醒', value: 'CARLOAN_SUPPLEMENT' },
+  { label: '审批结果', value: 'CARLOAN_APPROVAL' },
+  { label: '签约通知', value: 'CARLOAN_SIGNING' },
+  { label: '还款提醒', value: 'CARLOAN_REPAYMENT' },
+  { label: '系统告警', value: 'SYSTEM_ALERT' }
+]
+
+export const msgTemplateStatusOptions = ['ACTIVE', 'INACTIVE', 'DRAFT'].map(toOption)
 
 export const applicationStatusOptions = [
   'DRAFT',

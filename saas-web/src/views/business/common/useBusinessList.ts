@@ -1,4 +1,4 @@
-import { computed, h, reactive, ref, watch } from 'vue'
+import { computed, h, reactive, ref, shallowRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox, ElTag, ElButton, ElSpace } from 'element-plus'
 import {
@@ -10,7 +10,7 @@ import {
   fetchBusinessUpdate
 } from '@/api/business'
 import { useUserStore } from '@/store/modules/user'
-import type { PageConfig, FieldConfig, FilterConfig, FormModel, FormValue, BusinessRouteMeta, ActionConfig, SearchFormItem, ColumnCheck, FileItem, PhaseAction, PhaseConfig, NodeFieldDef, OptionConfig } from './types'
+import type { PageConfig, FieldConfig, FilterConfig, FormModel, FormValue, BusinessRouteMeta, ActionConfig, SearchFormItem, ColumnCheck, OptionConfig } from './types'
 import {
   applicationNodeByPath, applicationPhaseByPath, phaseNodeTabsMap, phaseTitleMap,
   commonStatusMap,
@@ -57,6 +57,7 @@ export function useBusinessList() {
   const activeMainTab = ref('1000')
   const routeMeta = computed(() => route.meta as BusinessRouteMeta)
   const extraFilterModel = reactive<FormModel>({})
+  const phaseDetailRuntime = shallowRef<null | typeof import('./phase-detail-runtime')>(null)
 
   // Remote options
   const { selectOptions, selectLoading, loadRemoteOptions, loadRemoteFilterOptions } =
@@ -112,184 +113,10 @@ export function useBusinessList() {
     return phaseNodeTabsMap[phaseCode] || []
   })
 
-  // ==================== 阶段Tab配置：按节点展示订单字段 ====================
-  // 节点 → 数据源 + 字段列表
-  const nodeFieldDefs: Record<number, { source?: string; label: string; fields: string[] }> = {
-    1100: { source: 'customer', label: '身份证信息', fields: ['name', 'phone', 'idCard', 'gender', 'birthDate', 'nation', 'householdAddress', 'issuingAuthority', 'idCardValidFrom', 'idCardValidTo', 'idCardFront', 'idCardBack', 'maritalStatus', 'education', 'occupation', 'companyName', 'monthlyIncome', 'address', 'emergencyName', 'emergencyPhone', 'status'] },
-    1110: { source: 'vehicle', label: '车辆信息', fields: ['plateNumber', 'vin', 'vehicleCode', 'brand', 'model', 'ownerName', 'address', 'usageNature', 'sealInfo', 'engineNumber', 'registerDate', 'vehicleImgUrl', 'mileage', 'color', 'year', 'purchasePrice', 'estimateValue', 'isMortgaged', 'mortgageInfo'] },
-    1120: { source: '', label: '申请信息', fields: ['applicationNo', 'amount', 'term', 'rate', 'repaymentMethod', 'purpose', 'productName', 'funderName', 'orgName', 'creatorName', 'createdAt'] },
-    1130: { source: '', label: '签署授权书', fields: ['files'] },
-    1140: { source: '', label: '待预审', fields: ['status', 'currentNodeName', 'currentStatusName', 'phaseName', 'remark'] },
-    1200: { source: '', label: '风控预审', fields: ['approvals'] },
-    1250: { source: 'funder', label: '资方预审', fields: ['name', 'funderType', 'code', 'contactName', 'contactPhone', 'integrationMode', 'creditLimit', 'priority', 'status'] },
-    1300: { source: '', label: '资料补充', fields: ['supplementReason', 'supplementDeadline'] },
-    1310: { source: 'customer', label: '客户资料', fields: ['name', 'phone', 'idCard', 'gender', 'birthDate', 'address'] },
-    1320: { source: 'vehicle', label: '车辆资料', fields: ['plateNumber', 'vin', 'brand', 'model'] },
-    1330: { source: '', label: '订单资料', fields: ['applicationNo', 'amount', 'term', 'rate'] },
-    1340: { source: '', label: '文件资料', fields: ['files'] },
-    1350: { source: '', label: '待提交', fields: ['status', 'currentNodeName'] },
-    1400: { source: '', label: '风控初审', fields: ['approvals'] },
-    1450: { source: '', label: '风控终审', fields: ['approvals'] },
-    1500: { source: 'funder', label: '资方终审', fields: ['name', 'funderType', 'contactName', 'contactPhone'] },
-    1600: { source: '', label: '签约办理', fields: ['sign'] },
-    1610: { source: '', label: '额度确认', fields: ['approvedAmount', 'approvedTerm', 'approvedRate'] },
-    1620: { source: '', label: '绑银行卡', fields: [] },
-    1630: { source: '', label: '合同签署', fields: ['sign'] },
-    1640: { source: '', label: 'GPS安装', fields: ['disbursement'] },
-    1650: { source: '', label: '抵押办理', fields: ['disbursement'] },
-    1660: { source: '', label: '待请款', fields: ['status', 'currentNodeName'] },
-    1700: { source: '', label: '请款资料', fields: ['disbursement'] },
-    1800: { source: '', label: '资方放款', fields: ['disbursement'] },
-    1900: { source: '', label: '贷后还款', fields: ['repaymentSummary', 'repayments'] }
-  }
-
-  const phaseConfig = [
-    { 
-      code: 1000, 
-      name: '预审阶段', 
-      nodes: [1100, 1110, 1120, 1130, 1140, 1200, 1250],
-      actions: [
-        { name: 'submit', label: '提交进件', type: 'primary', visible: (row: Record<string, unknown>) => ['DRAFT', 'PENDING_SUPPLEMENT'].includes(String(row.status)) },
-        { name: 'risk-pre-pass', label: '风控预审通过', type: 'success', visible: (row: Record<string, unknown>) => ['SUBMITTED', 'PENDING_RISK_PRE'].includes(String(row.status)) },
-        { name: 'risk-pre-reject', label: '风控预审拒绝', type: 'danger', visible: (row: Record<string, unknown>) => ['SUBMITTED', 'PENDING_RISK_PRE'].includes(String(row.status)) },
-        { name: 'funder-pre-pass', label: '资方预审通过', type: 'success', visible: (row: Record<string, unknown>) => String(row.status) === 'PENDING_FUNDER_PRE' },
-        { name: 'funder-pre-reject', label: '资方预审拒绝', type: 'danger', visible: (row: Record<string, unknown>) => String(row.status) === 'PENDING_FUNDER_PRE' }
-      ]
-    },
-    { 
-      code: 1300, 
-      name: '补件阶段', 
-      nodes: [1300, 1310, 1320, 1330, 1340, 1350],
-      actions: [
-        { name: 'complete-supplement', label: '资料补充完成', type: 'primary', visible: (row: Record<string, unknown>) => ['PENDING_SUPPLEMENT', 'FUNDER_PRE_PASSED'].includes(String(row.status)) }
-      ]
-    },
-    { 
-      code: 1400, 
-      name: '风控审批', 
-      nodes: [1400, 1450],
-      actions: [
-        { name: 'approve', label: '初审/终审通过', type: 'success', visible: (row: Record<string, unknown>) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW'].includes(String(row.status)) },
-        { name: 'reject', label: '审批驳回', type: 'danger', visible: (row: Record<string, unknown>) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW', 'PENDING_FUNDER_REVIEW'].includes(String(row.status)) },
-        { name: 'supplement', label: '要求补件', type: 'warning', visible: (row: Record<string, unknown>) => ['PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW', 'PENDING_FUNDER_REVIEW'].includes(String(row.status)) },
-        { name: 'submit-funder-review', label: '提交资方审批', type: 'primary', visible: (row: Record<string, unknown>) => String(row.status) === 'FINAL_REVIEW_PASSED' }
-      ]
-    },
-    { 
-      code: 1500, 
-      name: '资方终审', 
-      nodes: [1500],
-      actions: [
-        { name: 'funder-pass', label: '资方通过', type: 'success', visible: (row: Record<string, unknown>) => String(row.status) === 'PENDING_FUNDER_REVIEW' },
-        { name: 'funder-reject', label: '资方拒绝', type: 'danger', visible: (row: Record<string, unknown>) => String(row.status) === 'PENDING_FUNDER_REVIEW' },
-        { name: 'start-signing', label: '发起签约', type: 'primary', visible: (row: Record<string, unknown>) => ['FINAL_REVIEW_PASSED', 'FUNDER_REVIEW_PASSED'].includes(String(row.status)) }
-      ]
-    },
-    { 
-      code: 1600, 
-      name: '签约阶段', 
-      nodes: [1600, 1610, 1620, 1630, 1640, 1650, 1660],
-      actions: [
-        { name: 'complete-signing', label: '签约完成', type: 'success', visible: (row: Record<string, unknown>) => ['PENDING_SIGN', 'SIGNING_PROGRESS'].includes(String(row.status)) }
-      ]
-    },
-    { 
-      code: 1700, 
-      name: '请款放款', 
-      nodes: [1700, 1800],
-      actions: [
-        { name: 'submit-loan-request', label: '提交请款资料', type: 'primary', visible: (row: Record<string, unknown>) => ['SIGNED', 'PENDING_LOAN_REQUEST', 'LOAN_REQUEST_REJECTED'].includes(String(row.status)) },
-        { name: 'approve-loan-request', label: '请款审核通过', type: 'success', visible: (row: Record<string, unknown>) => String(row.status) === 'LOAN_REQUEST_REVIEWING' },
-        { name: 'reject-loan-request', label: '请款审核拒绝', type: 'danger', visible: (row: Record<string, unknown>) => String(row.status) === 'LOAN_REQUEST_REVIEWING' },
-        { name: 'gps-installed', label: 'GPS安装完成', type: 'success', visible: (row: Record<string, unknown>) => String(row.status) === 'PENDING_DISBURSEMENT' },
-        { name: 'mortgage-done', label: '抵押完成', type: 'success', visible: (row: Record<string, unknown>) => String(row.status) === 'PENDING_DISBURSEMENT' },
-        { name: 'request-disbursement', label: '提交资方放款', type: 'primary', visible: (row: Record<string, unknown>) => ['LOAN_REQUEST_APPROVED', 'PENDING_DISBURSEMENT'].includes(String(row.status)) },
-        { name: 'confirm-disbursement', label: '放款确认', type: 'success', visible: (row: Record<string, unknown>) => String(row.status) === 'PENDING_DISBURSEMENT' }
-      ]
-    },
-    { 
-      code: 1900, 
-      name: '贷后阶段', 
-      nodes: [1900],
-      actions: [
-        { name: 'settle', label: '结清归档', type: 'success', visible: (row: Record<string, unknown>) => String(row.status) === 'DISBURSED' }
-      ]
-    }
-  ]
-
-  // 中文标签映射
-  const fieldLabelMap: Record<string, string> = {
-    name: '姓名', phone: '手机号', idCard: '身份证号', gender: '性别', birthDate: '出生日期',
-    nation: '民族', householdAddress: '户籍地址', issuingAuthority: '签发机关',
-    idCardValidFrom: '身份证有效期起', idCardValidTo: '身份证有效期止',
-    maritalStatus: '婚姻状况', education: '学历', occupation: '职业',
-    companyName: '单位名称', monthlyIncome: '月收入', address: '地址',
-    emergencyName: '紧急联系人', emergencyPhone: '紧急联系人电话',
-    plateNumber: '车牌号', vin: '车架号', brand: '品牌', model: '车型',
-    ownerName: '车主', usageNature: '使用性质', sealInfo: '印章信息',
-    engineNumber: '发动机号', registerDate: '注册日期', mileage: '里程',
-    color: '颜色', year: '年份', purchasePrice: '购买价格', estimateValue: '评估价值',
-    isMortgaged: '是否抵押', mortgageInfo: '抵押信息',
-    applicationNo: '申请编号', amount: '申请金额', term: '期限(月)', rate: '年利率',
-    repaymentMethod: '还款方式', purpose: '贷款用途', productName: '产品',
-    funderName: '资方', orgName: '所属机构', creatorName: '创建人', createdAt: '创建时间',
-    status: '状态', currentNodeName: '当前节点', currentStatusName: '节点状态',
-    phaseName: '当前阶段', remark: '备注',
-    funderType: '资方类型', code: '编码', contactName: '联系人', contactPhone: '联系电话',
-    integrationMode: '对接方式', creditLimit: '授信额度', priority: '优先级',
-    supplementReason: '补件原因', supplementDeadline: '补件截止',
-    idCardFront: '身份证正面', idCardBack: '身份证反面', vehicleCode: '车辆编码', vehicleImgUrl: '车辆照片',
-    approvedAmount: '审批金额', approvedTerm: '审批期限', approvedRate: '审批利率'
-  }
-
-  function getFileType(fileName: string): 'image' | 'pdf' | 'video' | 'audio' | 'other' {
-    const ext = (fileName || '').split('.').pop()?.toLowerCase() || ''
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext)) return 'image'
-    if (ext === 'pdf') return 'pdf'
-    if (['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv'].includes(ext)) return 'video'
-    if (['mp3', 'wav', 'ogg', 'aac', 'flac'].includes(ext)) return 'audio'
-    return 'other'
-  }
-
-  function extractNodeFields(row: Record<string, unknown>, nodeCode: number) {
-    const def = nodeFieldDefs[nodeCode]
-    if (!def) return []
-    const sourceData = def.source ? (row[def.source] as Record<string, unknown> || {}) : row
-
-    // 文件节点特殊处理：提取 files 数组并附加类型信息
-    if (nodeCode === 1340 || nodeCode === 1130) {
-      const files = (row.files || []) as FileItem[]
-      if (!files.length) return []
-      return [{
-        prop: '_files',
-        label: '文件资料',
-        value: files.map((f: FileItem) => ({
-          ...f,
-          displayType: getFileType(f.fileName || f.fileUrl || '')
-        }))
-      }]
-    }
-
-    return def.fields
-      .filter(f => sourceData[f] !== undefined && sourceData[f] !== null && sourceData[f] !== '')
-      .map(f => ({ prop: f, label: fieldLabelMap[f] || f, value: sourceData[f] }))
-  }
-
-  const phaseTabs = computed(() =>
-    phaseConfig.map(phase => ({
-      code: phase.code,
-      name: phase.name,
-      actions: phase.actions || [],
-      groups: phase.nodes.map(nodeCode => {
-        const fields = currentRow.value ? extractNodeFields(currentRow.value, nodeCode) : []
-        return {
-          nodeCode,
-          nodeName: nodeFieldDefs[nodeCode]?.label || `节点${nodeCode}`,
-          fields
-        }
-      }).filter(g => g.fields.length > 0)
-    }))
-  )
+  const phaseTabs = computed(() => {
+    if (!phaseDetailRuntime.value) return []
+    return phaseDetailRuntime.value.buildPhaseTabs(currentRow.value)
+  })
 
   const defaultPhaseCode = computed(() => {
     const pathModule = getRoutePathModule()
@@ -301,24 +128,17 @@ export function useBusinessList() {
     )
   })
 
-  // 从综合查询进入时，用订单自身的 phaseCode 决定默认 Tab
+  async function ensurePhaseDetailRuntime() {
+    if (phaseDetailRuntime.value) return phaseDetailRuntime.value
+    const runtime = await import('./phase-detail-runtime')
+    phaseDetailRuntime.value = runtime
+    return runtime
+  }
+
+  // 从综合查询进入时，用订单自身状态决定默认 Tab
   function resolveRowPhaseCode(row: Record<string, unknown>): number {
-    const rowPhase = Number(row.phaseCode || row.nodeCode || 0)
-    if (rowPhase && phaseConfig.some(p => p.code === rowPhase || p.nodes.some(n => n === rowPhase))) {
-      return rowPhase
-    }
-    // 根据 currentNode 反推 phaseCode
-    const nodeMap: Record<number, number> = {
-      1100: 1000, 1110: 1000, 1120: 1000, 1130: 1000, 1140: 1000, 1200: 1000, 1250: 1000,
-      1300: 1300, 1310: 1300, 1320: 1300, 1330: 1300, 1340: 1300, 1350: 1300,
-      1400: 1400, 1450: 1400,
-      1500: 1500,
-      1600: 1600, 1610: 1600, 1620: 1600, 1630: 1600, 1640: 1600, 1650: 1600, 1660: 1600,
-      1700: 1700, 1800: 1700,
-      1900: 1900
-    }
-    const mapped = nodeMap[Number(row.currentNode || 0)]
-    return mapped || defaultPhaseCode.value
+    if (!phaseDetailRuntime.value) return defaultPhaseCode.value
+    return phaseDetailRuntime.value.resolveRowPhaseCode(row, defaultPhaseCode.value)
   }
 
   // ==================== 搜索相关 ====================
@@ -510,6 +330,7 @@ export function useBusinessList() {
     async function openDetail(row: Record<string, unknown>) {
     currentRow.value = row
     detailVisible.value = true
+    const runtime = await ensurePhaseDetailRuntime()
     try {
       const detail = await fetchBusinessDetail(config.value.api, Number(row.id))
       const flat = flattenRelations(detail)
@@ -522,7 +343,7 @@ export function useBusinessList() {
       currentRow.value = row
     }
     // 根据订单自身状态决定默认 Tab（综合查询场景）
-    const phaseCode = resolveRowPhaseCode(currentRow.value || row)
+    const phaseCode = runtime.resolveRowPhaseCode(currentRow.value || row, defaultPhaseCode.value)
     activeMainTab.value = String(phaseCode)
   }
 

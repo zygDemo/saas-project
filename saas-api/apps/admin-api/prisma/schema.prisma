@@ -1,3 +1,6 @@
+
+// ==================== 基础设施域 (Infrastructure) ====================
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -6,8 +9,6 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
-// ==================== 枚举定义 ====================
 
 enum UserStatus {
   ONLINE
@@ -106,8 +107,6 @@ enum Gender {
   UNKNOWN
 }
 
-// ==================== 基础租户/权限模型 ====================
-
 model Tenant {
   id               Int               @id @default(autoincrement())
   name             String
@@ -146,6 +145,7 @@ model Tenant {
   readingNotes ReadingNote[]
   systemParams      SystemParam[]
   announcements     Announcement[]
+  messageTemplates MessageTemplate[]
   collectionRecords CollectionRecord[]
   earlyRepayments   EarlyRepayment[]
   workOrders        WorkOrder[]
@@ -360,7 +360,54 @@ model FileAsset {
   deletedAt    DateTime?   // 软删除时间戳
 }
 
-// ==================== 机构/部门模型 ====================
+model OperationLog {
+  id           Int      @id @default(autoincrement())
+  tenantId     Int?
+  orgId        Int?
+  userId       Int?
+  userName     String?
+  module       String // 模块
+  action       String // 操作类型
+  description  String? // 操作描述
+  requestData  Json? // 请求数据
+  responseData Json? // 响应数据
+  ip           String?
+  statusCode   Int      @default(200) // HTTP状态码
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([orgId])
+  @@index([userId])
+  @@index([module])
+  @@index([createdAt])
+  @@index([statusCode])
+}
+
+model SystemParam {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  group     String?  @db.VarChar(50)   // 参数分组：basic, security, sms 等
+  name      String   @db.VarChar(100)  // 参数名称
+  key       String   @db.VarChar(100)  // 参数键（英文唯一标识）
+  value     String?  @db.Text          // 参数值
+  type      String   @default("STRING") @db.VarChar(20) // STRING, NUMBER, BOOLEAN, JSON
+  status    String   @default("ACTIVE") @db.VarChar(20)
+  remark    String?  @db.VarChar(500)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@index([group])
+  @@index([status])
+}
+
+
+// ==================== 机构配置域 (Organization & Config) ====================
 
 model Organization {
   id           Int       @id @default(autoincrement())
@@ -414,8 +461,6 @@ model Department {
   @@index([tenantId])
   @@index([orgId])
 }
-
-// ==================== 产品/资方模型 ====================
 
 model Product {
   id                    Int      @id @default(autoincrement())
@@ -515,56 +560,70 @@ model FlowConfig {
   deletedAt    DateTime?   // 软删除时间戳
 }
 
-// ==================== 线索模型 ====================
+model PackagePlan {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)   // 套餐名称
+  code        String   @unique @db.VarChar(50) // 套餐编码
+  description String?  @db.VarChar(500)   // 套餐描述
+  price       Decimal  @db.Decimal(10, 2) // 月费
+  maxUsers    Int      @default(0)        // 最大用户数，0=不限
+  maxOrgs     Int      @default(0)        // 最大机构数，0=不限
+  features    Json?                        // 功能特性列表
+  status      String   @default("ACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
-model Lead {
-  id           Int        @id @default(autoincrement())
-  tenantId     Int
-  orgId        Int
-  source       String // 来源：SELF、IMPORT、EXTERNAL、SCAN、REFERRAL
-  name         String
-  phone        String
-  idCard       String? // 身份证号（脱敏存储）
-  carBrand     String?
-  carModel     String?
-  loanAmount   Decimal?   @db.Decimal(15, 2)
-  remark       String?
-  status       LeadStatus @default(PENDING_ASSIGN)
-  assigneeId   Int? // 分配给业务员
-  nextFollowAt DateTime? // 下次跟进时间
-  createdBy    Int? // 创建人
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  org       Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  assignee  User?          @relation(fields: [assigneeId], references: [id])
-  followUps LeadFollowUp[]
-
-  @@index([tenantId])
-  @@index([orgId])
-  @@index([phone])
-  @@index([tenantId, phone])
   @@index([status])
-  @@index([assigneeId])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
-model LeadFollowUp {
-  id           Int       @id @default(autoincrement())
-  leadId       Int
-  followType   String // 跟进方式：PHONE、WECHAT、VISIT、OTHER
-  content      String
-  nextFollowAt DateTime?
-  createdBy    Int?
-  createdAt    DateTime  @default(now())
+model ProductTemplate {
+  id              Int      @id @default(autoincrement())
+  name            String   @db.VarChar(100)   // 模板名称
+  productType     String   @db.VarChar(50)    // 产品类型：抵押贷、信用贷、融资租赁
+  description     String?  @db.VarChar(500)
+  minRate         Decimal? @db.Decimal(5, 4)
+  maxRate         Decimal? @db.Decimal(5, 4)
+  minAmount       Decimal? @db.Decimal(15, 2)
+  maxAmount       Decimal? @db.Decimal(15, 2)
+  minTerm         Int?
+  maxTerm         Int?
+  repaymentMethod String?  @db.VarChar(50)
+  accessConditions Json?                       // 准入条件模板
+  fileChecklist   Json?                       // 所需文件清单模板
+  status          String   @default("ACTIVE") @db.VarChar(20)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
 
-  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
-
-  @@index([leadId])
+  @@index([status])
+  @@index([productType])
 }
 
-// ==================== 客户模型 ====================
+model ThirdPartyService {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)   // 服务名称
+  code        String   @unique @db.VarChar(50)  // 服务编码
+  serviceType String   @db.VarChar(50)    // 类型：SMS, OCR, GPS, CREDIT, PAYMENT
+  provider    String   @db.VarChar(100)   // 服务商
+  apiUrl      String?  @db.VarChar(500)   // API地址
+  config      Json?                        // 配置信息（加密存储）
+  status      String   @default("ACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE, ERROR
+  lastTestAt  DateTime?                    // 最后测试时间
+  lastTestOk  Boolean?                     // 最后测试结果
+  remark      String?  @db.VarChar(500)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@index([status])
+  @@index([serviceType])
+}
+
+
+// ==================== 客户管理域 (Customer Management) ====================
 
 model Customer {
   id               Int       @id @default(autoincrement())
@@ -681,7 +740,55 @@ model BankCard {
   @@index([customerId])
 }
 
-// ==================== 订单/进件模型 ====================
+model Lead {
+  id           Int        @id @default(autoincrement())
+  tenantId     Int
+  orgId        Int
+  source       String // 来源：SELF、IMPORT、EXTERNAL、SCAN、REFERRAL
+  name         String
+  phone        String
+  idCard       String? // 身份证号（脱敏存储）
+  carBrand     String?
+  carModel     String?
+  loanAmount   Decimal?   @db.Decimal(15, 2)
+  remark       String?
+  status       LeadStatus @default(PENDING_ASSIGN)
+  assigneeId   Int? // 分配给业务员
+  nextFollowAt DateTime? // 下次跟进时间
+  createdBy    Int? // 创建人
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  org       Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  assignee  User?          @relation(fields: [assigneeId], references: [id])
+  followUps LeadFollowUp[]
+
+  @@index([tenantId])
+  @@index([orgId])
+  @@index([phone])
+  @@index([tenantId, phone])
+  @@index([status])
+  @@index([assigneeId])
+  deletedAt    DateTime?   // 软删除时间戳
+}
+
+model LeadFollowUp {
+  id           Int       @id @default(autoincrement())
+  leadId       Int
+  followType   String // 跟进方式：PHONE、WECHAT、VISIT、OTHER
+  content      String
+  nextFollowAt DateTime?
+  createdBy    Int?
+  createdAt    DateTime  @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+}
+
+
+// ==================== 车贷业务域 (Car Loan Business) ====================
 
 model Application {
   id                 Int               @id @default(autoincrement())
@@ -755,8 +862,6 @@ model ApplicationFile {
   deletedAt    DateTime?   // 软删除时间戳
 }
 
-// ==================== 审批模型 ====================
-
 model ApprovalRecord {
   id            Int            @id @default(autoincrement())
   tenantId      Int
@@ -780,8 +885,6 @@ model ApprovalRecord {
   @@index([stage])
 }
 
-// ==================== 签约模型 ====================
-
 model SignRecord {
   id              Int        @id @default(autoincrement())
   tenantId        Int
@@ -801,8 +904,6 @@ model SignRecord {
   @@index([tenantId])
   deletedAt    DateTime?   // 软删除时间戳
 }
-
-// ==================== 放款模型 ====================
 
 model Disbursement {
   id              Int                @id @default(autoincrement())
@@ -830,8 +931,6 @@ model Disbursement {
   @@index([tenantId])
   deletedAt    DateTime?   // 软删除时间戳
 }
-
-// ==================== 还款模型 ====================
 
 model RepaymentPlan {
   id            Int             @id @default(autoincrement())
@@ -932,33 +1031,88 @@ model EarlyRepayment {
   @@index([repayStatus])
 }
 
-// ==================== 操作日志/审计 ====================
 
-model OperationLog {
-  id           Int      @id @default(autoincrement())
-  tenantId     Int?
-  orgId        Int?
-  userId       Int?
-  userName     String?
-  module       String // 模块
-  action       String // 操作类型
-  description  String? // 操作描述
-  requestData  Json? // 请求数据
-  responseData Json? // 响应数据
-  ip           String?
-  statusCode   Int      @default(200) // HTTP状态码
-  userAgent    String?
-  createdAt    DateTime @default(now())
+// ==================== 运营管理域 (Operations) ====================
 
+model MessageTemplate {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  name      String   @db.VarChar(100)  // 模板名称
+  code      String   @db.VarChar(80)   // 模板编码
+  channel   String   @default("SMS") @db.VarChar(30) // SMS, APP, WECHAT, EMAIL, SYSTEM
+  scene     String   @default("GENERAL") @db.VarChar(50) // 业务场景
+  title     String?  @db.VarChar(200)  // 标题/主题
+  content   String   @db.Text          // 模板内容
+  variables Json?                       // 变量说明 [{key,label,example}]
+  status    String   @default("ACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE, DRAFT
+  remark    String?  @db.VarChar(500)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code])
   @@index([tenantId])
-  @@index([orgId])
-  @@index([userId])
-  @@index([module])
-  @@index([createdAt])
-  @@index([statusCode])
+  @@index([channel])
+  @@index([scene])
+  @@index([status])
 }
 
-// ==================== 读书模块 ====================
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  title     String   @db.VarChar(200)  // 公告标题
+  content   String?  @db.Text          // 公告内容（富文本）
+  type      String   @default("NOTICE") @db.VarChar(20) // NOTICE, ANNOUNCEMENT, ALERT
+  level     String   @default("NORMAL") @db.VarChar(20) // NORMAL, IMPORTANT, URGENT
+  status    String   @default("DRAFT") @db.VarChar(20)  // DRAFT, PUBLISHED, EXPIRED
+  publishAt DateTime?                  // 发布时间
+  expireAt  DateTime?                  // 过期时间
+  target    String?  @db.VarChar(100)  // 发布范围
+  topFlag   Boolean  @default(false)   // 是否置顶
+  viewCount Int      @default(0)       // 查看次数
+  remark    String?  @db.VarChar(500)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([type])
+  @@index([publishAt])
+}
+
+model WorkOrder {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int
+  title       String   @db.VarChar(200)   // 工单标题
+  content     String?  @db.Text           // 工单内容
+  orderType   String   @default("FEEDBACK") @db.VarChar(30) // FEEDBACK, BUG, SUGGESTION, SUPPORT
+  priority    String   @default("NORMAL") @db.VarChar(20)   // LOW, NORMAL, HIGH, URGENT
+  status      String   @default("OPEN") @db.VarChar(20)     // OPEN, PROCESSING, RESOLVED, CLOSED
+  creatorId   Int?                        // 创建人
+  assigneeId  Int?                        // 处理人
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+  remark      String?  @db.VarChar(500)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([orderType])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+
+// ==================== 读书管理域 (Reading) ====================
 
 model BookCategory {
   id        Int      @id @default(autoincrement())
@@ -1129,145 +1283,4 @@ model ReadingNote {
   @@index([bookId])
   @@index([chapterId])
   deletedAt  DateTime?
-}
-
-// ========== 系统参数管理 ==========
-model SystemParam {
-  id        Int      @id @default(autoincrement())
-  tenantId  Int
-  group     String?  @db.VarChar(50)   // 参数分组：basic, security, sms 等
-  name      String   @db.VarChar(100)  // 参数名称
-  key       String   @db.VarChar(100)  // 参数键（英文唯一标识）
-  value     String?  @db.Text          // 参数值
-  type      String   @default("STRING") @db.VarChar(20) // STRING, NUMBER, BOOLEAN, JSON
-  status    String   @default("ACTIVE") @db.VarChar(20)
-  remark    String?  @db.VarChar(500)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@unique([tenantId, key])
-  @@index([tenantId])
-  @@index([group])
-  @@index([status])
-}
-
-// ========== 公告管理 ==========
-model Announcement {
-  id        Int      @id @default(autoincrement())
-  tenantId  Int
-  title     String   @db.VarChar(200)  // 公告标题
-  content   String?  @db.Text          // 公告内容（富文本）
-  type      String   @default("NOTICE") @db.VarChar(20) // NOTICE, ANNOUNCEMENT, ALERT
-  level     String   @default("NORMAL") @db.VarChar(20) // NORMAL, IMPORTANT, URGENT
-  status    String   @default("DRAFT") @db.VarChar(20)  // DRAFT, PUBLISHED, EXPIRED
-  publishAt DateTime?                  // 发布时间
-  expireAt  DateTime?                  // 过期时间
-  topFlag   Boolean  @default(false)   // 是否置顶
-  viewCount Int      @default(0)       // 查看次数
-  remark    String?  @db.VarChar(500)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId])
-  @@index([status])
-  @@index([type])
-  @@index([publishAt])
-}
-
-// ========== 平台管理：套餐与计费 ==========
-model PackagePlan {
-  id          Int      @id @default(autoincrement())
-  name        String   @db.VarChar(100)   // 套餐名称
-  code        String   @unique @db.VarChar(50) // 套餐编码
-  description String?  @db.VarChar(500)   // 套餐描述
-  price       Decimal  @db.Decimal(10, 2) // 月费
-  maxUsers    Int      @default(0)        // 最大用户数，0=不限
-  maxOrgs     Int      @default(0)        // 最大机构数，0=不限
-  features    Json?                        // 功能特性列表
-  status      String   @default("ACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
-
-  @@index([status])
-}
-
-// ========== 平台管理：产品与资方模板 ==========
-model ProductTemplate {
-  id              Int      @id @default(autoincrement())
-  name            String   @db.VarChar(100)   // 模板名称
-  productType     String   @db.VarChar(50)    // 产品类型：抵押贷、信用贷、融资租赁
-  description     String?  @db.VarChar(500)
-  minRate         Decimal? @db.Decimal(5, 4)
-  maxRate         Decimal? @db.Decimal(5, 4)
-  minAmount       Decimal? @db.Decimal(15, 2)
-  maxAmount       Decimal? @db.Decimal(15, 2)
-  minTerm         Int?
-  maxTerm         Int?
-  repaymentMethod String?  @db.VarChar(50)
-  accessConditions Json?                       // 准入条件模板
-  fileChecklist   Json?                       // 所需文件清单模板
-  status          String   @default("ACTIVE") @db.VarChar(20)
-  sortOrder       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime?
-
-  @@index([status])
-  @@index([productType])
-}
-
-// ========== 平台管理：第三方服务管理 ==========
-model ThirdPartyService {
-  id          Int      @id @default(autoincrement())
-  name        String   @db.VarChar(100)   // 服务名称
-  code        String   @unique @db.VarChar(50)  // 服务编码
-  serviceType String   @db.VarChar(50)    // 类型：SMS, OCR, GPS, CREDIT, PAYMENT
-  provider    String   @db.VarChar(100)   // 服务商
-  apiUrl      String?  @db.VarChar(500)   // API地址
-  config      Json?                        // 配置信息（加密存储）
-  status      String   @default("ACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE, ERROR
-  lastTestAt  DateTime?                    // 最后测试时间
-  lastTestOk  Boolean?                     // 最后测试结果
-  remark      String?  @db.VarChar(500)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
-
-  @@index([status])
-  @@index([serviceType])
-}
-
-// ========== 平台管理：运营工单 ==========
-model WorkOrder {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int
-  title       String   @db.VarChar(200)   // 工单标题
-  content     String?  @db.Text           // 工单内容
-  orderType   String   @default("FEEDBACK") @db.VarChar(30) // FEEDBACK, BUG, SUGGESTION, SUPPORT
-  priority    String   @default("NORMAL") @db.VarChar(20)   // LOW, NORMAL, HIGH, URGENT
-  status      String   @default("OPEN") @db.VarChar(20)     // OPEN, PROCESSING, RESOLVED, CLOSED
-  creatorId   Int?                        // 创建人
-  assigneeId  Int?                        // 处理人
-  resolvedAt  DateTime?
-  closedAt    DateTime?
-  remark      String?  @db.VarChar(500)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId])
-  @@index([status])
-  @@index([orderType])
-  @@index([priority])
-  @@index([createdAt])
 }

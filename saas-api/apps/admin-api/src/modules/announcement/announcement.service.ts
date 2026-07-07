@@ -54,6 +54,7 @@ export class AnnouncementService {
         status: dto.status ?? 'DRAFT',
         publishAt: dto.publishAt ? new Date(dto.publishAt) : undefined,
         expireAt: dto.expireAt ? new Date(dto.expireAt) : undefined,
+        target: dto.target,
         topFlag: dto.topFlag ?? false,
         remark: dto.remark
       }
@@ -74,6 +75,7 @@ export class AnnouncementService {
         status: dto.status,
         publishAt: dto.publishAt ? new Date(dto.publishAt) : undefined,
         expireAt: dto.expireAt ? new Date(dto.expireAt) : undefined,
+        target: dto.target,
         topFlag: dto.topFlag,
         remark: dto.remark
       }
@@ -87,6 +89,26 @@ export class AnnouncementService {
     const updated = await this.prisma.announcement.update({
       where: { id },
       data: { status: 'PUBLISHED', publishAt: new Date() }
+    })
+    return mapAnnouncement(updated)
+  }
+
+  async unpublish(id: number) {
+    const tenantId = getRequiredTenantId()
+    await this.findOrThrow(tenantId, id)
+    const updated = await this.prisma.announcement.update({
+      where: { id },
+      data: { status: 'DRAFT' }
+    })
+    return mapAnnouncement(updated)
+  }
+
+  async expire(id: number) {
+    const tenantId = getRequiredTenantId()
+    await this.findOrThrow(tenantId, id)
+    const updated = await this.prisma.announcement.update({
+      where: { id },
+      data: { status: 'EXPIRED', expireAt: new Date() }
     })
     return mapAnnouncement(updated)
   }
@@ -134,6 +156,7 @@ function mapAnnouncement(item: AnnouncementRecord) {
     status: item.status,
     publishAt: item.publishAt ? formatDate(item.publishAt) : null,
     expireAt: item.expireAt ? formatDate(item.expireAt) : null,
+    target: item.target,
     topFlag: item.topFlag,
     viewCount: item.viewCount,
     remark: item.remark,

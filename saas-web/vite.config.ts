@@ -73,15 +73,21 @@ export default ({ mode }: { mode: string }) => {
             if (id.includes('/element-plus@') || id.includes('/@element-plus+icons-vue@')) {
               return 'vendor-element-plus'
             }
-            if (id.includes('/vue@') || id.includes('/@vue+')) return 'vendor-vue-core'
-            if (id.includes('/vue-router@') || id.includes('/pinia@') || id.includes('/vue-i18n@')) {
+            if (id.includes('/vue-router@') || id.includes('/pinia@') || id.includes('/pinia-plugin-persistedstate@') || id.includes('/vue-i18n@')) {
               return 'vendor-vue-router'
             }
+            if (id.includes('/vue@') || id.includes('/@vue+')) return 'vendor-vue-core'
             if (id.includes('/@vueuse+')) return 'vendor-vueuse'
             if (id.includes('/xlsx@')) return 'vendor-xlsx'
+            if (id.includes('/xgplayer@')) return 'vendor-video'
+            if (id.includes('/highlight.js@')) return 'vendor-highlight'
+            if (id.includes('/file-saver@')) return 'vendor-file'
+            if (id.includes('/qrcode.vue@')) return 'vendor-qrcode'
+            if (id.includes('/ohash@')) return 'vendor-ohash'
             if (id.includes('/lodash-es@')) return 'vendor-lodash'
             if (id.includes('/crypto-js@') || id.includes('/axios@')) return 'vendor-utils'
-            if (id.includes('/@wangeditor+') || id.includes('/@transloadit+')) return 'vendor-editor'
+            if (id.includes('/@wangeditor+')) return 'vendor-editor'
+            if (id.includes('/@transloadit+')) return 'vendor-upload'
             if (id.includes('/mockjs@')) return 'vendor-mock'
             if (id.includes('/animejs@') || id.includes('/gsap@') || id.includes('/three@')) {
               return 'vendor-visual'
@@ -90,7 +96,7 @@ export default ({ mode }: { mode: string }) => {
               return 'vendor-runtime'
             }
 
-            return undefined
+            return 'vendor-misc'
           }
         }
       }

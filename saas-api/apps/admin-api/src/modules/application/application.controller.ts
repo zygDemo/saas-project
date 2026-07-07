@@ -97,6 +97,12 @@ export class ApplicationController {
     return this.service.riskPreReject(Number(id), dto)
   }
 
+  @Post(':id/risk-pre-return')
+  @ApiOperation({ summary: '风控预审驳回上一节点' })
+  riskPreReturn(@Param('id') id: string, @Body() dto: PrecheckActionDto) {
+    return this.service.riskPreReturn(Number(id), dto)
+  }
+
   @Post(':id/funder-pre-pass')
   @ApiOperation({ summary: '资方预审通过' })
   funderPrePass(@Param('id') id: string, @Body() dto: FunderReviewDto) {

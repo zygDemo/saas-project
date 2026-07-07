@@ -42,6 +42,13 @@ export class CreateAnnouncementDto {
   @IsString()
   expireAt?: string
 
+
+  @ApiPropertyOptional({ description: '发布范围', example: '全部用户' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  target?: string
+
   @ApiPropertyOptional({ description: '是否置顶', example: false })
   @IsOptional()
   @IsBoolean()

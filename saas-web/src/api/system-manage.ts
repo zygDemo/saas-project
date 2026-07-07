@@ -284,6 +284,61 @@ export function fetchDeleteSystemParam(id: number) {
   })
 }
 
+
+// ===== 消息模板 =====
+export function fetchGetMsgTemplateList(params: Api.SystemManage.MsgTemplateSearchParams) {
+  return request.get<Api.SystemManage.MsgTemplateList>({
+    url: '/msg-template/list',
+    params
+  })
+}
+
+export function fetchGetMsgTemplateById(id: number) {
+  return request.get<Api.SystemManage.MsgTemplateItem>({
+    url: `/msg-template/${id}`
+  })
+}
+
+export function fetchCreateMsgTemplate(params: Api.SystemManage.SaveMsgTemplateParams) {
+  return request.post<Api.SystemManage.MsgTemplateItem>({
+    url: '/msg-template',
+    data: params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchUpdateMsgTemplate(
+  id: number,
+  params: Partial<Api.SystemManage.SaveMsgTemplateParams>
+) {
+  return request.post<Api.SystemManage.MsgTemplateItem>({
+    url: `/msg-template/${id}`,
+    data: params,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchEnableMsgTemplate(id: number) {
+  return request.post<Api.SystemManage.MsgTemplateItem>({
+    url: `/msg-template/${id}/enable`,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchDisableMsgTemplate(id: number) {
+  return request.post<Api.SystemManage.MsgTemplateItem>({
+    url: `/msg-template/${id}/disable`,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchDeleteMsgTemplate(id: number) {
+  return request.post<{ id: number }>({
+    url: `/msg-template/${id}/delete`,
+    showSuccessMessage: true
+  })
+}
+
 // ===== 公告管理 =====
 export function fetchGetAnnouncementList(params: Api.SystemManage.AnnouncementSearchParams) {
   return request.get<Api.SystemManage.AnnouncementList>({
@@ -320,6 +375,20 @@ export function fetchUpdateAnnouncement(
 export function fetchPublishAnnouncement(id: number) {
   return request.post<Api.SystemManage.AnnouncementItem>({
     url: `/announcement/${id}/publish`,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchUnpublishAnnouncement(id: number) {
+  return request.post<Api.SystemManage.AnnouncementItem>({
+    url: `/announcement/${id}/unpublish`,
+    showSuccessMessage: true
+  })
+}
+
+export function fetchExpireAnnouncement(id: number) {
+  return request.post<Api.SystemManage.AnnouncementItem>({
+    url: `/announcement/${id}/expire`,
     showSuccessMessage: true
   })
 }

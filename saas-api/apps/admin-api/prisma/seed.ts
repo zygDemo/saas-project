@@ -1416,7 +1416,53 @@ async function seedAllMenus(tenantId: number) {
     await prisma.permission.deleteMany({ where: { menuId: { in: obsoleteMenuIds } } })
     await prisma.roleMenu.deleteMany({ where: { menuId: { in: obsoleteMenuIds } } })
     const { count } = await prisma.menu.deleteMany({ where: { id: { in: obsoleteMenuIds } } })
-    console.log(`已清理废弃菜单 ${count} 个: ${obsoleteMenus.map((m) => m.name).join(', ')}`)
+
+
+// 消息模板默认数据
+const defaultMsgTemplates = [
+  {
+    name: '预审通过短信',
+    code: 'PRECHECK_PASS_SMS',
+    channel: 'SMS',
+    scene: 'CARLOAN_PRECHECK',
+    title: '预审通过通知',
+    content: '尊敬的{{customerName}}，您的车贷申请{{applicationNo}}已通过预审，请登录小程序查看后续流程。',
+    variables: { customerName: '客户姓名', applicationNo: '申请编号' },
+    status: 'ACTIVE',
+    remark: '车贷预审通过后发送'
+  },
+  {
+    name: '补件提醒短信',
+    code: 'SUPPLEMENT_REMIND_SMS',
+    channel: 'SMS',
+    scene: 'CARLOAN_SUPPLEMENT',
+    title: '资料补充提醒',
+    content: '尊敬的{{customerName}}，您的申请{{applicationNo}}需要补充资料：{{reason}}，请及时处理。',
+    variables: { customerName: '客户姓名', applicationNo: '申请编号', reason: '补件原因' },
+    status: 'ACTIVE',
+    remark: '补件节点提醒客户'
+  },
+  {
+    name: '还款提醒站内信',
+    code: 'REPAYMENT_REMIND_APP',
+    channel: 'APP',
+    scene: 'CARLOAN_REPAYMENT',
+    title: '还款提醒',
+    content: '您本期还款日为{{dueDate}}，应还金额{{amount}}元，请按时还款。',
+    variables: { dueDate: '还款日', amount: '应还金额' },
+    status: 'ACTIVE',
+    remark: '贷后还款提醒'
+  }
+]
+for (const item of defaultMsgTemplates) {
+  await prisma.messageTemplate.upsert({
+    where: { tenantId_code: { tenantId: tenant.id, code: item.code } },
+    update: { ...item, variables: item.variables },
+    create: { tenantId: tenant.id, ...item, variables: item.variables }
+  })
+}
+
+  console.log(`已清理废弃菜单 ${count} 个: ${obsoleteMenus.map((m) => m.name).join(', ')}`)
   }
 
   // 初始化按钮权限

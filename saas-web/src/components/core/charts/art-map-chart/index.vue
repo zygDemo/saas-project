@@ -12,13 +12,13 @@
 <script setup lang="ts">
   import { echarts } from '@/plugins/echarts'
   import { useSettingStore } from '@/store/modules/setting'
-  import chinaMapJson from '@/mock/json/chinaMap.json'
   import type { MapChartProps } from '@/types/component/chart'
 
   defineOptions({ name: 'ArtMapChart' })
 
   const chinaMapRef = ref<HTMLElement | null>(null)
   const chartInstance = shallowRef<echarts.ECharts | null>(null)
+  const chinaMapJson = shallowRef<{ features: Array<{ properties: Record<string, unknown> }> } | null>(null)
   const settingStore = useSettingStore()
   const { isDark } = storeToRefs(settingStore)
 
@@ -38,8 +38,15 @@
 
   // 检查是否为空数据
   const isEmpty = computed(() => {
-    return props.isEmpty || (!props.mapData?.length && !chinaMapJson)
+    return props.isEmpty || (!props.mapData?.length && !chinaMapJson.value)
   })
+
+  const ensureChinaMapJson = async () => {
+    if (chinaMapJson.value) return chinaMapJson.value
+    const mod = await import('@/mock/json/chinaMap.json')
+    chinaMapJson.value = mod.default as { features: Array<{ properties: Record<string, unknown> }> }
+    return chinaMapJson.value
+  }
 
   // 根据 geoJson 数据准备地图数据
   const prepareMapData = (geoJson: {
@@ -200,10 +207,11 @@
   const initMap = async (): Promise<void> => {
     if (!chinaMapRef.value) return
 
+    const mapJson = await ensureChinaMapJson()
     chartInstance.value = echarts.init(chinaMapRef.value)
 
-    echarts.registerMap('china', chinaMapJson as unknown as string)
-    const mapData = props.mapData.length > 0 ? props.mapData : prepareMapData(chinaMapJson)
+    echarts.registerMap('china', mapJson as unknown as string)
+    const mapData = props.mapData.length > 0 ? props.mapData : prepareMapData(mapJson)
     const option = createChartOption(mapData)
 
     chartInstance.value.setOption(option)
@@ -281,7 +289,9 @@
     () => props.mapData,
     () => {
       if (chartInstance.value && !isEmpty.value) {
-        const mapData = props.mapData.length > 0 ? props.mapData : prepareMapData(chinaMapJson)
+        const mapJson = chinaMapJson.value
+        if (!mapJson) return
+        const mapData = props.mapData.length > 0 ? props.mapData : prepareMapData(mapJson)
         const option = createChartOption(mapData)
         chartInstance.value.setOption(option)
       }
