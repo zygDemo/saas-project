@@ -47,6 +47,7 @@ export const APP_ROUTES = {
       signCenter: "/pages/carloan/signing/signCenter",
       signConfirmAmount: "/pages/carloan/signing/signConfirmAmount",
       signBindCard: "/pages/carloan/signing/signBindCard",
+      authSign: "/pages/carloan/signing/authSign",
       videoFaceSign: "/pages/carloan/signing/videoFaceSign",
       faceSignList: "/pages/carloan/signing/faceSignList",
       faceSignResult: "/pages/carloan/signing/faceSignResult",

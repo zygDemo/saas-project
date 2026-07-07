@@ -659,7 +659,7 @@ function goStageStep(item) {
       detailRouteQuery,
     ),
     authSign: buildRoute(
-      APP_ROUTES.carloan.signing.videoFaceSign,
+      APP_ROUTES.carloan.signing.authSign,
       detailRouteQuery,
     ),
     idInfoSupplement: buildRoute(
