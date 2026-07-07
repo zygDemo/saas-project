@@ -234,13 +234,12 @@ async function handleNext() {
       const { creditOrderId, uuid } = result;
       setTimeout(() => {
         uni.$u.route({
-          url: buildRoute(APP_ROUTES.carloan.signing.authSign, {
+          url: buildRoute(APP_ROUTES.carloan.signing.videoFaceSign, {
             creditOrderId,
             uuid,
             name: carloanStore.pageContext.customerName || "",
             phone: carloanStore.pageContext.customerPhone || "",
-            type: "contract",
-            mode: "sign",
+            mode: "credit",
           }),
           type: "redirectTo",
         });
