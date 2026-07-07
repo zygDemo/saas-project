@@ -299,6 +299,10 @@ async function loadDetail() {
     if (detail.value?.uuid && !carloanStore.pageContext.uuid) {
       carloanStore.pageContext.uuid = String(detail.value.uuid);
     }
+    // 以接口返回的 nodeCode 为准，回写 store
+    if (detail.value?.nodeCode) {
+      carloanStore.pageContext.nodeCode = String(detail.value.nodeCode);
+    }
     // 加载流程节点配置
     await loadFlowConfig(detail.value.nodeCode);
   } catch (err) {
@@ -560,6 +564,10 @@ const allPreAuditStepsDone = computed(() =>
 );
 
 function getStageStepTag(item) {
+  // 数据加载中时显示占位状态，避免用旧 store 值渲染错误状态
+  if (loading.value) {
+    return { text: "加载中", type: "info" };
+  }
   if (["PENDING_PRECHECK", "PENDING_SUPPLEMENT"].includes(item.code)) {
     return {
       text: allPreAuditStepsDone.value ? "待提交" : "待完善",
