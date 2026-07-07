@@ -231,10 +231,16 @@ async function handleNext() {
   try {
     const result = await doSubmit();
     if (result) {
+      const { creditOrderId, uuid } = result;
       setTimeout(() => {
         uni.$u.route({
-          url: buildRoute(APP_ROUTES.carloan.precheck.applyProgress, {
-            creditOrderId: result.creditOrderId,
+          url: buildRoute(APP_ROUTES.carloan.signing.authSign, {
+            creditOrderId,
+            uuid,
+            name: carloanStore.pageContext.customerName || "",
+            phone: carloanStore.pageContext.customerPhone || "",
+            type: "contract",
+            mode: "sign",
           }),
           type: "redirectTo",
         });
