@@ -40,10 +40,10 @@ export class MobileCreditService {
       dto.remark
     ].filter(Boolean)
 
-    // 有订单编号 → 查找已有订单（任意状态）；无订单编号 → 查找最新草稿
+    // 有订单编号 → 按 applicationNo 查找已有订单（任意状态，跨客户）；无订单编号 → 查找当前客户最新草稿
     let existingApplication = dto.creditOrderId
       ? await this.prisma.application.findFirst({
-          where: { customerId, applicationNo: dto.creditOrderId }
+          where: { applicationNo: dto.creditOrderId }
         })
       : await findLatestDraftApplication(this.prisma, customer.id)
 
