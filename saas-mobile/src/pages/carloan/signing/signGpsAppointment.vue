@@ -79,9 +79,9 @@ const creditOrderId = ref("");
 const uuidVal = ref("");
 const customerName = ref("");
 const customerPhone = ref("");
-const applicationId = ref(null);
 const submitting = ref(false);
 const backUrl = ref("");
+const currentYear = new Date().getFullYear();
 
 const form = reactive({
   appointmentDate: "",
@@ -129,6 +129,8 @@ const formItems = computed(() => [
     label: "预约日期",
     placeholder: "请选择安装日期",
     type: "date",
+    startYear: currentYear,
+    endYear: currentYear + 2,
     required: true,
   },
   {
@@ -188,7 +190,6 @@ async function loadDetail() {
   try {
     const res = await businessApi.getCreditDetailByOrderId(creditOrderId.value);
     const d = res?.data || res || {};
-    applicationId.value = Number(d.id || d.applicationId || 0) || null;
     customerName.value = customerName.value || d.customerName || d.name || "";
     customerPhone.value =
       customerPhone.value || d.customerPhone || d.phone || d.telephone || "";
@@ -240,18 +241,8 @@ async function handleSubmit() {
     $u.toast("请输入正确的联系电话", "error");
     return;
   }
-  if (!applicationId.value) {
-    $u.toast("未找到订单信息，请刷新后重试", "error");
-    return;
-  }
-
   submitting.value = true;
   try {
-    await businessApi.completeGpsInstall(applicationId.value, {
-      gpsDeviceNo: form.contactPhone, // 用联系电话作为临时设备号
-      gpsInstallImg: "", // 图片后续补充
-    });
-
     saveLocalAppointment();
     saveSignProgress("MORTGAGING");
     $u.toast("预约提交成功", "success");

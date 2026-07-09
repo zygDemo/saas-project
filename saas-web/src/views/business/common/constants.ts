@@ -389,3 +389,69 @@ export const phaseNodeTabsMap: Record<number, { label: string; value: number }[]
   ],
   1900: [{ label: '贷后还款', value: 1900 }]
 }
+
+// 申请状态映射
+export const applicationStatusMap: Record<string, string> = {
+  'DRAFT': '草稿',
+  'SUBMITTED': '已提交',
+  'PENDING_RISK_PRE': '待风控预审',
+  'RISK_PRE_PASSED': '风控预审通过',
+  'RISK_PRE_REJECTED': '风控预审拒绝',
+  'PENDING_FUNDER_PRE': '待资方预审',
+  'FUNDER_PRE_PASSED': '资方预审通过',
+  'FUNDER_PRE_REJECTED': '资方预审拒绝',
+  'PENDING_SUPPLEMENT': '待补充资料',
+  'PENDING_FIRST_REVIEW': '待风控初审',
+  'PENDING_FINAL_REVIEW': '待风控终审',
+  'FINAL_REVIEW_PASSED': '风控终审通过',
+  'PENDING_FUNDER_REVIEW': '待资方审批',
+  'FUNDER_REVIEW_PASSED': '资方审批通过',
+  'PENDING_SIGN': '待签约',
+  'SIGNING_PROGRESS': '签约中',
+  'SIGNED': '已签约',
+  'PENDING_LOAN_REQUEST': '待请款',
+  'LOAN_REQUEST_REVIEWING': '请款审核中',
+  'LOAN_REQUEST_APPROVED': '请款已批准',
+  'LOAN_REQUEST_REJECTED': '请款已拒绝',
+  'PENDING_DISBURSEMENT': '待放款',
+  'DISBURSED': '已放款',
+  'SETTLED': '已结清',
+  'CANCELLED': '已取消'
+}
+
+// 线索状态映射
+export const leadStatusMap: Record<string, string> = {
+  'NEW': '新建',
+  'CONTACTED': '已联系',
+  'FOLLOWING': '跟进中',
+  'CONVERTED': '已转化',
+  'LOST': '已流失'
+}
+
+// 签约状态映射
+export const signingStatusMap: Record<string, string> = {
+  'PENDING': '待签约',
+  'SIGNING_PROGRESS': '签约中',
+  'SIGNED': '已签约',
+  'EXPIRED': '已过期',
+  'CANCELLED': '已取消'
+}
+
+// 放款状态映射
+export const disbursementStatusMap: Record<string, string> = {
+  'PENDING_APPLICATION': '待请款',
+  'REVIEWING': '审核中',
+  'APPROVED': '已批准',
+  'PENDING_DISBURSEMENT': '待放款',
+  'DISBURSED': '已放款',
+  'REJECTED': '已拒绝'
+}
+
+// 还款状态映射
+export const repaymentStatusMap: Record<string, string> = {
+  'NOT_DUE': '未到期',
+  'PAID': '已还清',
+  'OVERDUE': '已逾期',
+  'PARTIAL': '部分还款',
+  'PENDING': '待还款'
+}

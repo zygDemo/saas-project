@@ -1,22 +1,21 @@
 <template>
   <app-page nav-title="确认额度" :back-url="backUrl">
     <view class="confirm-page">
-      <!-- 额度卡片 -->
       <view class="quota-card">
         <text class="quota-label">资方批复额度</text>
         <view class="quota-value">
           <text class="quota-currency">¥</text>
-          <text class="quota-num">{{ formatMoney(approvedAmount) }}</text>
+          <text class="quota-num">{{ formatMoney(displayAmount) }}</text>
         </view>
         <view class="quota-meta">
           <view class="meta-item">
             <text class="meta-label">期限</text>
-            <text class="meta-value">{{ approvedTerm || "-" }}期</text>
+            <text class="meta-value">{{ displayTerm || "-" }}期</text>
           </view>
           <view class="meta-divider" />
           <view class="meta-item">
             <text class="meta-label">年化利率</text>
-            <text class="meta-value">{{ approvedRate || "-" }}%</text>
+            <text class="meta-value">{{ displayRate || "-" }}%</text>
           </view>
           <view class="meta-divider" />
           <view class="meta-item">
@@ -26,7 +25,6 @@
         </view>
       </view>
 
-      <!-- 客户确认 -->
       <view class="confirm-section">
         <view class="section-title">
           <text class="title-text">客户确认</text>
@@ -34,9 +32,14 @@
         </view>
 
         <AppForm :modelValue="form" :items="formItems" />
+
+        <view class="confirm-check">
+          <u-checkbox v-model="form.confirmed" shape="square">
+            我已确认以上信息无误
+          </u-checkbox>
+        </view>
       </view>
 
-      <!-- 说明 -->
       <view class="notice-card">
         <u-icon name="info-circle" size="28" color="#f59e0b" />
         <text class="notice-text">
@@ -44,7 +47,6 @@
         </text>
       </view>
 
-      <!-- 底部按钮 -->
       <view class="footer-actions">
         <u-button type="default" size="large" shape="circle" plain @click="goBack">
           上一步
@@ -54,7 +56,7 @@
           size="large"
           shape="circle"
           :loading="submitting"
-          :disabled="Array.isArray(form.confirmed) ? form.confirmed.length === 0 : !form.confirmed"
+          :disabled="submitting"
           @click="handleConfirm"
         >
           确认额度并继续
@@ -65,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { useLocalStore } from "@/stores/local";
@@ -85,16 +87,6 @@ const applicationId = ref(null);
 const submitting = ref(false);
 const backUrl = ref("");
 
-function saveSignProgress(status) {
-  if (!creditOrderId.value || !status) return;
-  const progressMap = uni.getStorageSync(SIGN_PROGRESS_STORAGE_KEY) || {};
-  progressMap[creditOrderId.value] = {
-    status,
-    updatedAt: Date.now(),
-  };
-  uni.setStorageSync(SIGN_PROGRESS_STORAGE_KEY, progressMap);
-}
-
 const form = reactive({
   confirmed: false,
   confirmAmount: "",
@@ -103,26 +95,34 @@ const form = reactive({
   remark: "",
 });
 
+const isConfirmed = computed(() => !!form.confirmed);
+
 const formItems = computed(() => [
   {
     key: "confirmAmount",
     label: "确认金额(元)",
-    placeholder: "请输入确认金额，默认为批复额度",
+    placeholder: "系统回填批复额度",
     type: "number",
     required: true,
   },
   {
     key: "confirmTerm",
     label: "确认期限(期)",
-    placeholder: "请输入确认期限，默认为批复期限",
+    placeholder: "系统回填批复期限",
     type: "number",
+    disabled: true,
+    readonly: true,
+    clearable: false,
     required: true,
   },
   {
     key: "confirmRate",
     label: "确认利率(%)",
-    placeholder: "请输入确认利率，默认为批复利率",
+    placeholder: "系统回填，客户不可修改",
     type: "number",
+    disabled: true,
+    readonly: true,
+    clearable: false,
     required: true,
   },
   {
@@ -132,21 +132,18 @@ const formItems = computed(() => [
     type: "textarea",
     required: false,
   },
-  {
-    key: "confirmed",
-    label: "我已确认以上信息无误",
-    type: "checkbox",
-    required: true,
-    options: [{ name: "我已确认以上信息无误", value: true, checked: false }],
-  },
 ]);
 
+const displayAmount = computed(() => toNumber(form.confirmAmount || approvedAmount.value, 0));
+const displayTerm = computed(() => toNumber(form.confirmTerm || approvedTerm.value, 0));
+const displayRate = computed(() => normalizeRate(form.confirmRate || approvedRate.value));
+
 const monthlyPayment = computed(() => {
-  const amount = Number(form.confirmAmount || approvedAmount.value || 0);
-  const rate = Number(form.confirmRate || approvedRate.value || 0);
-  const term = Number(form.confirmTerm || approvedTerm.value || 1);
+  const amount = displayAmount.value;
+  const rate = displayRate.value;
+  const term = displayTerm.value || 1;
   if (!amount || !rate || !term) return 0;
-  // 等额本息近似计算
+
   const monthlyRate = rate / 100 / 12;
   const payment =
     (amount * monthlyRate * (1 + monthlyRate) ** term) /
@@ -166,15 +163,40 @@ onMounted(() => {
   }
 });
 
+function firstPresent(...values) {
+  return values.find((value) => value !== undefined && value !== null && value !== "");
+}
+
+function toNumber(value, fallback = 0) {
+  if (typeof value === "string") {
+    const normalized = value.replace(/[,，%％￥¥\s]/g, "");
+    const num = Number(normalized);
+    return Number.isFinite(num) ? num : fallback;
+  }
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
+function normalizeRate(value) {
+  const rate = toNumber(value, 0);
+  if (rate > 0 && rate < 1) return Number((rate * 100).toFixed(4));
+  return rate;
+}
+
 async function loadDetail() {
   try {
     const res = await businessApi.getCreditDetailByOrderId(creditOrderId.value);
     if (res?.code === 200 && res.data) {
       const d = res.data;
       applicationId.value = Number(d.id || d.applicationId || 0);
-      approvedAmount.value = Number(d.approvedAmount || d.amount || 0);
-      approvedTerm.value = Number(d.approvedTerm || d.term || d.periods || 0);
-      approvedRate.value = Number(d.approvedRate || d.rate || 0);
+      approvedAmount.value = toNumber(
+        firstPresent(d.approvedAmount, d.passQuota, d.validAmt, d.pushQuota, d.amount, d.loanAmount),
+        0,
+      );
+      approvedTerm.value = toNumber(firstPresent(d.approvedTerm, d.term, d.periods), 0);
+      approvedRate.value = normalizeRate(
+        firstPresent(d.approvedRate, d.rate, d.executeRate, d.productRate, d.loanRate),
+      );
 
       form.confirmAmount = String(approvedAmount.value || "");
       form.confirmTerm = String(approvedTerm.value || "");
@@ -185,10 +207,23 @@ async function loadDetail() {
   }
 }
 
+function saveSignProgress(status) {
+  if (!creditOrderId.value || !status) return;
+  const progressMap = uni.getStorageSync(SIGN_PROGRESS_STORAGE_KEY) || {};
+  progressMap[creditOrderId.value] = {
+    status,
+    updatedAt: Date.now(),
+  };
+  uni.setStorageSync(SIGN_PROGRESS_STORAGE_KEY, progressMap);
+}
+
 function formatMoney(value) {
   const num = Number(value || 0);
   if (!Number.isFinite(num)) return "0.00";
-  return num.toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return num.toLocaleString("zh-CN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 function goBack() {
@@ -200,19 +235,24 @@ function goBack() {
 }
 
 async function handleConfirm() {
-  const isChecked = Array.isArray(form.confirmed)
-    ? form.confirmed.length > 0
-    : !!form.confirmed;
-  if (!isChecked) {
+  if (!isConfirmed.value) {
     $u.toast("请先勾选确认选项", "error");
     return;
   }
-  if (!form.confirmAmount || Number(form.confirmAmount) <= 0) {
+  if (!applicationId.value) {
+    $u.toast("额度信息未加载完成", "error");
+    return;
+  }
+  if (!displayAmount.value || displayAmount.value <= 0) {
     $u.toast("请输入确认金额", "error");
     return;
   }
-  if (!form.confirmTerm || Number(form.confirmTerm) <= 0) {
+  if (!displayTerm.value || displayTerm.value <= 0) {
     $u.toast("请输入确认期限", "error");
+    return;
+  }
+  if (!displayRate.value || displayRate.value <= 0) {
+    $u.toast("利率信息未回填", "error");
     return;
   }
 
@@ -221,9 +261,9 @@ async function handleConfirm() {
     await businessApi.confirmAmount({
       applicationId: Number(applicationId.value),
       approverId: Number(localStore.userInfo?.userId) || 0,
-      approvedAmount: Number(form.confirmAmount),
-      term: Number(form.confirmTerm),
-      rate: Number(form.confirmRate),
+      approvedAmount: displayAmount.value,
+      term: displayTerm.value,
+      rate: displayRate.value,
     });
 
     saveSignProgress("BINDING_CARD");
@@ -246,7 +286,6 @@ async function handleConfirm() {
   background: linear-gradient(180deg, #f2f4f8 0%, #f8f9fb 100%);
 }
 
-/* ===== 额度卡片 ===== */
 .quota-card {
   background: linear-gradient(135deg, #1e3a8a, var(--u-type-primary));
   border-radius: 20rpx;
@@ -314,7 +353,6 @@ async function handleConfirm() {
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* ===== 确认区域 ===== */
 .confirm-section {
   background: #fff;
   border-radius: 20rpx;
@@ -325,6 +363,12 @@ async function handleConfirm() {
 
 .section-title {
   margin-bottom: 20rpx;
+}
+
+.confirm-check {
+  margin-top: 8rpx;
+  padding: 18rpx 4rpx 4rpx;
+  border-top: 1rpx solid #eef0f4;
 }
 
 .title-text {
@@ -341,7 +385,6 @@ async function handleConfirm() {
   display: block;
 }
 
-/* ===== 说明卡片 ===== */
 .notice-card {
   display: flex;
   align-items: flex-start;
@@ -359,7 +402,6 @@ async function handleConfirm() {
   flex: 1;
 }
 
-/* ===== 底部按钮 ===== */
 .footer-actions {
   position: fixed;
   left: 0;
@@ -377,28 +419,22 @@ async function handleConfirm() {
   }
 }
 
-/* 深色模式适配 */
 @media (prefers-color-scheme: dark) {
-  .page-container { background-color: #121212; }
-  .card { background-color: #1e1e1e; }
-  .card-item { background-color: #1e1e1e; }
-  .list-item { background-color: #1e1e1e; }
-  .section { background-color: #1e1e1e; }
-  .form-item { background-color: #1e1e1e; border-color: #2a2a2a; }
-  .title { color: #e5e6eb; }
-  .subtitle { color: #8b8c91; }
-  .desc { color: #8b8c91; }
-  .label { color: #b0b3b8; }
-  .value { color: #e5e6eb; }
-  .name { color: #e5e6eb; }
-  .info { color: #b0b3b8; }
-  .text { color: #e5e6eb; }
-  .tip { color: #8b8c91; }
-  .divider { background-color: #2a2a2a; }
-  .border { border-color: #2a2a2a; }
-  .input { background-color: #2a2a2a; color: #e5e6eb; }
-  .textarea { background-color: #2a2a2a; color: #e5e6eb; }
-  .picker { background-color: #2a2a2a; color: #e5e6eb; }
-  .footer { background-color: #1e1e1e; }
+  .confirm-page {
+    background: #121212;
+  }
+
+  .confirm-section,
+  .footer-actions {
+    background: #1e1e1e;
+  }
+
+  .title-text {
+    color: #e5e6eb;
+  }
+
+  .title-sub {
+    color: #8b8c91;
+  }
 }
 </style>

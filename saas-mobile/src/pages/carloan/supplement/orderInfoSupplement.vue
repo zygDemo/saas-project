@@ -133,9 +133,8 @@ function handleProductChange(productId) {
     }
     // 回填还款方式 (repaymentMethod)
     if (selectedProduct.repaymentMethod) {
-      form.repaymentMethod = formatRepaymentMethodToLabel(
-        selectedProduct.repaymentMethod
-      );
+      // 直接使用数字值，与 select 组件的 value 一致
+      form.repaymentMethod = selectedProduct.repaymentMethod;
     }
     // 回填执行利率 (executeRate)
     if (selectedProduct.executeRate) {
@@ -173,8 +172,8 @@ async function loadCreditDetail() {
       form.loanPurpose = data.loanPurpose || "";
       form.productId = data.productId ? String(data.productId) : "";
       form.periods = data.periods ? String(data.periods) : "";
-      // 还款方式：后端返回数字，需要转换为中文显示
-      form.repaymentMethod = formatRepaymentMethodToLabel(data.repaymentMethod);
+      // 还款方式：直接使用数字值
+      form.repaymentMethod = data.repaymentMethod || '';
       form.executeRate = data.executeRate
         ? `${Number(data.executeRate) * 100}%`
         : "";
@@ -262,7 +261,13 @@ const formItems = computed(() => [
   {
     key: "repaymentMethod",
     label: "还款方式",
-    type: "text",
+    type: "select",
+    options: [
+      { label: "等额本息", value: "等额本息" },
+      { label: "等额本金", value: "等额本金" },
+      { label: "先息后本", value: "先息后本" },
+      { label: "一次性还本付息", value: "一次性还本付息" }
+    ],
     disabled: true,
   },
   {
@@ -311,9 +316,7 @@ async function saveOrderInfo() {
       loanPurpose: form.loanPurpose,
       productId: Number(form.productId),
       periods: form.periods ? Number(form.periods) : undefined,
-      repaymentMethod: form.repaymentMethod
-        ? formatRepaymentMethodToValue(form.repaymentMethod)
-        : undefined,
+      repaymentMethod: form.repaymentMethod || undefined,
       executeRate: form.executeRate
         ? Number(String(form.executeRate).replace("%", "")) / 100
         : undefined,

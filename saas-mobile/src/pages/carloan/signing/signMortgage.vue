@@ -125,9 +125,9 @@ const SIGN_MORTGAGE_STORAGE_KEY = "SIGN_MORTGAGE_MAP";
 
 const creditOrderId = ref("");
 const uuidVal = ref("");
-const applicationId = ref(null);
 const submitting = ref(false);
 const backUrl = ref("");
+const currentYear = new Date().getFullYear();
 
 const form = reactive({
   mortgageType: "SELF",
@@ -207,6 +207,8 @@ const formItems = computed(() => [
     label: "办理/预约日期",
     placeholder: "请选择日期",
     type: "date",
+    startYear: currentYear,
+    endYear: currentYear + 2,
     required: true,
   },
   {
@@ -267,7 +269,6 @@ async function loadDetail() {
   try {
     const res = await businessApi.getCreditDetailByOrderId(creditOrderId.value);
     const d = res?.data || res || {};
-    applicationId.value = Number(d.id || d.applicationId || 0) || null;
     form.contactName = form.contactName || d.customerName || d.name || "";
     form.contactPhone =
       form.contactPhone || d.customerPhone || d.phone || d.telephone || "";
@@ -324,18 +325,8 @@ async function handleSubmit() {
     $u.toast("请输入正确的联系电话", "error");
     return;
   }
-  if (!applicationId.value) {
-    $u.toast("未找到订单信息，请刷新后重试", "error");
-    return;
-  }
-
   submitting.value = true;
   try {
-    await businessApi.completeMortgage(applicationId.value, {
-      mortgageStatus: form.mortgageType,
-      mortgageImg: files.mortgageCert || "",
-    });
-
     saveLocalMortgage();
     saveSignProgress("SIGNED");
     $u.toast("提交成功", "success");

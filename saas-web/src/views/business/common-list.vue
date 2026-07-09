@@ -182,10 +182,20 @@
     return tagTypes.has(value as ElementTagType) ? (value as ElementTagType) : 'info'
   }
 
-  function handleDetailAction(action: ActionConfig) {
+  function handleDetailAction(action: ActionConfig & { planId?: number; plan?: Record<string, unknown> }) {
     if (!currentRow.value) return
     // 合并 config.value.actions 中对应的完整 action 配置（包含 path 和 fields）
     const fullAction = config.value.actions.find((a) => a.name === action.name) || action
+    // 如果是从还款计划表格点击的"还款"按钮，用 plan 数据预填表单
+    if (action.plan && action.name === 'register-repayment') {
+      const plan = action.plan
+      fullAction.defaults = () => ({
+        amount: plan.totalAmount,
+        principal: plan.principal,
+        interest: plan.interest,
+        penalty: plan.penaltyAmount || 0
+      })
+    }
     openAction(currentRow.value, fullAction)
   }
 
