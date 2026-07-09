@@ -29,6 +29,21 @@
           style="width: 100%"
           @update:model-value="updateField(field.prop, $event)"
         />
+        <ElSelect
+          v-else-if="field.type === 'select'"
+          :model-value="actionModel[field.prop]"
+          placeholder="请选择"
+          clearable
+          style="width: 100%"
+          @update:model-value="updateField(field.prop, $event)"
+        >
+          <ElOption
+            v-for="opt in (field.options || [])"
+            :key="opt.value"
+            :label="opt.label"
+            :value="opt.value"
+          />
+        </ElSelect>
         <ElInput
           v-else
           :model-value="actionModel[field.prop] as string"
@@ -79,10 +94,46 @@
   }>()
 
   function updateField(prop: string, value: unknown) {
-    emit('update:actionModel', {
-      ...props.actionModel,
-      [prop]: value
-    })
+    const newModel = { ...props.actionModel, [prop]: value }
+    // 部分结清：修改还款总额时按比例重算本金/利息
+    if (prop === 'amount' && newModel.repayType === 'PARTIAL') {
+      const row = props.activeAction?._actionRow as Record<string, unknown> | undefined
+      const origP = Number(row?.__earlyRepayOrigPrincipal || 0)
+      const origI = Number(row?.__earlyRepayOrigInterest || 0)
+      const origTotal = origP + origI
+      if (origTotal > 0) {
+        const ratio = Number(value) / origTotal
+        newModel.principal = Math.round(origP * ratio * 100) / 100
+        newModel.interest = Math.round(origI * ratio * 100) / 100
+      }
+    }
+    // 切换还款类型时重置金额
+    if (prop === 'repayType') {
+      const row = props.activeAction?._actionRow as Record<string, unknown> | undefined
+      if (row) {
+        const origP = Number(row.__earlyRepayOrigPrincipal || 0)
+        const origI = Number(row.__earlyRepayOrigInterest || 0)
+        const origTotal = Math.round((origP + origI) * 100) / 100
+        if (value === 'FULL') {
+          newModel.amount = origTotal
+          newModel.principal = Math.round(origP * 100) / 100
+          newModel.interest = Math.round(origI * 100) / 100
+        } else {
+          // PARTIAL: 取第一个未还清计划的金额
+          const plans = (row.repayments || []) as Record<string, unknown>[]
+          const firstUnpaid = plans.find((p: Record<string, unknown>) => {
+            const s = String(p.status)
+            return s !== 'PAID' && s !== 'SETTLED'
+          })
+          if (firstUnpaid) {
+            newModel.amount = Number(firstUnpaid.totalAmount || 0)
+            newModel.principal = Number(firstUnpaid.principal || 0)
+            newModel.interest = Number(firstUnpaid.interest || 0)
+          }
+        }
+      }
+    }
+    emit('update:actionModel', newModel)
   }
 </script>
 

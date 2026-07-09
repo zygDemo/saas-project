@@ -24,6 +24,15 @@
           <text class="pre-order-label">订单号</text>
           <text class="pre-order-value">{{ orderNo }}</text>
         </view>
+        <view class="pre-node-row">
+          <text class="pre-node-label">当前节点</text>
+          <view class="pre-node-pill">
+            <text class="pre-node-text">{{ currentNodeLabel }}</text>
+            <text v-if="currentNodeCode" class="pre-node-code">
+              {{ currentNodeCode }}
+            </text>
+          </view>
+        </view>
         <view v-if="latestRemark" class="pre-remark-inline">
           <text class="pre-remark-inline__label">审批备注</text>
           <text class="pre-remark-inline__value">{{ latestRemark }}</text>
@@ -60,6 +69,10 @@
               'PENDING_PRECHECK',
               'PENDING_SUPPLEMENT',
             ].includes(item.code),
+            'pre-supplement-card--current':
+              getSignStepState(item.code) === 'doing',
+            'pre-supplement-card--done':
+              getSignStepState(item.code) === 'finish',
           }"
           @click="goStageStep(item)"
         >
@@ -152,6 +165,16 @@ const flowConfig = ref({});
 const flowNodes = ref([]);
 let detailId = "";
 
+const APPROVAL_STAGE_NODE_MAP = {
+  RISK_PRE: "1200",
+  FUNDER_PRE: "1250",
+  SUPPLEMENT: "1300",
+  FIRST_REVIEW: "1400",
+  FINAL_REVIEW: "1450",
+  FUNDER_REVIEW: "1500",
+  LOAN_REQUEST: "1700",
+};
+
 function safeDecode(value) {
   let result = String(value || "").replace(/\+/g, " ");
   for (let i = 0; i < 2; i += 1) {
@@ -202,14 +225,14 @@ function hasDetailPayload(payload) {
 }
 
 function pickDetailUuid(payload = {}) {
-  return String(
-    payload.uuid ||
-      payload.customerUuid ||
-      payload.userUuid ||
-      payload.user?.uuid ||
-      payload.customer?.uuid ||
-      "",
-  );
+  const uuid = [
+    payload.uuid,
+    payload.customerUuid,
+    payload.userUuid,
+    payload.user?.uuid,
+    payload.customer?.uuid,
+  ].find(Boolean);
+  return String(uuid || "");
 }
 
 function normalizeDetailPayload(payload = {}) {
@@ -397,14 +420,15 @@ const signProgress = computed(() => {
 });
 
 const currentNodeCode = computed(() =>
-  String(
-    carloanStore.pageContext.nodeCode ||
-      detail.value?.nodeCode ||
-      detail.value?.currentNode ||
-      detail.value?.businessNode ||
-      "",
-  ),
+  String([
+    carloanStore.pageContext.nodeCode,
+    detail.value?.nodeCode,
+    detail.value?.currentNode,
+    detail.value?.businessNode,
+  ].find(Boolean) || ""),
 );
+
+const currentNodeLabel = computed(() => businessNodeText(currentNodeCode.value));
 
 const isPreAuditDetail = computed(() =>
   ["1100", "1200", "PRE_AUDIT", "INITIAL_AUDIT"].includes(
@@ -421,12 +445,11 @@ const isSupplementDetail = computed(() =>
 const isLoanRequestDetail = computed(() => {
   const code = currentNodeCode.value;
   const numericCode = Number(code);
-  return (
-    (Number.isFinite(numericCode) &&
-      numericCode >= 1700 &&
-      numericCode <= 1799) ||
-    ["LOAN_REQUEST", "PENDING_LOAN_REQUEST"].includes(code)
-  );
+  const isLoanRequestNode =
+    Number.isFinite(numericCode) &&
+    numericCode >= 1700 &&
+    numericCode <= 1799;
+  return isLoanRequestNode || ["LOAN_REQUEST", "PENDING_LOAN_REQUEST"].includes(code);
 });
 
 /** 根据节点状态获取页面标题 */
@@ -471,6 +494,47 @@ const ENTRY_NODE_MAP = {
   MORTGAGE: 1650,
 };
 
+const SUPPLEMENT_STATUS_FIELD_MAP = {
+  CUSTOMER_SUPPLEMENT: "isSupplementCustomer",
+  VEHICLE_SUPPLEMENT: "isSupplementVehicle",
+  ORDER_SUPPLEMENT: "isSupplementOrder",
+  FILE_SUPPLEMENT: "isSupplementFile",
+};
+
+const SIGN_STEP_TO_STATUS = {
+  CONFIRM_AMOUNT: "CONFIRMING_AMOUNT",
+  BIND_CARD: "BINDING_CARD",
+  SIGN_CONTRACT: "SIGNING_CONTRACT",
+  GPS_APPOINTMENT: "GPS_APPOINTING",
+  MORTGAGE: "MORTGAGING",
+};
+
+const SIGN_STATUS_ORDER = [
+  "CONFIRMING_AMOUNT",
+  "BINDING_CARD",
+  "SIGNING_CONTRACT",
+  "GPS_APPOINTING",
+  "MORTGAGING",
+  "SIGNED",
+];
+
+function isFlagDone(value) {
+  return value === 1 || value === "1" || value === true || value === "true";
+}
+
+function getSupplementStepDone(code) {
+  const field = SUPPLEMENT_STATUS_FIELD_MAP[code];
+  if (!field) return null;
+  return isFlagDone(detail.value?.[field]);
+}
+
+function normalizeSignStatus(status) {
+  if (!status || status === "PENDING" || status === "SIGNING_PROGRESS") {
+    return "CONFIRMING_AMOUNT";
+  }
+  return status;
+}
+
 /** 根据接口节点数据判断某个节点是否已完成 */
 function isNodeDone(nodeCode) {
   const currentNodeNum = Number(currentNodeCode.value);
@@ -485,6 +549,12 @@ function isNodeDone(nodeCode) {
 }
 
 function getEntryStepDone(code) {
+  const signStepState = getSignStepState(code);
+  if (signStepState) return signStepState === "finish";
+
+  const supplementDone = getSupplementStepDone(code);
+  if (supplementDone !== null) return supplementDone;
+
   // 1. 优先使用接口返回的 flowConfig.stepStatus
   if (flowConfig.value && flowConfig.value.stepStatus) {
     const stepStatus = flowConfig.value.stepStatus[code];
@@ -508,8 +578,6 @@ function getEntryStepDone(code) {
   }
 
   if (code === "ID_CARD" || code === "CUSTOMER_SUPPLEMENT") {
-    // 补件状态优先
-    if (code === "CUSTOMER_SUPPLEMENT" && detail.value?.isSupplementCustomer === 1) return true;
     return Boolean(
       entryProgress.value?.ID_CARD === 1 ||
       detailUuid.value ||
@@ -523,8 +591,6 @@ function getEntryStepDone(code) {
     );
   }
   if (code === "VEHICLE" || code === "VEHICLE_SUPPLEMENT") {
-    // 补件状态优先
-    if (code === "VEHICLE_SUPPLEMENT" && detail.value?.isSupplementVehicle === 1) return true;
     return Boolean(
       detail.value?.vehicle?.plateNumber ||
       detail.value?.plateNumber ||
@@ -532,8 +598,6 @@ function getEntryStepDone(code) {
     );
   }
   if (code === "APPLICATION" || code === "ORDER_SUPPLEMENT") {
-    // 补件状态优先
-    if (code === "ORDER_SUPPLEMENT" && detail.value?.isSupplementOrder === 1) return true;
     return Boolean(
       detail.value?.periods || detail.value?.pushQuota || detail.value?.amount,
     );
@@ -550,8 +614,6 @@ function getEntryStepDone(code) {
     );
   }
   if (code === "FILE_SUPPLEMENT") {
-    // 补件状态优先
-    if (detail.value?.isSupplementFile === 1) return true;
     return Boolean(
       detail.value?.fileCount ||
       detail.value?.attachmentCount ||
@@ -573,6 +635,28 @@ function getEntryStepDone(code) {
   return false;
 }
 
+function getSignStepState(code) {
+  const stepStatus = SIGN_STEP_TO_STATUS[code];
+  if (!stepStatus) return null;
+
+  const localStatus = normalizeSignStatus(signProgress.value?.status);
+  const currentStatusIndex = SIGN_STATUS_ORDER.indexOf(localStatus);
+  const stepIndex = SIGN_STATUS_ORDER.indexOf(stepStatus);
+
+  if (currentStatusIndex >= 0 && stepIndex >= 0) {
+    if (localStatus === "SIGNED" || stepIndex < currentStatusIndex) {
+      return "finish";
+    }
+    if (stepIndex === currentStatusIndex) return "doing";
+    return "pending";
+  }
+
+  const stepNodeCode = ENTRY_NODE_MAP[code];
+  if (stepNodeCode && isNodeDone(stepNodeCode)) return "finish";
+  if (Number(currentNodeCode.value) === stepNodeCode) return "doing";
+  return "pending";
+}
+
 const allPreAuditStepsDone = computed(() =>
   stageEntryItems.value
     .filter(
@@ -581,12 +665,24 @@ const allPreAuditStepsDone = computed(() =>
     .every((item) => getEntryStepDone(item.code)),
 );
 
+const allSupplementStepsDone = computed(() =>
+  supplementEntryItems
+    .filter((item) => item.code !== "PENDING_SUPPLEMENT")
+    .every((item) => getEntryStepDone(item.code)),
+);
+
 function getStageStepTag(item) {
   // 数据加载中时显示占位状态，避免用旧 store 值渲染错误状态
   if (loading.value) {
     return { text: "加载中", type: "info" };
   }
-  if (["PENDING_PRECHECK", "PENDING_SUPPLEMENT"].includes(item.code)) {
+  if (item.code === "PENDING_SUPPLEMENT") {
+    return {
+      text: allSupplementStepsDone.value ? "待提交" : "待完善",
+      type: allSupplementStepsDone.value ? "info" : "warning",
+    };
+  }
+  if (item.code === "PENDING_PRECHECK") {
     return {
       text: allPreAuditStepsDone.value ? "待提交" : "待完善",
       type: allPreAuditStepsDone.value ? "info" : "warning",
@@ -611,6 +707,10 @@ function getStageStepTag(item) {
   }
   if (
     [
+      "CUSTOMER_SUPPLEMENT",
+      "VEHICLE_SUPPLEMENT",
+      "ORDER_SUPPLEMENT",
+      "FILE_SUPPLEMENT",
       "CONFIRM_AMOUNT",
       "BIND_CARD",
       "SIGN_CONTRACT",
@@ -618,9 +718,17 @@ function getStageStepTag(item) {
       "MORTGAGE",
     ].includes(item.code)
   ) {
+    const isSupplementItem = item.code.includes("SUPPLEMENT");
+    const signStepState = getSignStepState(item.code);
+    if (signStepState === "finish") {
+      return { text: "已完成", type: "success" };
+    }
+    if (signStepState === "doing") {
+      return { text: "进行中", type: "primary" };
+    }
     return getEntryStepDone(item.code)
-      ? { text: "已完成", type: "success" }
-      : { text: "待办理", type: "info" };
+      ? { text: isSupplementItem ? "已补充" : "已完成", type: "success" }
+      : { text: isSupplementItem ? "待补充" : "待办理", type: "warning" };
   }
   return getEntryStepDone(item.code)
     ? { text: "已完成", type: "success" }
@@ -658,6 +766,15 @@ function goStageStep(item) {
     uuid: detailUuid.value,
     customerName: customerDisplayName.value,
     customerPhone: customerDisplayPhone.value,
+    backUrl: buildRoute(APP_ROUTES.carloan.precheck.applyDetail, {
+      id: detailId || detail.value?.id || "",
+      creditOrderId: orderNo.value,
+      orderNo: orderNo.value,
+      uuid: detailUuid.value,
+      customerName: customerDisplayName.value,
+      customerPhone: customerDisplayPhone.value,
+      nodeCode: currentNodeCode.value,
+    }),
   });
   const urlMap = {
     idInfo: buildRoute(APP_ROUTES.carloan.precheck.idInfo, detailRouteQuery),
@@ -762,6 +879,86 @@ function goStageStep(item) {
   uni.showToast({ title: "当前阶段请查看进展", icon: "none" });
 }
 
+function normalizeApprovalStageNode(stage) {
+  const normalizedStage = String(stage || "").trim();
+  if (!normalizedStage) return "";
+  if (/^\d+$/.test(normalizedStage)) return normalizedStage;
+  return APPROVAL_STAGE_NODE_MAP[normalizedStage] || "";
+}
+
+function formatApprovalTime(value) {
+  if (!value) return "";
+  const text = String(value);
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(text)) return text;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return text;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+function buildLifecycleApprovalMeta() {
+  const metaMap = {};
+  const approvals = Array.isArray(detail.value?.approvals) ? detail.value.approvals : [];
+
+  approvals.forEach((approval) => {
+    const nodeCode = normalizeApprovalStageNode(approval?.stage);
+    if (!nodeCode) return;
+    const prev = metaMap[nodeCode];
+    const currentTime = new Date(approval?.createdAt || 0).getTime() || 0;
+    const prevTime = new Date(prev?.rawCreatedAt || 0).getTime() || 0;
+    if (!prev || currentTime >= prevTime) {
+      metaMap[nodeCode] = {
+        approveName: approval?.approverName || prev?.approveName || "",
+        approvalTime: formatApprovalTime(approval?.createdAt) || prev?.approvalTime || "",
+        approvalReason: approval?.opinion || prev?.approvalReason || "",
+        rawCreatedAt: approval?.createdAt || "",
+      };
+    }
+  });
+
+  if (detail.value?.supplementReason) {
+    metaMap["1300"] = {
+      ...(metaMap["1300"] || {}),
+      approvalReason:
+        (metaMap["1300"] && metaMap["1300"].approvalReason) || detail.value.supplementReason,
+    };
+  }
+
+  if (detail.value?.disbursement?.remark) {
+    metaMap["1800"] = {
+      ...(metaMap["1800"] || {}),
+      approvalReason:
+        (metaMap["1800"] && metaMap["1800"].approvalReason) || detail.value.disbursement.remark,
+    };
+  }
+
+  return metaMap;
+}
+
+function enrichLifecycleRecords(records) {
+  const approvalMeta = buildLifecycleApprovalMeta();
+  return (Array.isArray(records) ? records : []).map((item) => {
+    const nodeCode = String(item?.currentNode || "");
+    const extra = approvalMeta[nodeCode] || {};
+    return {
+      ...item,
+      currentNodeName:
+        item?.currentNodeName ||
+        businessNodeText(nodeCode) ||
+        item?.nodeName ||
+        nodeCode,
+      approveName: item?.approveName || extra.approveName || "",
+      approvalTime: item?.approvalTime || extra.approvalTime || "",
+      approvalReason: item?.approvalReason || extra.approvalReason || "",
+    };
+  });
+}
+
 async function handleProgress() {
   const lifecycleId =
     detailId ||
@@ -778,7 +975,7 @@ async function handleProgress() {
   try {
     const res = await businessApi.getLifecycle(String(lifecycleId));
     if (res?.code === 200 && Array.isArray(res.data)) {
-      flowRecordList.value = res.data;
+      flowRecordList.value = enrichLifecycleRecords(res.data);
       return;
     }
     throw new Error("接口返回异常");
@@ -954,6 +1151,54 @@ async function handlePreAuditSubmit() {
   color: #2b3445;
   word-break: break-all;
   line-height: 1.35;
+}
+
+.pre-node-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-top: 14rpx;
+  padding: 18rpx 22rpx;
+  background: rgba(64, 150, 255, 0.08);
+  border: 1rpx solid rgba(64, 150, 255, 0.16);
+  border-radius: 14rpx;
+}
+
+.pre-node-label {
+  flex-shrink: 0;
+  font-size: 25rpx;
+  color: #5f6f86;
+}
+
+.pre-node-pill {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10rpx;
+}
+
+.pre-node-text {
+  min-width: 0;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: var(--u-type-primary);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pre-node-code {
+  flex-shrink: 0;
+  padding: 4rpx 10rpx;
+  border-radius: 999rpx;
+  background: rgba(64, 150, 255, 0.12);
+  font-size: 22rpx;
+  color: #4a78b8;
 }
 
 .pre-remark-inline {
@@ -1211,6 +1456,23 @@ async function handlePreAuditSubmit() {
     align-items: center;
     justify-content: center;
     border-radius: 12rpx;
+  }
+}
+
+.pre-supplement-card--current {
+  border-color: rgba(31, 111, 235, 0.36);
+  background: linear-gradient(135deg, #ffffff, #f3f8ff);
+
+  &::before {
+    background: linear-gradient(180deg, #1f6feb, #26a69a);
+  }
+}
+
+.pre-supplement-card--done {
+  border-color: rgba(16, 185, 129, 0.24);
+
+  &::before {
+    background: rgba(16, 185, 129, 0.55);
   }
 }
 

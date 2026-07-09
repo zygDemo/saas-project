@@ -1,5 +1,5 @@
 <template>
-  <app-page nav-title="客户签约">
+  <app-page nav-title="客户签约" :back-url="backUrl">
     <view class="sign-center-page">
       <!-- 客户信息卡片 -->
       <view class="customer-card">
@@ -117,7 +117,6 @@
 import { ref, computed, onMounted } from "vue";
 import { onLoad, onShow } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
-import { $u } from "uview-pro";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildSignRouteQuery } from "@/common/carloan-route-query";
 
@@ -128,6 +127,7 @@ const uuidVal = ref("");
 const customerName = ref("");
 const customerPhone = ref("");
 const loading = ref(false);
+const backUrl = ref("");
 const signStatus = ref("PENDING"); // PENDING / CONFIRMING_AMOUNT / BINDING_CARD / SIGNING_CONTRACT / GPS_APPOINTING / MORTGAGING / SIGNED
 
 const stepList = computed(() => {
@@ -251,6 +251,12 @@ onLoad((options) => {
   uuidVal.value = options?.uuid || "";
   customerName.value = options?.customerName || "";
   customerPhone.value = options?.customerPhone || "";
+  backUrl.value =
+    options?.backUrl ||
+    buildRoute(APP_ROUTES.carloan.precheck.applyDetail, {
+      creditOrderId: creditOrderId.value,
+      uuid: uuidVal.value,
+    });
 
   const localStatus = getLocalSignStatus();
   if (options?.signStatus || localStatus) {
@@ -336,6 +342,7 @@ function goStep(step) {
     type: step.key === "SIGN_CONTRACT" ? "contract" : undefined,
     name: step.key === "SIGN_CONTRACT" ? customerName.value || "" : "",
     phone: step.key === "SIGN_CONTRACT" ? customerPhone.value || "" : "",
+    backUrl: backUrl.value,
   });
   uni.navigateTo({
     url: buildRoute(step.path, signRouteQuery),

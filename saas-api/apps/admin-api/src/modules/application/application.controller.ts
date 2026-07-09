@@ -217,6 +217,12 @@ export class ApplicationController {
     return this.service.registerRepayment(Number(planId), dto)
   }
 
+  @Post(':id/register-repayment')
+  @ApiOperation({ summary: '按订单登记还款（自动选择第一个未还清计划）' })
+  registerRepaymentByApplication(@Param('id') id: string, @Body() dto: RegisterRepaymentDto) {
+    return this.service.registerRepaymentByApplication(Number(id), dto)
+  }
+
   @Post(':id/settle')
   @ApiOperation({ summary: '结清/归档' })
   settle(@Param('id') id: string, @Body() dto: SettleApplicationDto) {

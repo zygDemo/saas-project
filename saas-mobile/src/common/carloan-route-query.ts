@@ -8,6 +8,7 @@ export interface CarloanSignRouteQueryInput {
   uuid?: RouteQueryValue;
   customerName?: RouteQueryValue;
   customerPhone?: RouteQueryValue;
+  backUrl?: RouteQueryValue;
   signStatus?: RouteQueryValue;
   name?: RouteQueryValue;
   phone?: RouteQueryValue;

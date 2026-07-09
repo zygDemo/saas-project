@@ -45,8 +45,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+type ListCardItem = Record<string, any>;
+
 const props = defineProps<{
-  item: Record<string, unknown>;
+  item: ListCardItem;
   index: number;
   statusClass?: string;
   avatarClass?: string;
@@ -54,7 +56,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "click", item: Record<string, unknown>): void;
+  (e: "click", item: ListCardItem): void;
 }>();
 
 const avatarText = computed(() => {

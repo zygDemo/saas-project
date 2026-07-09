@@ -28,6 +28,8 @@ test.describe('登录功能测试', () => {
 
     const url = loginPage.page.url()
     expect(url).toBeTruthy()
-    expect(url).toContain('localhost:5173')
+    const parsedUrl = new URL(url)
+    expect(['localhost', '127.0.0.1']).toContain(parsedUrl.hostname)
+    expect(parsedUrl.port).toBe('5173')
   })
 })

@@ -1,5 +1,5 @@
 <template>
-  <app-page nav-title="绑定银行卡">
+  <app-page nav-title="绑定银行卡" :back-url="backUrl">
     <view class="bind-card-page">
       <!-- 卡片展示 -->
       <view v-if="savedCards.length > 0" class="card-list">
@@ -11,7 +11,10 @@
           @click="selectCard(index)"
         >
           <view class="card-header">
-            <text class="bank-name">{{ card.bankName || "未知银行" }}</text>
+            <view class="card-header-left">
+              <text class="bank-name">{{ card.bankName || "未知银行" }}</text>
+              <text v-if="card.isDefault" class="default-tag">收款/还款卡</text>
+            </view>
             <u-icon
               v-if="selectedCardIndex === index"
               name="checkbox-mark"
@@ -32,7 +35,9 @@
       <!-- 新增卡片 -->
       <view class="add-card-section">
         <view class="section-title">
-          <text class="title-text">{{ savedCards.length > 0 ? "添加新卡" : "绑定银行卡" }}</text>
+          <text class="title-text">{{
+            savedCards.length > 0 ? "添加新卡" : "绑定银行卡"
+          }}</text>
           <text class="title-sub">请填写客户本人银行卡信息</text>
         </view>
 
@@ -41,6 +46,15 @@
 
       <!-- 底部按钮 -->
       <view class="footer-actions">
+        <u-button
+          type="default"
+          size="large"
+          shape="circle"
+          plain
+          @click="goBack"
+        >
+          上一步
+        </u-button>
         <u-button
           type="primary"
           size="large"
@@ -65,6 +79,15 @@ import AppForm from "@/components/app-form/app-form.vue";
 const businessApi = useCarloanApi();
 const SIGN_PROGRESS_STORAGE_KEY = "SIGN_PROGRESS_MAP";
 
+const creditOrderId = ref("");
+const uuidVal = ref("");
+const customerName = ref("");
+const customerPhone = ref("");
+const submitting = ref(false);
+const selectedCardIndex = ref(-1);
+const savedCards = ref([]);
+const backUrl = ref("");
+
 function saveSignProgress(status) {
   if (!creditOrderId.value || !status) return;
   const progressMap = uni.getStorageSync(SIGN_PROGRESS_STORAGE_KEY) || {};
@@ -75,20 +98,12 @@ function saveSignProgress(status) {
   uni.setStorageSync(SIGN_PROGRESS_STORAGE_KEY, progressMap);
 }
 
-const creditOrderId = ref("");
-const uuidVal = ref("");
-const customerName = ref("");
-const submitting = ref(false);
-const selectedCardIndex = ref(-1);
-const savedCards = ref([]);
-
 const form = reactive({
   cardHolder: "",
   bankName: "",
   cardNo: "",
   phone: "",
   idCard: "",
-  isDefault: false,
 });
 
 const bankOptions = [
@@ -122,9 +137,9 @@ const formItems = computed(() => [
     key: "cardNo",
     label: "银行卡号",
     placeholder: "请输入银行卡号",
-    type: "number",
+    type: "text",
     required: true,
-    maxlength: 19,
+    maxlength: 23,
   },
   {
     key: "phone",
@@ -141,19 +156,35 @@ const formItems = computed(() => [
     required: true,
     maxlength: 18,
   },
-  {
-    key: "isDefault",
-    label: "设为默认收款卡",
-    type: "checkbox",
-    required: false,
-  },
+
 ]);
 
 onLoad((options) => {
   creditOrderId.value = options?.creditOrderId || "";
   uuidVal.value = options?.uuid || "";
   customerName.value = options?.customerName || "";
+  customerPhone.value = options?.customerPhone || "";
+  backUrl.value = options?.backUrl || "";
   form.cardHolder = customerName.value;
+  if (customerPhone.value) {
+    form.phone = customerPhone.value;
+  }
+  // 从客户详情回填身份证号
+  if (uuidVal.value) {
+    businessApi
+      .getUserBasic(uuidVal.value)
+      .then((res) => {
+        if (res?.data) {
+          if (res.data.personIdcard && !form.idCard) {
+            form.idCard = res.data.personIdcard;
+          }
+          if (res.data.telephone && !form.phone) {
+            form.phone = res.data.telephone;
+          }
+        }
+      })
+      .catch(() => {});
+  }
 });
 
 onMounted(() => {
@@ -175,13 +206,21 @@ function selectCard(index) {
   selectedCardIndex.value = index;
 }
 
+function goBack() {
+  if (backUrl.value) {
+    uni.redirectTo({ url: backUrl.value });
+    return;
+  }
+  uni.navigateBack();
+}
+
 function validateCardNo(no) {
   const s = String(no || "").replace(/\s/g, "");
   if (!/^\d{16,19}$/.test(s)) return false;
   let sum = 0;
   let alternate = false;
   for (let i = s.length - 1; i >= 0; i--) {
-    let n = parseInt(s.substring(i, i + 1), 10);
+    let n = Number.parseInt(s.substring(i, i + 1), 10);
     if (alternate) {
       n *= 2;
       if (n > 9) n -= 9;
@@ -231,9 +270,9 @@ async function handleSave() {
     saveSignProgress("SIGNING_CONTRACT");
     $u.toast("绑卡成功", "success");
     setTimeout(() => {
-      uni.navigateBack();
+      goBack();
     }, 800);
-  } catch (e) {
+  } catch {
     $u.toast("绑卡失败，请重试", "error");
   } finally {
     submitting.value = false;
@@ -283,9 +322,24 @@ async function handleSave() {
   margin-bottom: 24rpx;
 }
 
+.card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
 .bank-name {
   font-size: 32rpx;
   font-weight: 700;
+}
+
+.default-tag {
+  font-size: 20rpx;
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  padding: 2rpx 12rpx;
+  border-radius: 6rpx;
+  font-weight: 500;
 }
 
 .card-number {
@@ -336,40 +390,109 @@ async function handleSave() {
   display: block;
 }
 
+.title-tip {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 12rpx;
+  padding: 16rpx 20rpx;
+  background: #fffbeb;
+  border-radius: 12rpx;
+  border: 1rpx solid #fde68a;
+}
+
+.tip-text {
+  font-size: 24rpx;
+  color: #92400e;
+  line-height: 1.4;
+}
+
 /* ===== 底部按钮 ===== */
 .footer-actions {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
+  display: flex;
+  gap: 18rpx;
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+
+  :deep(.u-btn) {
+    flex: 1;
+  }
 }
 
 /* 深色模式适配 */
 @media (prefers-color-scheme: dark) {
-  .page-container { background-color: #121212; }
-  .card { background-color: #1e1e1e; }
-  .card-item { background-color: #1e1e1e; }
-  .list-item { background-color: #1e1e1e; }
-  .section { background-color: #1e1e1e; }
-  .form-item { background-color: #1e1e1e; border-color: #2a2a2a; }
-  .title { color: #e5e6eb; }
-  .subtitle { color: #8b8c91; }
-  .desc { color: #8b8c91; }
-  .label { color: #b0b3b8; }
-  .value { color: #e5e6eb; }
-  .name { color: #e5e6eb; }
-  .info { color: #b0b3b8; }
-  .text { color: #e5e6eb; }
-  .tip { color: #8b8c91; }
-  .divider { background-color: #2a2a2a; }
-  .border { border-color: #2a2a2a; }
-  .input { background-color: #2a2a2a; color: #e5e6eb; }
-  .textarea { background-color: #2a2a2a; color: #e5e6eb; }
-  .picker { background-color: #2a2a2a; color: #e5e6eb; }
-  .footer { background-color: #1e1e1e; }
+  .page-container {
+    background-color: #121212;
+  }
+  .card {
+    background-color: #1e1e1e;
+  }
+  .card-item {
+    background-color: #1e1e1e;
+  }
+  .list-item {
+    background-color: #1e1e1e;
+  }
+  .section {
+    background-color: #1e1e1e;
+  }
+  .form-item {
+    background-color: #1e1e1e;
+    border-color: #2a2a2a;
+  }
+  .title {
+    color: #e5e6eb;
+  }
+  .subtitle {
+    color: #8b8c91;
+  }
+  .desc {
+    color: #8b8c91;
+  }
+  .label {
+    color: #b0b3b8;
+  }
+  .value {
+    color: #e5e6eb;
+  }
+  .name {
+    color: #e5e6eb;
+  }
+  .info {
+    color: #b0b3b8;
+  }
+  .text {
+    color: #e5e6eb;
+  }
+  .tip {
+    color: #8b8c91;
+  }
+  .divider {
+    background-color: #2a2a2a;
+  }
+  .border {
+    border-color: #2a2a2a;
+  }
+  .input {
+    background-color: #2a2a2a;
+    color: #e5e6eb;
+  }
+  .textarea {
+    background-color: #2a2a2a;
+    color: #e5e6eb;
+  }
+  .picker {
+    background-color: #2a2a2a;
+    color: #e5e6eb;
+  }
+  .footer {
+    background-color: #1e1e1e;
+  }
 }
 </style>

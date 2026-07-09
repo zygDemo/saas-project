@@ -1,5 +1,5 @@
 <template>
-  <app-page :nav-title="pageTitle" :show-nav-back="!isCustomerRole">
+  <app-page :nav-title="pageTitle" :show-nav-back="!isCustomerRole" :back-url="backUrl">
     <view class="video-face-sign-page">
       <!-- 客户信息卡片 -->
       <view class="customer-card">
@@ -246,10 +246,10 @@
               签署授权书
             </u-button>
             <u-button
+              v-if="!isCustomerRole"
               type="default"
               size="large"
               shape="circle"
-              v-if="!isCustomerRole"
               @click="goToApplyList"
             >
               返回预审列表
@@ -290,7 +290,7 @@ import { useCarloanApi } from "@/api/carloan";
 import { useConfirm } from "@/composables/useConfirm";
 import { useSessionStore } from "@/stores";
 import { closeBrowser } from "@/composables/useCloseBrowser";
-import { APP_ROUTES, buildHashRoute, buildRoute } from "@/common/navigation";
+import { APP_ROUTES, buildHashRoute } from "@/common/navigation";
 import { buildNavTitleQuery } from "@/common/carloan-route-query";
 import { getBaseUrl, getHashQuery, safeDecode } from "./signing-url";
 
@@ -302,6 +302,16 @@ const sessionStore = useSessionStore();
 const businessApi = useCarloanApi();
 const SIGN_PROGRESS_STORAGE_KEY = "SIGN_PROGRESS_MAP";
 const ENTRY_PROGRESS_STORAGE_KEY = "ENTRY_PROGRESS_MAP";
+
+const customerInfo = reactive({
+  name: "",
+  idCard: "",
+  phone: "",
+  amount: "",
+  rawAmount: "",
+  uuid: "",
+  creditOrderId: "",
+});
 
 function saveSignProgress(status) {
   if (!customerInfo.creditOrderId || !status) return;
@@ -338,16 +348,6 @@ const isCustomerRole = computed(() => {
   return roleTags === "客户" || roleTags.includes("客户");
 });
 
-const customerInfo = reactive({
-  name: "",
-  idCard: "",
-  phone: "",
-  amount: "",
-  rawAmount: "",
-  uuid: "",
-  creditOrderId: "",
-});
-
 // 页面标题：区分面签和授信
 const pageTitle = ref("授信认证");
 
@@ -359,6 +359,7 @@ const loading = ref(false);
 const signingLoading = ref(false);
 const authorizeSignLoading = ref(false);
 const signRecordId = ref(null);
+const backUrl = ref("");
 
 const stepList = reactive([]);
 
@@ -405,8 +406,9 @@ onLoad(async (options = {}) => {
   const optCreditOrderId = query.creditOrderId || "";
   const orderId = query.orderId || "";
   const type = query.type || "";
+  backUrl.value = query.backUrl || "";
 
-  console.log("[videoFaceSign] query:", {
+  console.warn("[videoFaceSign] query:", {
     uuid,
     type,
     creditOrderId: optCreditOrderId,
@@ -417,7 +419,7 @@ onLoad(async (options = {}) => {
   // 必填校验
   if (!uuid && !orderId && !optCreditOrderId) {
     uni.showToast({ title: "参数错误，缺少 uuid", icon: "none" });
-    setTimeout(() => uni.navigateBack(), 1500);
+    setTimeout(() => goBack(), 1500);
     return;
   }
 
@@ -441,7 +443,7 @@ onLoad(async (options = {}) => {
   const resolvedUuid = uuid || detailInfo.uuid || "";
   if (!resolvedUuid) {
     uni.showToast({ title: "参数错误，缺少 uuid", icon: "none" });
-    setTimeout(() => uni.navigateBack(), 1500);
+    setTimeout(() => goBack(), 1500);
     return;
   }
 
@@ -539,8 +541,6 @@ async function handleStartFaceSign() {
       });
 
       if (res?.code === 200) {
-        const orderId = res.data?.creditOrderId || customerInfo.creditOrderId;
-
         // 模拟人脸识别成功
         faceResult.status = "success";
         faceResult.statusText = "核验通过";
@@ -554,7 +554,7 @@ async function handleStartFaceSign() {
 
         // 返回订单详情页
         setTimeout(() => {
-          uni.navigateBack();
+          goBack();
         }, 800);
       } else {
         uni.showToast({ title: "授信申请失败", icon: "none" });
@@ -579,6 +579,7 @@ async function handleStartFaceSign() {
     `name=${encodeURIComponent(customerInfo.name)}`,
     `phone=${encodeURIComponent(customerInfo.phone)}`,
     `amount=${encodeURIComponent(customerInfo.rawAmount)}`,
+    `backUrl=${encodeURIComponent(backUrl.value)}`,
     `mode=${isCreditMode.value ? "credit" : "faceSign"}`,
   ].join("&");
 
@@ -630,6 +631,7 @@ async function handleStartContract() {
     `name=${encodeURIComponent(customerInfo.name)}`,
     `phone=${encodeURIComponent(customerInfo.phone)}`,
     `amount=${encodeURIComponent(customerInfo.rawAmount)}`,
+    `backUrl=${encodeURIComponent(backUrl.value)}`,
   ]
     .join("&")
     .replace(/#\/([^?&]+)&/, "#/$1?");
@@ -735,6 +737,7 @@ async function handleSignContract() {
       `uuid=${encodeURIComponent(customerInfo.uuid)}`,
       `creditOrderId=${encodeURIComponent(customerInfo.creditOrderId)}`,
       `mode=credit`,
+      `backUrl=${encodeURIComponent(backUrl.value)}`,
     ].join("&");
 
     const res = await businessApi.startAuthContractSign({
@@ -792,6 +795,10 @@ function handleCancel() {
 
 /** 返回列表 */
 function goBack() {
+  if (backUrl.value) {
+    uni.redirectTo({ url: backUrl.value });
+    return;
+  }
   uni.navigateBack();
 }
 
@@ -824,7 +831,7 @@ async function handleAuthorizeSign() {
 
     // 可选：跳转到结果页面或刷新状态
     setTimeout(() => {
-      uni.navigateBack();
+      goBack();
     }, 1500);
   } catch (err) {
     console.error("授权签署失败:", err);

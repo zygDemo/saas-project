@@ -1,5 +1,5 @@
 <template>
-  <app-page nav-title="客户资料">
+  <app-page nav-title="客户资料" :back-url="applyDetailUrl">
     <view class="idinfo-supplement-page">
       <!-- 客户信息 -->
       <view class="section-title">
@@ -119,8 +119,12 @@
       </u-popup>
 
       <!-- 底部按钮 -->
-      <view v-if="!readonly" class="footer-btn">
+      <view class="footer-btn">
+        <u-button type="default" shape="circle" @click="goApplyDetail">
+          上一步
+        </u-button>
         <u-button
+          v-if="!readonly"
           type="default"
           shape="circle"
           :loading="submitLoading"
@@ -129,6 +133,7 @@
           保存
         </u-button>
         <u-button
+          v-if="!readonly"
           type="primary"
           shape="circle"
           :loading="submitLoading"
@@ -157,16 +162,31 @@ const localStore = useLocalStore()
 const carloanStore = useCarloanStore();
 const businessApi = useCarloanApi();
 
+const submitLoading = ref(false);
+const readonly = ref(false);
+const loading = ref(false);
+
+const applyDetailUrl = computed(() =>
+  buildRoute(
+    APP_ROUTES.carloan.precheck.applyDetail,
+    buildSupplementRouteQuery({
+      uuid: carloanStore.pageContext.uuid,
+      creditOrderId: carloanStore.pageContext.creditOrderId,
+      readonly: readonly.value ? 1 : undefined,
+    }),
+  ),
+);
+
+function goApplyDetail() {
+  uni.redirectTo({ url: applyDetailUrl.value });
+}
+
 /** 添加联系人按钮自定义样式 */
 const addBtnStyle = {
   padding: "0 20rpx",
   height: "56rpx",
   fontSize: "26rpx",
 };
-
-const submitLoading = ref(false);
-const readonly = ref(false);
-const loading = ref(false);
 
 const form = reactive({
   // 客户信息
@@ -290,8 +310,14 @@ async function loadContacts() {
 /** 后端关系文字 → 前端关系编码 */
 function mapRelationToCode(relation) {
   const map = {
-    "配偶": "1", "父母": "2", "子女": "3", "朋友": "4",
-    "兄弟姐妹": "5", "亲戚": "6", "同事": "7", "其他": "8",
+    配偶: "1",
+    父母: "2",
+    子女: "3",
+    朋友: "4",
+    兄弟姐妹: "5",
+    亲戚: "6",
+    同事: "7",
+    其他: "8",
   };
   return map[relation] || "";
 }

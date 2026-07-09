@@ -40,10 +40,14 @@ import type { PropType } from "vue";
 import { $u } from "uview-pro";
 import { reactive } from "vue";
 
-defineProps({
+const props = defineProps({
   navTitle: {
     type: String,
     default: "uView Pro",
+  },
+  backUrl: {
+    type: String,
+    default: "",
   },
   showNavBack: {
     type: Boolean,
@@ -83,6 +87,11 @@ const background = reactive({
 });
 
 const handleBack = () => {
+  if (props.backUrl) {
+    uni.redirectTo({ url: props.backUrl });
+    return;
+  }
+
   navigateBackOrFallback();
 };
 </script>

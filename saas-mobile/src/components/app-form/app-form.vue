@@ -56,6 +56,16 @@
           @click="openDatePicker(item)"
         />
 
+        <!-- 时间选择类型 -->
+        <u-input
+          v-else-if="item.type === 'time'"
+          v-model="pickerDisplayValue[item.key]"
+          :placeholder="item.placeholder || `请选择${item.label}`"
+          type="select"
+          :disabled="item.disabled"
+          @click="openDatePicker(item)"
+        />
+
         <!-- 地区选择类型 -->
         <u-input
           v-else-if="item.type === 'region'"
@@ -339,7 +349,7 @@ const pickerDisplayValue = computed(() => {
     return display;
   }
   props.items.forEach((item) => {
-    if (item.type === "date" || item.type === "region" || item.type === "city") {
+    if (item.type === "date" || item.type === "time" || item.type === "region" || item.type === "city") {
       display[item.key] = formState[item.key] || "";
     }
   });
@@ -394,11 +404,16 @@ function onSelectConfirm(e) {
 // 打开日期选择器
 function openDatePicker(item) {
   currentPickerKey.value = item.key;
+  const pickerMode = item.mode || "time";
   currentPickerConfig.value = {
-    mode: item.mode || "time",
-    defaultTime: item.defaultTime,
+    mode: pickerMode,
+    valueType: item.type,
+    defaultTime: buildDefaultTime(item),
     startYear: item.startYear || 1950,
     endYear: item.endYear || 2050,
+    params: item.params || (item.type === "time"
+      ? { hour: true, minute: true }
+      : { year: true, month: true, day: true }),
     formatter: item.formatter,
     showTimeTag: item.showTimeTag,
     maskCloseAble: item.maskCloseAble,
@@ -450,8 +465,31 @@ function openRegionPicker(item) {
 }
 
 // Picker 统一确认处理
+function padDatePart(value) {
+  return String(value ?? "").padStart(2, "0");
+}
+
+function getTodayText() {
+  const now = new Date();
+  return `${now.getFullYear()}-${padDatePart(now.getMonth() + 1)}-${padDatePart(now.getDate())}`;
+}
+
+function getCurrentTimeText() {
+  const now = new Date();
+  return `${padDatePart(now.getHours())}:${padDatePart(now.getMinutes())}`;
+}
+
+function buildDefaultTime(item) {
+  const currentValue = formState[item.key];
+  if (item.type === "time") {
+    return `${getTodayText()} ${currentValue || item.defaultTime || getCurrentTimeText()}`;
+  }
+  return currentValue || item.defaultTime || getTodayText();
+}
+
 function onPickerConfirm(e) {
   const mode = currentPickerConfig.value.mode;
+  const valueType = currentPickerConfig.value.valueType;
   let newValue = "";
 
   if (mode === "region") {
@@ -470,9 +508,15 @@ function onPickerConfirm(e) {
     } else {
       newValue = "";
     }
-  } else if (mode === "time" || mode === "date") {
+  } else if (mode === "time" && valueType === "time") {
+    const { hour, minute } = e || {};
+    newValue = `${padDatePart(hour)}:${padDatePart(minute)}`;
+  } else if (mode === "time" && valueType === "date") {
     const { year, month, day } = e || {};
-    newValue = `${year}-${month}-${day}`;
+    newValue = `${year}-${padDatePart(month)}-${padDatePart(day)}`;
+  } else if (mode === "date") {
+    const { year, month, day } = e || {};
+    newValue = `${year}-${padDatePart(month)}-${padDatePart(day)}`;
   } else {
     newValue = e.format || e.value;
   }

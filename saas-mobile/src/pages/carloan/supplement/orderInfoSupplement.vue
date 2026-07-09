@@ -1,5 +1,5 @@
 <template>
-  <app-page nav-title="订单信息">
+  <app-page nav-title="订单信息" :back-url="applyDetailUrl">
     <view class="order-supplement-page">
       <view class="section-title">
         <view class="title-dot" />
@@ -9,8 +9,12 @@
       <AppForm :modelValue="form" :items="readonlyFormItems" @change="onFormChange" />
 
       <!-- 底部按钮 -->
-      <view v-if="!readonly" class="footer-btn">
+      <view class="footer-btn">
+        <u-button type="default" shape="circle" @click="goApplyDetail">
+          上一步
+        </u-button>
         <u-button
+          v-if="!readonly"
           type="default"
           shape="circle"
           :loading="submitLoading"
@@ -19,6 +23,7 @@
           保存
         </u-button>
         <u-button
+          v-if="!readonly"
           type="primary"
           shape="circle"
           :loading="submitLoading"
@@ -56,6 +61,21 @@ const pageLoading = ref(false);
 // 页面参数
 const creditId = ref("");
 const readonly = ref(false);
+
+const applyDetailUrl = computed(() =>
+  buildRoute(
+    APP_ROUTES.carloan.precheck.applyDetail,
+    buildSupplementRouteQuery({
+      uuid: carloanStore.pageContext.uuid,
+      creditOrderId: carloanStore.pageContext.creditOrderId,
+      readonly: readonly.value ? 1 : undefined,
+    }),
+  ),
+);
+
+function goApplyDetail() {
+  uni.redirectTo({ url: applyDetailUrl.value });
+}
 
 // 表单数据
 const form = reactive({

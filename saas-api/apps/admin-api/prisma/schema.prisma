@@ -697,28 +697,37 @@ model CustomerContact {
 }
 
 model Vehicle {
-  id            Int       @id @default(autoincrement())
-  customerId    Int
-  vin           String? // 车架号
-  plateNumber   String? // 车牌号
-  brand         String?
-  model         String?
-  ownerName     String?
-  address       String?
-  usageNature   String?
-  sealInfo      String?
-  engineNumber  String?
-  registerDate  DateTime?
-  vehicleImgUrl String?
-  color         String?
-  year          Int?
-  mileage       Int?
-  purchasePrice Decimal?  @db.Decimal(15, 2)
-  estimateValue Decimal?  @db.Decimal(15, 2) // 评估价
-  isMortgaged   Boolean   @default(false)
-  mortgageInfo  String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                     Int       @id @default(autoincrement())
+  customerId             Int
+  vin                    String? // 车架号
+  plateNumber            String? // 车牌号
+  brand                  String?
+  model                  String?
+  ownerName              String?
+  address                String?
+  usageNature            String?
+  sealInfo               String?
+  engineNumber           String?
+  registerDate           DateTime?
+  vehicleImgUrl          String?
+  color                  String?
+  year                   Int?
+  mileage                Int?
+  purchasePrice          Decimal?  @db.Decimal(15, 2)
+  estimateValue          Decimal?  @db.Decimal(15, 2) // 评估价/估值
+  isMortgaged            Boolean   @default(false)
+  mortgageInfo           String?
+  fuelType               Int?      // 燃油类型：1-油车 2-纯电 3-油电混合
+  isFault                Int?      // 是否故障：1-是 2-否
+  purchaseType           Int?      // 购买方式：1-全款 2-按揭
+  purchaseDate           DateTime? // 购买日期
+  loanAmount             Decimal?  @db.Decimal(15, 2) // 贷款金额（分）
+  loanTerm               Int?      // 贷款期限（年）
+  monthlyPayment         Decimal?  @db.Decimal(15, 2) // 月还款金额（分）
+  isInsurance            Int?      // 是否投保：1-是 2-否
+  insuranceExpirationDate DateTime? // 保险到期日
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 

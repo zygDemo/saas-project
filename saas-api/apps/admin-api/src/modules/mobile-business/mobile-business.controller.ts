@@ -348,7 +348,7 @@ export class MobileStatisticsController {
 @ApiTags('移动端联系人')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('m/user')
+@Controller('m/contact')
 export class MobileContactController {
   constructor(private readonly contactService: MobileContactService) {}
 
@@ -442,6 +442,12 @@ export class MobileBankCardController {
 export class MobilePostLoanController {
   constructor(private readonly postLoanService: MobilePostLoanService) {}
 
+  @Post('confirm-amount')
+  @ApiOperation({ summary: '确认额度' })
+  confirmAmount(@Body() dto: { applicationId: number; approvedAmount: number; term?: number; rate?: number }) {
+    return this.postLoanService.confirmAmount(Number(dto.applicationId), dto)
+  }
+
   @Get('repayment-plans/:applicationId')
   @ApiOperation({ summary: '获取还款计划' })
   getRepaymentPlans(@Param('applicationId') applicationId: string) {
@@ -458,6 +464,12 @@ export class MobilePostLoanController {
   @ApiOperation({ summary: '获取订单详情' })
   getDetail(@Param('id') id: string) {
     return this.postLoanService.getApplicationDetailMobile(Number(id))
+  }
+
+  @Post('register-repayment')
+  @ApiOperation({ summary: '登记还款' })
+  registerRepayment(@Body() dto: { applicationId: number; amount: number; principal?: number; interest?: number; penalty?: number; paymentMethod: string; transactionNo?: string; remark?: string }) {
+    return this.postLoanService.registerRepaymentMobile(dto.applicationId, dto)
   }
 }
 

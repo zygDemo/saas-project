@@ -1,5 +1,5 @@
 <template>
-  <app-page nav-title="确认额度">
+  <app-page nav-title="确认额度" :back-url="backUrl">
     <view class="confirm-page">
       <!-- 额度卡片 -->
       <view class="quota-card">
@@ -46,6 +46,9 @@
 
       <!-- 底部按钮 -->
       <view class="footer-actions">
+        <u-button type="default" size="large" shape="circle" plain @click="goBack">
+          上一步
+        </u-button>
         <u-button
           type="primary"
           size="large"
@@ -73,6 +76,15 @@ const businessApi = useCarloanApi();
 const localStore = useLocalStore();
 const SIGN_PROGRESS_STORAGE_KEY = "SIGN_PROGRESS_MAP";
 
+const creditOrderId = ref("");
+const uuidVal = ref("");
+const approvedAmount = ref(0);
+const approvedTerm = ref(0);
+const approvedRate = ref(0);
+const applicationId = ref(null);
+const submitting = ref(false);
+const backUrl = ref("");
+
 function saveSignProgress(status) {
   if (!creditOrderId.value || !status) return;
   const progressMap = uni.getStorageSync(SIGN_PROGRESS_STORAGE_KEY) || {};
@@ -82,14 +94,6 @@ function saveSignProgress(status) {
   };
   uni.setStorageSync(SIGN_PROGRESS_STORAGE_KEY, progressMap);
 }
-
-const creditOrderId = ref("");
-const uuidVal = ref("");
-const approvedAmount = ref(0);
-const approvedTerm = ref(0);
-const approvedRate = ref(0);
-const applicationId = ref<number | null>(null);
-const submitting = ref(false);
 
 const form = reactive({
   confirmed: false,
@@ -145,14 +149,15 @@ const monthlyPayment = computed(() => {
   // 等额本息近似计算
   const monthlyRate = rate / 100 / 12;
   const payment =
-    (amount * monthlyRate * Math.pow(1 + monthlyRate, term)) /
-    (Math.pow(1 + monthlyRate, term) - 1);
+    (amount * monthlyRate * (1 + monthlyRate) ** term) /
+    ((1 + monthlyRate) ** term - 1);
   return Number.isFinite(payment) ? payment : 0;
 });
 
 onLoad((options) => {
   creditOrderId.value = options?.creditOrderId || "";
   uuidVal.value = options?.uuid || "";
+  backUrl.value = options?.backUrl || "";
 });
 
 onMounted(() => {
@@ -186,6 +191,14 @@ function formatMoney(value) {
   return num.toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function goBack() {
+  if (backUrl.value) {
+    uni.redirectTo({ url: backUrl.value });
+    return;
+  }
+  uni.navigateBack();
+}
+
 async function handleConfirm() {
   const isChecked = Array.isArray(form.confirmed)
     ? form.confirmed.length > 0
@@ -216,9 +229,9 @@ async function handleConfirm() {
     saveSignProgress("BINDING_CARD");
     $u.toast("额度确认成功", "success");
     setTimeout(() => {
-      uni.navigateBack();
+      goBack();
     }, 800);
-  } catch (e) {
+  } catch {
     $u.toast("确认失败，请重试", "error");
   } finally {
     submitting.value = false;
@@ -352,10 +365,16 @@ async function handleConfirm() {
   left: 0;
   right: 0;
   bottom: 0;
+  display: flex;
+  gap: 18rpx;
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+
+  :deep(.u-btn) {
+    flex: 1;
+  }
 }
 
 /* 深色模式适配 */

@@ -1,5 +1,5 @@
 <template>
-  <app-page :nav-title="pageTitle" :show-nav-back="!isCustomerRole">
+  <app-page :nav-title="pageTitle" :show-nav-back="!isCustomerRole" :back-url="backUrl">
     <view class="face-sign-result-page">
       <!-- 加载中 -->
       <view v-if="loading" class="loading-box">
@@ -349,6 +349,7 @@ const signTime = ref("");
 const callbackUuid = ref("");
 const contractSigned = ref(true);
 const pageMode = ref("credit"); // 'credit' | 'faceSign'
+const backUrl = ref("");
 
 const customerInfo = reactive<CustomerInfo>({
   name: "",
@@ -386,6 +387,7 @@ onLoad((options) => {
     string
   >;
   navTitle.value = merged.navTitle || "";
+  backUrl.value = merged.backUrl || "";
 
   // 兼容 orderId 和 creditOrderId 两种参数名
   const creditOrderId = (merged.creditOrderId || merged.orderId || "").split(
@@ -464,9 +466,9 @@ function applyFaceApiData(data: unknown, options: Record<string, string>) {
   const api = (data || {}) as Record<string, unknown>;
   customerInfo.name = safeDecode(
     (api?.customerName as string | undefined) ||
-      (api?.name as string | undefined) ||
-      options.name ||
-      DEFAULT_CUSTOMER.name,
+    (api?.name as string | undefined) ||
+    options.name ||
+    DEFAULT_CUSTOMER.name,
   );
   customerInfo.idCard =
     (api?.idCard as string | undefined) || options.idCard || DEFAULT_CUSTOMER.idCard;
@@ -491,8 +493,8 @@ function applyFaceApiData(data: unknown, options: Record<string, string>) {
   faceResult.passed = passed;
   faceResult.score = String(
     (api?.score as string | undefined) ||
-      (api?.similarity as string | undefined) ||
-      "",
+    (api?.similarity as string | undefined) ||
+    "",
   );
   faceResult.msg =
     options.msg ||
@@ -544,26 +546,26 @@ function applyCustomerInfoFromData(
   const api = (data || {}) as Record<string, unknown>;
   const name = safeDecode(
     (api?.customerName as string | undefined) ||
-      (api?.personName as string | undefined) ||
-      (api?.name as string | undefined) ||
-      (api?.userName as string | undefined) ||
-      options.name ||
-      customerInfo.name,
+    (api?.personName as string | undefined) ||
+    (api?.name as string | undefined) ||
+    (api?.userName as string | undefined) ||
+    options.name ||
+    customerInfo.name,
   );
   const phone = safeDecode(
     (api?.phone as string | undefined) ||
-      (api?.telephone as string | undefined) ||
-      (api?.mobile as string | undefined) ||
-      (api?.phonenumber as string | undefined) ||
-      options.phone ||
-      customerInfo.phone,
+    (api?.telephone as string | undefined) ||
+    (api?.mobile as string | undefined) ||
+    (api?.phonenumber as string | undefined) ||
+    options.phone ||
+    customerInfo.phone,
   );
   const amount = safeDecode(
     (api?.amount as string | undefined) ||
-      (api?.loanAmount as string | undefined) ||
-      (api?.creditAmount as string | undefined) ||
-      options.amount ||
-      customerInfo.amount,
+    (api?.loanAmount as string | undefined) ||
+    (api?.creditAmount as string | undefined) ||
+    options.amount ||
+    customerInfo.amount,
   );
   const orderId =
     (api?.creditOrderId as string | undefined) ||
@@ -799,6 +801,7 @@ async function handleContractSign() {
       `name=${encodeURIComponent(customerInfo.name)}`,
       `phone=${encodeURIComponent(customerInfo.phone)}`,
       `amount=${encodeURIComponent(customerInfo.amount)}`,
+      `backUrl=${encodeURIComponent(backUrl.value)}`,
     ].join("&");
 
     const res = await businessApi.startContractSign({
@@ -868,6 +871,7 @@ async function handleSignContract() {
       `name=${encodeURIComponent(customerInfo.name)}`,
       `phone=${encodeURIComponent(customerInfo.phone)}`,
       `amount=${encodeURIComponent(customerInfo.amount)}`,
+      `backUrl=${encodeURIComponent(backUrl.value)}`,
     ].join("&");
 
     const res = await businessApi.startAuthContractSign({
@@ -902,6 +906,10 @@ async function handleSignContract() {
 }
 
 function goBack() {
+  if (backUrl.value) {
+    uni.redirectTo({ url: backUrl.value });
+    return;
+  }
   uni.navigateBack({ delta: 2 });
 }
 
@@ -914,11 +922,11 @@ function retryCredit() {
     pageMode.value === "faceSign"
       ? buildRoute(
           APP_ROUTES.carloan.signing.videoFaceSign,
-          buildSignRouteQuery({ uuid: callbackUuid.value, orderId: customerInfo.creditOrderId, type: "contract" }),
+          buildSignRouteQuery({ uuid: callbackUuid.value, orderId: customerInfo.creditOrderId, type: "contract", backUrl: backUrl.value }),
         )
       : buildRoute(
           APP_ROUTES.carloan.signing.videoFaceSign,
-          buildSignRouteQuery({ uuid: callbackUuid.value, creditOrderId: customerInfo.creditOrderId }),
+          buildSignRouteQuery({ uuid: callbackUuid.value, creditOrderId: customerInfo.creditOrderId, backUrl: backUrl.value }),
         );
   uni.redirectTo({ url });
 }

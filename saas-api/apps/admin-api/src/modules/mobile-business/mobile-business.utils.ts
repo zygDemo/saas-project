@@ -317,8 +317,18 @@ export function mapVehicle(vehicle: any, uuid: string, apiPrefix: string) {
     vehicleCode: vehicle.vin,
     mileage: vehicle.mileage,
     purchasePrice: yuanToCent(vehicle.purchasePrice),
+    valuationPrice: yuanToCent(vehicle.estimateValue),
     vehicleColor: vehicle.color,
-    isMortgage: vehicle.isMortgaged ? 1 : 2
+    isMortgage: vehicle.isMortgaged ? 1 : 2,
+    fuelType: vehicle.fuelType,
+    isFault: vehicle.isFault,
+    purchaseType: vehicle.purchaseType,
+    purchaseDate: formatDateOnly(vehicle.purchaseDate),
+    loanAmount: yuanToCent(vehicle.loanAmount),
+    loanTerm: vehicle.loanTerm,
+    monthlyPayment: yuanToCent(vehicle.monthlyPayment),
+    isInsurance: vehicle.isInsurance,
+    insuranceExpirationDate: formatDateOnly(vehicle.insuranceExpirationDate)
   }
 }
 

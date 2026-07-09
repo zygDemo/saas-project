@@ -47,3 +47,7 @@ AGENTS.md
 CODEBUDDY.md
 CLAUDE.md
 .zed/CONVENTIONS.md
+
+.pnpm-store/v11/projects
+saas-mobile/test-results
+saas-mobile/tests

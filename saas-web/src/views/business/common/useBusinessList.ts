@@ -383,7 +383,7 @@ export function useBusinessList() {
   }
 
   function openAction(row: Record<string, unknown>, action: ActionConfig) {
-    activeAction.value = action
+    activeAction.value = { ...action, _actionRow: row } as ActionConfig
     actionRow.value = row
     const defaults = action.defaults?.(row) || {}
     const operatorProps = ['approverId', 'reviewerId', 'createdBy']

@@ -896,8 +896,26 @@ export class ApplicationService extends BaseBusinessCrudService<
     })
   }
 
+  async registerRepaymentByApplication(applicationId: number, dto: RegisterRepaymentDto) {
+    // 获取第一个未还清的还款计划
+    const plan = await this.prisma.repaymentPlan.findFirst({
+      where: this.addTenantId({
+        applicationId,
+        status: { in: [RepaymentStatus.NOT_DUE, RepaymentStatus.OVERDUE, RepaymentStatus.PARTIAL] }
+      }),
+      orderBy: { period: 'asc' }
+    })
+    if (!plan) throw new BadRequestException('没有待还款的计划')
+    // createdBy 可选：如果没有传入，使用当前租户的第一个管理员
+    if (!dto.createdBy) {
+      const admin = await this.prisma.user.findFirst({ where: { tenantId: getCurrentTenantId()! } })
+      dto.createdBy = admin?.id
+    }
+    return this.registerRepayment(plan.id, dto)
+  }
+
   async registerRepayment(planId: number, dto: RegisterRepaymentDto) {
-    await this.ensureRelatedExists(this.prisma.user, dto.createdBy, '登记人不存在')
+    if (dto.createdBy) await this.ensureRelatedExists(this.prisma.user, dto.createdBy, '登记人不存在')
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const plan = await tx.repaymentPlan.findFirst({
         where: this.addTenantId({ id: planId })
@@ -1029,18 +1047,111 @@ export class ApplicationService extends BaseBusinessCrudService<
 
   // ==================== 提前还款 ====================
 
-  async applyEarlyRepayment(applicationId: number, dto: { repayType?: string; amount: number; principal: number; interest: number; penalty?: number; reason?: string }) {
-    return this.prisma.earlyRepayment.create({
-      data: {
-        tenantId: getCurrentTenantId()!,
-        applicationId,
-        repayType: dto.repayType ?? 'FULL',
-        amount: dto.amount,
-        principal: dto.principal,
-        interest: dto.interest,
-        penalty: dto.penalty ?? 0,
-        reason: dto.reason
+  async applyEarlyRepayment(applicationId: number, dto: { repayType?: string; amount?: number; principal?: number; interest?: number; penalty?: number; reason?: string }) {
+    const repayType = dto.repayType ?? 'FULL'
+    let amount: number = dto.amount ?? 0
+    let principal: number = dto.principal ?? 0
+    let interest: number = dto.interest ?? 0
+
+    // 如果未传金额，自动从还款计划计算
+    if (!dto.amount || !dto.principal || !dto.interest) {
+      const unpaidPlans = await this.prisma.repaymentPlan.findMany({
+        where: this.addTenantId({
+          applicationId,
+          status: { in: [RepaymentStatus.NOT_DUE, RepaymentStatus.OVERDUE, RepaymentStatus.PARTIAL] }
+        }),
+        orderBy: { period: 'asc' }
+      })
+      principal = unpaidPlans.reduce((sum, p) => sum + Number(p.principal), 0)
+      interest = unpaidPlans.reduce((sum, p) => sum + Number(p.interest), 0)
+      amount = Math.round((principal + interest) * 100) / 100
+    }
+
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // 1. 创建提前还款记录
+      const earlyRepayment = await tx.earlyRepayment.create({
+        data: {
+          tenantId: getCurrentTenantId()!,
+          applicationId,
+          repayType,
+          amount,
+          principal,
+          interest,
+          penalty: dto.penalty ?? 0,
+          reason: dto.reason
+        }
+      })
+
+      // 2. 处理还款计划
+      if (repayType === 'FULL') {
+        // 提前结清：标记所有未还清计划为已还清
+        const unpaidPlans = await tx.repaymentPlan.findMany({
+          where: {
+            applicationId,
+            status: { in: [RepaymentStatus.NOT_DUE, RepaymentStatus.OVERDUE, RepaymentStatus.PARTIAL] }
+          }
+        })
+        // 逐条更新，确保 paidPrincipal/paidInterest/paidTotal 与 principal/interest/totalAmount 一致
+        for (const plan of unpaidPlans) {
+          const planPrincipal = Number(plan.principal)
+          const planInterest = Number(plan.interest)
+          const planTotal = Number(plan.totalAmount)
+          await tx.repaymentPlan.update({
+            where: { id: plan.id },
+            data: {
+              status: RepaymentStatus.PAID,
+              paidPrincipal: Number(plan.paidPrincipal) + planPrincipal,
+              paidInterest: Number(plan.paidInterest) + planInterest,
+              paidTotal: Number(plan.paidTotal) + planTotal,
+              paidAt: new Date()
+            }
+          })
+        }
+        // 更新订单状态为已结清
+        await tx.application.update({
+          where: { id: applicationId },
+          data: {
+            status: ApplicationStatus.SETTLED,
+            ...flowPatch(ApplicationStatus.SETTLED)
+          }
+        })
+      } else {
+        // 部分提前：调整第一个未还清计划的金额
+        const plan = await tx.repaymentPlan.findFirst({
+          where: this.addTenantId({
+            applicationId,
+            status: { in: [RepaymentStatus.NOT_DUE, RepaymentStatus.OVERDUE, RepaymentStatus.PARTIAL] }
+          }),
+          orderBy: { period: 'asc' }
+        })
+        if (plan) {
+          const planPrincipal = Number(plan.principal)
+          const planInterest = Number(plan.interest)
+          // 如果用户输入的 principal/interest 超过计划值，取计划值
+          const adjustPrincipal = Math.min(principal, planPrincipal)
+          const adjustInterest = Math.min(interest, planInterest)
+          const adjustTotal = adjustPrincipal + adjustInterest
+
+          const newPaidPrincipal = Number(plan.paidPrincipal) + adjustPrincipal
+          const newPaidInterest = Number(plan.paidInterest) + adjustInterest
+          const newPaidTotal = Number(plan.paidTotal) + adjustTotal
+          const planTotalDue = Number(plan.totalAmount) + Number(plan.penaltyAmount)
+          const nextStatus = newPaidTotal >= planTotalDue ? RepaymentStatus.PAID : RepaymentStatus.PARTIAL
+
+          await tx.repaymentPlan.update({
+            where: { id: plan.id },
+            data: {
+              paidPrincipal: newPaidPrincipal,
+              paidInterest: newPaidInterest,
+              paidTotal: newPaidTotal,
+              status: nextStatus,
+              paidAt: nextStatus === RepaymentStatus.PAID ? new Date() : plan.paidAt
+            }
+          })
+        }
       }
+
+      return earlyRepayment
     })
   }
 
@@ -1898,7 +2009,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     const term = Number(application.approvedTerm ?? application.term)
     const amount = Number(dto.disburseAmount)
     const annualRate = Number(application.approvedRate ?? application.rate)
-    const monthlyRate = annualRate / 12
+    const monthlyRate = annualRate / 100 / 12
     // 统一舍入：先将月供舍入到分，后续计算全部基于舍入后的值，避免浮点累积误差
     const roundedMonthlyPrincipal = Math.round((amount / term) * 100) / 100
     const baseDueDate = dto.firstDueDate
@@ -1949,6 +2060,7 @@ export class ApplicationService extends BaseBusinessCrudService<
             approver: { select: { id: true, userName: true, nickName: true } },
           },
         },
+        disbursement: true,
       },
     });
 
@@ -1970,10 +2082,36 @@ export class ApplicationService extends BaseBusinessCrudService<
       nodeSortMap[node.nodeCode] = (rc.sort as number) || Number(node.nodeCode);
     }
 
-    // 构建审批记录索引：stage → 最新审批
+    // 构建审批记录索引：stage → 最新审批（同一 stage 只保留最新）
     const approvalByStage = new Map<string, typeof application.approvals[number]>();
     for (const approval of application.approvals) {
-      approvalByStage.set(approval.stage, approval);
+      const prev = approvalByStage.get(approval.stage);
+      if (!prev || new Date(approval.createdAt).getTime() >= new Date(prev.createdAt).getTime()) {
+        approvalByStage.set(approval.stage, approval);
+      }
+    }
+
+    // stage 字符串 → nodeCode 数字映射（与 Prisma 枚举一致）
+    const STAGE_TO_NODE: Record<string, string> = {
+      RISK_PRE: '1200',
+      FUNDER_PRE: '1250',
+      SUPPLEMENT: '1300',
+      FIRST_REVIEW: '1400',
+      FINAL_REVIEW: '1450',
+      FUNDER_REVIEW: '1500',
+      LOAN_REQUEST: '1700',
+    };
+
+    // 反向索引：nodeCode → 最新 approval，用于按 nodeCode 查找
+    const approvalByNode = new Map<string, typeof application.approvals[number]>();
+    for (const [stage, approval] of approvalByStage) {
+      const nodeCode = STAGE_TO_NODE[stage];
+      if (nodeCode) {
+        const prev = approvalByNode.get(nodeCode);
+        if (!prev || new Date(approval.createdAt).getTime() >= new Date(prev.createdAt).getTime()) {
+          approvalByNode.set(nodeCode, approval);
+        }
+      }
     }
 
     const currentNodeNum = Number(application.currentNode);
@@ -1992,7 +2130,7 @@ export class ApplicationService extends BaseBusinessCrudService<
       if (nodeNum > currentNodeNum) continue;
 
       const stage = node.nodeCode;
-      const approval = approvalByStage.get(stage);
+      const approval = approvalByNode.get(stage);
       const isCurrentNode = stage === currentNodeStr;
       const isPending = isCurrentNode && application.currentStatus === 10;
 
@@ -2036,6 +2174,17 @@ export class ApplicationService extends BaseBusinessCrudService<
           approvalStatus: '已完成',
           approvalCost: null,
         });
+      }
+    }
+
+    // 补充特殊备注来源（补件原因 / 放款备注）
+    for (const item of lifecycle) {
+      const nc = String(item.currentNode);
+      if (nc === '1300' && !item.approvalReason && application.supplementReason) {
+        item.approvalReason = application.supplementReason;
+      }
+      if (nc === '1800' && !item.approvalReason && application.disbursement?.remark) {
+        item.approvalReason = application.disbursement.remark;
       }
     }
 

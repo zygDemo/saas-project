@@ -92,9 +92,34 @@
                 {{ item.approvalTime }}
               </text>
             </view>
-            <text v-if="item.approvalReason" class="flow-record__reason">
-              {{ item.approvalReason }}
-            </text>
+            <view
+              v-if="item.approvalReason"
+              class="flow-record__reason"
+              :class="reasonClass(item)"
+            >
+              <text class="flow-record__reason-label">{{
+                reasonLabel(item)
+              }}</text>
+              <text
+                class="flow-record__reason-text"
+                :class="{ 'is-clamped': needsClamp(item) && !isExpanded(idx) }"
+                >{{ item.approvalReason }}</text
+              >
+              <view
+                v-if="needsClamp(item)"
+                class="flow-record__reason-toggle"
+                @click="toggleExpand(idx)"
+              >
+                <text class="flow-record__reason-toggle-text">{{
+                  isExpanded(idx) ? "收起" : "展开全部"
+                }}</text>
+                <u-icon
+                  :name="isExpanded(idx) ? 'arrow-up' : 'arrow-down'"
+                  size="22"
+                  color="#667eea"
+                />
+              </view>
+            </view>
           </view>
         </view>
       </scroll-view>
@@ -103,7 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 interface FlowRecordItem {
   currentNode: string;
@@ -125,8 +150,27 @@ const emit = defineEmits<{
   (e: "update:visible", value: boolean): void;
 }>();
 
+const expandedSet = ref(new Set<number>());
+
+function isExpanded(idx: number) {
+  return expandedSet.value.has(idx);
+}
+
+function toggleExpand(idx: number) {
+  const next = new Set(expandedSet.value);
+  if (next.has(idx)) next.delete(idx);
+  else next.add(idx);
+  expandedSet.value = next;
+}
+
+function needsClamp(item: FlowRecordItem) {
+  const reason = String(item?.approvalReason || "");
+  return reason.length > 80 || reason.includes("\n");
+}
+
 function onInput(val: boolean) {
   emit("update:visible", val);
+  if (!val) expandedSet.value = new Set();
 }
 
 const doneCount = computed(
@@ -156,6 +200,24 @@ function isReject(item: FlowRecordItem) {
   return ["拒绝", "驳回", "失败", "退回"].some((text) =>
     item.approvalStatus?.includes(text),
   );
+}
+
+function isSupplement(item: FlowRecordItem) {
+  return ["补件", "要求补件"].some((text) =>
+    item.approvalStatus?.includes(text),
+  );
+}
+
+function reasonLabel(item: FlowRecordItem) {
+  if (isReject(item)) return "驳回原因";
+  if (isSupplement(item)) return "补件要求";
+  return "审批备注";
+}
+
+function reasonClass(item: FlowRecordItem) {
+  if (isReject(item)) return "flow-record__reason--reject";
+  if (isSupplement(item)) return "flow-record__reason--supplement";
+  return "";
 }
 
 function dotClass(item: FlowRecordItem) {
@@ -501,14 +563,73 @@ function recordStateClass(item: FlowRecordItem) {
 }
 
 .flow-record__reason {
-  display: block;
-  font-size: 25rpx;
-  color: #4e5969;
-  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
   padding: 16rpx 18rpx;
   background: #f7f9fc;
   border-radius: 16rpx;
+  border: 1rpx solid #eef2f7;
+
+  &--reject {
+    background: linear-gradient(135deg, #fff5f5 0%, #fef2f2 100%);
+    border-color: rgba(239, 68, 68, 0.18);
+  }
+
+  &--supplement {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef9ee 100%);
+    border-color: rgba(245, 158, 11, 0.18);
+  }
+}
+
+.flow-record__reason-label {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #86909c;
+  line-height: 1;
+
+  .flow-record__reason--reject & {
+    color: #e34d59;
+  }
+
+  .flow-record__reason--supplement & {
+    color: #d97706;
+  }
+}
+
+.flow-record__reason-text {
+  font-size: 25rpx;
+  color: #4e5969;
+  line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
+
+  &.is-clamped {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
+
+  .flow-record__reason--reject & {
+    color: #991b1b;
+  }
+
+  .flow-record__reason--supplement & {
+    color: #92400e;
+  }
+}
+
+.flow-record__reason-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  align-self: flex-end;
+}
+
+.flow-record__reason-toggle-text {
+  font-size: 24rpx;
+  color: #667eea;
+  font-weight: 600;
 }
 </style>

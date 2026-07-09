@@ -40,10 +40,20 @@ export class MobileVehicleService {
         registerDate: parseDate(dto.registerDate),
         vehicleImgUrl: dto.vehicleImgUrl,
         color: dto.vehicleColor,
-        mileage: Number(dto.mileage),
+        mileage: dto.mileage != null ? Number(dto.mileage) : undefined,
         purchasePrice: centToYuan(dto.purchasePrice),
+        estimateValue: centToYuan(dto.valuationPrice),
         isMortgaged: dto.isMortgage === 1,
-        mortgageInfo: dto.isMortgage === 1 ? '已抵押' : undefined
+        mortgageInfo: dto.isMortgage === 1 ? '已抵押' : undefined,
+        fuelType: dto.fuelType,
+        isFault: dto.isFault,
+        purchaseType: dto.purchaseType,
+        purchaseDate: parseDate(dto.purchaseDate),
+        loanAmount: centToYuan(dto.loanAmount),
+        loanTerm: dto.loanTerm,
+        monthlyPayment: centToYuan(dto.monthlyPayment),
+        isInsurance: dto.isInsurance,
+        insuranceExpirationDate: parseDate(dto.insuranceExpirationDate)
       }
 
       const vehicle = current

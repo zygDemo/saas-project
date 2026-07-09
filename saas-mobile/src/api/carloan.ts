@@ -377,12 +377,12 @@ export function useCarloanApi() {
       http.post<ApiResponse<IdCardInfo>>("/m/user/addOrUpdateUserBasic", data),
     /** 联系人信息保存（uuid 通过 URL 参数传递） */
     addOrUpdateContact: (data: ContactInfo) =>
-      http.post(`/m/user/addOrUpdateContact`, data),
+      http.post(`/m/contact/addOrUpdateContact`, data),
     /** 获取联系人列表 */
     getContacts: (userUuid: string) =>
-      http.get("/m/user/getContacts", { userUuid }),
+      http.get("/m/contact/getContacts", { userUuid }),
     /** 删除联系人 */
-    deleteContact: (id: number) => http.delete(`/m/user/deleteContact/${id}`),
+    deleteContact: (id: number) => http.delete(`/m/contact/deleteContact/${id}`),
     /** 创建/更新身份证信息 */
     addOrUpdateIdCardInfo: (data: IdCardInfo) =>
       http.post<ApiResponse<IdCardInfo>>("/m/user/addOrUpdateIdCardInfo", data),
@@ -617,11 +617,11 @@ export function useCarloanApi() {
     deleteBankCard: (id: number) =>
       http.post(`/m/bank-card/delete/${id}`),
 
-    /** 额度确认（复用审批接口传核定金额） */
+    /** 额度确认 */
     confirmAmount: (data: { applicationId: number; approverId: number; approvedAmount: number; term?: number; rate?: number }) =>
-      http.post(`/application/${data.applicationId}/approve`, {
-        approverId: data.approverId,
-        amount: data.approvedAmount,
+      http.post('/m/post-loan/confirm-amount', {
+        applicationId: data.applicationId,
+        approvedAmount: data.approvedAmount,
         term: data.term,
         rate: data.rate,
       }),
@@ -633,6 +633,10 @@ export function useCarloanApi() {
     /** 申请提前还款 */
     applyEarlyRepayment: (data: { applicationId: number; repayType?: string; amount: number; principal: number; interest: number; penalty?: number; reason?: string }) =>
       http.post('/m/post-loan/early-repayment', data),
+
+    /** 登记还款 */
+    registerRepayment: (data: { applicationId: number; amount: number; principal?: number; interest?: number; penalty?: number; paymentMethod: string; transactionNo?: string; remark?: string }) =>
+      http.post('/m/post-loan/register-repayment', data),
 
     /** 获取订单详情（用于请款确认） */
     getApplicationDetail: (id: number | string) =>

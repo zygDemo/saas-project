@@ -1,5 +1,5 @@
 <template>
-  <app-page nav-title="抵押办理">
+  <app-page nav-title="抵押办理" :back-url="backUrl">
     <view class="mortgage-page">
       <!-- 说明卡片 -->
       <view class="intro-card">
@@ -95,6 +95,9 @@
 
       <!-- 底部按钮 -->
       <view class="footer-actions">
+        <u-button type="default" size="large" shape="circle" plain @click="goBack">
+          上一步
+        </u-button>
         <u-button
           type="primary"
           size="large"
@@ -119,6 +122,28 @@ import AppForm from "@/components/app-form/app-form.vue";
 const businessApi = useCarloanApi();
 const SIGN_PROGRESS_STORAGE_KEY = "SIGN_PROGRESS_MAP";
 const SIGN_MORTGAGE_STORAGE_KEY = "SIGN_MORTGAGE_MAP";
+
+const creditOrderId = ref("");
+const uuidVal = ref("");
+const applicationId = ref(null);
+const submitting = ref(false);
+const backUrl = ref("");
+
+const form = reactive({
+  mortgageType: "SELF",
+  appointmentDate: "",
+  appointmentTime: "",
+  mortgageAddress: "",
+  contactName: "",
+  contactPhone: "",
+  registerNo: "",
+  remark: "",
+});
+
+const files = reactive({
+  mortgageCert: "",
+  registerCert: "",
+});
 
 function getStorageMap(key) {
   const value = uni.getStorageSync(key);
@@ -160,26 +185,6 @@ function loadLocalMortgage() {
   Object.assign(form, localMortgage);
   if (localMortgage.files) Object.assign(files, localMortgage.files);
 }
-
-const creditOrderId = ref("");
-const uuidVal = ref("");
-const submitting = ref(false);
-
-const form = reactive({
-  mortgageType: "SELF",
-  appointmentDate: "",
-  appointmentTime: "",
-  mortgageAddress: "",
-  contactName: "",
-  contactPhone: "",
-  registerNo: "",
-  remark: "",
-});
-
-const files = reactive({
-  mortgageCert: "",
-  registerCert: "",
-});
 
 const typeOptions = [
   {
@@ -252,8 +257,32 @@ onLoad((options) => {
   uuidVal.value = options?.uuid || "";
   form.contactName = options?.customerName || "";
   form.contactPhone = options?.customerPhone || "";
+  backUrl.value = options?.backUrl || "";
   loadLocalMortgage();
+  loadDetail();
 });
+
+async function loadDetail() {
+  if (!creditOrderId.value) return;
+  try {
+    const res = await businessApi.getCreditDetailByOrderId(creditOrderId.value);
+    const d = res?.data || res || {};
+    applicationId.value = Number(d.id || d.applicationId || 0) || null;
+    form.contactName = form.contactName || d.customerName || d.name || "";
+    form.contactPhone =
+      form.contactPhone || d.customerPhone || d.phone || d.telephone || "";
+  } catch (e) {
+    console.error("获取订单详情失败", e);
+  }
+}
+
+function goBack() {
+  if (backUrl.value) {
+    uni.redirectTo({ url: backUrl.value });
+    return;
+  }
+  uni.navigateBack();
+}
 
 function uploadImage(key) {
   uni.chooseImage({
@@ -295,6 +324,10 @@ async function handleSubmit() {
     $u.toast("请输入正确的联系电话", "error");
     return;
   }
+  if (!applicationId.value) {
+    $u.toast("未找到订单信息，请刷新后重试", "error");
+    return;
+  }
 
   submitting.value = true;
   try {
@@ -307,9 +340,9 @@ async function handleSubmit() {
     saveSignProgress("SIGNED");
     $u.toast("提交成功", "success");
     setTimeout(() => {
-      uni.navigateBack();
+      goBack();
     }, 800);
-  } catch (e) {
+  } catch {
     $u.toast("提交失败，请重试", "error");
   } finally {
     submitting.value = false;
@@ -512,10 +545,16 @@ async function handleSubmit() {
   left: 0;
   right: 0;
   bottom: 0;
+  display: flex;
+  gap: 18rpx;
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+
+  :deep(.u-btn) {
+    flex: 1;
+  }
 }
 
 /* 深色模式适配 */

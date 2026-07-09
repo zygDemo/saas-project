@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../prisma/prisma.service'
 import { mapApplication } from './mobile-business.utils'
-import { findApplication } from './mobile-business.db-helpers'
 
 @Injectable()
 export class MobilePostLoanService {
@@ -16,8 +15,8 @@ export class MobilePostLoanService {
       where: { id: applicationId },
       data: {
         approvedAmount: dto.approvedAmount,
-        ...(dto.term && { term: dto.term }),
-        ...(dto.rate && { rate: dto.rate })
+        ...(dto.term && { approvedTerm: dto.term }),
+        ...(dto.rate && { approvedRate: dto.rate })
       }
     })
   }
@@ -45,6 +44,54 @@ export class MobilePostLoanService {
     })
   }
 
+  async registerRepaymentMobile(applicationId: number, dto: { amount: number; principal?: number; interest?: number; penalty?: number; paymentMethod: string; transactionNo?: string; remark?: string }) {
+    const plan = await this.prisma.repaymentPlan.findFirst({
+      where: {
+        applicationId,
+        status: { in: ['NOT_DUE', 'OVERDUE', 'PARTIAL'] as any }
+      },
+      orderBy: { period: 'asc' }
+    })
+    if (!plan) throw new (require('@nestjs/common').BadRequestException)('没有待还款的计划')
+
+    const principal = dto.principal ?? dto.amount
+    const interest = dto.interest ?? 0
+    const penalty = dto.penalty ?? 0
+    const paidPrincipal = Number(plan.paidPrincipal) + principal
+    const paidInterest = Number(plan.paidInterest) + interest
+    const paidTotal = Number(plan.paidTotal) + dto.amount
+    const totalDue = Number(plan.totalAmount) + Number(plan.penaltyAmount)
+    const nextStatus = paidTotal >= totalDue ? 'PAID' : 'PARTIAL'
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.repaymentRecord.create({
+        data: {
+          tenantId: 1,
+          planId: plan.id,
+          amount: dto.amount,
+          principal,
+          interest,
+          penalty,
+          paymentMethod: dto.paymentMethod,
+          transactionNo: dto.transactionNo,
+          voucherUrl: undefined,
+          remark: dto.remark,
+          createdBy: undefined
+        }
+      })
+      return tx.repaymentPlan.update({
+        where: { id: plan.id },
+        data: {
+          paidPrincipal,
+          paidInterest,
+          paidTotal,
+          status: nextStatus,
+          paidAt: nextStatus === 'PAID' ? new Date() : plan.paidAt
+        }
+      })
+    })
+  }
+
   async getApplicationDetailMobile(id: number) {
     const app = await this.prisma.application.findFirst({
       where: { id },
@@ -54,7 +101,7 @@ export class MobilePostLoanService {
         funder: true,
         disbursement: true,
         signRecord: true,
-        repaymentPlans: { orderBy: { period: 'asc' } }
+        repayments: { orderBy: { period: 'asc' } }
       }
     })
     if (!app) throw new NotFoundException('订单不存在')

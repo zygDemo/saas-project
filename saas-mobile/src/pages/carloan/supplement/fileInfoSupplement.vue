@@ -1,5 +1,5 @@
 <template>
-  <app-page nav-title="文件信息">
+  <app-page nav-title="文件信息" :back-url="applyDetailUrl">
     <view class="file-supplement-page">
       <view v-if="!fileGroups.length" class="empty-wrap">
         <u-empty mode="list" text="暂无文件配置" />
@@ -28,8 +28,16 @@
         </view>
       </template>
 
-      <view v-if="!readonly" class="footer-btn">
-        <u-button type="primary" shape="circle" @click="handleSubmit">
+      <view class="footer-btn">
+        <u-button type="default" shape="circle" @click="goApplyDetail">
+          上一步
+        </u-button>
+        <u-button
+          v-if="!readonly"
+          type="primary"
+          shape="circle"
+          @click="handleSubmit"
+        >
           提交
         </u-button>
       </view>
@@ -114,6 +122,21 @@ const fileList = ref([]);
 const IMAGE_TYPES = ["jpg", "jpeg", "png", "gif", "webp", "bmp"];
 const VIDEO_TYPES = ["mp4", "mov", "avi", "mkv", "wmv", "m4v"];
 
+const applyDetailUrl = computed(() =>
+  buildRoute(
+    APP_ROUTES.carloan.precheck.applyDetail,
+    buildSupplementRouteQuery({
+      uuid: carloanStore.pageContext.uuid,
+      creditOrderId: carloanStore.pageContext.creditOrderId,
+      readonly: readonly.value ? 1 : undefined,
+    }),
+  ),
+);
+
+function goApplyDetail() {
+  uni.redirectTo({ url: applyDetailUrl.value });
+}
+
 const uploadAction = `${API_BASE_URL}/m/file/uploadWithType`;
 const uploadMaxSize = UPLOAD_MAX_SIZE * 1024 * 1024;
 
@@ -124,7 +147,7 @@ const uploadHeader = computed(() => {
     : localStore.token || "";
 
   return {
-    Authorization: tokenUtil.buildAuthorization(token),
+    "Authorization": tokenUtil.buildAuthorization(token),
     "X-Tenant-ID": TENANT_ID,
   };
 });
@@ -665,7 +688,7 @@ async function handleSubmit() {
     $u.toast("提交成功", "success");
     setTimeout(() => {
       uni.redirectTo({
-        url: buildRoute(APP_ROUTES.carloan.supplement.supplementDetail, buildSupplementRouteQuery({ creditOrderId: carloanStore.pageContext.creditOrderId })),
+        url: applyDetailUrl.value,
       });
     }, 1500);
   } catch (e) {
@@ -736,9 +759,15 @@ async function handleSubmit() {
   left: 0;
   right: 0;
   bottom: 0;
+  display: flex;
+  gap: 24rpx;
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+
+  :deep(.u-btn) {
+    flex: 1;
+  }
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <app-page nav-title="GPS安装预约">
+  <app-page nav-title="GPS安装预约" :back-url="backUrl">
     <view class="gps-page">
       <!-- 安装说明 -->
       <view class="intro-card">
@@ -47,6 +47,9 @@
 
       <!-- 底部按钮 -->
       <view class="footer-actions">
+        <u-button type="default" size="large" shape="circle" plain @click="goBack">
+          上一步
+        </u-button>
         <u-button
           type="primary"
           size="large"
@@ -71,6 +74,23 @@ import AppForm from "@/components/app-form/app-form.vue";
 const businessApi = useCarloanApi();
 const SIGN_PROGRESS_STORAGE_KEY = "SIGN_PROGRESS_MAP";
 const SIGN_GPS_STORAGE_KEY = "SIGN_GPS_APPOINTMENT_MAP";
+
+const creditOrderId = ref("");
+const uuidVal = ref("");
+const customerName = ref("");
+const customerPhone = ref("");
+const applicationId = ref(null);
+const submitting = ref(false);
+const backUrl = ref("");
+
+const form = reactive({
+  appointmentDate: "",
+  appointmentTime: "",
+  installAddress: "",
+  contactName: "",
+  contactPhone: "",
+  remark: "",
+});
 
 function getStorageMap(key) {
   const value = uni.getStorageSync(key);
@@ -102,21 +122,6 @@ function saveLocalAppointment() {
   };
   uni.setStorageSync(SIGN_GPS_STORAGE_KEY, appointmentMap);
 }
-
-const creditOrderId = ref("");
-const uuidVal = ref("");
-const customerName = ref("");
-const customerPhone = ref("");
-const submitting = ref(false);
-
-const form = reactive({
-  appointmentDate: "",
-  appointmentTime: "",
-  installAddress: "",
-  contactName: "",
-  contactPhone: "",
-  remark: "",
-});
 
 const formItems = computed(() => [
   {
@@ -168,13 +173,31 @@ onLoad((options) => {
   uuidVal.value = options?.uuid || "";
   customerName.value = options?.customerName || "";
   customerPhone.value = options?.customerPhone || "";
+  backUrl.value = options?.backUrl || "";
   form.contactName = customerName.value;
   form.contactPhone = customerPhone.value;
 });
 
 onMounted(() => {
   loadAppointment();
+  loadDetail();
 });
+
+async function loadDetail() {
+  if (!creditOrderId.value) return;
+  try {
+    const res = await businessApi.getCreditDetailByOrderId(creditOrderId.value);
+    const d = res?.data || res || {};
+    applicationId.value = Number(d.id || d.applicationId || 0) || null;
+    customerName.value = customerName.value || d.customerName || d.name || "";
+    customerPhone.value =
+      customerPhone.value || d.customerPhone || d.phone || d.telephone || "";
+    form.contactName = form.contactName || customerName.value;
+    form.contactPhone = form.contactPhone || customerPhone.value;
+  } catch (e) {
+    console.error("获取订单详情失败", e);
+  }
+}
 
 async function loadAppointment() {
   try {
@@ -186,6 +209,14 @@ async function loadAppointment() {
   } catch (e) {
     console.error("获取预约信息失败", e);
   }
+}
+
+function goBack() {
+  if (backUrl.value) {
+    uni.redirectTo({ url: backUrl.value });
+    return;
+  }
+  uni.navigateBack();
 }
 
 async function handleSubmit() {
@@ -209,6 +240,10 @@ async function handleSubmit() {
     $u.toast("请输入正确的联系电话", "error");
     return;
   }
+  if (!applicationId.value) {
+    $u.toast("未找到订单信息，请刷新后重试", "error");
+    return;
+  }
 
   submitting.value = true;
   try {
@@ -221,9 +256,9 @@ async function handleSubmit() {
     saveSignProgress("MORTGAGING");
     $u.toast("预约提交成功", "success");
     setTimeout(() => {
-      uni.navigateBack();
+      goBack();
     }, 800);
-  } catch (e) {
+  } catch {
     $u.toast("预约失败，请重试", "error");
   } finally {
     submitting.value = false;
@@ -373,10 +408,16 @@ async function handleSubmit() {
   left: 0;
   right: 0;
   bottom: 0;
+  display: flex;
+  gap: 18rpx;
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+
+  :deep(.u-btn) {
+    flex: 1;
+  }
 }
 
 /* 深色模式适配 */

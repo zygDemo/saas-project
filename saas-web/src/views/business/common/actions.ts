@@ -309,6 +309,84 @@ export const applicationActions: ActionConfig[] = [
     path: (row) => `/application/${row.id}/settle`,
     fields: [{ prop: 'remark', label: '结清备注', type: 'textarea' }],
     visible: (row) => String(row.status) === 'DISBURSED'
-  }
+  },
+  {
+    name: 'register-repayment',
+    label: '登记还款',
+    type: 'primary',
+    path: (row) => `/application/${row.id}/register-repayment`,
+    fields: [
+      { prop: 'amount', label: '还款金额', type: 'number', precision: 2, required: true },
+      { prop: 'principal', label: '本金', type: 'number', precision: 2 },
+      { prop: 'interest', label: '利息', type: 'number', precision: 2 },
+      { prop: 'penalty', label: '罚息', type: 'number', precision: 2 },
+      { prop: 'paymentMethod', label: '还款方式', type: 'select', options: [
+        { label: '银行转账', value: 'BANK_TRANSFER' },
+        { label: '现金', value: 'CASH' },
+        { label: '支付宝', value: 'ALIPAY' },
+        { label: '微信', value: 'WECHAT' }
+      ], required: true },
+      { prop: 'transactionNo', label: '交易流水号' },
+      { prop: 'remark', label: '备注', type: 'textarea' },
+      { prop: 'createdBy', label: '登记人', type: 'number', visible: false }
+    ],
+    defaults: (row) => {
+      // 从还款计划中预填当期金额
+      const plans = (row.repayments || []) as Record<string, unknown>[]
+      const unpaid = plans.find((p: Record<string, unknown>) => {
+        const s = String(p.status)
+        return s !== 'PAID' && s !== 'SETTLED'
+      })
+      return {
+        amount: unpaid?.totalAmount ?? 0,
+        principal: unpaid?.principal ?? 0,
+        interest: unpaid?.interest ?? 0,
+        penalty: unpaid?.penaltyAmount ? Number(unpaid.penaltyAmount) > 0 ? unpaid.penaltyAmount : undefined : undefined,
+        paymentMethod: 'BANK_TRANSFER'
+      }
+    },
+    visible: (row) => String(row.status) === 'DISBURSED'
+  },
+  {
+    name: 'early-repayment',
+    label: '提前还款',
+    type: 'warning',
+    path: (row) => `/application/${row.id}/early-repayment`,
+    fields: [
+      { prop: 'repayType', label: '还款类型', type: 'select', options: [
+        { label: '提前结清', value: 'FULL' },
+        { label: '部分提前', value: 'PARTIAL' }
+      ], required: true },
+      { prop: 'amount', label: '还款总额', type: 'number', precision: 2, required: true },
+      { prop: 'principal', label: '本金', type: 'number', precision: 2, required: true },
+      { prop: 'interest', label: '利息', type: 'number', precision: 2, required: true },
+      { prop: 'penalty', label: '违约金', type: 'number', precision: 2 },
+      { prop: 'reason', label: '提前还款原因', type: 'textarea' }
+    ],
+    defaults: (row) => {
+      // 从还款计划中自动计算剩余金额
+      const plans = (row.repayments || []) as Record<string, unknown>[]
+      let remainingPrincipal = 0
+      let remainingInterest = 0
+      for (const p of plans) {
+        const s = String(p.status)
+        if (s !== 'PAID' && s !== 'SETTLED') {
+          remainingPrincipal += Number(p.principal || 0)
+          remainingInterest += Number(p.interest || 0)
+        }
+      }
+      const total = Math.round((remainingPrincipal + remainingInterest) * 100) / 100
+      // 保存原始值用于部分结清时重算
+      ;(row as Record<string, unknown>).__earlyRepayOrigPrincipal = remainingPrincipal
+      ;(row as Record<string, unknown>).__earlyRepayOrigInterest = remainingInterest
+      return {
+        repayType: 'FULL',
+        amount: total,
+        principal: Math.round(remainingPrincipal * 100) / 100,
+        interest: Math.round(remainingInterest * 100) / 100
+      }
+    },
+    visible: (row) => String(row.status) === 'DISBURSED'
+  },
 ]
 

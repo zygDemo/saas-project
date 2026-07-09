@@ -1,5 +1,5 @@
 <template>
-  <app-page nav-title="车辆资料">
+  <app-page nav-title="车辆资料" :back-url="applyDetailUrl">
     <view class="carinfo-supplement-page">
       <!-- 车辆基本信息 -->
       <view class="section-title-row">
@@ -59,8 +59,12 @@
       <AppForm :modelValue="form" :items="readonlyEvaluationFormItems" />
 
       <!-- 底部按钮 -->
-      <view v-if="!readonly" class="footer-btn">
+      <view class="footer-btn">
+        <u-button type="default" shape="circle" @click="goApplyDetail">
+          上一步
+        </u-button>
         <u-button
+          v-if="!readonly"
           type="default"
           shape="circle"
           :loading="submitLoading"
@@ -69,6 +73,7 @@
           保存
         </u-button>
         <u-button
+          v-if="!readonly"
           type="primary"
           shape="circle"
           :loading="submitLoading"
@@ -105,6 +110,21 @@ const priceLoading = ref(false);
 const modelLoading = ref(false);
 const creditOrderId = ref("");
 const readonly = ref(false);
+
+const applyDetailUrl = computed(() =>
+  buildRoute(
+    APP_ROUTES.carloan.precheck.applyDetail,
+    buildSupplementRouteQuery({
+      uuid: carloanStore.pageContext.uuid,
+      creditOrderId: creditOrderId.value || carloanStore.pageContext.creditOrderId,
+      readonly: readonly.value ? 1 : undefined,
+    }),
+  ),
+);
+
+function goApplyDetail() {
+  uni.redirectTo({ url: applyDetailUrl.value });
+}
 
 /** 安全转为字符串 */
 function toStr(val: unknown): string {
@@ -202,15 +222,14 @@ async function loadData() {
     if (res?.code === 200 && res.data) {
       const data = res.data as Record<string, unknown>;
 
-  // 通用字段映射加载
-  for (const [apiField, { key, transform }] of Object.entries(FIELD_MAP)) {
-    const val = data[apiField];
-    if (val !== undefined && val !== null) {
-      const typedVal = val as string;
-      form[key] = transform ? transform(typedVal) : typedVal;
-    }
-  }
-
+      // 通用字段映射加载
+      for (const [apiField, { key, transform }] of Object.entries(FIELD_MAP)) {
+        const val = data[apiField];
+        if (val !== undefined && val !== null) {
+          const typedVal = val as string;
+          form[key] = transform ? transform(typedVal) : typedVal;
+        }
+      }
     }
   } catch (e) {
     console.error("加载车辆信息失败", e);
@@ -364,7 +383,6 @@ const readonlyEvaluationFormItems = computed(() =>
 /** 查询车价（通过车辆识别代码） */
 async function queryVehiclePrice() {
   if (readonly.value) return;
-  console.log(form);
   if (!form.vehicleCode) {
     $u.toast("请先确保车辆识别代码已录入");
     return;
