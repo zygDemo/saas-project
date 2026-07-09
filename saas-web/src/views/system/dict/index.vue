@@ -328,7 +328,9 @@
         await fetchUpdateDictType(typeForm.id, typeForm)
         ElMessage.success('更新成功')
       } else {
-        await fetchCreateDictType(typeForm)
+        // 创建时不发送 id 字段
+        const { id, ...createData } = typeForm
+        await fetchCreateDictType(createData)
         ElMessage.success('创建成功')
       }
       typeDialogVisible.value = false
@@ -342,11 +344,14 @@
     if (!selectedType.value) return
     submitting.value = true
     try {
-      const payload = { ...dataForm, typeId: selectedType.value.id }
       if (dataForm.id) {
+        const payload = { ...dataForm, typeId: selectedType.value.id }
         await fetchUpdateDictData(dataForm.id, payload)
         ElMessage.success('更新成功')
       } else {
+        // 创建时不发送 id 字段
+        const { id, ...createData } = dataForm
+        const payload = { ...createData, typeId: selectedType.value.id }
         await fetchCreateDictData(payload)
         ElMessage.success('创建成功')
       }
