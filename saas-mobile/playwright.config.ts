@@ -1,14 +1,19 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const host = process.env.PLAYWRIGHT_HOST || '127.0.0.1'
+const port = process.env.PLAYWRIGHT_PORT || '5173'
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://${host}:${port}/saas/mobile/`
+const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEB_SERVER === '1'
+
 /**
- * 移动端 H5 自动化测试配置
- * 使用 Playwright 模拟移动设备测试 uni-app H5 版本
+ * 移动端 H5 自动化测试配置。
+ * 默认启动本地 H5 服务；已有服务时可设置 PLAYWRIGHT_SKIP_WEB_SERVER=1 复用外部地址。
  */
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: 0, // 不重试
+  retries: 0,
   workers: 1,
   reporter: [
     ['html', { outputFolder: 'tests/e2e-report' }],
@@ -19,7 +24,7 @@ export default defineConfig({
     timeout: 10000,
   },
   use: {
-    baseURL: 'http://localhost:5173/saas/mobile/',
+    baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -39,6 +44,12 @@ export default defineConfig({
       },
     },
   ],
-  // 不自动启动 dev server，重用已有的
-  webServer: undefined,
+  webServer: skipWebServer
+    ? undefined
+    : {
+        command: `pnpm dev:h5 -- --host ${host} --port ${port}`,
+        url: baseURL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120000,
+      },
 })

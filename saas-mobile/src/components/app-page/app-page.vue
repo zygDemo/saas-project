@@ -25,12 +25,17 @@
       </u-transition>
     </view>
     <!-- 注意：使用自定义 layout 组件的 TabBar，不使用系统 TabBar -->
-    <app-tabbar v-if="showTabbar" />
+    <app-tabbar
+      v-if="showTabbar"
+      :active-tab="activeTab"
+      :scope="tabbarScope"
+    />
   </view>
 </template>
 
 <script setup lang="ts">
-import { navigateBackOrFallback } from "@/common/navigation";
+import { navigateBackOrFallback, TABBAR_SCOPES } from "@/common/navigation";
+import type { TabbarScope } from "@/common/navigation";
 import type { PropType } from "vue";
 import { $u } from "uview-pro";
 import { reactive } from "vue";
@@ -51,6 +56,14 @@ defineProps({
   showTabbar: {
     type: Boolean,
     default: false,
+  },
+  activeTab: {
+    type: Number,
+    default: 0,
+  },
+  tabbarScope: {
+    type: String as PropType<TabbarScope>,
+    default: TABBAR_SCOPES.portal,
   },
   customStyle: {
     type: [String, Object] as PropType<string | Record<string, unknown>>,

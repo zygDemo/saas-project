@@ -2,14 +2,16 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service'
 import { MobileContactDto } from './dto/mobile-business.dto'
 import { getCustomerByUuid } from './mobile-business.db-helpers'
+import { getRequiredTenantId } from '../../common/utils/helpers'
 
 @Injectable()
 export class MobileContactService {
   constructor(private readonly prisma: PrismaService) {}
 
   async addOrUpdateContact(dto: MobileContactDto) {
-    const customer = await getCustomerByUuid(this.prisma, dto.userUuid)
-    if (!customer) throw new NotFoundException('客户不存在')
+    const tenantId = getRequiredTenantId()
+    const customer = await getCustomerByUuid(this.prisma, dto.userUuid, tenantId)
+    if (!customer) throw new NotFoundException('客户不存在或无权访问')
 
     const relationMap: Record<number, string> = {
       1: '配偶',
@@ -53,7 +55,8 @@ export class MobileContactService {
   }
 
   async getContacts(userUuid: string) {
-    const customer = await getCustomerByUuid(this.prisma, userUuid)
+    const tenantId = getRequiredTenantId()
+    const customer = await getCustomerByUuid(this.prisma, userUuid, tenantId)
     if (!customer) return []
 
     return this.prisma.customerContact.findMany({

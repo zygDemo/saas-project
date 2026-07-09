@@ -183,7 +183,10 @@
   }
 
   function handleDetailAction(action: ActionConfig) {
-    if (currentRow.value) openAction(currentRow.value, action)
+    if (!currentRow.value) return
+    // 合并 config.value.actions 中对应的完整 action 配置（包含 path 和 fields）
+    const fullAction = config.value.actions.find((a) => a.name === action.name) || action
+    openAction(currentRow.value, fullAction)
   }
 
 

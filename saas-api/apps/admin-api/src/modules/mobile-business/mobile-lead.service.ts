@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service'
 import { RequestUser } from '../../common/types/request-user'
 import { MobileSalesLeadDto, MobileFollowUpDto } from './dto/mobile-business.dto'
 import { getDefaultOrg, getCustomerByUuid } from './mobile-business.db-helpers'
+import { getRequiredTenantId } from '../../common/utils/helpers'
 
 @Injectable()
 export class MobileLeadService {
@@ -65,7 +66,8 @@ export class MobileLeadService {
   }
 
   async addFollowUp(dto: MobileFollowUpDto, user: RequestUser) {
-    const customer = await getCustomerByUuid(this.prisma, dto.uuid)
+    const tenantId = getRequiredTenantId()
+    const customer = await getCustomerByUuid(this.prisma, dto.uuid, tenantId)
     if (!customer) throw new NotFoundException('客户不存在')
 
     const lead = await this.prisma.lead.findFirst({
@@ -100,7 +102,8 @@ export class MobileLeadService {
   }
 
   async getFollowUpList(uuid: string) {
-    const customer = await getCustomerByUuid(this.prisma, uuid)
+    const tenantId = getRequiredTenantId()
+    const customer = await getCustomerByUuid(this.prisma, uuid, tenantId)
     if (!customer) return []
 
     const lead = await this.prisma.lead.findFirst({

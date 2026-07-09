@@ -98,7 +98,7 @@
                 size="small"
                 shape="circle"
                 plain
-                @click.stop="urgeOrder(order)"
+                @click.stop="urgeOrder"
               />
             </view>
           </view>
@@ -179,7 +179,8 @@
 <script setup lang="ts">
 import { APP_ROUTES } from "@/common/navigation";
 import layout from "@/pages/layout/layout.vue";
-import { useFoodStore, type FoodOrder } from "@/stores/food";
+import { useFoodStore } from "@/stores/food";
+import type { FoodOrder } from "@/stores/food";
 import { computed, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { onShow } from "@dcloudio/uni-app";
@@ -237,7 +238,7 @@ const payOrder = (order: FoodOrder) => {
   });
 };
 
-const urgeOrder = (order: FoodOrder) => {
+const urgeOrder = () => {
   uni.showToast({ title: "已催单，商家正在加急制作中", icon: "none" });
 };
 

@@ -142,7 +142,7 @@ function mapIdCardBack(parsed: IdCardParsed, fields: IdCardFields): IdCardBackRe
     validDateEnd,
     validDate:
       back.validDate ||
-      (validDateStart || validDateEnd ? `${validDateStart}至${validDateEnd}` : "") ||
+      buildValidDate(validDateStart, validDateEnd) ||
       "",
   };
 }

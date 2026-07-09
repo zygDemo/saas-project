@@ -635,16 +635,11 @@ const bookList = ref<BookItem[]>([
 // 格式化字数
 const formatWordCount = (count?: number) => {
   if (!count) return "";
-  if (count >= 10000) return (count / 10000).toFixed(0) + "万字";
-  return count + "字";
+  if (count >= 10000) return `${(count / 10000).toFixed(0)}万字`;
+  return `${count}字`;
 };
 
 // 从API获取图书列表
-interface BookListResponse {
-  items: BookItem[];
-  total: number;
-}
-
 const fetchBooks = async (kw?: string, append = false) => {
   if (isLoadingMore.value) return;
   if (!append) {
@@ -693,7 +688,7 @@ const fetchBooks = async (kw?: string, append = false) => {
   } finally {
     isLoadingMore.value = false;
   }
-};
+}
 
 onLoad(() => {
   fetchCategories();
@@ -787,7 +782,7 @@ const filteredBooks = computed(() => {
 });
 
 // 从 API 加载真实分类
-const fetchCategories = async () => {
+async function fetchCategories() {
   try {
     const res = await readingApi.getCategories();
     const cats = (res?.data ?? []) as CategoryItem[];
@@ -821,16 +816,12 @@ const fetchCategories = async () => {
 };
 
 const formatNumber = (num: number) => {
-  if (num >= 10000000) return (num / 10000000).toFixed(1) + "千万";
-  if (num >= 10000) return (num / 10000).toFixed(1) + "万";
+  if (num >= 10000000) return `${(num / 10000000).toFixed(1)}千万`;
+  if (num >= 10000) return `${(num / 10000).toFixed(1)}万`;
   return num.toString();
 };
 
-
-
-
-
-const refreshDerivedBooks = () => {
+function refreshDerivedBooks() {
   freeBooks.value = bookList.value
     .filter((book) => book.originalPrice || !book.isSerial)
     .slice(0, 4)
@@ -838,9 +829,7 @@ const refreshDerivedBooks = () => {
       ...book,
       originalPrice: book.originalPrice || 20,
     }));
-};
-
-
+}
 
 const updateCountdown = () => {
   let total = 5 * 3600 + 23 * 60 + 45;
@@ -968,7 +957,7 @@ const goBookListDetail = (list: BookList) => {
   uni.showToast({ title: `查看书单：${list.title}`, icon: "none" });
 };
 
-const viewMore = (type: string) => {
+const viewMore = (_type: string) => {
   uni.showToast({ title: "更多功能开发中", icon: "none" });
 };
 </script>
@@ -1952,8 +1941,8 @@ const viewMore = (type: string) => {
     color: #b8bcc7;
   }
 }
-
 </style>
+
 <style>
 /* 覆盖全局竖线 */
 .section-title::before { display: none !important; }

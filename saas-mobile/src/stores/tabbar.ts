@@ -1,52 +1,56 @@
-import type { TabbarItem } from 'uview-pro/types/global'
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import {
+  getLayoutTabbar,
+  TABBAR_SCOPES,
+} from "@/common/navigation";
+import type { TabbarScope } from "@/common/navigation";
+import type { TabbarItem } from "uview-pro/types/global";
+import { defineStore } from "pinia";
+import { computed, ref } from "vue";
 
-export const useTabbarStore = defineStore('tabbar', () => {
-  const activeIndex = ref(0)
-  const tabbarList = ref<TabbarItem[]>([
-    {
-      text: '首页',
-      iconPath: 'home',
-      selectedIconPath: 'home-fill',
-      pagePath: '/pages/carloan/portal/workbench',
-      isDot: true,
-    },
-    {
-      text: '订单',
-      iconPath: 'order',
-      selectedIconPath: 'order-fill',
-      pagePath: '/pages/carloan/precheck/orderList',
-      isDot: true,
-    },
-    {
-      text: '我的',
-      iconPath: 'account',
-      selectedIconPath: 'account-fill',
-      pagePath: '/pages/my/my',
-      count: 3,
-    },
-  ])
+export const useTabbarStore = defineStore("tabbar", () => {
+  const activeIndex = ref(0);
+  const scope = ref<TabbarScope>(TABBAR_SCOPES.portal);
+  const badgeMap = ref<Record<number, number>>({});
+  const dotMap = ref<Record<number, boolean>>({});
+
+  const tabbarList = computed<TabbarItem[]>(() =>
+    getLayoutTabbar(scope.value).map((item, index) => ({
+      text: item.text,
+      iconPath: item.iconPath,
+      selectedIconPath: item.selectedIconPath,
+      pagePath: item.route,
+      customIcon: item.customIcon,
+      count: badgeMap.value[index] ?? item.count,
+      isDot: dotMap.value[index] ?? item.isDot,
+    })),
+  );
 
   const setActiveIndex = (index: number) => {
-    activeIndex.value = index
-  }
+    activeIndex.value = index;
+  };
+
+  const setScope = (nextScope: TabbarScope) => {
+    scope.value = nextScope;
+    activeIndex.value = 0;
+  };
 
   const updateBadge = (index: number, count: number) => {
-    tabbarList.value[index].count = count
-  }
+    badgeMap.value[index] = count;
+  };
 
   const updateIsDot = (index: number, isDot: boolean) => {
-    tabbarList.value[index].isDot = isDot
-  }
+    dotMap.value[index] = isDot;
+  };
 
   return {
     activeIndex,
+    scope,
     tabbarList,
     setActiveIndex,
+    setScope,
     updateBadge,
     updateIsDot,
-  }
+  };
 }, {
   persist: true,
-})
+});

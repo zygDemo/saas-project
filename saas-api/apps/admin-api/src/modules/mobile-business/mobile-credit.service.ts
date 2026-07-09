@@ -14,6 +14,7 @@ import {
 import { mapCreditStatus, mapBusinessNode, statusFromBusinessNode, mapApplication } from './mobile-business.utils'
 import { getCustomerByUuid, getDefaultProduct, getDefaultFunder, findApplication, findLatestDraftApplication, findDraftApplicationByNo } from './mobile-business.db-helpers'
 import { MobileFileService } from './mobile-file.service'
+import { getRequiredTenantId } from '../../common/utils/helpers'
 
 @Injectable()
 export class MobileCreditService {
@@ -24,7 +25,8 @@ export class MobileCreditService {
   ) {}
 
   async creditApply(dto: MobileCreditApplyDto, user: RequestUser) {
-    const customer = await getCustomerByUuid(this.prisma, dto.uuid)
+    const tenantId = getRequiredTenantId()
+    const customer = await getCustomerByUuid(this.prisma, dto.uuid, tenantId)
     const product = await getDefaultProduct(this.prisma, customer.orgId)
     const funder = await getDefaultFunder(this.prisma, customer.orgId)
     const rate = product ? Number(product.minRate) : 0.006

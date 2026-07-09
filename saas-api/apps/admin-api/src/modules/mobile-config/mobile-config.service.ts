@@ -61,8 +61,9 @@ export class MobileConfigService {
 
   /** 获取指定用户的移动端模块配置（包含角色信息，供管理端编辑使用） */
   async getUserConfig(userId: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+    const tenantId = getRequiredTenantId()
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, tenantId },
       select: { mobileModules: true, mobileMultiModule: true, roles: { select: { roleId: true, role: { select: { name: true } } } } },
     });
     if (!user) throw new NotFoundException('用户不存在');
@@ -80,7 +81,8 @@ export class MobileConfigService {
 
   /** 更新指定用户的移动端模块配置 */
   async updateUserConfig(userId: number, dto: SaveEntityMobileConfigDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const tenantId = getRequiredTenantId()
+    const user = await this.prisma.user.findFirst({ where: { id: userId, tenantId } });
     if (!user) throw new NotFoundException('用户不存在');
 
     if (dto.mobileModules) this.validateModuleKeys(dto.mobileModules);
@@ -109,8 +111,9 @@ export class MobileConfigService {
 
   /** 获取指定角色的移动端模块配置 */
   async getRoleConfig(roleId: number) {
-    const role = await this.prisma.role.findUnique({
-      where: { id: roleId },
+    const tenantId = getRequiredTenantId()
+    const role = await this.prisma.role.findFirst({
+      where: { id: roleId, tenantId },
       select: { name: true, mobileModules: true, mobileMultiModule: true },
     });
     if (!role) throw new NotFoundException('角色不存在');
@@ -128,7 +131,8 @@ export class MobileConfigService {
 
   /** 更新指定角色的移动端模块配置 */
   async updateRoleConfig(roleId: number, dto: SaveEntityMobileConfigDto) {
-    const role = await this.prisma.role.findUnique({ where: { id: roleId } });
+    const tenantId = getRequiredTenantId()
+    const role = await this.prisma.role.findFirst({ where: { id: roleId, tenantId } });
     if (!role) throw new NotFoundException('角色不存在');
 
     if (dto.mobileModules) this.validateModuleKeys(dto.mobileModules);
@@ -189,8 +193,9 @@ export class MobileConfigService {
     // 2. 查角色级配置（取第一个角色）
     const firstRoleId = user.roles[0]?.roleId;
     if (firstRoleId) {
-      const role = await this.prisma.role.findUnique({
-        where: { id: firstRoleId },
+      const tenantId = getRequiredTenantId()
+      const role = await this.prisma.role.findFirst({
+        where: { id: firstRoleId, tenantId },
         select: { mobileModules: true, mobileMultiModule: true },
       });
       const roleModules = role?.mobileModules as string[] | null;

@@ -33,14 +33,19 @@ export async function getDefaultFunder(prisma: PrismaService, orgId: number) {
   })
 }
 
-export async function findCustomerByUuid(prisma: PrismaService, uuid: string) {
+export async function findCustomerByUuid(prisma: PrismaService, uuid: string, tenantId?: number) {
   const id = Number(uuid)
   if (!Number.isInteger(id) || id <= 0) return null
-  return prisma.customer.findFirst({ where: { id } })
+  return prisma.customer.findFirst({ 
+    where: { 
+      id,
+      ...(tenantId ? { tenantId } : {})
+    } 
+  })
 }
 
-export async function getCustomerByUuid(prisma: PrismaService, uuid: string) {
-  const customer = await findCustomerByUuid(prisma, uuid)
+export async function getCustomerByUuid(prisma: PrismaService, uuid: string, tenantId?: number) {
+  const customer = await findCustomerByUuid(prisma, uuid, tenantId)
   if (!customer) throw new NotFoundException('客户信息不存在')
   return customer
 }

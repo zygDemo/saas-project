@@ -224,7 +224,7 @@ export const useReadingStore = defineStore(
       simulateDownload(id);
     };
 
-    const simulateDownload = (bookId: string) => {
+    function simulateDownload(bookId: string) {
       const item = downloads.value.find((download) => download.id === bookId);
       if (!item) return;
 
@@ -244,7 +244,7 @@ export const useReadingStore = defineStore(
         item.progress = Math.min(100, item.progress + Math.floor(Math.random() * 10) + 1);
         item.downloadedSize = `${((item.progress / 100) * 20.5).toFixed(1)}MB`;
       }, 1000);
-    };
+    }
 
     const pauseDownload = (bookId: string | number) => {
       const item = downloads.value.find((download) => download.id === String(bookId));

@@ -416,6 +416,21 @@ export function useBusinessList() {
       ElMessage.success('操作成功')
       actionVisible.value = false
       await loadData()
+      // 操作成功后更新详情抽屉中的 currentRow
+      if (detailVisible.value && currentRow.value?.id) {
+        try {
+          const detail = await fetchBusinessDetail<Record<string, unknown>>(config.value.api, Number(currentRow.value.id))
+          const flat = flattenRelations(detail)
+          if (detail.customer) flat.customer = detail.customer
+          if (detail.vehicle) flat.vehicle = detail.vehicle
+          if (Array.isArray(detail.vehicles) && detail.vehicles.length) flat.vehicles = detail.vehicles
+          currentRow.value = { ...currentRow.value, ...flat }
+        } catch {
+          // 如果刷新详情失败，使用列表中的数据
+          const updatedRow = data.value.find((r: Record<string, unknown>) => r.id === currentRow.value?.id)
+          if (updatedRow) currentRow.value = { ...currentRow.value, ...updatedRow }
+        }
+      }
     } catch (error) {
       ElMessage.error(error instanceof Error ? error.message : '操作失败')
     } finally {

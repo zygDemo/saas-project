@@ -100,9 +100,9 @@
 import {
   APP_ROUTES,
   getInitialMobileEntry,
-  getModuleHomeRoute,
 } from "@/common/navigation";
-import { fetchMobileConfig, type MobileConfigData, type MobileModuleItem } from "@/api/mobile-config";
+import { fetchMobileConfig } from "@/api/mobile-config";
+import type { MobileConfigData, MobileModuleItem } from "@/api/mobile-config";
 import type { CurrentSystemValue } from "@/stores/local";
 import { computed, ref } from "vue";
 import { onLoad, onShow } from "@dcloudio/uni-app";
@@ -116,7 +116,6 @@ const currentDate = ref("");
 const avatar = ref("");
 const hasLogin = computed(() => Boolean(localStore.token));
 const avatarInitial = computed(() => (userName.value || "U").slice(0, 1).toUpperCase());
-const moduleCount = computed(() => serviceCards.value.length);
 
 const greeting = computed(() => {
   const h = new Date().getHours();
@@ -231,6 +230,12 @@ const serviceCards = ref([
   },
 ]);
 
+const moduleCount = computed(() => serviceCards.value.length);
+
+function goLogin() {
+  uni.navigateTo({ url: APP_ROUTES.auth.login });
+}
+
 const shortcutItems = ref([
   {
     key: "apply",
@@ -267,13 +272,7 @@ const shortcutItems = ref([
 
 ]);
 
-
-
 /** 模块 key 到首页路由 */
-function getModuleRoute(key: string): string | null {
-  return getModuleHomeRoute(key);
-}
-
 /** 原始完整服务卡片列表 */
 const allServiceCards = [...serviceCards.value];
 
@@ -330,7 +329,6 @@ const goProfile = () => {
   if (!hasLogin.value) return goLogin();
   uni.switchTab({ url: APP_ROUTES.my.home });
 };
-const goLogin = () => uni.navigateTo({ url: APP_ROUTES.auth.login });
 const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "none" });
 </script>
 

@@ -18,7 +18,7 @@
       </view>
       <text class="toolbar-title">{{ currentChapter?.title || "" }}</text>
       <view class="toolbar-right">
-      <view class="toolbar-btn" @click="showNotePopup = true">
+      <view class="toolbar-btn" @click="showNoteEditor">
         <u-icon name="edit-pen" color="#fff" size="40" />
       </view>
         <u-icon
@@ -45,9 +45,9 @@
         v-if="pageMode !== 'vertical'"
         class="chapter-swiper"
         :current="currentPage"
-        @change="onPageChange"
         :duration="pageMode === 'cover' ? 350 : 200"
         :style="{ background: bgColorStyle }"
+        @change="onPageChange"
       >
         <swiper-item v-for="(page, idx) in currentPages" :key="idx">
           <scroll-view class="page-scroll" scroll-y>
@@ -159,9 +159,7 @@
 
       <!-- 进度条 -->
       <view class="progress-section">
-        <text v-if="pageMode !== 'vertical'" class="progress-text"
-          >{{ currentPage + 1 }}/{{ currentPages.length }}</text
-        >
+        <text v-if="pageMode !== 'vertical'" class="progress-text">{{ currentPage + 1 }}/{{ currentPages.length }}</text>
         <slider
           v-if="pageMode !== 'vertical'"
           class="progress-slider"
@@ -370,8 +368,7 @@
             tabindex="0"
             @click="showBookmarkPopup = false"
             @keyup.enter="showBookmarkPopup = false"
-            >关闭</text
-          >
+            >关闭</text>
         </view>
         <scroll-view class="bookmark-scroll" scroll-y>
           <view v-if="bookmarks.length === 0" class="empty-bookmarks">
@@ -425,7 +422,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { onLoad, onShareAppMessage, onUnload } from "@dcloudio/uni-app";
-import { useReadingApi, type ChapterLiteItem, type ReadingStatistics } from "@/api/reading";
+import { useReadingApi } from "@/api/reading";
+import type { ChapterLiteItem } from "@/api/reading";
 import { useReadingStore } from "@/stores/reading";
 import {
   bgColors,
@@ -435,22 +433,23 @@ import {
   loadBookmarks,
   loadSettings,
   saveBookmarkList,
-  STORAGE_KEY,
-  type Bookmark,
-  type Chapter,
+  STORAGE_KEY
+
 } from "./reader-helpers";
+import type { Bookmark, Chapter } from "./reader-helpers";
 
 const readingApi = useReadingApi();
-
-// 笔记相关状态
+const bookId = ref("");
+const chapterId = ref("");
 const showNotePopup = ref(false);
 const selectedText = ref('');
 const noteContent = ref('');
 const noteColor = ref('#FFEB3B');
 const noteStartPos = ref(0);
 const noteEndPos = ref(0);
+
+// 笔记相关状态
 const chapterNotes = ref<any[]>([]);
-const noteColors = ['#FFEB3B', '#FF9800', '#F44336', '#4CAF50', '#2196F3', '#9C27B0'];
 
 // 加载当前章节的笔记
 async function loadChapterNotes() {
@@ -461,7 +460,7 @@ async function loadChapterNotes() {
 }
 
 // 创建笔记/高亮
-async function saveNote() {
+async function _saveNote() {
   if (!selectedText.value && !noteContent.value) return;
   try {
     await readingApi.createNote({
@@ -482,7 +481,7 @@ async function saveNote() {
 }
 
 // 长按选择文本创建高亮
-function onLongPress(e: any) {
+function _onLongPress(_e: any) {
   // #ifdef H5
   const selection = window.getSelection?.();
   if (selection && selection.toString().trim()) {
@@ -491,7 +490,6 @@ function onLongPress(e: any) {
   }
   // #endif
 }
-
 
 const readingStore = useReadingStore();
 const showToolbar = ref(false);
@@ -512,8 +510,6 @@ const isListenMode = ref(false);
 const isBookmarked = ref(false);
 const currentPage = ref(0);
 const verticalScrollTop = ref(0);
-const bookId = ref("");
-const chapterId = ref("");
 const totalChapters = ref(0);
 const touchStartX = ref(0);
 const touchStartY = ref(0);
@@ -552,7 +548,6 @@ async function loadChapterContent(
 
   return content;
 }
-
 
 // 章节预加载：加载当前章节后，后台预加载前后各1章
 async function preloadAdjacentChapters(targetBookId: string, targetChapterId: string) {
@@ -853,7 +848,6 @@ onLoad(async (options) => {
         chapterId.value = savedChapterId;
       }
       if (!chapterId.value && allItems.length) {
-        
     // 进入全屏阅读模式
     try {
       (uni as unknown as { hideStatusBar?: () => void }).hideStatusBar?.();
@@ -953,11 +947,6 @@ const onScrollToLower = async () => {
   }
 };
 
-interface ReaderPageChangeEvent {
-  current: number;
-  source?: string;
-}
-
 const onPageChange = async (changeEvent: { current: number; detail?: { current?: number } }) => {
   currentPage.value = changeEvent.detail?.current ?? changeEvent.current;
   checkBookmarkStatus();
@@ -1002,6 +991,10 @@ const showChapterList = () => {
   showChapterPopup.value = true;
 };
 
+const showNoteEditor = () => {
+  uni.showToast({ title: "绗旇鍔熻兘寮€鍙戜腑", icon: "none" });
+};
+
 const jumpToChapter = async (chapter: Chapter) => {
   if (await validateChapterAccess(chapter)) {
     chapterId.value = chapter.id;
@@ -1013,7 +1006,7 @@ const jumpToChapter = async (chapter: Chapter) => {
   }
 };
 
-const readChapter = (chapter: Chapter) => {
+const _readChapter = (chapter: Chapter) => {
   validateChapterAccess(chapter).then((allowed) => {
     if (!allowed) return;
     uni.navigateTo({
@@ -1051,7 +1044,7 @@ async function handlePurchaseChapter(chapter: Chapter) {
     currentPage.value = 0;
     checkBookmarkStatus();
     debouncedSaveProgress();
-  } catch (e) {
+  } catch {
     uni.hideLoading();
     uni.showToast({ title: '购买失败，请重试', icon: 'none' });
   }

@@ -9,6 +9,7 @@ import { UploadedImageFile } from '../file/file.service'
 import { RequestUser } from '../../common/types/request-user'
 import { MobileUploadResult, IMAGE_UPLOAD_LIMIT, mimeToExtension, decodeOriginalName, fileNameFromReference, extFromFileName, resolveCategoryName, normalizeFileReference, mapFileAsset, isMissingFileAssetStorage } from './mobile-business.utils'
 import { getDefaultOrg, findApplication, findCustomerByUuid, getCustomerByUuid, getFileAssetModel, getCustomerApplicationIds, getCustomerVehicleIds } from './mobile-business.db-helpers'
+import { getRequiredTenantId } from '../../common/utils/helpers'
 
 @Injectable()
 export class MobileFileService {
@@ -237,7 +238,8 @@ export class MobileFileService {
       }
     }
     if (body.uuid) {
-      const customer = await getCustomerByUuid(this.prisma, body.uuid)
+      const tenantId = getRequiredTenantId()
+      const customer = await getCustomerByUuid(this.prisma, body.uuid, tenantId)
       return {
         orgId: customer.orgId,
         businessType: 'CUSTOMER',

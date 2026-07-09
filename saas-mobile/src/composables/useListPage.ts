@@ -1,4 +1,5 @@
 import { reactive, ref } from "vue";
+import type { Ref } from "vue";
 
 export interface UseListPageOptions<T> {
   fetchFn: (params: Record<string, unknown>) => Promise<unknown>;
@@ -27,7 +28,7 @@ export function useListPage<T>(options: UseListPageOptions<T>) {
     keyword: "",
   });
 
-  const list = ref<T[]>([]);
+  const list: Ref<T[]> = ref([]);
   const loading = ref(false);
   const pageNum = ref(1);
   const hasMore = ref(true);

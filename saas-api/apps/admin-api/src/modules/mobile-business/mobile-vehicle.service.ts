@@ -6,6 +6,7 @@ import { MobileVehicleInfoDto } from './dto/mobile-business.dto'
 import { centToYuan, parseDate, mapVehicle, guardMobileEntryStorageAsync } from './mobile-business.utils'
 import { getCustomerByUuid, findLatestDraftApplication } from './mobile-business.db-helpers'
 import { MobileFileService } from './mobile-file.service'
+import { getRequiredTenantId } from '../../common/utils/helpers'
 
 @Injectable()
 export class MobileVehicleService {
@@ -17,7 +18,8 @@ export class MobileVehicleService {
 
   async addOrUpdateVehicle(dto: MobileVehicleInfoDto, user: RequestUser) {
     return guardMobileEntryStorageAsync(async () => {
-      const customer = await getCustomerByUuid(this.prisma, dto.uuid)
+      const tenantId = getRequiredTenantId()
+      const customer = await getCustomerByUuid(this.prisma, dto.uuid, tenantId)
       const current = await this.prisma.vehicle.findFirst({
         where: {
           customerId: customer.id,
@@ -75,7 +77,8 @@ export class MobileVehicleService {
 
   async getVehicleInfo(uuid: string) {
     return guardMobileEntryStorageAsync(async () => {
-      const customer = await getCustomerByUuid(this.prisma, uuid)
+      const tenantId = getRequiredTenantId()
+      const customer = await getCustomerByUuid(this.prisma, uuid, tenantId)
       const vehicle = await this.prisma.vehicle.findFirst({
         where: { customerId: customer.id },
         orderBy: { id: 'desc' }

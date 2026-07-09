@@ -12,7 +12,6 @@
     {
       "path": "pages/carloan/workbench"
     },
-
     {
       "path": "pages/auth/login"
     },
@@ -135,15 +134,21 @@
     },
     {
       "path": "pages/carloan/postloan/repaymentPlan",
-      "style": { "navigationBarTitleText": "还款计划" }
+      "style": {
+        "navigationBarTitleText": "还款计划"
+      }
     },
     {
       "path": "pages/carloan/postloan/earlyRepayment",
-      "style": { "navigationBarTitleText": "提前还款" }
+      "style": {
+        "navigationBarTitleText": "提前还款"
+      }
     },
     {
       "path": "pages/carloan/postloan/loanConfirm",
-      "style": { "navigationBarTitleText": "请款确认" }
+      "style": {
+        "navigationBarTitleText": "请款确认"
+      }
     },
     {
       "path": "pages/food/goods/list",
@@ -236,7 +241,11 @@
     "navigationStyle": "custom"
   },
   "easycom": {
-    "autoscan": true
+    "autoscan": false,
+    "custom": {
+      "^app-(.*)$": "@/components/app-$1/app-$1.vue",
+      "^progress-ring$": "@/components/progress-ring/progress-ring.vue"
+    }
   },
   "tabBar": {
     "custom": true,

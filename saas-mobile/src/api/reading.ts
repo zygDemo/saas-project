@@ -1,6 +1,6 @@
 import { http } from "uview-pro";
-import type { ApiResponse } from "@/types/api/contract";
 import type {
+  ApiResponse,
   BookItem,
   BookDetail,
   BookListResult,
@@ -93,7 +93,7 @@ export function useReadingApi() {
     /** 提交书籍评价 */
     createReview: (data: { bookId: number | string; rating: number; content?: string }) =>
       http.post<ApiResponse<ReviewItem>>("/reading/reviews", data),
-  
+
       // 笔记/高亮
       getNotes: (params?: { bookId?: number | string; chapterId?: number | string; page?: number; pageSize?: number }) =>
         http.get<ApiResponse<{ items: NoteItem[]; total: number }>>('/reading/notes', params),

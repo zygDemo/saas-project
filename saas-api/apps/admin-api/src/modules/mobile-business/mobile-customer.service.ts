@@ -6,6 +6,7 @@ import { MobileIdCardInfoDto, MobileCustomerExtraDto, MobileUserListQueryDto } f
 import { mapGender, parseBirthDate, formatDateTime, mapCustomer, guardMobileEntryStorageAsync } from './mobile-business.utils'
 import { getDefaultOrg, findCustomerByUuid, getCustomerByUuid, findLatestDraftApplication, ensureCustomerDraftApplication } from './mobile-business.db-helpers'
 import { MobileFileService } from './mobile-file.service'
+import { getRequiredTenantId } from '../../common/utils/helpers'
 
 @Injectable()
 export class MobileCustomerService {
@@ -98,7 +99,8 @@ export class MobileCustomerService {
 
   async getUserBasic(uuid: string) {
     return guardMobileEntryStorageAsync(async () => {
-      const customer = await getCustomerByUuid(this.prisma, uuid)
+      const tenantId = getRequiredTenantId()
+      const customer = await getCustomerByUuid(this.prisma, uuid, tenantId)
       const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
       return mapCustomer(customer, apiPrefix)
     })
