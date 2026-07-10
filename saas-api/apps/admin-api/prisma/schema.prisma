@@ -759,6 +759,8 @@ model Lead {
   idCard       String? // 身份证号（脱敏存储）
   carBrand     String?
   carModel     String?
+  province     String?    // 省
+  city         String?    // 市
   loanAmount   Decimal?   @db.Decimal(15, 2)
   remark       String?
   status       LeadStatus @default(PENDING_ASSIGN)

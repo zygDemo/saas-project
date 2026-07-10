@@ -12,8 +12,15 @@ export class MobileLeadService {
   async addSalesLead(dto: MobileSalesLeadDto, user: RequestUser, headerOrgId?: number) {
     const org = await getDefaultOrg(this.prisma, headerOrgId)
 
+    // 兼容前端字段名：customerName → personName, phone → telephone
+    const personName = dto.personName || dto.customerName
+    const telephone = dto.telephone || dto.phone
+
+    if (!personName?.trim()) throw new BadRequestException('客户姓名不能为空')
+    if (!telephone?.trim()) throw new BadRequestException('手机号不能为空')
+
     const customer = await this.prisma.customer.findFirst({
-      where: { orgId: org.id, phone: dto.telephone }
+      where: { orgId: org.id, phone: telephone }
     })
 
     if (customer) {
@@ -30,9 +37,10 @@ export class MobileLeadService {
 
     const newCustomer = await this.prisma.customer.create({
       data: {
+        tenantId: org.tenantId,
         orgId: org.id,
-        name: dto.personName,
-        phone: dto.telephone,
+        name: personName,
+        phone: telephone,
         idCard: dto.idCard,
         status: 'ACTIVE'
       }
@@ -40,16 +48,20 @@ export class MobileLeadService {
 
     await this.prisma.lead.create({
       data: {
+        tenantId: org.tenantId,
         orgId: org.id,
         source: dto.source || 'SELF',
-        name: dto.personName,
-        phone: dto.telephone,
+        name: personName,
+        phone: telephone,
         idCard: dto.idCard,
         carBrand: dto.carBrand,
         carModel: dto.carModel,
+        province: dto.province,
+        city: dto.city,
         loanAmount: dto.loanAmount,
         remark: dto.remark,
         status: 'PENDING_ASSIGN',
+        assigneeId: dto.salesmanId,
         createdBy: user.sub
       }
     })

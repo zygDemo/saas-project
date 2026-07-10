@@ -598,13 +598,25 @@ export class MobileContactDto {
 // ==================== 销售线索 DTO ====================
 
 export class MobileSalesLeadDto {
-  @ApiProperty({ description: '客户姓名' })
+  @ApiPropertyOptional({ description: '客户姓名' })
+  @IsOptional()
   @IsString()
-  personName: string
+  personName?: string
 
-  @ApiProperty({ description: '手机号' })
+  @ApiPropertyOptional({ description: '客户姓名（前端兼容字段）' })
+  @IsOptional()
   @IsString()
-  telephone: string
+  customerName?: string
+
+  @ApiPropertyOptional({ description: '手机号' })
+  @IsOptional()
+  @IsString()
+  telephone?: string
+
+  @ApiPropertyOptional({ description: '手机号（前端兼容字段）' })
+  @IsOptional()
+  @IsString()
+  phone?: string
 
   @ApiPropertyOptional({ description: '身份证号' })
   @IsOptional()
@@ -637,6 +649,23 @@ export class MobileSalesLeadDto {
   @IsOptional()
   @IsString()
   remark?: string
+
+  @ApiPropertyOptional({ description: '省' })
+  @IsOptional()
+  @IsString()
+  province?: string
+
+  @ApiPropertyOptional({ description: '市' })
+  @IsOptional()
+  @IsString()
+  city?: string
+
+  @ApiPropertyOptional({ description: '业务员ID' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  salesmanId?: number
 
   @ApiPropertyOptional({ description: '授信订单号（兼容旧前端透传字段）' })
   @IsOptional()
