@@ -30,7 +30,6 @@
  * @author Art Design Pro Team
  */
 import type { App, ComponentPublicInstance } from 'vue'
-import { reportError, reportPerformance } from '@/utils/monitor/monitor'
 
 const IGNORABLE_SCRIPT_ERRORS = [
   'ResizeObserver loop completed with undelivered notifications.',
@@ -67,13 +66,17 @@ function isIgnorableScriptError(message: Event | string, source?: string): boole
   return false
 }
 
-export function vueErrorHandler(err: unknown, instance: ComponentPublicInstance | null, info: string) {
+export function vueErrorHandler(
+  err: unknown,
+  instance: ComponentPublicInstance | null,
+  info: string
+) {
   console.error('[VueError]', err, info, instance)
   reportError({
     type: 'vue',
     message: err instanceof Error ? err.message : String(err),
     stack: err instanceof Error ? err.stack : undefined,
-    source: instance?.$options?.name || info,
+    source: instance?.$options?.name || info
   })
 }
 
@@ -95,7 +98,7 @@ export function scriptErrorHandler(
     source,
     lineno: typeof lineno === 'number' ? lineno : undefined,
     colno: typeof colno === 'number' ? colno : undefined,
-    stack: error?.stack,
+    stack: error?.stack
   })
   return true
 }
@@ -107,7 +110,7 @@ export function registerPromiseErrorHandler() {
     reportError({
       type: 'promise',
       message: reason instanceof Error ? reason.message : String(reason),
-      stack: reason instanceof Error ? reason.stack : undefined,
+      stack: reason instanceof Error ? reason.stack : undefined
     })
   })
 }
@@ -134,7 +137,7 @@ export function registerResourceErrorHandler() {
           source:
             (target as HTMLImageElement).src ||
             (target as HTMLScriptElement).src ||
-            (target as HTMLLinkElement).href,
+            (target as HTMLLinkElement).href
         })
       }
     },

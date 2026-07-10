@@ -47,7 +47,7 @@
           />
           <ElDatePicker
             v-else-if="field.type === 'date'"
-            :model-value="formModel[field.prop] as string | number | Date | string[] | undefined"
+            :model-value="formModel[field.prop]"
             type="datetime"
             value-format="YYYY-MM-DDTHH:mm:ss.SSSZ"
             :placeholder="field.placeholder || `请选择${field.label}`"

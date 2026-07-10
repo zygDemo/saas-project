@@ -7,20 +7,46 @@
         </ElFormItem>
         <ElFormItem label="业务类型">
           <ElSelect v-model="search.businessType" clearable placeholder="全部" style="width: 150px">
-            <ElOption v-for="item in businessTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <ElOption
+              v-for="item in businessTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="业务ID">
-          <ElInputNumber v-model="search.businessId" :min="1" controls-position="right" placeholder="订单/业务ID" />
+          <ElInputNumber
+            v-model="search.businessId"
+            :min="1"
+            controls-position="right"
+            placeholder="订单/业务ID"
+          />
         </ElFormItem>
         <ElFormItem label="分类">
-          <ElSelect v-model="search.categoryCode" clearable filterable placeholder="全部" style="width: 150px">
-            <ElOption v-for="item in categoryOptions" :key="item.value" :label="item.label" :value="item.value" />
+          <ElSelect
+            v-model="search.categoryCode"
+            clearable
+            filterable
+            placeholder="全部"
+            style="width: 150px"
+          >
+            <ElOption
+              v-for="item in categoryOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="状态">
           <ElSelect v-model="search.status" clearable placeholder="全部" style="width: 120px">
-            <ElOption v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <ElOption
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </ElSelect>
         </ElFormItem>
         <ElFormItem>
@@ -78,7 +104,11 @@
             :on-success="handleImageUploadSuccess"
             :on-error="handleImageUploadError"
           >
-            <img v-if="form.fileUrl && isImageFile(form)" :src="resolveFileUrl(form.fileUrl)" class="upload-preview" />
+            <img
+              v-if="form.fileUrl && isImageFile(form)"
+              :src="resolveFileUrl(form.fileUrl)"
+              class="upload-preview"
+            />
             <div v-else class="upload-placeholder">
               <ArtSvgIcon icon="ri:image-add-line" class="upload-icon" />
               <span>点击上传图片</span>
@@ -92,8 +122,19 @@
           <ElInput v-model="form.fileUrl" placeholder="请输入文件 URL" />
         </ElFormItem>
         <ElFormItem label="分类" required>
-          <ElSelect v-model="form.categoryCode" filterable placeholder="请选择分类" style="width: 100%" @change="syncCategoryName">
-            <ElOption v-for="item in categoryOptions" :key="item.value" :label="item.label" :value="item.value" />
+          <ElSelect
+            v-model="form.categoryCode"
+            filterable
+            placeholder="请选择分类"
+            style="width: 100%"
+            @change="syncCategoryName"
+          >
+            <ElOption
+              v-for="item in categoryOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="分类名称">
@@ -102,19 +143,39 @@
         <ElFormItem label="业务绑定">
           <div class="file-binding">
             <ElSelect v-model="form.businessType" clearable placeholder="业务类型">
-              <ElOption v-for="item in businessTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+              <ElOption
+                v-for="item in businessTypeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
             </ElSelect>
-            <ElInputNumber v-model="form.businessId" :min="1" controls-position="right" placeholder="业务ID" />
+            <ElInputNumber
+              v-model="form.businessId"
+              :min="1"
+              controls-position="right"
+              placeholder="业务ID"
+            />
           </div>
         </ElFormItem>
         <ElFormItem label="机构ID">
-          <ElInputNumber v-model="form.orgId" :min="1" controls-position="right" style="width: 100%" />
+          <ElInputNumber
+            v-model="form.orgId"
+            :min="1"
+            controls-position="right"
+            style="width: 100%"
+          />
         </ElFormItem>
         <ElFormItem v-if="form.id" label="扩展信息">
           <div class="file-binding">
             <ElInput v-model="form.mimeType" placeholder="MIME 类型" />
             <ElInput v-model="form.fileExt" placeholder="扩展名" />
-            <ElInputNumber v-model="form.fileSize" :min="0" controls-position="right" placeholder="字节" />
+            <ElInputNumber
+              v-model="form.fileSize"
+              :min="0"
+              controls-position="right"
+              placeholder="字节"
+            />
           </div>
         </ElFormItem>
         <ElFormItem v-if="form.id" label="存储类型">
@@ -130,7 +191,12 @@
         </ElFormItem>
         <ElFormItem label="状态">
           <ElSelect v-model="form.status" style="width: 100%">
-            <ElOption v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <ElOption
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="备注">
@@ -289,7 +355,9 @@
       label: '状态',
       width: 90,
       formatter: (row: FileAssetItem) =>
-        h(ElTag, { type: row.status === 'ACTIVE' ? 'success' : 'info' }, () => statusLabel(row.status))
+        h(ElTag, { type: row.status === 'ACTIVE' ? 'success' : 'info' }, () =>
+          statusLabel(row.status)
+        )
     },
     { prop: 'createdAt', label: '上传时间', width: 180 },
     {
@@ -300,7 +368,11 @@
       formatter: (row: FileAssetItem) =>
         h('div', [
           h(ElButton, { link: true, type: 'primary', onClick: () => openFile(row) }, () => '打开'),
-          h(ElButton, { link: true, type: 'primary', onClick: () => openDialog(row) }, () => '编辑'),
+          h(
+            ElButton,
+            { link: true, type: 'primary', onClick: () => openDialog(row) },
+            () => '编辑'
+          ),
           h(ElButton, { link: true, type: 'danger', onClick: () => deleteFile(row) }, () => '删除')
         ])
     }
@@ -322,11 +394,13 @@
   async function loadData() {
     loading.value = true
     try {
-      const result = await fetchGetFileAssetList(cleanSearchParams({
-        ...search,
-        current: pagination.current,
-        size: pagination.size
-      }))
+      const result = await fetchGetFileAssetList(
+        cleanSearchParams({
+          ...search,
+          current: pagination.current,
+          size: pagination.size
+        })
+      )
       list.value = result.records || []
       pagination.total = result.total || 0
       clearSelection()
@@ -531,12 +605,18 @@
   function isImageFile(row: Partial<FileAssetItem>) {
     const mimeType = row.mimeType || ''
     const ext = (row.fileExt || row.fileName?.split('.').pop() || '').toLowerCase()
-    return mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext)
+    return (
+      mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext)
+    )
   }
 
   function resolveFileUrl(fileUrl?: string) {
     if (!fileUrl) return ''
-    if (/^(https?:)?\/\//.test(fileUrl) || fileUrl.startsWith('data:') || fileUrl.startsWith('blob:')) {
+    if (
+      /^(https?:)?\/\//.test(fileUrl) ||
+      fileUrl.startsWith('data:') ||
+      fileUrl.startsWith('blob:')
+    ) {
       return fileUrl
     }
     return fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`
@@ -553,9 +633,9 @@
 
     .file-header {
       display: flex;
+      gap: 16px;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
 
       h3 {
         margin: 0;
@@ -563,17 +643,17 @@
 
       p {
         margin: 4px 0 0;
-        color: var(--el-text-color-secondary);
         font-size: 13px;
+        color: var(--el-text-color-secondary);
       }
     }
 
     .file-thumb {
       width: 44px;
       height: 44px;
-      border-radius: 4px;
       vertical-align: middle;
       cursor: zoom-in;
+      border-radius: 4px;
     }
 
     .file-empty {
@@ -585,9 +665,9 @@
         width: 160px;
         height: 112px;
         overflow: hidden;
+        background: var(--el-fill-color-lighter);
         border: 1px dashed var(--el-border-color);
         border-radius: 6px;
-        background: var(--el-fill-color-lighter);
       }
     }
 
@@ -608,8 +688,8 @@
       gap: 8px;
       align-items: center;
       justify-content: center;
-      color: var(--el-text-color-secondary);
       font-size: 13px;
+      color: var(--el-text-color-secondary);
     }
 
     .upload-icon {

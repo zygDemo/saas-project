@@ -118,9 +118,13 @@
   import { resolveHeaderStats } from './common/detailHelpers'
   import type { ActionConfig } from './common'
 
-  const BusinessDetailDrawer = defineAsyncComponent(() => import('./common/business-detail-drawer.vue'))
+  const BusinessDetailDrawer = defineAsyncComponent(
+    () => import('./common/business-detail-drawer.vue')
+  )
   const BusinessFormDialog = defineAsyncComponent(() => import('./common/business-form-dialog.vue'))
-  const BusinessActionDialog = defineAsyncComponent(() => import('./common/business-action-dialog.vue'))
+  const BusinessActionDialog = defineAsyncComponent(
+    () => import('./common/business-action-dialog.vue')
+  )
 
   const {
     loading,
@@ -182,7 +186,9 @@
     return tagTypes.has(value as ElementTagType) ? (value as ElementTagType) : 'info'
   }
 
-  function handleDetailAction(action: ActionConfig & { planId?: number; plan?: Record<string, unknown> }) {
+  function handleDetailAction(
+    action: ActionConfig & { planId?: number; plan?: Record<string, unknown> }
+  ) {
     if (!currentRow.value) return
     // 合并 config.value.actions 中对应的完整 action 配置（包含 path 和 fields）
     const fullAction = config.value.actions.find((a) => a.name === action.name) || action
@@ -198,7 +204,6 @@
     }
     openAction(currentRow.value, fullAction)
   }
-
 
   function handleFormModelUpdate(value: Record<string, unknown>) {
     Object.assign(formModel, value)
@@ -260,7 +265,6 @@
       min-height: 0;
     }
   }
-
 
   .org-summary {
     display: grid;

@@ -64,7 +64,9 @@
               <ArtSvgIcon icon="ri:error-warning-line" class="text-xl" />
             </div>
             <div>
-              <div class="text-2xl font-bold text-danger">{{ stats.consecutiveFails?.length || 0 }}</div>
+              <div class="text-2xl font-bold text-danger">{{
+                stats.consecutiveFails?.length || 0
+              }}</div>
               <p class="mt-1 text-sm text-g-500">连续失败</p>
             </div>
           </div>
@@ -73,18 +75,15 @@
     </ElRow>
 
     <!-- 检测规则说明 -->
-    <ElAlert
-      title="异常IP检测规则说明"
-      type="info"
-      :closable="false"
-      show-icon
-      class="mb-5"
-    >
+    <ElAlert title="异常IP检测规则说明" type="info" :closable="false" show-icon class="mb-5">
       <template #default>
         <div class="rules-content">
           <div class="rule-item">
             <ElTag type="warning" size="small" effect="dark">突发攻击</ElTag>
-            <span>5分钟内异常请求（statusCode >= 400）超过 <strong>50次</strong> 的IP，可能是DDoS攻击或爬虫</span>
+            <span
+              >5分钟内异常请求（statusCode >= 400）超过
+              <strong>50次</strong> 的IP，可能是DDoS攻击或爬虫</span
+            >
           </div>
           <div class="rule-item">
             <ElTag type="info" size="small" effect="dark">登录异常</ElTag>
@@ -92,7 +91,10 @@
           </div>
           <div class="rule-item">
             <ElTag type="danger" size="small" effect="dark">连续失败</ElTag>
-            <span>连续失败（statusCode >= 400）超过 <strong>5次</strong> 的IP，可能是恶意扫描或攻击</span>
+            <span
+              >连续失败（statusCode >= 400）超过
+              <strong>5次</strong> 的IP，可能是恶意扫描或攻击</span
+            >
           </div>
           <div class="rule-item">
             <ElTag type="danger" size="small" effect="dark">综合排行</ElTag>
@@ -103,13 +105,7 @@
     </ElAlert>
 
     <!-- 威胁等级说明 -->
-    <ElAlert
-      title="威胁等级说明"
-      type="warning"
-      :closable="false"
-      show-icon
-      class="mb-5"
-    >
+    <ElAlert title="威胁等级说明" type="warning" :closable="false" show-icon class="mb-5">
       <template #default>
         <div class="threat-levels">
           <div class="level-item">
@@ -137,7 +133,11 @@
         <!-- 1. 突发攻击检测 -->
         <ElTabPane name="burst">
           <template #label>
-            <ElBadge :value="stats.burstIps?.length || 0" :hidden="!stats.burstIps?.length" class="tab-badge">
+            <ElBadge
+              :value="stats.burstIps?.length || 0"
+              :hidden="!stats.burstIps?.length"
+              class="tab-badge"
+            >
               <span>突发攻击检测</span>
             </ElBadge>
           </template>
@@ -149,7 +149,9 @@
             <ElTable :data="stats.burstIps" stripe border size="small">
               <ElTableColumn type="index" label="排名" width="70" align="center">
                 <template #default="{ $index }">
-                  <ElTag :type="$index < 3 ? 'danger' : 'info'" effect="dark" size="small">{{ $index + 1 }}</ElTag>
+                  <ElTag :type="$index < 3 ? 'danger' : 'info'" effect="dark" size="small">{{
+                    $index + 1
+                  }}</ElTag>
                 </template>
               </ElTableColumn>
               <ElTableColumn prop="ip" label="IP地址" width="160">
@@ -191,7 +193,11 @@
         <!-- 2. 登录接口监控 -->
         <ElTabPane name="login">
           <template #label>
-            <ElBadge :value="stats.loginAttempts?.length || 0" :hidden="!stats.loginAttempts?.length" class="tab-badge">
+            <ElBadge
+              :value="stats.loginAttempts?.length || 0"
+              :hidden="!stats.loginAttempts?.length"
+              class="tab-badge"
+            >
               <span>登录接口监控</span>
             </ElBadge>
           </template>
@@ -203,7 +209,9 @@
             <ElTable :data="stats.loginAttempts" stripe border size="small">
               <ElTableColumn type="index" label="排名" width="70" align="center">
                 <template #default="{ $index }">
-                  <ElTag :type="$index < 3 ? 'danger' : 'info'" effect="dark" size="small">{{ $index + 1 }}</ElTag>
+                  <ElTag :type="$index < 3 ? 'danger' : 'info'" effect="dark" size="small">{{
+                    $index + 1
+                  }}</ElTag>
                 </template>
               </ElTableColumn>
               <ElTableColumn prop="ip" label="IP地址" width="160">
@@ -223,7 +231,10 @@
               </ElTableColumn>
               <ElTableColumn prop="failRate" label="失败率" width="100" align="center">
                 <template #default="{ row }">
-                  <ElTag :type="row.failRate > 80 ? 'danger' : row.failRate > 50 ? 'warning' : 'success'" size="small">
+                  <ElTag
+                    :type="row.failRate > 80 ? 'danger' : row.failRate > 50 ? 'warning' : 'success'"
+                    size="small"
+                  >
                     {{ row.failRate }}%
                   </ElTag>
                 </template>
@@ -252,7 +263,11 @@
         <!-- 3. 连续失败检测 -->
         <ElTabPane name="consecutive">
           <template #label>
-            <ElBadge :value="stats.consecutiveFails?.length || 0" :hidden="!stats.consecutiveFails?.length" class="tab-badge">
+            <ElBadge
+              :value="stats.consecutiveFails?.length || 0"
+              :hidden="!stats.consecutiveFails?.length"
+              class="tab-badge"
+            >
               <span>连续失败检测</span>
             </ElBadge>
           </template>
@@ -264,7 +279,9 @@
             <ElTable :data="stats.consecutiveFails" stripe border size="small">
               <ElTableColumn type="index" label="排名" width="70" align="center">
                 <template #default="{ $index }">
-                  <ElTag :type="$index < 3 ? 'danger' : 'info'" effect="dark" size="small">{{ $index + 1 }}</ElTag>
+                  <ElTag :type="$index < 3 ? 'danger' : 'info'" effect="dark" size="small">{{
+                    $index + 1
+                  }}</ElTag>
                 </template>
               </ElTableColumn>
               <ElTableColumn prop="ip" label="IP地址" width="160">
@@ -272,7 +289,12 @@
                   <ElTag type="danger" effect="dark" size="small">{{ row.ip }}</ElTag>
                 </template>
               </ElTableColumn>
-              <ElTableColumn prop="consecutiveFails" label="连续失败次数" width="120" align="center">
+              <ElTableColumn
+                prop="consecutiveFails"
+                label="连续失败次数"
+                width="120"
+                align="center"
+              >
                 <template #default="{ row }">
                   <span class="font-bold text-danger">{{ row.consecutiveFails }}</span>
                 </template>
@@ -306,7 +328,11 @@
         <!-- 4. 综合攻击排行 -->
         <ElTabPane name="rank">
           <template #label>
-            <ElBadge :value="stats.attackIps?.length || 0" :hidden="!stats.attackIps?.length" class="tab-badge">
+            <ElBadge
+              :value="stats.attackIps?.length || 0"
+              :hidden="!stats.attackIps?.length"
+              class="tab-badge"
+            >
               <span>综合攻击排行</span>
             </ElBadge>
           </template>
@@ -318,7 +344,9 @@
             <ElTable :data="stats.attackIps" stripe border size="small">
               <ElTableColumn type="index" label="排名" width="70" align="center">
                 <template #default="{ $index }">
-                  <ElTag :type="$index < 3 ? 'danger' : 'info'" effect="dark" size="small">{{ $index + 1 }}</ElTag>
+                  <ElTag :type="$index < 3 ? 'danger' : 'info'" effect="dark" size="small">{{
+                    $index + 1
+                  }}</ElTag>
                 </template>
               </ElTableColumn>
               <ElTableColumn prop="ip" label="IP地址" width="160">
@@ -338,7 +366,10 @@
               </ElTableColumn>
               <ElTableColumn prop="failRate" label="失败率" width="100" align="center">
                 <template #default="{ row }">
-                  <ElTag :type="row.failRate > 50 ? 'danger' : row.failRate > 20 ? 'warning' : 'success'" size="small">
+                  <ElTag
+                    :type="row.failRate > 50 ? 'danger' : row.failRate > 20 ? 'warning' : 'success'"
+                    size="small"
+                  >
                     {{ row.failRate }}%
                   </ElTag>
                 </template>
@@ -367,7 +398,7 @@
   import { ref } from 'vue'
   import type { AuditLogStats } from '@/api/data-center'
 
-  const props = defineProps<{
+  defineProps<{
     stats: AuditLogStats
   }>()
 
@@ -379,22 +410,33 @@
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return value
     return date.toLocaleString('zh-CN', {
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
     })
   }
 
   // 威胁等级转换
   const getThreatType = (level: string) => {
     const map: Record<string, 'danger' | 'warning' | 'info' | 'success'> = {
-      critical: 'danger', high: 'danger', medium: 'warning', low: 'info'
+      critical: 'danger',
+      high: 'danger',
+      medium: 'warning',
+      low: 'info'
     }
     return map[level] || 'info'
   }
 
   const getThreatLabel = (level: string) => {
     const map: Record<string, string> = {
-      critical: '严重', high: '高危', medium: '中危', low: '低危'
+      critical: '严重',
+      high: '高危',
+      medium: '中危',
+      low: '低危'
     }
     return map[level] || '未知'
   }
@@ -464,14 +506,14 @@
 
     .rule-item {
       display: flex;
-      align-items: center;
       gap: 8px;
+      align-items: center;
       font-size: 13px;
       color: var(--el-text-color-regular);
 
       strong {
-        color: var(--el-color-danger);
         font-weight: 600;
+        color: var(--el-color-danger);
       }
     }
   }
@@ -483,18 +525,20 @@
 
     .level-item {
       display: flex;
-      align-items: center;
       gap: 8px;
+      align-items: center;
       font-size: 13px;
       color: var(--el-text-color-regular);
 
       .action {
-        color: var(--el-color-warning);
-        font-weight: 500;
         margin-left: 8px;
+        font-weight: 500;
+        color: var(--el-color-warning);
       }
     }
   }
 
-  .font-bold { font-weight: 600; }
+  .font-bold {
+    font-weight: 600;
+  }
 </style>

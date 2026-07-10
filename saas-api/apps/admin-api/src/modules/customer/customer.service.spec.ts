@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { CustomerService } from './customer.service'
 import { PrismaService } from '../prisma/prisma.service'
-import { BadRequestException, NotFoundException } from '@nestjs/common'
+import { NotFoundException } from '@nestjs/common'
 
 jest.mock('../../common/tenant/tenant-context', () => ({
   getCurrentTenantId: jest.fn(() => 1)
@@ -74,7 +74,7 @@ describe('CustomerService', () => {
       mockPrisma.organization.findFirst!.mockResolvedValue({ id: 1 } as any)
       mockPrisma.customer.create!.mockResolvedValue(makeCustomer())
 
-      const result = await service.create({
+      await service.create({
         orgId: 1,
         name: '张三',
         phone: '13800138000',
@@ -137,7 +137,7 @@ describe('CustomerService', () => {
       mockPrisma.customer.count!.mockResolvedValue(2)
       mockPrisma.customer.findMany!.mockResolvedValue([makeCustomer()])
 
-      const result = await service.getList({ current: 1, size: 10 }) as any
+      await service.getList({ current: 1, size: 10 }) as any
 
       expect(result.records).toHaveLength(1)
       expect(result.total).toBe(2)
@@ -228,7 +228,7 @@ describe('CustomerService', () => {
         relation: '配偶'
       })
 
-      const result = await service.addContact(1, {
+      await service.addContact(1, {
         name: '李四',
         phone: '13900139000',
         relation: '配偶'
@@ -265,7 +265,7 @@ describe('CustomerService', () => {
         model: 'X5'
       })
 
-      const result = await service.addVehicle(1, {
+      await service.addVehicle(1, {
         plateNumber: '京A12345',
         brand: '宝马',
         model: 'X5'
@@ -290,7 +290,7 @@ describe('CustomerService', () => {
         isDefault: true
       })
 
-      const result = await service.addBankCard(1, {
+      await service.addBankCard(1, {
         bankName: '工商银行',
         cardNo: '622200000000',
         cardType: 'DEBIT',
@@ -339,7 +339,7 @@ describe('CustomerService', () => {
       mockPrisma.organization.findFirst!.mockResolvedValue({ id: 1 } as any)
       mockPrisma.customer.update!.mockResolvedValue(makeCustomer({ name: '李四' }))
 
-      const result = await service.update(1, { orgId: 1, name: '李四' })
+      await service.update(1, { orgId: 1, name: '李四' })
 
       expect(mockPrisma.customer.update).toHaveBeenCalled()
     })
@@ -359,7 +359,7 @@ describe('CustomerService', () => {
       mockPrisma.customer.findFirst!.mockResolvedValue(makeCustomer())
       mockPrisma.customer.update!.mockResolvedValue({ id: 1 })
 
-      const result = await service.remove(1)
+      await service.remove(1)
 
       expect(result.id).toBe(1)
       expect(mockPrisma.customer.update).toHaveBeenCalledWith(

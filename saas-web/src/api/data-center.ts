@@ -36,9 +36,28 @@ export interface AuditLogStats {
   actions: Array<{ action: string; count: number }>
   hourly: Array<{ hour: number; label: string; count: number; attackCount: number }>
   attackIps: Array<{ ip: string; count: number; failCount: number; failRate: number }>
-  burstIps: Array<{ ip: string; burstCount: number; windowStart: string; windowEnd: string; threatLevel: string }>
-  loginAttempts: Array<{ ip: string; count: number; failCount: number; failRate: number; lastAttempt: string; threatLevel: string }>
-  consecutiveFails: Array<{ ip: string; consecutiveFails: number; lastFailTime: string; failModule: string; threatLevel: string }>
+  burstIps: Array<{
+    ip: string
+    burstCount: number
+    windowStart: string
+    windowEnd: string
+    threatLevel: string
+  }>
+  loginAttempts: Array<{
+    ip: string
+    count: number
+    failCount: number
+    failRate: number
+    lastAttempt: string
+    threatLevel: string
+  }>
+  consecutiveFails: Array<{
+    ip: string
+    consecutiveFails: number
+    lastFailTime: string
+    failModule: string
+    threatLevel: string
+  }>
 }
 
 export interface HeatmapData {

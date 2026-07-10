@@ -35,7 +35,7 @@ export function setupAfterEachGuard(router: Router) {
       reportPerformance({
         type: 'route',
         name: to.name as string,
-        url: toRoute,
+        url: toRoute
       })
     }
   })

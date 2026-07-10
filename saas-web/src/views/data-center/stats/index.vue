@@ -116,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, h, onMounted, onUnmounted, reactive, ref, nextTick, watch } from 'vue'
+  import { computed, h, onMounted, onUnmounted, reactive, ref, nextTick } from 'vue'
   import { fetchDataCenterStats, type DataCenterStats } from '@/api/data-center'
   import { echarts, graphic } from '@/plugins/echarts'
 
@@ -135,14 +135,54 @@
 
   // 核心指标（8个，2排x4列）
   const overviewCards = computed(() => [
-    { label: '订单总数', value: totalApplications.value, icon: 'ri:file-list-3-line', tone: 'is-primary' },
-    { label: '客户总数', value: stats.overview.customerTotal || 0, icon: 'ri:user-heart-line', tone: 'is-info' },
-    { label: '已放款', value: stats.overview.disbursedCount || 0, icon: 'ri:money-cny-circle-line', tone: 'is-success' },
-    { label: '通过率', value: (stats.overview.passRate || 0) + '%', icon: 'ri:percent-line', tone: 'is-primary' },
-    { label: '申请金额', value: money(stats.overview.requestedAmount), icon: 'ri:funds-line', tone: 'is-info' },
-    { label: '审批金额', value: money(stats.overview.approvedAmount), icon: 'ri:verified-badge-line', tone: 'is-success' },
-    { label: '放款金额', value: money(stats.overview.disbursedAmount), icon: 'ri:bank-card-line', tone: 'is-success' },
-    { label: '待还金额', value: money(stats.overview.pendingRepaymentAmount), icon: 'ri:refund-2-line', tone: 'is-warning' }
+    {
+      label: '订单总数',
+      value: totalApplications.value,
+      icon: 'ri:file-list-3-line',
+      tone: 'is-primary'
+    },
+    {
+      label: '客户总数',
+      value: stats.overview.customerTotal || 0,
+      icon: 'ri:user-heart-line',
+      tone: 'is-info'
+    },
+    {
+      label: '已放款',
+      value: stats.overview.disbursedCount || 0,
+      icon: 'ri:money-cny-circle-line',
+      tone: 'is-success'
+    },
+    {
+      label: '通过率',
+      value: (stats.overview.passRate || 0) + '%',
+      icon: 'ri:percent-line',
+      tone: 'is-primary'
+    },
+    {
+      label: '申请金额',
+      value: money(stats.overview.requestedAmount),
+      icon: 'ri:funds-line',
+      tone: 'is-info'
+    },
+    {
+      label: '审批金额',
+      value: money(stats.overview.approvedAmount),
+      icon: 'ri:verified-badge-line',
+      tone: 'is-success'
+    },
+    {
+      label: '放款金额',
+      value: money(stats.overview.disbursedAmount),
+      icon: 'ri:bank-card-line',
+      tone: 'is-success'
+    },
+    {
+      label: '待还金额',
+      value: money(stats.overview.pendingRepaymentAmount),
+      icon: 'ri:refund-2-line',
+      tone: 'is-warning'
+    }
   ])
 
   // 产品排行列
@@ -220,7 +260,12 @@
       xAxis: { type: 'category', data: days, axisLabel: { fontSize: 10 } },
       yAxis: [
         { type: 'value', name: '订单数', position: 'left', axisLabel: { fontSize: 10 } },
-        { type: 'value', name: '金额(万)', position: 'right', axisLabel: { fontSize: 10, formatter: (v: number) => (v / 10000).toFixed(0) } }
+        {
+          type: 'value',
+          name: '金额(万)',
+          position: 'right',
+          axisLabel: { fontSize: 10, formatter: (v: number) => (v / 10000).toFixed(0) }
+        }
       ],
       series: [
         {
@@ -327,7 +372,11 @@
     const num = Number(value || 0)
     if (num === 0) return '¥0.00'
     if (num >= 10000) return '¥' + (num / 10000).toFixed(2) + '万'
-    return num.toLocaleString('zh-CN', { style: 'currency', currency: 'CNY', minimumFractionDigits: 2 })
+    return num.toLocaleString('zh-CN', {
+      style: 'currency',
+      currency: 'CNY',
+      minimumFractionDigits: 2
+    })
   }
 
   onMounted(() => {
@@ -351,12 +400,14 @@
 
   .page-header {
     display: flex;
+    gap: 16px;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
   }
 
-  h3, h4, p {
+  h3,
+  h4,
+  p {
     margin: 0;
   }
 
@@ -377,13 +428,13 @@
   }
 
   .stat-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
     width: 48px;
     height: 48px;
     border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
   }
 
   .stat-icon.is-primary {

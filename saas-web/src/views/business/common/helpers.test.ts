@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   formatDate,
   packageLabel,
@@ -15,7 +15,7 @@ import {
   toPercentDisplayValue,
   toPercentPayloadValue,
   fieldOptions,
-  getRemoteOptionParams,
+  getRemoteOptionParams
 } from './helpers'
 import type { FieldConfig, PageConfig } from './types'
 
@@ -193,7 +193,7 @@ describe('formatCell', () => {
     api: 'test',
     columns: [],
     formFields: [],
-    actions: [],
+    actions: []
   }
 
   it('formats businessScale with counts', () => {
@@ -228,7 +228,7 @@ describe('formatCell', () => {
   it('uses statusMap for status/gender/action props', () => {
     const config: PageConfig = {
       ...emptyConfig,
-      statusMap: { ACTIVE: '已启用' },
+      statusMap: { ACTIVE: '已启用' }
     }
     expect(formatCell({ status: 'ACTIVE' }, 'status', config)).toBe('已启用')
     expect(formatCell({ gender: 'MALE' }, 'gender', emptyConfig)).toBe('男')
@@ -267,7 +267,7 @@ describe('shouldShowFieldGroup', () => {
     { prop: 'a', label: 'A', group: '基础' },
     { prop: 'b', label: 'B', group: '基础' },
     { prop: 'c', label: 'C', group: '联系' },
-    { prop: 'd', label: 'D' },
+    { prop: 'd', label: 'D' }
   ]
 
   it('shows group header for the first field in a group', () => {
@@ -333,7 +333,7 @@ describe('flattenRelations', () => {
 
   it('flattens _count object', () => {
     const row = {
-      _count: { departments: 3, products: 5, funders: 2, customers: 10, applications: 7 },
+      _count: { departments: 3, products: 5, funders: 2, customers: 10, applications: 7 }
     }
     const result = flattenRelations(row)
     expect(result.departmentCount).toBe(3)
@@ -357,7 +357,7 @@ describe('resetModel', () => {
     const target: Record<string, unknown> = { oldKey: 'old' }
     const fields: FieldConfig[] = [
       { prop: 'name', label: '名称', defaultValue: '默认' },
-      { prop: 'status', label: '状态', defaultValue: 'ACTIVE' },
+      { prop: 'status', label: '状态', defaultValue: 'ACTIVE' }
     ]
     resetModel(target, fields)
     expect(target).toEqual({ name: '默认', status: 'ACTIVE' })
@@ -366,9 +366,7 @@ describe('resetModel', () => {
 
   it('uses source values when provided', () => {
     const target: Record<string, unknown> = {}
-    const fields: FieldConfig[] = [
-      { prop: 'name', label: '名称', defaultValue: '默认' },
-    ]
+    const fields: FieldConfig[] = [{ prop: 'name', label: '名称', defaultValue: '默认' }]
     const source = { name: '来自服务器' }
     resetModel(target, fields, source)
     expect(target.name).toBe('来自服务器')
@@ -377,7 +375,7 @@ describe('resetModel', () => {
   it('handles json type fields with stringification', () => {
     const target: Record<string, unknown> = {}
     const fields: FieldConfig[] = [
-      { prop: 'config', label: '配置', type: 'json', defaultValue: { a: 1 } },
+      { prop: 'config', label: '配置', type: 'json', defaultValue: { a: 1 } }
     ]
     resetModel(target, fields)
     expect(target.config).toBe('{\n  "a": 1\n}')
@@ -385,9 +383,7 @@ describe('resetModel', () => {
 
   it('handles percent transform', () => {
     const target: Record<string, unknown> = {}
-    const fields: FieldConfig[] = [
-      { prop: 'rate', label: '利率', transform: 'percent' },
-    ]
+    const fields: FieldConfig[] = [{ prop: 'rate', label: '利率', transform: 'percent' }]
     const source = { rate: 0.05 }
     resetModel(target, fields, source)
     expect(target.rate).toBe(5)
@@ -402,7 +398,7 @@ describe('cleanPayload', () => {
       { prop: 'name', label: '名称' },
       { prop: 'desc', label: '描述' },
       { prop: 'age', label: '年龄' },
-      { prop: 'extra', label: '额外' },
+      { prop: 'extra', label: '额外' }
     ]
     const result = cleanPayload(source, fields)
     expect(result).toEqual({ name: 'test' })
@@ -432,38 +428,30 @@ describe('cleanPayload', () => {
 // ==================== validateRequired ====================
 describe('validateRequired', () => {
   it('returns empty string when all required fields are filled', () => {
-    const fields: FieldConfig[] = [
-      { prop: 'name', label: '名称', required: true },
-    ]
+    const fields: FieldConfig[] = [{ prop: 'name', label: '名称', required: true }]
     expect(validateRequired(fields, { name: 'test' })).toBe('')
   })
 
   it('returns error message for first missing required field', () => {
     const fields: FieldConfig[] = [
       { prop: 'name', label: '名称', required: true },
-      { prop: 'code', label: '编码', required: true },
+      { prop: 'code', label: '编码', required: true }
     ]
     expect(validateRequired(fields, { code: 'abc' })).toBe('请填写名称')
   })
 
   it('treats empty string as missing', () => {
-    const fields: FieldConfig[] = [
-      { prop: 'name', label: '名称', required: true },
-    ]
+    const fields: FieldConfig[] = [{ prop: 'name', label: '名称', required: true }]
     expect(validateRequired(fields, { name: '' })).toBe('请填写名称')
   })
 
   it('treats null as missing', () => {
-    const fields: FieldConfig[] = [
-      { prop: 'name', label: '名称', required: true },
-    ]
+    const fields: FieldConfig[] = [{ prop: 'name', label: '名称', required: true }]
     expect(validateRequired(fields, { name: null })).toBe('请填写名称')
   })
 
   it('returns empty when no required fields', () => {
-    const fields: FieldConfig[] = [
-      { prop: 'name', label: '名称' },
-    ]
+    const fields: FieldConfig[] = [{ prop: 'name', label: '名称' }]
     expect(validateRequired(fields, {})).toBe('')
   })
 })
@@ -501,7 +489,7 @@ describe('fieldOptions', () => {
     const field: FieldConfig = {
       prop: 'status',
       label: '状态',
-      options: [{ label: '启用', value: 'ACTIVE' }],
+      options: [{ label: '启用', value: 'ACTIVE' }]
     }
     expect(fieldOptions(field, {})).toEqual([{ label: '启用', value: 'ACTIVE' }])
   })
@@ -510,7 +498,7 @@ describe('fieldOptions', () => {
     const field: FieldConfig = {
       prop: 'orgId',
       label: '机构',
-      remoteOptions: { module: 'org' },
+      remoteOptions: { module: 'org' }
     }
     const selectOptions = { orgId: [{ label: '机构A', value: 1 }] }
     expect(fieldOptions(field, selectOptions)).toEqual([{ label: '机构A', value: 1 }])
@@ -520,7 +508,7 @@ describe('fieldOptions', () => {
     const field: FieldConfig = {
       prop: 'orgId',
       label: '机构',
-      remoteOptions: { module: 'org' },
+      remoteOptions: { module: 'org' }
     }
     expect(fieldOptions(field, {})).toEqual([])
   })
@@ -532,7 +520,7 @@ describe('getRemoteOptionParams', () => {
     const source: FieldConfig = {
       prop: 'orgId',
       label: '机构',
-      remoteOptions: { module: 'org', params: { status: 'ACTIVE' } },
+      remoteOptions: { module: 'org', params: { status: 'ACTIVE' } }
     }
     expect(getRemoteOptionParams(source, {})).toEqual({ status: 'ACTIVE' })
   })
@@ -542,7 +530,7 @@ describe('getRemoteOptionParams', () => {
     const source: FieldConfig = {
       prop: 'deptId',
       label: '部门',
-      remoteOptions: { module: 'dept', params: paramsFn },
+      remoteOptions: { module: 'dept', params: paramsFn }
     }
     const model = { orgId: 5 }
     expect(getRemoteOptionParams(source, model)).toEqual({ orgId: 5 })
@@ -553,7 +541,7 @@ describe('getRemoteOptionParams', () => {
     const source: FieldConfig = {
       prop: 'orgId',
       label: '机构',
-      remoteOptions: { module: 'org' },
+      remoteOptions: { module: 'org' }
     }
     expect(getRemoteOptionParams(source, {})).toEqual({})
   })

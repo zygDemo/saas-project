@@ -18,7 +18,11 @@
     />
 
     <ElCard class="art-table-card">
-      <ArtTableHeader :loading="isLoading" @refresh="loadBooks" layout="refresh,size,fullscreen,columns,settings">
+      <ArtTableHeader
+        :loading="isLoading"
+        @refresh="loadBooks"
+        layout="refresh,size,fullscreen,columns,settings"
+      >
         <template #left>
           <ElSpace wrap>
             <ElButton type="primary" @click="$router.push('/reading/books')">管理图书</ElButton>

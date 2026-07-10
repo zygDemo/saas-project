@@ -31,7 +31,11 @@
     />
 
     <ElCard class="art-table-card">
-      <ArtTableHeader :loading="isLoading" @refresh="loadCategories" layout="refresh,size,fullscreen,columns,settings">
+      <ArtTableHeader
+        :loading="isLoading"
+        @refresh="loadCategories"
+        layout="refresh,size,fullscreen,columns,settings"
+      >
         <template #left>
           <ElSpace wrap>
             <ElButton
@@ -98,7 +102,7 @@
         <ElButton type="primary" @click="handleSave" :loading="saving">保存</ElButton>
       </template>
     </ElDialog>
-</ReadingPageShell>
+  </ReadingPageShell>
 </template>
 
 <script setup lang="ts">
@@ -231,7 +235,7 @@
         tree: isTree.value,
         keyword: searchForm.keyword.value || undefined
       }
-      const res = await getBookCategories(params) as BookCategory[]
+      const res = (await getBookCategories(params)) as BookCategory[]
       const data = res || []
       categoryList.value = data
       displayList.value = data
@@ -340,23 +344,23 @@
 
     saving.value = true
     try {
-    if (isEdit.value && editId.value) {
-      await updateBookCategory(editId.value, {
-        ...formData,
-        parentId: formData.parentId ?? undefined
-      })
-      ElMessage.success('编辑成功')
-    } else {
-      await createBookCategory({
-        name: formData.name,
-        parentId: formData.parentId ?? undefined,
-        sort: formData.sort
-      })
-      ElMessage.success('新增成功')
-    }
+      if (isEdit.value && editId.value) {
+        await updateBookCategory(editId.value, {
+          ...formData,
+          parentId: formData.parentId ?? undefined
+        })
+        ElMessage.success('编辑成功')
+      } else {
+        await createBookCategory({
+          name: formData.name,
+          parentId: formData.parentId ?? undefined,
+          sort: formData.sort
+        })
+        ElMessage.success('新增成功')
+      }
       showDialog.value = false
       loadCategories()
-    } catch (error) {
+    } catch {
       ElMessage.error(isEdit.value ? '编辑失败' : '新增失败')
     } finally {
       saving.value = false

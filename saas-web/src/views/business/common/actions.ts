@@ -67,12 +67,27 @@ export const applicationActions: ActionConfig[] = [
       if (status === 'DISBURSED' || status === 'CANCELLED' || status.includes('REJECTED'))
         return false
       const dedicatedStatuses = new Set([
-        'DRAFT', 'PENDING_SUPPLEMENT', 'FUNDER_PRE_PASSED', 'SUBMITTED',
-        'PENDING_RISK_PRE', 'PENDING_FUNDER_PRE', 'PENDING_FIRST_REVIEW',
-        'PENDING_FINAL_REVIEW', 'FINAL_REVIEW_PASSED', 'PENDING_FUNDER_REVIEW',
-        'PENDING_SIGN', 'SIGNING_PROGRESS', 'SIGNED', 'PENDING_LOAN_REQUEST',
-        'LOAN_REQUEST_REJECTED', 'LOAN_REQUEST_REVIEWING', 'LOAN_REQUEST_APPROVED',
-        'PENDING_DISBURSEMENT', 'DISBURSED', 'RISK_PRE_PASSED', 'FUNDER_REVIEW_PASSED'
+        'DRAFT',
+        'PENDING_SUPPLEMENT',
+        'FUNDER_PRE_PASSED',
+        'SUBMITTED',
+        'PENDING_RISK_PRE',
+        'PENDING_FUNDER_PRE',
+        'PENDING_FIRST_REVIEW',
+        'PENDING_FINAL_REVIEW',
+        'FINAL_REVIEW_PASSED',
+        'PENDING_FUNDER_REVIEW',
+        'PENDING_SIGN',
+        'SIGNING_PROGRESS',
+        'SIGNED',
+        'PENDING_LOAN_REQUEST',
+        'LOAN_REQUEST_REJECTED',
+        'LOAN_REQUEST_REVIEWING',
+        'LOAN_REQUEST_APPROVED',
+        'PENDING_DISBURSEMENT',
+        'DISBURSED',
+        'RISK_PRE_PASSED',
+        'FUNDER_REVIEW_PASSED'
       ])
       return !dedicatedStatuses.has(status)
     }
@@ -159,8 +174,12 @@ export const applicationActions: ActionConfig[] = [
     fields: approvalFields.slice(0, 2),
     visible: (row) =>
       [
-        'SUBMITTED', 'PENDING_RISK_PRE', 'PENDING_FUNDER_PRE',
-        'PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW', 'PENDING_FUNDER_REVIEW'
+        'SUBMITTED',
+        'PENDING_RISK_PRE',
+        'PENDING_FUNDER_PRE',
+        'PENDING_FIRST_REVIEW',
+        'PENDING_FINAL_REVIEW',
+        'PENDING_FUNDER_REVIEW'
       ].includes(String(row.status))
   },
   {
@@ -175,8 +194,12 @@ export const applicationActions: ActionConfig[] = [
     ],
     visible: (row) =>
       [
-        'SUBMITTED', 'PENDING_RISK_PRE', 'PENDING_FUNDER_PRE',
-        'PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW', 'PENDING_FUNDER_REVIEW'
+        'SUBMITTED',
+        'PENDING_RISK_PRE',
+        'PENDING_FUNDER_PRE',
+        'PENDING_FIRST_REVIEW',
+        'PENDING_FINAL_REVIEW',
+        'PENDING_FUNDER_REVIEW'
       ].includes(String(row.status))
   },
   {
@@ -320,12 +343,18 @@ export const applicationActions: ActionConfig[] = [
       { prop: 'principal', label: '本金', type: 'number', precision: 2 },
       { prop: 'interest', label: '利息', type: 'number', precision: 2 },
       { prop: 'penalty', label: '罚息', type: 'number', precision: 2 },
-      { prop: 'paymentMethod', label: '还款方式', type: 'select', options: [
-        { label: '银行转账', value: 'BANK_TRANSFER' },
-        { label: '现金', value: 'CASH' },
-        { label: '支付宝', value: 'ALIPAY' },
-        { label: '微信', value: 'WECHAT' }
-      ], required: true },
+      {
+        prop: 'paymentMethod',
+        label: '还款方式',
+        type: 'select',
+        options: [
+          { label: '银行转账', value: 'BANK_TRANSFER' },
+          { label: '现金', value: 'CASH' },
+          { label: '支付宝', value: 'ALIPAY' },
+          { label: '微信', value: 'WECHAT' }
+        ],
+        required: true
+      },
       { prop: 'transactionNo', label: '交易流水号' },
       { prop: 'remark', label: '备注', type: 'textarea' },
       { prop: 'createdBy', label: '登记人', type: 'number', visible: false }
@@ -341,7 +370,11 @@ export const applicationActions: ActionConfig[] = [
         amount: unpaid?.totalAmount ?? 0,
         principal: unpaid?.principal ?? 0,
         interest: unpaid?.interest ?? 0,
-        penalty: unpaid?.penaltyAmount ? Number(unpaid.penaltyAmount) > 0 ? unpaid.penaltyAmount : undefined : undefined,
+        penalty: unpaid?.penaltyAmount
+          ? Number(unpaid.penaltyAmount) > 0
+            ? unpaid.penaltyAmount
+            : undefined
+          : undefined,
         paymentMethod: 'BANK_TRANSFER'
       }
     },
@@ -353,10 +386,16 @@ export const applicationActions: ActionConfig[] = [
     type: 'warning',
     path: (row) => `/application/${row.id}/early-repayment`,
     fields: [
-      { prop: 'repayType', label: '还款类型', type: 'select', options: [
-        { label: '提前结清', value: 'FULL' },
-        { label: '部分提前', value: 'PARTIAL' }
-      ], required: true },
+      {
+        prop: 'repayType',
+        label: '还款类型',
+        type: 'select',
+        options: [
+          { label: '提前结清', value: 'FULL' },
+          { label: '部分提前', value: 'PARTIAL' }
+        ],
+        required: true
+      },
       { prop: 'amount', label: '还款总额', type: 'number', precision: 2, required: true },
       { prop: 'principal', label: '本金', type: 'number', precision: 2, required: true },
       { prop: 'interest', label: '利息', type: 'number', precision: 2, required: true },
@@ -387,6 +426,5 @@ export const applicationActions: ActionConfig[] = [
       }
     },
     visible: (row) => String(row.status) === 'DISBURSED'
-  },
+  }
 ]
-

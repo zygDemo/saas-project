@@ -21,8 +21,6 @@
  * @author Art Design Pro Team
  */
 
-import type { VNode } from 'vue'
-
 // 搜索组件类型
 export type SearchComponentType =
   | 'input'

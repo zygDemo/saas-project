@@ -32,7 +32,11 @@
     />
 
     <ElCard class="art-table-card">
-      <ArtTableHeader :loading="isLoading" @refresh="loadBooks" layout="refresh,size,fullscreen,columns,settings">
+      <ArtTableHeader
+        :loading="isLoading"
+        @refresh="loadBooks"
+        layout="refresh,size,fullscreen,columns,settings"
+      >
         <template #left>
           <ElSpace wrap>
             <ElButton @click="openUploadDialog" v-auth="'add'">上传 TXT</ElButton>
@@ -204,19 +208,34 @@
           <ElInput v-model="uploadForm.author" placeholder="默认：未知" />
         </ElFormItem>
         <ElFormItem label="分类">
-          <ElSelect v-model="uploadForm.categoryId" placeholder="请选择分类" class="w-full" clearable>
+          <ElSelect
+            v-model="uploadForm.categoryId"
+            placeholder="请选择分类"
+            class="w-full"
+            clearable
+          >
             <ElOption v-for="cat in categoryList" :key="cat.id" :label="cat.name" :value="cat.id" />
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="简介">
-          <ElInput v-model="uploadForm.desc" type="textarea" :rows="2" placeholder="图书简介（可选）" />
+          <ElInput
+            v-model="uploadForm.desc"
+            type="textarea"
+            :rows="2"
+            placeholder="图书简介（可选）"
+          />
         </ElFormItem>
         <ElFormItem label="标签">
           <ElInput v-model="uploadForm.tags" placeholder="多个标签用逗号分隔" />
         </ElFormItem>
         <ElFormItem label="章节正则">
-          <ElInput v-model="uploadForm.chapterRegex" placeholder="留空使用默认规则（第X章/回/节等）" />
-          <div class="text-xs text-gray-400 mt-1">自定义正则表达式匹配章节标题，如 ^CHAPTER \d+</div>
+          <ElInput
+            v-model="uploadForm.chapterRegex"
+            placeholder="留空使用默认规则（第X章/回/节等）"
+          />
+          <div class="text-xs text-gray-400 mt-1"
+            >自定义正则表达式匹配章节标题，如 ^CHAPTER \d+</div
+          >
         </ElFormItem>
       </ElForm>
       <template #footer>
@@ -224,13 +243,20 @@
         <ElButton type="primary" @click="handleUploadTxt" :loading="uploading">上传并创建</ElButton>
       </template>
     </ElDialog>
-</ReadingPageShell>
+  </ReadingPageShell>
 </template>
 
 <script setup lang="ts">
   import ReadingPageShell from '../components/ReadingPageShell.vue'
   import { h } from 'vue'
-  import { getBooks, createBook, updateBook, deleteBook, getBookCategories, uploadTxtBook } from '@/api/reading'
+  import {
+    getBooks,
+    createBook,
+    updateBook,
+    deleteBook,
+    getBookCategories,
+    uploadTxtBook
+  } from '@/api/reading'
   import { ElMessage, ElMessageBox, ElTag, ElButton } from 'element-plus'
   import { useRouter } from 'vue-router'
   import ArtExcelExport from '@/components/core/forms/art-excel-export/index.vue'
@@ -359,7 +385,11 @@
     chapterCount: { title: '章节数', width: 10 },
     rating: { title: '评分', width: 8 },
     readCount: { title: '阅读量', width: 12, formatter: (_v, row) => formatNumber(row.readCount) },
-    status: { title: '状态', width: 8, formatter: (_v, row) => row.status === 1 ? '上架' : '下架' },
+    status: {
+      title: '状态',
+      width: 8,
+      formatter: (_v, row) => (row.status === 1 ? '上架' : '下架')
+    }
   }
 
   // 全量导出数据（去除分页限制，最多 10000 条）
@@ -370,7 +400,7 @@
       if (searchForm.keyword) params.keyword = searchForm.keyword
       if (searchForm.categoryId) params.categoryId = searchForm.categoryId
       if (searchForm.status !== '') params.status = searchForm.status
-      const res = await getBooks(params) as BookListResponse
+      const res = (await getBooks(params)) as BookListResponse
       exportData.value = res?.items || []
     } catch {
       exportData.value = bookList.value
@@ -435,9 +465,7 @@
       width: 70,
       align: 'center' as const,
       formatter: (row: Book) =>
-        row.isHot
-          ? h(ElTag, { type: 'danger', size: 'small' }, () => '热')
-          : h('span', null, '-')
+        row.isHot ? h(ElTag, { type: 'danger', size: 'small' }, () => '热') : h('span', null, '-')
     },
     {
       prop: 'isRecommend',
@@ -515,7 +543,7 @@
       if (searchForm.categoryId) params.categoryId = searchForm.categoryId
       if (searchForm.status !== '') params.status = searchForm.status
 
-      const res = await getBooks(params) as BookListResponse
+      const res = (await getBooks(params)) as BookListResponse
       bookList.value = res?.items || []
       total.value = res?.total || 0
     } catch (error) {
@@ -656,7 +684,7 @@
           await deleteBook(row.id)
           ElMessage.success('删除成功')
           loadBooks()
-        } catch (error) {
+        } catch {
           ElMessage.error('删除失败')
         }
       })
@@ -684,7 +712,7 @@
       }
       showDialog.value = false
       loadBooks()
-    } catch (error) {
+    } catch {
       ElMessage.error(isEdit.value ? '编辑失败' : '新增失败')
     } finally {
       saving.value = false
@@ -713,7 +741,9 @@
           try {
             await deleteBook(id)
             successCount++
-          } catch { /* 单个失败继续 */ }
+          } catch {
+            /* 单个失败继续 */
+          }
         }
         ElMessage.success(`成功删除 ${successCount} 本图书`)
         selectedIds.value = []
@@ -761,8 +791,14 @@
       if (uploadForm.tags) fd.append('tags', uploadForm.tags)
       if (uploadForm.chapterRegex) fd.append('chapterRegex', uploadForm.chapterRegex)
 
-      const res = await uploadTxtBook(fd) as { title: string; chapterCount: number; totalWordCount: number }
-      ElMessage.success(`创建成功：${res?.title}，共 ${res?.chapterCount} 章，${formatWordCount(res?.totalWordCount || 0)}`)
+      const res = (await uploadTxtBook(fd)) as {
+        title: string
+        chapterCount: number
+        totalWordCount: number
+      }
+      ElMessage.success(
+        `创建成功：${res?.title}，共 ${res?.chapterCount} 章，${formatWordCount(res?.totalWordCount || 0)}`
+      )
       showUploadDialog.value = false
       loadBooks()
     } catch (error: unknown) {

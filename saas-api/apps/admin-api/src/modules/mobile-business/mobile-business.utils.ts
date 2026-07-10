@@ -1,8 +1,8 @@
+import { BadRequestException } from '@nestjs/common'
 import { ApplicationStatus, Gender, Prisma } from '@prisma/client'
 import { hasValue } from '../../common/utils/helpers'
 import {
   normalizeFileUrl,
-  normalizeApiPrefix,
   resolveObjectKeyFromFileUrl
 } from '../../common/utils/file-url'
 
@@ -394,7 +394,7 @@ export function guardMobileEntryStorage<T>(action: () => Promise<T>) {
     return action()
   } catch (error) {
     if (isMissingMobileEntryStorage(error)) {
-      throw new (require('@nestjs/common').BadRequestException)(MOBILE_ENTRY_STORAGE_ERROR)
+      throw new BadRequestException(MOBILE_ENTRY_STORAGE_ERROR)
     }
     throw error
   }

@@ -182,6 +182,7 @@
    * @param item 菜单项数据
    * @returns 是否为外部链接
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const isExternalLink = (item: AppRouteRecord): boolean => {
     return !!(item.meta.link && !item.meta.isIframe)
   }

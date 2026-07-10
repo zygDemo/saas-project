@@ -18,7 +18,7 @@ import {
   MobileFollowUpDto,
   MobileSigningStartDto
 } from './dto/mobile-business.dto'
-import { MobileUploadResult } from './mobile-business.utils'
+import {  } from './mobile-business.utils'
 import { MobileFileService } from './mobile-file.service'
 import { MobileCustomerService } from './mobile-customer.service'
 import { MobileVehicleService } from './mobile-vehicle.service'

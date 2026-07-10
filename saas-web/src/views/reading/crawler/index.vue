@@ -102,10 +102,7 @@
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center">
           <el-icon class="text-2xl text-blue-500 mr-2">
-            <i
-              v-if="progress.status === 'downloading'"
-              class="ri-loader-4-line animate-spin"
-            ></i>
+            <i v-if="progress.status === 'downloading'" class="ri-loader-4-line animate-spin"></i>
             <i v-else-if="progress.status === 'paused'" class="ri-pause-circle-line"></i>
             <i v-else-if="progress.status === 'completed'" class="ri-check-double-line"></i>
             <i v-else-if="progress.status === 'cancelled'" class="ri-close-circle-line"></i>
@@ -572,16 +569,19 @@
   .animate-spin {
     animation: spin 1s linear infinite;
   }
+
   @keyframes spin {
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
   }
+
   .chapter-log-box {
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-family: Consolas, Monaco, 'Courier New', monospace;
     line-height: 1.6;
   }
 </style>

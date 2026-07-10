@@ -17,7 +17,9 @@
       <div class="mb-4 flex items-center gap-3">
         <span class="text-sm text-gray-700">多业务模块：</span>
         <ElSwitch v-model="form.mobileMultiModule" @change="onMultiModuleChange" />
-        <span class="text-xs text-gray-400">{{ form.mobileMultiModule ? '支持多模块切换' : '单模块模式' }}</span>
+        <span class="text-xs text-gray-400">{{
+          form.mobileMultiModule ? '支持多模块切换' : '单模块模式'
+        }}</span>
       </div>
 
       <!-- 模块勾选列表 -->
@@ -27,7 +29,11 @@
           v-for="mod in availableModules"
           :key="mod.key"
           :value="mod.key"
-          :disabled="!form.mobileMultiModule && selectedModules.length >= 1 && !selectedModules.includes(mod.key)"
+          :disabled="
+            !form.mobileMultiModule &&
+            selectedModules.length >= 1 &&
+            !selectedModules.includes(mod.key)
+          "
           size="large"
           class="module-checkbox"
         >
@@ -37,7 +43,10 @@
           </div>
         </ElCheckbox>
       </ElCheckboxGroup>
-      <p v-if="!form.mobileMultiModule && selectedModules.length > 0" class="mt-2 text-xs text-amber-500">
+      <p
+        v-if="!form.mobileMultiModule && selectedModules.length > 0"
+        class="mt-2 text-xs text-amber-500"
+      >
         单模块模式：仅第一个勾选的模块生效
       </p>
 
@@ -47,7 +56,9 @@
         <div v-if="selectedModules.length === 0" class="text-sm text-gray-400">将展示默认首页</div>
         <div v-else class="text-sm text-blue-600">
           <template v-if="form.mobileMultiModule">
-            多模块首页，可切换：[{{ selectedModules.map(k => moduleMap[k]?.name ?? k).join('、') }}]
+            多模块首页，可切换：[{{
+              selectedModules.map((k) => moduleMap[k]?.name ?? k).join('、')
+            }}]
           </template>
           <template v-else>
             直接进入：{{ moduleMap[defaultModule]?.name ?? defaultModule }}
@@ -64,117 +75,118 @@
 </template>
 
 <script setup lang="ts">
-import {
-  fetchGetRoleMobileConfig,
-  fetchUpdateRoleMobileConfig,
-  fetchResetRoleMobileConfig
-} from '@/api/system-manage'
+  import {
+    fetchGetRoleMobileConfig,
+    fetchUpdateRoleMobileConfig,
+    fetchResetRoleMobileConfig
+  } from '@/api/system-manage'
 
-type RoleListItem = Api.SystemManage.RoleListItem
-type MobileModuleItem = Api.SystemManage.MobileModuleItem
+  type RoleListItem = Api.SystemManage.RoleListItem
+  type MobileModuleItem = Api.SystemManage.MobileModuleItem
 
-interface Props {
-  modelValue: boolean
-  roleData?: RoleListItem
-}
-
-interface Emits {
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'success'): void
-}
-
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
-
-const visible = computed({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
-})
-
-const saving = ref(false)
-const resetting = ref(false)
-const availableModules = ref<MobileModuleItem[]>([])
-const moduleMap = ref<Record<string, MobileModuleItem>>({})
-
-const form = reactive({
-  mobileMultiModule: false
-})
-
-const selectedModules = ref<string[]>([])
-
-const defaultModule = computed(() => {
-  return selectedModules.value[0] ?? null
-})
-
-const onMultiModuleChange = (val: string | number | boolean) => {
-  if (!Boolean(val) && selectedModules.value.length > 1) {
-    selectedModules.value = [selectedModules.value[0]]
+  interface Props {
+    modelValue: boolean
+    roleData?: RoleListItem
   }
-}
 
-const loadConfig = async () => {
-  if (!props.roleData?.roleId) return
-  try {
-    const res = await fetchGetRoleMobileConfig(props.roleData.roleId)
-    availableModules.value = res.available
-    moduleMap.value = res.available.reduce((map, m) => ({ ...map, [m.key]: m }), {})
-    selectedModules.value = res.enabled ?? []
-    form.mobileMultiModule = res.mobileMultiModule
-  } catch {
-    // ignored
+  interface Emits {
+    (e: 'update:modelValue', value: boolean): void
+    (e: 'success'): void
   }
-}
 
-const save = async () => {
-  if (!props.roleData?.roleId) return
-  saving.value = true
-  try {
-    await fetchUpdateRoleMobileConfig(props.roleData.roleId, {
-      mobileModules: selectedModules.value,
-      mobileMultiModule: form.mobileMultiModule,
-      defaultMobileModule: defaultModule.value
-    })
-    emit('success')
-    visible.value = false
-  } finally {
-    saving.value = false
+  const props = defineProps<Props>()
+  const emit = defineEmits<Emits>()
+
+  const visible = computed({
+    get: () => props.modelValue,
+    set: (val) => emit('update:modelValue', val)
+  })
+
+  const saving = ref(false)
+  const resetting = ref(false)
+  const availableModules = ref<MobileModuleItem[]>([])
+  const moduleMap = ref<Record<string, MobileModuleItem>>({})
+
+  const form = reactive({
+    mobileMultiModule: false
+  })
+
+  const selectedModules = ref<string[]>([])
+
+  const defaultModule = computed(() => {
+    return selectedModules.value[0] ?? null
+  })
+
+  const onMultiModuleChange = (val: string | number | boolean) => {
+    if (!val && selectedModules.value.length > 1) {
+      selectedModules.value = [selectedModules.value[0]]
+    }
   }
-}
 
-const resetConfig = async () => {
-  if (!props.roleData?.roleId) return
-  resetting.value = true
-  try {
-    const res = await fetchResetRoleMobileConfig(props.roleData.roleId)
-    selectedModules.value = res.enabled ?? []
-    form.mobileMultiModule = res.mobileMultiModule
-    emit('success')
-  } finally {
-    resetting.value = false
+  const loadConfig = async () => {
+    if (!props.roleData?.roleId) return
+    try {
+      const res = await fetchGetRoleMobileConfig(props.roleData.roleId)
+      availableModules.value = res.available
+      moduleMap.value = res.available.reduce((map, m) => ({ ...map, [m.key]: m }), {})
+      selectedModules.value = res.enabled ?? []
+      form.mobileMultiModule = res.mobileMultiModule
+    } catch {
+      // ignored
+    }
   }
-}
 
-const handleClose = () => {
-  // reset state on close
-}
-
-watch(
-  () => props.modelValue,
-  (val) => {
-    if (val) loadConfig()
+  const save = async () => {
+    if (!props.roleData?.roleId) return
+    saving.value = true
+    try {
+      await fetchUpdateRoleMobileConfig(props.roleData.roleId, {
+        mobileModules: selectedModules.value,
+        mobileMultiModule: form.mobileMultiModule,
+        defaultMobileModule: defaultModule.value
+      })
+      emit('success')
+      visible.value = false
+    } finally {
+      saving.value = false
+    }
   }
-)
+
+  const resetConfig = async () => {
+    if (!props.roleData?.roleId) return
+    resetting.value = true
+    try {
+      const res = await fetchResetRoleMobileConfig(props.roleData.roleId)
+      selectedModules.value = res.enabled ?? []
+      form.mobileMultiModule = res.mobileMultiModule
+      emit('success')
+    } finally {
+      resetting.value = false
+    }
+  }
+
+  const handleClose = () => {
+    // reset state on close
+  }
+
+  watch(
+    () => props.modelValue,
+    (val) => {
+      if (val) loadConfig()
+    }
+  )
 </script>
 
 <style scoped>
-.module-checkbox {
-  margin: 0;
-  padding: 8px 12px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 6px;
-  transition: background 0.2s;
-}
-.module-checkbox:hover {
-  background: var(--el-fill-color-light);
-}
+  .module-checkbox {
+    padding: 8px 12px;
+    margin: 0;
+    border: 1px solid var(--el-border-color-light);
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+
+  .module-checkbox:hover {
+    background: var(--el-fill-color-light);
+  }
 </style>

@@ -44,18 +44,32 @@
             <div class="dict-panel__header">
               <div>
                 <h3>字典项</h3>
-                <p>{{ selectedType ? `${selectedType.name}（${selectedType.code}）` : '请选择字典类型' }}</p>
+                <p>{{
+                  selectedType ? `${selectedType.name}（${selectedType.code}）` : '请选择字典类型'
+                }}</p>
               </div>
-              <ElButton type="primary" :disabled="!selectedType" @click="openDataDialog()">新增字典项</ElButton>
+              <ElButton type="primary" :disabled="!selectedType" @click="openDataDialog()"
+                >新增字典项</ElButton
+              >
             </div>
           </template>
 
           <ElForm :model="dataSearch" class="dict-search" inline>
             <ElFormItem label="标签">
-              <ElInput v-model="dataSearch.label" clearable placeholder="字典标签" :disabled="!selectedType" />
+              <ElInput
+                v-model="dataSearch.label"
+                clearable
+                placeholder="字典标签"
+                :disabled="!selectedType"
+              />
             </ElFormItem>
             <ElFormItem label="值">
-              <ElInput v-model="dataSearch.value" clearable placeholder="字典值" :disabled="!selectedType" />
+              <ElInput
+                v-model="dataSearch.value"
+                clearable
+                placeholder="字典值"
+                :disabled="!selectedType"
+              />
             </ElFormItem>
             <ElFormItem>
               <ElButton type="primary" :disabled="!selectedType" @click="loadData">查询</ElButton>
@@ -75,7 +89,11 @@
       </ElCol>
     </ElRow>
 
-    <ElDialog v-model="typeDialogVisible" :title="typeForm.id ? '编辑字典类型' : '新增字典类型'" width="520px">
+    <ElDialog
+      v-model="typeDialogVisible"
+      :title="typeForm.id ? '编辑字典类型' : '新增字典类型'"
+      width="520px"
+    >
       <ElForm label-width="90px" :model="typeForm">
         <ElFormItem label="名称" required>
           <ElInput v-model="typeForm.name" placeholder="请输入字典名称" />
@@ -85,7 +103,12 @@
         </ElFormItem>
         <ElFormItem label="状态">
           <ElSelect v-model="typeForm.status" style="width: 100%">
-            <ElOption v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <ElOption
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="备注">
@@ -98,7 +121,11 @@
       </template>
     </ElDialog>
 
-    <ElDialog v-model="dataDialogVisible" :title="dataForm.id ? '编辑字典项' : '新增字典项'" width="520px">
+    <ElDialog
+      v-model="dataDialogVisible"
+      :title="dataForm.id ? '编辑字典项' : '新增字典项'"
+      width="520px"
+    >
       <ElForm label-width="90px" :model="dataForm">
         <ElFormItem label="所属类型">
           <ElInput :model-value="selectedType?.name || ''" disabled />
@@ -110,11 +137,21 @@
           <ElInput v-model="dataForm.value" placeholder="请输入字典值" />
         </ElFormItem>
         <ElFormItem label="排序">
-          <ElInputNumber v-model="dataForm.sort" :min="0" controls-position="right" style="width: 100%" />
+          <ElInputNumber
+            v-model="dataForm.sort"
+            :min="0"
+            controls-position="right"
+            style="width: 100%"
+          />
         </ElFormItem>
         <ElFormItem label="状态">
           <ElSelect v-model="dataForm.status" style="width: 100%">
-            <ElOption v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <ElOption
+              v-for="item in statusOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="备注">
@@ -164,7 +201,7 @@
   const typePagination = reactive({ current: 1, size: 20, total: 0 })
   const dataPagination = reactive({ current: 1, size: 20, total: 0 })
 
-  const statusLabel = (status: string) => status === 'ACTIVE' ? '启用' : '停用'
+  const statusLabel = (status: string) => (status === 'ACTIVE' ? '启用' : '停用')
 
   // 字典类型表格列配置
   const typeColumns = computed(() => [
@@ -176,7 +213,9 @@
       label: '状态',
       width: 80,
       formatter: (row: DictTypeItem) =>
-        h(ElTag, { type: row.status === 'ACTIVE' ? 'success' : 'info' }, () => statusLabel(row.status))
+        h(ElTag, { type: row.status === 'ACTIVE' ? 'success' : 'info' }, () =>
+          statusLabel(row.status)
+        )
     },
     {
       prop: 'operation',
@@ -185,7 +224,11 @@
       fixed: 'right' as const,
       formatter: (row: DictTypeItem) =>
         h('div', [
-          h(ElButton, { link: true, type: 'primary', onClick: () => openTypeDialog(row) }, () => '编辑'),
+          h(
+            ElButton,
+            { link: true, type: 'primary', onClick: () => openTypeDialog(row) },
+            () => '编辑'
+          ),
           h(ElButton, { link: true, type: 'danger', onClick: () => deleteType(row) }, () => '删除')
         ])
     }
@@ -201,7 +244,9 @@
       label: '状态',
       width: 90,
       formatter: (row: DictDataItem) =>
-        h(ElTag, { type: row.status === 'ACTIVE' ? 'success' : 'info' }, () => statusLabel(row.status))
+        h(ElTag, { type: row.status === 'ACTIVE' ? 'success' : 'info' }, () =>
+          statusLabel(row.status)
+        )
     },
     { prop: 'remark', label: '备注', minWidth: 150, showOverflowTooltip: true },
     {
@@ -211,7 +256,11 @@
       fixed: 'right' as const,
       formatter: (row: DictDataItem) =>
         h('div', [
-          h(ElButton, { link: true, type: 'primary', onClick: () => openDataDialog(row) }, () => '编辑'),
+          h(
+            ElButton,
+            { link: true, type: 'primary', onClick: () => openDataDialog(row) },
+            () => '编辑'
+          ),
           h(ElButton, { link: true, type: 'danger', onClick: () => deleteData(row) }, () => '删除')
         ])
     }
@@ -329,7 +378,7 @@
         ElMessage.success('更新成功')
       } else {
         // 创建时不发送 id 字段
-        const { id, ...createData } = typeForm
+        const { id: _id, ...createData } = typeForm // eslint-disable-line @typescript-eslint/no-unused-vars
         await fetchCreateDictType(createData)
         ElMessage.success('创建成功')
       }
@@ -350,7 +399,7 @@
         ElMessage.success('更新成功')
       } else {
         // 创建时不发送 id 字段
-        const { id, ...createData } = dataForm
+        const { id: _id, ...createData } = dataForm // eslint-disable-line @typescript-eslint/no-unused-vars
         const payload = { ...createData, typeId: selectedType.value.id }
         await fetchCreateDictData(payload)
         ElMessage.success('创建成功')

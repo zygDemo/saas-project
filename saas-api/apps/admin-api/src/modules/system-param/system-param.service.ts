@@ -146,7 +146,7 @@ export class SystemParamService {
   }
 }
 
-type ParamRecord = Prisma.SystemParamGetPayload<{}>
+type ParamRecord = Prisma.SystemParamGetPayload<object>
 
 function mapParam(item: ParamRecord) {
   return {

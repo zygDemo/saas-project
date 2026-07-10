@@ -288,7 +288,7 @@
       if (dialogType.value === 'add') {
         await fetchCreateUser(params)
       } else if (currentUserData.value.id) {
-        const { password, ...updateParams } = params
+        const { password: _password, ...updateParams } = params // eslint-disable-line @typescript-eslint/no-unused-vars
         await fetchUpdateUser(currentUserData.value.id, updateParams)
       }
 

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { LeadService } from './lead.service'
 import { PrismaService } from '../prisma/prisma.service'
-import { BadRequestException, NotFoundException } from '@nestjs/common'
+import { NotFoundException } from '@nestjs/common'
 import { LeadStatus } from '@prisma/client'
 
 jest.mock('../../common/tenant/tenant-context', () => ({

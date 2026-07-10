@@ -126,7 +126,11 @@
    * 验证密码
    * 当密码输入后，如果确认密码已填写，则触发确认密码的验证
    */
-  const validatePassword = (_rule: Record<string, unknown>, value: string, callback: (error?: Error) => void) => {
+  const validatePassword = (
+    _rule: Record<string, unknown>,
+    value: string,
+    callback: (error?: Error) => void
+  ) => {
     if (!value) {
       callback(new Error(t('register.placeholder.password')))
       return

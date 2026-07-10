@@ -62,15 +62,11 @@
 
   const clearCacheAndReload = async () => {
     try {
-      await ElMessageBox.confirm(
-        '清除缓存会退出登录并刷新页面，是否继续？',
-        '清除缓存确认',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-      )
+      await ElMessageBox.confirm('清除缓存会退出登录并刷新页面，是否继续？', '清除缓存确认', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
 
       // 清除本地存储
       localStorage.clear()

@@ -109,18 +109,12 @@
                 currentRow.type
               }}</ElTag>
             </ElDescriptionsItem>
-            <ElDescriptionsItem label="事件">{{
-              currentRow.event || '-'
-            }}</ElDescriptionsItem>
+            <ElDescriptionsItem label="事件">{{ currentRow.event || '-' }}</ElDescriptionsItem>
             <ElDescriptionsItem label="页面">{{
               currentRow.page || currentRow.route || '-'
             }}</ElDescriptionsItem>
             <ElDescriptionsItem label="状态码">
-              <ElTag
-                :type="statusTagType(currentRow.statusCode)"
-                effect="dark"
-                size="small"
-              >
+              <ElTag :type="statusTagType(currentRow.statusCode)" effect="dark" size="small">
                 {{ currentRow.statusCode || '-' }}
               </ElTag>
             </ElDescriptionsItem>
@@ -145,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted, onUnmounted, reactive, watch, nextTick } from 'vue'
+  import { ref, onMounted, onUnmounted, reactive, watch } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
   import { echarts, graphic } from '@/plugins/echarts'
   import {
@@ -165,7 +159,7 @@
     performanceCount: 0,
     actionCount: 0,
     hourly: [],
-    sourceBreakdown: [],
+    sourceBreakdown: []
   })
 
   const detailVisible = ref(false)
@@ -174,7 +168,7 @@
     keyword: '',
     module: 'frontend-monitor',
     event: '',
-    statusCode: '',
+    statusCode: ''
   })
 
   const trendChartRef = ref<HTMLElement>()
@@ -196,8 +190,8 @@
     useTable({
       core: {
         apiFn: fetchMonitorLogs,
-        immediate: true,
-      },
+        immediate: true
+      }
     })
 
   const handleSearch = () => {
@@ -209,14 +203,10 @@
       keyword: '',
       module: 'frontend-monitor',
       event: '',
-      statusCode: '',
+      statusCode: ''
     }
     refreshData()
   }
-
-  const errorCount = computed(() => stats.errorCount || 0)
-  const performanceCount = computed(() => stats.performanceCount || 0)
-  const actionCount = computed(() => Math.max((stats.total || 0) - errorCount.value - performanceCount.value, 0))
 
   const typeTagType = (type?: string) => {
     if (type === 'error') return 'danger'
@@ -250,14 +240,14 @@
   }
 
   const showDetail = (row: Record<string, unknown>) => {
-    currentRow.value = (row as unknown) as MonitorLogItem
+    currentRow.value = row as unknown as MonitorLogItem
     detailVisible.value = true
   }
 
   const loadStats = async () => {
     try {
       const result = await fetchMonitorStats({
-        module: searchForm.value.module,
+        module: searchForm.value.module
       })
       Object.assign(stats, result)
       updateTrendChart()
@@ -266,6 +256,7 @@
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const initTrendChart = () => {
     if (trendChartRef.value && !trendChart) {
       trendChart = echarts.init(trendChartRef.value)
@@ -367,15 +358,17 @@
     font-size: 12px;
     word-break: break-all;
   }
+
   .json-block {
     padding: 12px;
-    background: #f5f7fa;
-    border-radius: 6px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: 12px;
-    white-space: pre-wrap;
     word-break: break-all;
+    white-space: pre-wrap;
+    background: #f5f7fa;
+    border-radius: 6px;
   }
+
   .card-header {
     display: flex;
     align-items: center;

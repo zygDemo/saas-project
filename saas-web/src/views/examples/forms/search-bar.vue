@@ -633,7 +633,11 @@
    * @param formData 表单数据
    * @param type 表单类型描述
    */
-  const createFormHandler = (ref: Ref<{ validate: (cb: (valid: boolean) => void) => void } | null>, formData: Record<string, unknown>, type: string) => ({
+  const createFormHandler = (
+    ref: Ref<{ validate: (cb: (valid: boolean) => void) => void } | null>,
+    formData: Record<string, unknown>,
+    type: string
+  ) => ({
     reset: () => {
       console.log(`重置${type}表单`)
       emit('reset')

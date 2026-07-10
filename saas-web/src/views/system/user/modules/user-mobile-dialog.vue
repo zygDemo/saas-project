@@ -13,12 +13,7 @@
         用户：<span class="font-medium text-gray-700">{{ userData?.userName ?? '—' }}</span>
         <template v-if="configData.roles?.length">
           ｜ 角色：
-          <ElTag
-            v-for="r in configData.roles"
-            :key="r.roleId"
-            size="small"
-            class="ml-1"
-          >
+          <ElTag v-for="r in configData.roles" :key="r.roleId" size="small" class="ml-1">
             {{ r.roleName }}
           </ElTag>
         </template>
@@ -28,7 +23,9 @@
       <div class="mb-4 flex items-center gap-3">
         <span class="text-sm text-gray-700">多业务模块：</span>
         <ElSwitch v-model="form.mobileMultiModule" @change="onMultiModuleChange" />
-        <span class="text-xs text-gray-400">{{ form.mobileMultiModule ? '支持多模块切换' : '单模块模式' }}</span>
+        <span class="text-xs text-gray-400">{{
+          form.mobileMultiModule ? '支持多模块切换' : '单模块模式'
+        }}</span>
       </div>
 
       <!-- 模块勾选列表 -->
@@ -38,7 +35,11 @@
           v-for="mod in availableModules"
           :key="mod.key"
           :value="mod.key"
-          :disabled="!form.mobileMultiModule && selectedModules.length >= 1 && !selectedModules.includes(mod.key)"
+          :disabled="
+            !form.mobileMultiModule &&
+            selectedModules.length >= 1 &&
+            !selectedModules.includes(mod.key)
+          "
           size="large"
           class="module-checkbox"
         >
@@ -48,7 +49,10 @@
           </div>
         </ElCheckbox>
       </ElCheckboxGroup>
-      <p v-if="!form.mobileMultiModule && selectedModules.length > 0" class="mt-2 text-xs text-amber-500">
+      <p
+        v-if="!form.mobileMultiModule && selectedModules.length > 0"
+        class="mt-2 text-xs text-amber-500"
+      >
         单模块模式：仅第一个勾选的模块生效
       </p>
 
@@ -73,7 +77,9 @@
         </div>
         <div v-else class="text-sm text-blue-600">
           <template v-if="form.mobileMultiModule">
-            多模块首页，可切换：[{{ selectedModules.map(k => moduleMap[k]?.name ?? k).join('、') }}]
+            多模块首页，可切换：[{{
+              selectedModules.map((k) => moduleMap[k]?.name ?? k).join('、')
+            }}]
           </template>
           <template v-else>
             直接进入：{{ moduleMap[defaultModule]?.name ?? defaultModule }}
@@ -90,124 +96,125 @@
 </template>
 
 <script setup lang="ts">
-import {
-  fetchGetUserMobileConfig,
-  fetchUpdateUserMobileConfig,
-  fetchResetUserMobileConfig
-} from '@/api/system-manage'
+  import {
+    fetchGetUserMobileConfig,
+    fetchUpdateUserMobileConfig,
+    fetchResetUserMobileConfig
+  } from '@/api/system-manage'
 
-type UserListItem = Api.SystemManage.UserListItem
-type MobileModuleItem = Api.SystemManage.MobileModuleItem
-type EntityMobileConfigData = Api.SystemManage.EntityMobileConfigData
+  type UserListItem = Api.SystemManage.UserListItem
+  type MobileModuleItem = Api.SystemManage.MobileModuleItem
+  type EntityMobileConfigData = Api.SystemManage.EntityMobileConfigData
 
-interface Props {
-  modelValue: boolean
-  userData?: Partial<UserListItem>
-}
-
-interface Emits {
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'success'): void
-}
-
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
-
-const visible = computed({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
-})
-
-const saving = ref(false)
-const resetting = ref(false)
-const availableModules = ref<MobileModuleItem[]>([])
-const moduleMap = ref<Record<string, MobileModuleItem>>({})
-
-const configData = reactive<Partial<EntityMobileConfigData>>({
-  roles: []
-})
-
-const form = reactive({
-  mobileMultiModule: false
-})
-
-const selectedModules = ref<string[]>([])
-
-const defaultModule = computed(() => {
-  return selectedModules.value[0] ?? null
-})
-
-const onMultiModuleChange = (val: string | number | boolean) => {
-  if (!Boolean(val) && selectedModules.value.length > 1) {
-    selectedModules.value = [selectedModules.value[0]]
+  interface Props {
+    modelValue: boolean
+    userData?: Partial<UserListItem>
   }
-}
 
-const loadConfig = async () => {
-  if (!props.userData?.id) return
-  try {
-    const res = await fetchGetUserMobileConfig(props.userData.id)
-    availableModules.value = res.available
-    moduleMap.value = res.available.reduce((map, m) => ({ ...map, [m.key]: m }), {})
-    selectedModules.value = res.enabled ?? []
-    form.mobileMultiModule = res.mobileMultiModule
-    configData.roles = res.roles ?? []
-  } catch {
-    // ignored
+  interface Emits {
+    (e: 'update:modelValue', value: boolean): void
+    (e: 'success'): void
   }
-}
 
-const save = async () => {
-  if (!props.userData?.id) return
-  saving.value = true
-  try {
-    await fetchUpdateUserMobileConfig(props.userData.id, {
-      mobileModules: selectedModules.value,
-      mobileMultiModule: form.mobileMultiModule,
-      defaultMobileModule: defaultModule.value
-    })
-    emit('success')
-    visible.value = false
-  } finally {
-    saving.value = false
+  const props = defineProps<Props>()
+  const emit = defineEmits<Emits>()
+
+  const visible = computed({
+    get: () => props.modelValue,
+    set: (val) => emit('update:modelValue', val)
+  })
+
+  const saving = ref(false)
+  const resetting = ref(false)
+  const availableModules = ref<MobileModuleItem[]>([])
+  const moduleMap = ref<Record<string, MobileModuleItem>>({})
+
+  const configData = reactive<Partial<EntityMobileConfigData>>({
+    roles: []
+  })
+
+  const form = reactive({
+    mobileMultiModule: false
+  })
+
+  const selectedModules = ref<string[]>([])
+
+  const defaultModule = computed(() => {
+    return selectedModules.value[0] ?? null
+  })
+
+  const onMultiModuleChange = (val: string | number | boolean) => {
+    if (!val && selectedModules.value.length > 1) {
+      selectedModules.value = [selectedModules.value[0]]
+    }
   }
-}
 
-const resetConfig = async () => {
-  if (!props.userData?.id) return
-  resetting.value = true
-  try {
-    const res = await fetchResetUserMobileConfig(props.userData.id)
-    selectedModules.value = res.enabled ?? []
-    form.mobileMultiModule = res.mobileMultiModule
-    configData.roles = res.roles ?? []
-    emit('success')
-  } finally {
-    resetting.value = false
+  const loadConfig = async () => {
+    if (!props.userData?.id) return
+    try {
+      const res = await fetchGetUserMobileConfig(props.userData.id)
+      availableModules.value = res.available
+      moduleMap.value = res.available.reduce((map, m) => ({ ...map, [m.key]: m }), {})
+      selectedModules.value = res.enabled ?? []
+      form.mobileMultiModule = res.mobileMultiModule
+      configData.roles = res.roles ?? []
+    } catch {
+      // ignored
+    }
   }
-}
 
-const handleClose = () => {
-  // reset state on close
-}
-
-watch(
-  () => props.modelValue,
-  (val) => {
-    if (val) loadConfig()
+  const save = async () => {
+    if (!props.userData?.id) return
+    saving.value = true
+    try {
+      await fetchUpdateUserMobileConfig(props.userData.id, {
+        mobileModules: selectedModules.value,
+        mobileMultiModule: form.mobileMultiModule,
+        defaultMobileModule: defaultModule.value
+      })
+      emit('success')
+      visible.value = false
+    } finally {
+      saving.value = false
+    }
   }
-)
+
+  const resetConfig = async () => {
+    if (!props.userData?.id) return
+    resetting.value = true
+    try {
+      const res = await fetchResetUserMobileConfig(props.userData.id)
+      selectedModules.value = res.enabled ?? []
+      form.mobileMultiModule = res.mobileMultiModule
+      configData.roles = res.roles ?? []
+      emit('success')
+    } finally {
+      resetting.value = false
+    }
+  }
+
+  const handleClose = () => {
+    // reset state on close
+  }
+
+  watch(
+    () => props.modelValue,
+    (val) => {
+      if (val) loadConfig()
+    }
+  )
 </script>
 
 <style scoped>
-.module-checkbox {
-  margin: 0;
-  padding: 8px 12px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 6px;
-  transition: background 0.2s;
-}
-.module-checkbox:hover {
-  background: var(--el-fill-color-light);
-}
+  .module-checkbox {
+    padding: 8px 12px;
+    margin: 0;
+    border: 1px solid var(--el-border-color-light);
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+
+  .module-checkbox:hover {
+    background: var(--el-fill-color-light);
+  }
 </style>

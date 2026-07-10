@@ -127,7 +127,7 @@
   }
   type ElementTagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
 
-  const props = defineProps({
+  defineProps({
     modelValue: {
       type: Boolean,
       required: true
@@ -208,7 +208,7 @@
   }
 
   .detail-drawer__content {
-    padding: 8px 0 24px 0;
+    padding: 8px 0 24px;
   }
 
   .detail-drawer__content .el-descriptions__label {
@@ -243,44 +243,44 @@
 
   .detail-drawer__header-top {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
     flex-wrap: wrap;
     gap: 8px;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .detail-drawer__header-identity {
     display: flex;
-    align-items: center;
     gap: 10px;
+    align-items: center;
   }
 
   .detail-drawer__order-no {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: 15px;
     font-weight: 700;
     color: var(--el-text-color-primary);
     letter-spacing: 0.5px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
   .detail-drawer__header-summary {
     display: flex;
-    align-items: center;
+    flex-wrap: wrap;
     gap: 6px;
+    align-items: center;
     font-size: 12px;
     color: var(--el-text-color-secondary);
-    flex-wrap: wrap;
   }
 
   .detail-drawer__summary-item {
     display: flex;
-    align-items: center;
     gap: 3px;
+    align-items: center;
   }
 
   .detail-drawer__summary-label {
-    color: var(--el-text-color-placeholder);
     font-size: 11px;
+    color: var(--el-text-color-placeholder);
   }
 
   .detail-drawer__summary-value {
@@ -289,9 +289,9 @@
   }
 
   .detail-drawer__summary-sep {
-    color: var(--el-border-color);
-    font-size: 11px;
     margin: 0 1px;
+    font-size: 11px;
+    color: var(--el-border-color);
   }
 
   .detail-drawer__header-stats {
@@ -321,8 +321,8 @@
     overflow: hidden;
     font-size: 10px;
     color: var(--el-text-color-secondary);
-    text-transform: uppercase;
     text-overflow: ellipsis;
+    text-transform: uppercase;
     letter-spacing: 0.3px;
     white-space: nowrap;
   }

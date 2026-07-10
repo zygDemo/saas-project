@@ -320,7 +320,10 @@
       return
     }
 
-    let currentValue: Record<string | number, unknown> = modelValue.value as Record<string | number, unknown>
+    let currentValue: Record<string | number, unknown> = modelValue.value as Record<
+      string | number,
+      unknown
+    >
 
     segments.forEach((segment, index) => {
       const isLast = index === segments.length - 1
@@ -496,7 +499,8 @@
 
   defineExpose({
     ref: formInstance,
-    validate: (...args: unknown[]) => formInstance.value?.validate(...args as [(valid: boolean) => void]),
+    validate: (...args: unknown[]) =>
+      formInstance.value?.validate(...(args as [(valid: boolean) => void])),
     reset: handleReset,
     // 允许外部在不触发提交事件时主动获取清洗后的输出。
     getOutput: getSanitizedOutput

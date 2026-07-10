@@ -257,7 +257,7 @@ export class ReadingService {
     let content = file.buffer.toString('utf-8');
     if (content.includes('\ufffd') && content.indexOf('\ufffd') < 100) {
       try {
-        const iconv = require('iconv-lite');
+        const iconv = require('iconv-lite'); // eslint-disable-line @typescript-eslint/no-require-imports
         content = iconv.decode(file.buffer, 'gbk');
       } catch {
         // iconv-lite 不可用，继续用 UTF-8
@@ -272,7 +272,7 @@ export class ReadingService {
     // 修复文件名编码：Windows 文件名是 GBK，Multer 按 Latin-1 解析会导致乱码
     let originalname = file.originalname
     try {
-      const iconv = require('iconv-lite')
+      const iconv = require('iconv-lite') // eslint-disable-line @typescript-eslint/no-require-imports
       const buffer = Buffer.from(originalname, 'latin1')
       const decoded = iconv.decode(buffer, 'gbk')
       // 如果解码后包含中文字符，说明 GBK 解码成功
@@ -353,13 +353,13 @@ export class ReadingService {
     // 默认章节匹配模式
     const defaultPatterns = [
       // 第X章/回/节/卷/篇 + 可选标题
-      '^\s*(第[零一二三四五六七八九十百千万\d]+[章回节卷篇幕]\s*.*)$',
+      '^\\s*(第[零一二三四五六七八九十百千万\\d]+[章回节卷篇幕]\\s*.*)$',
       // Chapter X / CHAPTER X
-      '^\s*(chapter\s+\d+.*)$',
+      '^\\s*(chapter\\s+\\d+.*)$',
       // 数字序号标题，如 "001 标题" 或 "1. 标题"
-      '^\s*(\d{1,4}[\.、\s]\s*.{2,30})$',
+      '^\\s*(\\d{1,4}[\\.、\\s]\\s*.{2,30})$',
       // 卷标题
-      '^\s*(第[零一二三四五六七八九十百千万\d]+[卷部]\s*.*)$',
+      '^\\s*(第[零一二三四五六七八九十百千万\\d]+[卷部]\\s*.*)$',
     ];
 
     let regex: RegExp;

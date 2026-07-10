@@ -87,7 +87,7 @@
               <span class="flow-legend__item">
                 <span
                   class="flow-legend__dot"
-                  style="border-color: var(--el-border-color); background: var(--el-bg-color)"
+                  style="background: var(--el-bg-color); border-color: var(--el-border-color)"
                 ></span>
                 普通
               </span>
@@ -95,8 +95,8 @@
                 <span
                   class="flow-legend__dot"
                   style="
-                    border-color: var(--el-color-warning-light-3);
                     background: var(--el-color-warning-light-9);
+                    border-color: var(--el-color-warning-light-3);
                   "
                 ></span>
                 条件
@@ -493,12 +493,13 @@
         const transitions = nodeRule(row).transitions || []
         if (!transitions.length) return h('span', {}, '-')
         return h('div', { class: 'transition-cell' }, [
-          transitions.map((item: { id: number; fromNode: string; toNode: string; condition?: string }) =>
-            h(
-              'span',
-              { key: `${item.action}-${item.toNode}` },
-              `${actionLabel(item.action)} -> ${item.toNode}`
-            )
+          transitions.map(
+            (item: { id: number; fromNode: string; toNode: string; condition?: string }) =>
+              h(
+                'span',
+                { key: `${item.action}-${item.toNode}` },
+                `${actionLabel(item.action)} -> ${item.toNode}`
+              )
           )
         ])
       }
@@ -921,9 +922,9 @@
   .flow-card-title,
   .phase-block__head {
     display: flex;
+    gap: 16px;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
   }
 
   .flow-toolbar__main {
@@ -938,8 +939,8 @@
 
   .flow-toolbar__main p {
     margin: 6px 0 0;
-    color: var(--el-text-color-secondary);
     font-size: 13px;
+    color: var(--el-text-color-secondary);
   }
 
   .flow-toolbar__actions {
@@ -949,27 +950,27 @@
 
   .flow-layout {
     display: grid;
+    flex: 1;
     grid-template-columns: 360px minmax(0, 1fr);
     gap: 16px;
     min-height: 0;
-    flex: 1;
   }
 
   .flow-map,
   .flow-table-card {
-    min-height: 0;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .flow-map :deep(.el-card__body),
   .flow-table-card :deep(.el-card__body) {
-    flex: 1;
-    overflow: auto;
     display: flex;
+    flex: 1;
     flex-direction: column;
     min-height: 0;
+    overflow: auto;
   }
 
   .flow-card-title {
@@ -978,14 +979,14 @@
 
   .phase-block {
     padding: 12px;
+    background: var(--el-fill-color-blank);
     border: 1px solid var(--el-border-color-lighter);
     border-radius: 8px;
-    background: var(--el-fill-color-blank);
   }
 
   .phase-block__head span {
-    color: var(--el-text-color-secondary);
     font-size: 12px;
+    color: var(--el-text-color-secondary);
   }
 
   .phase-block__nodes {
@@ -998,23 +999,23 @@
   .node-pill {
     height: 30px;
     padding: 0 10px;
-    border: 1px solid var(--el-border-color);
-    border-radius: 6px;
-    background: var(--el-bg-color);
+    font-size: 12px;
     color: var(--el-text-color-regular);
     cursor: pointer;
-    font-size: 12px;
+    background: var(--el-bg-color);
+    border: 1px solid var(--el-border-color);
+    border-radius: 6px;
   }
 
   .node-pill span {
     margin-right: 5px;
-    color: var(--el-color-primary);
     font-weight: 650;
+    color: var(--el-color-primary);
   }
 
   .node-pill.is-parallel {
-    border-color: var(--el-color-success-light-5);
     background: var(--el-color-success-light-9);
+    border-color: var(--el-color-success-light-5);
   }
 
   .node-pill.is-inactive {
@@ -1022,8 +1023,8 @@
   }
 
   .node-pill.is-conditional {
-    border-color: var(--el-color-warning-light-3);
     background: var(--el-color-warning-light-9);
+    border-color: var(--el-color-warning-light-3);
   }
 
   .node-pill.is-conditional span {
@@ -1038,35 +1039,35 @@
 
   .node-name-cell__main {
     display: flex;
-    align-items: center;
     gap: 6px;
+    align-items: center;
   }
 
   .node-name-cell__code {
     display: inline-flex;
+    flex-shrink: 0;
     align-items: center;
     justify-content: center;
     min-width: 36px;
     height: 20px;
     padding: 0 6px;
-    border-radius: 4px;
-    background: var(--el-color-primary-light-9);
-    color: var(--el-color-primary);
+    font-family: monospace;
     font-size: 11px;
     font-weight: 700;
-    font-family: monospace;
-    flex-shrink: 0;
+    color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+    border-radius: 4px;
   }
 
   .node-name-cell__phase {
-    color: var(--el-text-color-secondary);
     font-size: 11px;
+    color: var(--el-text-color-secondary);
   }
 
   .node-name-cell span,
   .transition-cell {
-    color: var(--el-text-color-secondary);
     font-size: 12px;
+    color: var(--el-text-color-secondary);
   }
 
   .transition-cell {
@@ -1093,29 +1094,30 @@
     padding-right: 10px;
     overflow: auto;
   }
+
   .flow-legend {
     display: flex;
-    align-items: center;
     gap: 12px;
-    margin-left: auto;
+    align-items: center;
     margin-right: 8px;
+    margin-left: auto;
     font-size: 11px;
     color: var(--el-text-color-secondary);
   }
 
   .flow-legend__item {
     display: inline-flex;
-    align-items: center;
     gap: 4px;
+    align-items: center;
     white-space: nowrap;
   }
 
   .flow-legend__dot {
     display: inline-block;
+    flex-shrink: 0;
     width: 10px;
     height: 10px;
-    border-radius: 3px;
     border: 1px solid transparent;
-    flex-shrink: 0;
+    border-radius: 3px;
   }
 </style>

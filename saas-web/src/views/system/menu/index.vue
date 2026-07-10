@@ -221,9 +221,9 @@
               type: 'edit',
               onClick: () => handleEditAuth(row)
             }),
-          h(ArtButtonTable, {
-            type: 'delete',
-            onClick: () => handleDeleteAuth(row)
+            h(ArtButtonTable, {
+              type: 'delete',
+              onClick: () => handleDeleteAuth(row)
             })
           ])
         }
@@ -396,6 +396,7 @@
   /**
    * 添加权限按钮
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleAddAuth = (row: AppRouteRecord): void => {
     dialogType.value = 'button'
     currentMenuRow.value = row

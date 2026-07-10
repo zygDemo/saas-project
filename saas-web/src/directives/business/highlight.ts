@@ -71,51 +71,53 @@ async function getHighlight() {
       import('highlight.js/lib/languages/yaml'),
       import('highlight.js/lib/languages/markdown'),
       import('highlight.js/lib/languages/plaintext')
-    ]).then(([
-      core,
-      javascript,
-      typescript,
-      xml,
-      json,
-      bash,
-      css,
-      scss,
-      less,
-      java,
-      go,
-      rust,
-      sql,
-      yaml,
-      markdown,
-      plaintext
-    ]) => {
-      const hljs = core.default as HighlightInstance
-      hljs.registerLanguage('javascript', javascript.default)
-      hljs.registerLanguage('js', javascript.default)
-      hljs.registerLanguage('typescript', typescript.default)
-      hljs.registerLanguage('ts', typescript.default)
-      hljs.registerLanguage('xml', xml.default)
-      hljs.registerLanguage('html', xml.default)
-      hljs.registerLanguage('vue', xml.default)
-      hljs.registerLanguage('json', json.default)
-      hljs.registerLanguage('bash', bash.default)
-      hljs.registerLanguage('shell', bash.default)
-      hljs.registerLanguage('sh', bash.default)
-      hljs.registerLanguage('css', css.default)
-      hljs.registerLanguage('scss', scss.default)
-      hljs.registerLanguage('less', less.default)
-      hljs.registerLanguage('java', java.default)
-      hljs.registerLanguage('go', go.default)
-      hljs.registerLanguage('rust', rust.default)
-      hljs.registerLanguage('sql', sql.default)
-      hljs.registerLanguage('yaml', yaml.default)
-      hljs.registerLanguage('yml', yaml.default)
-      hljs.registerLanguage('markdown', markdown.default)
-      hljs.registerLanguage('md', markdown.default)
-      hljs.registerLanguage('plaintext', plaintext.default)
-      hljs.registerLanguage('text', plaintext.default)
-      return hljs
-    })
+    ]).then(
+      ([
+        core,
+        javascript,
+        typescript,
+        xml,
+        json,
+        bash,
+        css,
+        scss,
+        less,
+        java,
+        go,
+        rust,
+        sql,
+        yaml,
+        markdown,
+        plaintext
+      ]) => {
+        const hljs = core.default as HighlightInstance
+        hljs.registerLanguage('javascript', javascript.default)
+        hljs.registerLanguage('js', javascript.default)
+        hljs.registerLanguage('typescript', typescript.default)
+        hljs.registerLanguage('ts', typescript.default)
+        hljs.registerLanguage('xml', xml.default)
+        hljs.registerLanguage('html', xml.default)
+        hljs.registerLanguage('vue', xml.default)
+        hljs.registerLanguage('json', json.default)
+        hljs.registerLanguage('bash', bash.default)
+        hljs.registerLanguage('shell', bash.default)
+        hljs.registerLanguage('sh', bash.default)
+        hljs.registerLanguage('css', css.default)
+        hljs.registerLanguage('scss', scss.default)
+        hljs.registerLanguage('less', less.default)
+        hljs.registerLanguage('java', java.default)
+        hljs.registerLanguage('go', go.default)
+        hljs.registerLanguage('rust', rust.default)
+        hljs.registerLanguage('sql', sql.default)
+        hljs.registerLanguage('yaml', yaml.default)
+        hljs.registerLanguage('yml', yaml.default)
+        hljs.registerLanguage('markdown', markdown.default)
+        hljs.registerLanguage('md', markdown.default)
+        hljs.registerLanguage('plaintext', plaintext.default)
+        hljs.registerLanguage('text', plaintext.default)
+        return hljs
+      }
+    )
   }
 
   return highlightPromise
@@ -313,7 +315,8 @@ const highlightDirective: HighlightDirective = {
 
   unmounted(el: HTMLElement) {
     // 清理 MutationObserver
-    const observer = (el as HTMLElement & { _highlightObserver?: MutationObserver })._highlightObserver
+    const observer = (el as HTMLElement & { _highlightObserver?: MutationObserver })
+      ._highlightObserver
     if (observer) {
       observer.disconnect()
       delete (el as HTMLElement & { _highlightObserver?: MutationObserver })._highlightObserver

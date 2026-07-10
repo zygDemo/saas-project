@@ -26,10 +26,7 @@
 
   /** 动态加载 xlsx（仅在导出时加载） */
   async function loadXlsx() {
-    const [xlsxMod, fileSaverMod] = await Promise.all([
-      import('xlsx'),
-      import('file-saver')
-    ])
+    const [xlsxMod, fileSaverMod] = await Promise.all([import('xlsx'), import('file-saver')])
     return { XLSX: xlsxMod, FileSaver: fileSaverMod.default }
   }
 

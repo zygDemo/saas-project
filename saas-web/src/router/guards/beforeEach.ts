@@ -35,7 +35,12 @@
  * @module router/guards/beforeEach
  * @author Art Design Pro Team
  */
-import type { Router, RouteLocationNormalized, NavigationGuardNext, RouteRecordRaw } from 'vue-router'
+import type {
+  Router,
+  RouteLocationNormalized,
+  NavigationGuardNext,
+  RouteRecordRaw
+} from 'vue-router'
 import { nextTick } from 'vue'
 import NProgress from 'nprogress'
 import { useSettingStore } from '@/store/modules/setting'

@@ -26,7 +26,11 @@
     />
 
     <ElCard class="art-table-card announcement-table-card">
-      <ArtTableHeader :loading="loading" layout="refresh,size,fullscreen,columns,settings" @refresh="loadData">
+      <ArtTableHeader
+        :loading="loading"
+        layout="refresh,size,fullscreen,columns,settings"
+        @refresh="loadData"
+      >
         <template #left>
           <div class="table-title">
             <span>公告列表</span>
@@ -53,23 +57,44 @@
       top="5vh"
       class="announcement-dialog"
     >
-      <ElForm ref="formRef" :model="form" :rules="rules" label-width="92px" class="announcement-form">
+      <ElForm
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="92px"
+        class="announcement-form"
+      >
         <div class="form-section">基础信息</div>
         <ElFormItem label="公告标题" prop="title">
-          <ElInput v-model="form.title" maxlength="200" show-word-limit placeholder="请输入公告标题" />
+          <ElInput
+            v-model="form.title"
+            maxlength="200"
+            show-word-limit
+            placeholder="请输入公告标题"
+          />
         </ElFormItem>
         <ElRow :gutter="16">
           <ElCol :xs="24" :sm="12">
             <ElFormItem label="公告类型">
               <ElSelect v-model="form.type" class="w-full">
-                <ElOption v-for="item in typeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                <ElOption
+                  v-for="item in typeOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </ElSelect>
             </ElFormItem>
           </ElCol>
           <ElCol :xs="24" :sm="12">
             <ElFormItem label="重要程度">
               <ElSelect v-model="form.level" class="w-full">
-                <ElOption v-for="item in levelOptions" :key="item.value" :label="item.label" :value="item.value" />
+                <ElOption
+                  v-for="item in levelOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </ElSelect>
             </ElFormItem>
           </ElCol>
@@ -103,7 +128,11 @@
         <ElRow :gutter="16">
           <ElCol :xs="24" :sm="12">
             <ElFormItem label="发布范围">
-              <ElInput v-model="form.target" maxlength="100" placeholder="如：全部用户 / 管理员 / 指定机构" />
+              <ElInput
+                v-model="form.target"
+                maxlength="100"
+                placeholder="如：全部用户 / 管理员 / 指定机构"
+              />
             </ElFormItem>
           </ElCol>
           <ElCol :xs="24" :sm="12">
@@ -123,26 +152,46 @@
           />
         </ElFormItem>
         <ElFormItem label="备注">
-          <ElInput v-model="form.remark" type="textarea" :rows="2" maxlength="500" show-word-limit placeholder="可选" />
+          <ElInput
+            v-model="form.remark"
+            type="textarea"
+            :rows="2"
+            maxlength="500"
+            show-word-limit
+            placeholder="可选"
+          />
         </ElFormItem>
       </ElForm>
       <template #footer>
         <ElButton @click="dialogVisible = false">取消</ElButton>
         <ElButton :loading="submitting" @click="handleSubmit('DRAFT')">保存草稿</ElButton>
-        <ElButton type="primary" :loading="submitting" @click="handleSubmit('PUBLISHED')">保存并发布</ElButton>
+        <ElButton type="primary" :loading="submitting" @click="handleSubmit('PUBLISHED')"
+          >保存并发布</ElButton
+        >
       </template>
     </ElDialog>
 
     <!-- 详情预览 -->
-    <ElDialog v-model="previewVisible" title="公告预览" width="720px" class="announcement-preview-dialog">
+    <ElDialog
+      v-model="previewVisible"
+      title="公告预览"
+      width="720px"
+      class="announcement-preview-dialog"
+    >
       <div v-if="previewItem" class="announcement-preview">
         <div class="preview-header">
           <div>
             <h2>{{ previewItem.title }}</h2>
             <div class="preview-meta">
-              <ElTag :type="getTypeTag(previewItem.type)" size="small">{{ getTypeLabel(previewItem.type) }}</ElTag>
-              <ElTag :type="getLevelTag(previewItem.level)" size="small">{{ getLevelLabel(previewItem.level) }}</ElTag>
-              <ElTag :type="getStatusTag(previewItem.status)" size="small">{{ getStatusLabel(previewItem.status) }}</ElTag>
+              <ElTag :type="getTypeTag(previewItem.type)" size="small">{{
+                getTypeLabel(previewItem.type)
+              }}</ElTag>
+              <ElTag :type="getLevelTag(previewItem.level)" size="small">{{
+                getLevelLabel(previewItem.level)
+              }}</ElTag>
+              <ElTag :type="getStatusTag(previewItem.status)" size="small">{{
+                getStatusLabel(previewItem.status)
+              }}</ElTag>
             </div>
           </div>
           <div class="preview-time">
@@ -204,10 +253,31 @@
   ]
 
   const searchItems = computed(() => [
-    { key: 'title', label: '公告标题', type: 'input' as const, placeholder: '请输入公告标题', clearable: true },
-    { key: 'type', label: '类型', type: 'select' as const, props: { options: typeOptions, clearable: true, filterable: true } },
-    { key: 'level', label: '级别', type: 'select' as const, props: { options: levelOptions, clearable: true, filterable: true } },
-    { key: 'status', label: '状态', type: 'select' as const, props: { options: statusOptions, clearable: true, filterable: true } }
+    {
+      key: 'title',
+      label: '公告标题',
+      type: 'input' as const,
+      placeholder: '请输入公告标题',
+      clearable: true
+    },
+    {
+      key: 'type',
+      label: '类型',
+      type: 'select' as const,
+      props: { options: typeOptions, clearable: true, filterable: true }
+    },
+    {
+      key: 'level',
+      label: '级别',
+      type: 'select' as const,
+      props: { options: levelOptions, clearable: true, filterable: true }
+    },
+    {
+      key: 'status',
+      label: '状态',
+      type: 'select' as const,
+      props: { options: statusOptions, clearable: true, filterable: true }
+    }
   ])
 
   const form = reactive({
@@ -229,12 +299,21 @@
     content: [{ required: true, message: '请输入公告内容', trigger: 'blur' }]
   }
 
-  const getTypeTag = (t: string): TagType => ({ NOTICE: 'info', ANNOUNCEMENT: '', ALERT: 'warning' } as Record<string, TagType>)[t] || 'info'
-  const getTypeLabel = (t: string) => ({ NOTICE: '通知', ANNOUNCEMENT: '公告', ALERT: '警告' }[t] || t)
-  const getLevelTag = (l: string): TagType => ({ NORMAL: 'info', IMPORTANT: 'warning', URGENT: 'danger' } as Record<string, TagType>)[l] || 'info'
-  const getLevelLabel = (l: string) => ({ NORMAL: '普通', IMPORTANT: '重要', URGENT: '紧急' }[l] || l)
-  const getStatusTag = (s: string): TagType => ({ DRAFT: 'info', PUBLISHED: 'success', EXPIRED: 'warning' } as Record<string, TagType>)[s] || 'info'
-  const getStatusLabel = (s: string) => ({ DRAFT: '草稿', PUBLISHED: '已发布', EXPIRED: '已过期' }[s] || s)
+  const getTypeTag = (t: string): TagType =>
+    (({ NOTICE: 'info', ANNOUNCEMENT: '', ALERT: 'warning' }) as Record<string, TagType>)[t] ||
+    'info'
+  const getTypeLabel = (t: string) =>
+    ({ NOTICE: '通知', ANNOUNCEMENT: '公告', ALERT: '警告' })[t] || t
+  const getLevelTag = (l: string): TagType =>
+    (({ NORMAL: 'info', IMPORTANT: 'warning', URGENT: 'danger' }) as Record<string, TagType>)[l] ||
+    'info'
+  const getLevelLabel = (l: string) =>
+    ({ NORMAL: '普通', IMPORTANT: '重要', URGENT: '紧急' })[l] || l
+  const getStatusTag = (s: string): TagType =>
+    (({ DRAFT: 'info', PUBLISHED: 'success', EXPIRED: 'warning' }) as Record<string, TagType>)[s] ||
+    'info'
+  const getStatusLabel = (s: string) =>
+    ({ DRAFT: '草稿', PUBLISHED: '已发布', EXPIRED: '已过期' })[s] || s
 
   const columns = computed(() => [
     {
@@ -244,26 +323,33 @@
       formatter: (row: AnnItem) =>
         h('div', { class: 'announcement-title-cell' }, [
           h('span', { class: 'announcement-title-cell__text' }, row.title),
-          row.topFlag ? h(ElTag, { type: 'danger', size: 'small', effect: 'plain' }, () => '置顶') : null
+          row.topFlag
+            ? h(ElTag, { type: 'danger', size: 'small', effect: 'plain' }, () => '置顶')
+            : null
         ])
     },
     {
       prop: 'type',
       label: '类型',
       width: 90,
-      formatter: (row: AnnItem) => h(ElTag, { type: getTypeTag(row.type), size: 'small' }, () => getTypeLabel(row.type))
+      formatter: (row: AnnItem) =>
+        h(ElTag, { type: getTypeTag(row.type), size: 'small' }, () => getTypeLabel(row.type))
     },
     {
       prop: 'level',
       label: '级别',
       width: 90,
-      formatter: (row: AnnItem) => h(ElTag, { type: getLevelTag(row.level), size: 'small' }, () => getLevelLabel(row.level))
+      formatter: (row: AnnItem) =>
+        h(ElTag, { type: getLevelTag(row.level), size: 'small' }, () => getLevelLabel(row.level))
     },
     {
       prop: 'status',
       label: '状态',
       width: 100,
-      formatter: (row: AnnItem) => h(ElTag, { type: getStatusTag(row.status), size: 'small' }, () => getStatusLabel(row.status))
+      formatter: (row: AnnItem) =>
+        h(ElTag, { type: getStatusTag(row.status), size: 'small' }, () =>
+          getStatusLabel(row.status)
+        )
     },
     { prop: 'target', label: '发布范围', width: 120, showOverflowTooltip: true },
     { prop: 'viewCount', label: '阅读', width: 80, align: 'center' as const },
@@ -275,17 +361,43 @@
       width: 260,
       fixed: 'right' as const,
       formatter: (row: AnnItem) =>
-        h(ElSpace, { size: 4 }, () => [
-          h(ElButton, { link: true, type: 'primary', onClick: () => handlePreview(row) }, () => '预览'),
-          row.status !== 'PUBLISHED'
-            ? h(ElButton, { link: true, type: 'success', onClick: () => handlePublish(row) }, () => '发布')
-            : h(ElButton, { link: true, type: 'warning', onClick: () => handleUnpublish(row) }, () => '撤回'),
-          row.status !== 'EXPIRED'
-            ? h(ElButton, { link: true, type: 'warning', onClick: () => handleExpire(row) }, () => '过期')
-            : null,
-          h(ElButton, { link: true, type: 'primary', onClick: () => openDialog(row) }, () => '编辑'),
-          h(ElButton, { link: true, type: 'danger', onClick: () => handleDelete(row) }, () => '删除')
-        ].filter(Boolean))
+        h(ElSpace, { size: 4 }, () =>
+          [
+            h(
+              ElButton,
+              { link: true, type: 'primary', onClick: () => handlePreview(row) },
+              () => '预览'
+            ),
+            row.status !== 'PUBLISHED'
+              ? h(
+                  ElButton,
+                  { link: true, type: 'success', onClick: () => handlePublish(row) },
+                  () => '发布'
+                )
+              : h(
+                  ElButton,
+                  { link: true, type: 'warning', onClick: () => handleUnpublish(row) },
+                  () => '撤回'
+                ),
+            row.status !== 'EXPIRED'
+              ? h(
+                  ElButton,
+                  { link: true, type: 'warning', onClick: () => handleExpire(row) },
+                  () => '过期'
+                )
+              : null,
+            h(
+              ElButton,
+              { link: true, type: 'primary', onClick: () => openDialog(row) },
+              () => '编辑'
+            ),
+            h(
+              ElButton,
+              { link: true, type: 'danger', onClick: () => handleDelete(row) },
+              () => '删除'
+            )
+          ].filter(Boolean)
+        )
     }
   ])
 
@@ -574,7 +686,7 @@
     border-radius: 4px;
   }
 
-  @media (max-width: 768px) {
+  @media (width <= 768px) {
     .page-hero {
       align-items: flex-start;
     }

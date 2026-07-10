@@ -495,7 +495,8 @@
 
   defineExpose({
     ref: formInstance,
-    validate: (...args: unknown[]) => formInstance.value?.validate(...args as [(valid: boolean) => void]),
+    validate: (...args: unknown[]) =>
+      formInstance.value?.validate(...(args as [(valid: boolean) => void])),
     reset: handleReset,
     // 允许外部在手动组装请求前直接读取清洗后的参数。
     getOutput: getSanitizedOutput

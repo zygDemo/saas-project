@@ -272,18 +272,21 @@
 <style scoped>
   .card-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
   }
+
   .card-header h3 {
     margin: 0;
     font-size: 16px;
   }
+
   .card-header p {
     margin: 4px 0 0;
     font-size: 13px;
     color: var(--el-text-color-secondary);
   }
+
   .search-form {
     margin-bottom: 16px;
   }

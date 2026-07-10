@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../prisma/prisma.service'
@@ -52,7 +53,7 @@ export class MobilePostLoanService {
       },
       orderBy: { period: 'asc' }
     })
-    if (!plan) throw new (require('@nestjs/common').BadRequestException)('没有待还款的计划')
+    if (!plan) throw new BadRequestException('没有待还款的计划')
 
     const principal = dto.principal ?? dto.amount
     const interest = dto.interest ?? 0

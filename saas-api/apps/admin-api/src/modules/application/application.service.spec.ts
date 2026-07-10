@@ -8,7 +8,7 @@ import {
   ApprovalAction,
   DisbursementStatus,
   RepaymentStatus,
-  SignStatus
+  
 } from '@prisma/client'
 
 jest.mock('../../common/utils/application-no')
@@ -361,7 +361,7 @@ describe('ApplicationService', () => {
         status: ApplicationStatus.PENDING_RISK_PRE
       })
 
-      const result = await service.submit(1)
+      await service.submit(1)
 
       expect(mockPrisma.application.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -1117,7 +1117,7 @@ describe('ApplicationService', () => {
         return fn(tx)
       })
 
-      const result = await service.registerRepayment(1, {
+      await service.registerRepayment(1, {
         amount: 8900,
         principal: 8000,
         interest: 900,
@@ -1226,7 +1226,7 @@ describe('ApplicationService', () => {
         { id: 2, period: 2, status: RepaymentStatus.NOT_DUE, records: [] }
       ] as any)
 
-      const result = await service.getRepaymentPlans(1)
+      await service.getRepaymentPlans(1)
 
       expect(result).toHaveLength(2)
       expect(mockPrisma.repaymentPlan.findMany).toHaveBeenCalledWith(
@@ -1245,7 +1245,7 @@ describe('ApplicationService', () => {
       ] as any)
       mockPrisma.repaymentPlan.count!.mockResolvedValue(1)
 
-      const result = await service.getOverduePlans({ page: 1, pageSize: 20 })
+      await service.getOverduePlans({ page: 1, pageSize: 20 })
 
       expect(result.items).toHaveLength(1)
       expect(result.total).toBe(1)
@@ -1273,7 +1273,7 @@ describe('ApplicationService', () => {
         { id: 1, content: '电话催收' }
       ] as any)
 
-      const result = await service.getCollectionRecords(1)
+      await service.getCollectionRecords(1)
 
       expect(result).toHaveLength(1)
     })
@@ -1443,7 +1443,7 @@ describe('ApplicationService', () => {
       // 2. 提交
       mockStatus(ApplicationStatus.DRAFT)
       mockPrisma.application.update!.mockResolvedValue({ id: 1, status: ApplicationStatus.PENDING_RISK_PRE })
-      const submitResult = await service.submit(1)
+      await service.submit(1)
       expect(mockPrisma.application.update).toHaveBeenCalled()
 
       // 3. 风控预审通过

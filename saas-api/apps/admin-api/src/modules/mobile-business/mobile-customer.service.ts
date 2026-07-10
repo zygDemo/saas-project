@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service'
 import { RequestUser } from '../../common/types/request-user'
 import { MobileIdCardInfoDto, MobileCustomerExtraDto, MobileUserListQueryDto } from './dto/mobile-business.dto'
 import { mapGender, parseBirthDate, formatDateTime, mapCustomer, guardMobileEntryStorageAsync } from './mobile-business.utils'
-import { getDefaultOrg, findCustomerByUuid, getCustomerByUuid, findLatestDraftApplication, ensureCustomerDraftApplication } from './mobile-business.db-helpers'
+import { getDefaultOrg, findCustomerByUuid, getCustomerByUuid, ensureCustomerDraftApplication } from './mobile-business.db-helpers'
 import { MobileFileService } from './mobile-file.service'
 import { getRequiredTenantId } from '../../common/utils/helpers'
 

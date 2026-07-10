@@ -67,7 +67,9 @@
 
   // 统一的设置变更处理
   const handleSettingChange = (handlerName: string, value: unknown) => {
-    const handler = (basicHandlers as Record<string, ((val: unknown) => void) | undefined>)[handlerName]
+    const handler = (basicHandlers as Record<string, ((val: unknown) => void) | undefined>)[
+      handlerName
+    ]
     if (typeof handler === 'function') {
       handler(value)
     } else {

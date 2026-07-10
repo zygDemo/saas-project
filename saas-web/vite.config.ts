@@ -73,7 +73,12 @@ export default ({ mode }: { mode: string }) => {
             if (id.includes('/element-plus@') || id.includes('/@element-plus+icons-vue@')) {
               return 'vendor-element-plus'
             }
-            if (id.includes('/vue-router@') || id.includes('/pinia@') || id.includes('/pinia-plugin-persistedstate@') || id.includes('/vue-i18n@')) {
+            if (
+              id.includes('/vue-router@') ||
+              id.includes('/pinia@') ||
+              id.includes('/pinia-plugin-persistedstate@') ||
+              id.includes('/vue-i18n@')
+            ) {
               return 'vendor-vue-router'
             }
             if (id.includes('/vue@') || id.includes('/@vue+')) return 'vendor-vue-core'

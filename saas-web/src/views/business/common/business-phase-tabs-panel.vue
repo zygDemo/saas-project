@@ -1,20 +1,22 @@
 <template>
-  <ElTabs :model-value="activeMainTab" class="detail-drawer__main-tabs" @update:model-value="handleTabChange">
+  <ElTabs
+    :model-value="activeMainTab"
+    class="detail-drawer__main-tabs"
+    @update:model-value="handleTabChange"
+  >
     <ElTabPane
       v-for="phase in phaseTabs"
       :key="phase.code"
       :label="phase.name"
       :name="String(phase.code)"
     >
-      <div v-if="!phase.groups.length" class="detail-drawer__phase-empty">
-        暂无此阶段数据
-      </div>
+      <div v-if="!phase.groups.length" class="detail-drawer__phase-empty"> 暂无此阶段数据 </div>
       <div v-else class="phase-fields">
         <div v-if="phase.actions && phase.actions.length" class="phase-actions">
           <ElButton
             v-for="action in phase.actions"
             :key="action.name"
-            :type="(action.type || 'primary') as 'primary' | 'success' | 'warning' | 'danger' | 'info'"
+            :type="action.type || 'primary'"
             :disabled="!action.visible(currentRow)"
             @click="$emit('action', action)"
           >
@@ -37,9 +39,18 @@
                     共 {{ field.value?.length || 0 }} 期
                   </span>
                 </div>
-                <ElTable :data="field.value" stripe border size="small" class="repayment-table"
+                <ElTable
+                  :data="field.value"
+                  stripe
+                  border
+                  size="small"
+                  class="repayment-table"
                   :row-class-name="repaymentRowClass"
-                  :header-cell-style="{ background: 'var(--el-color-primary-light-9)', color: 'var(--el-text-color-primary)', fontWeight: '600' }"
+                  :header-cell-style="{
+                    background: 'var(--el-color-primary-light-9)',
+                    color: 'var(--el-text-color-primary)',
+                    fontWeight: '600'
+                  }"
                 >
                   <ElTableColumn prop="period" label="期数" min-width="55" align="center">
                     <template #default="{ row }">第{{ row.period }}期</template>
@@ -55,7 +66,9 @@
                   </ElTableColumn>
                   <ElTableColumn prop="totalAmount" label="应还总额" min-width="90" align="right">
                     <template #default="{ row }">
-                      <span class="repayment-table__amount">{{ formatMoney(row.totalAmount) }}</span>
+                      <span class="repayment-table__amount">{{
+                        formatMoney(row.totalAmount)
+                      }}</span>
                     </template>
                   </ElTableColumn>
                   <ElTableColumn prop="status" label="状态" min-width="75" align="center">
@@ -95,7 +108,9 @@
                         type="primary"
                         size="small"
                         link
-                        @click="$emit('action', { name: 'register-repayment', planId: row.id, plan: row })"
+                        @click="
+                          $emit('action', { name: 'register-repayment', planId: row.id, plan: row })
+                        "
                       >
                         还款
                       </ElButton>
@@ -142,7 +157,7 @@
     groups: PhaseGroupLike[]
   }
 
-  const props = defineProps({
+  defineProps({
     currentRow: {
       type: Object as PropType<Record<string, unknown>>,
       required: true
@@ -168,12 +183,20 @@
   }
 
   const _repaymentStatusLabelMap: Record<string, string> = {
-    NOT_DUE: '未到期', PAID: '已还清', OVERDUE: '已逾期',
-    PARTIAL: '部分还款', PENDING: '待还款', SETTLED: '已结清'
+    NOT_DUE: '未到期',
+    PAID: '已还清',
+    OVERDUE: '已逾期',
+    PARTIAL: '部分还款',
+    PENDING: '待还款',
+    SETTLED: '已结清'
   }
   const _repaymentStatusTypeMap: Record<string, string> = {
-    NOT_DUE: 'info', PAID: 'success', OVERDUE: 'danger',
-    PARTIAL: 'warning', PENDING: 'warning', SETTLED: 'success'
+    NOT_DUE: 'info',
+    PAID: 'success',
+    OVERDUE: 'danger',
+    PARTIAL: 'warning',
+    PENDING: 'warning',
+    SETTLED: 'success'
   }
 
   function repaymentStatusLabel(status: string) {
@@ -191,12 +214,19 @@
 
   function formatDate(val: string | Date | undefined) {
     if (!val) return '-'
-    return new Date(val).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    return new Date(val).toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
   }
 
   function formatMoney(val: string | number | undefined) {
     if (val === undefined || val === null || val === '') return '0.00'
-    return Number(val).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    return Number(val).toLocaleString('zh-CN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })
   }
 
   /** 判断是否为当期（第一个未还清的期次） */
@@ -268,9 +298,13 @@
     font-size: 14px;
     font-weight: 700;
     color: var(--el-text-color-primary);
-    background: linear-gradient(135deg, var(--el-color-primary-light-9) 0%, var(--el-fill-color-extra-light) 100%);
-    border-bottom: 1px solid var(--el-color-primary-light-8);
     letter-spacing: 0.5px;
+    background: linear-gradient(
+      135deg,
+      var(--el-color-primary-light-9) 0%,
+      var(--el-fill-color-extra-light) 100%
+    );
+    border-bottom: 1px solid var(--el-color-primary-light-8);
   }
 
   .phase-fields__group :deep(.el-descriptions) {
@@ -283,14 +317,14 @@
   }
 
   .phase-fields__group :deep(.el-descriptions__label) {
+    width: 90px;
     font-weight: 500;
     color: var(--el-text-color-secondary);
-    width: 90px;
   }
 
   .phase-fields__group :deep(.el-descriptions__content) {
-    color: var(--el-text-color-primary);
     font-size: 13px;
+    color: var(--el-text-color-primary);
   }
 
   .repayment-table-wrap {
@@ -303,7 +337,11 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    background: linear-gradient(135deg, var(--el-color-primary-light-9) 0%, var(--el-fill-color-extra-light) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--el-color-primary-light-9) 0%,
+      var(--el-fill-color-extra-light) 100%
+    );
     border-bottom: 1px solid var(--el-color-primary-light-8);
     border-radius: 8px 8px 0 0;
   }
@@ -324,17 +362,21 @@
   }
 
   .repayment-table :deep(.el-table__header th) {
-    background: linear-gradient(180deg, var(--el-color-primary-light-9) 0%, var(--el-fill-color-light) 100%);
+    padding: 10px 0;
     font-size: 12px;
     font-weight: 600;
     color: var(--el-text-color-primary);
-    padding: 10px 0;
+    background: linear-gradient(
+      180deg,
+      var(--el-color-primary-light-9) 0%,
+      var(--el-fill-color-light) 100%
+    );
     border-bottom: 2px solid var(--el-color-primary-light-5);
   }
 
   .repayment-table :deep(.el-table__row td) {
-    font-size: 13px;
     padding: 8px 0;
+    font-size: 13px;
   }
 
   .repayment-table :deep(.el-table__row.el-table__row--striped td) {
@@ -342,21 +384,21 @@
   }
 
   .repayment-table__amount {
+    font-size: 13px;
     font-weight: 700;
     color: var(--el-color-primary);
-    font-size: 13px;
   }
 
   .repayment-table__paid {
-    color: var(--el-color-success);
-    font-weight: 600;
     font-size: 13px;
+    font-weight: 600;
+    color: var(--el-color-success);
   }
 
   .repayment-table__overdue {
-    color: var(--el-color-danger);
-    font-weight: 700;
     font-size: 13px;
+    font-weight: 700;
+    color: var(--el-color-danger);
   }
 
   :deep(.repayment-row--overdue) {

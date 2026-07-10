@@ -6,7 +6,11 @@ describe('approvalFields', () => {
   it('has 5 standard approval fields', () => {
     expect(approvalFields).toHaveLength(5)
     expect(approvalFields.map((f) => f.prop)).toEqual([
-      'approverId', 'opinion', 'amount', 'term', 'rate',
+      'approverId',
+      'opinion',
+      'amount',
+      'term',
+      'rate'
     ])
   })
 
@@ -215,7 +219,14 @@ describe('applicationActions', () => {
     })
 
     it('defaults use approvedAmount/term/rate with fallback', () => {
-      const row = { approvedAmount: 80000, amount: 100000, approvedTerm: 12, term: 24, approvedRate: 0.04, rate: 0.05 }
+      const row = {
+        approvedAmount: 80000,
+        amount: 100000,
+        approvedTerm: 12,
+        term: 24,
+        approvedRate: 0.04,
+        rate: 0.05
+      }
       expect(action.defaults!(row)).toEqual({ amount: 80000, term: 12, rate: 0.04 })
     })
 
@@ -302,7 +313,9 @@ describe('applicationActions', () => {
 
     it('generates correct path for different statuses', () => {
       const pathFn = process.path!
-      expect(pathFn({ id: 1, status: 'PENDING_SUPPLEMENT' })).toBe('/application/1/complete-supplement')
+      expect(pathFn({ id: 1, status: 'PENDING_SUPPLEMENT' })).toBe(
+        '/application/1/complete-supplement'
+      )
       expect(pathFn({ id: 2, status: 'SUBMITTED' })).toBe('/application/2/risk-pre-pass')
       expect(pathFn({ id: 3, status: 'PENDING_RISK_PRE' })).toBe('/application/3/risk-pre-pass')
       expect(pathFn({ id: 4, status: 'PENDING_FUNDER_PRE' })).toBe('/application/4/funder-pre-pass')

@@ -12,7 +12,7 @@ import {
   MobileCreditUpdateDto
 } from './dto/mobile-business.dto'
 import { mapCreditStatus, mapBusinessNode, statusFromBusinessNode, mapApplication } from './mobile-business.utils'
-import { getCustomerByUuid, getDefaultProduct, getDefaultFunder, findApplication, findLatestDraftApplication, findDraftApplicationByNo } from './mobile-business.db-helpers'
+import { getCustomerByUuid, getDefaultProduct, getDefaultFunder, findApplication, findLatestDraftApplication } from './mobile-business.db-helpers'
 import { MobileFileService } from './mobile-file.service'
 import { getRequiredTenantId } from '../../common/utils/helpers'
 
@@ -43,7 +43,7 @@ export class MobileCreditService {
     ].filter(Boolean)
 
     // 有订单编号 → 按 applicationNo 查找已有订单（任意状态，跨客户）；无订单编号 → 查找当前客户最新草稿
-    let existingApplication = dto.creditOrderId
+    const existingApplication = dto.creditOrderId
       ? await this.prisma.application.findFirst({
           where: { applicationNo: dto.creditOrderId }
         })

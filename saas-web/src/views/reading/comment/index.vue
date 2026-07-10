@@ -14,7 +14,11 @@
     />
 
     <ElCard class="art-table-card">
-      <ArtTableHeader :loading="isLoading" @refresh="loadReviews" layout="refresh,size,fullscreen,columns,settings">
+      <ArtTableHeader
+        :loading="isLoading"
+        @refresh="loadReviews"
+        layout="refresh,size,fullscreen,columns,settings"
+      >
         <template #left>
           <ElSpace wrap>
             <ElButton type="primary" @click="handleSearch">刷新</ElButton>
@@ -45,9 +49,21 @@
           <span class="comment-detail__label">状态</span>
           <span class="comment-detail__value">
             <ElTag
-              :type="currentComment.status === 'approved' ? 'success' : currentComment.status === 'pending' ? 'warning' : 'danger'"
+              :type="
+                currentComment.status === 'approved'
+                  ? 'success'
+                  : currentComment.status === 'pending'
+                    ? 'warning'
+                    : 'danger'
+              "
             >
-              {{ currentComment.status === 'approved' ? '已通过' : currentComment.status === 'pending' ? '待审核' : '已驳回' }}
+              {{
+                currentComment.status === 'approved'
+                  ? '已通过'
+                  : currentComment.status === 'pending'
+                    ? '待审核'
+                    : '已驳回'
+              }}
             </ElTag>
           </span>
         </div>
@@ -57,7 +73,7 @@
         </div>
       </template>
     </ElDrawer>
-</ReadingPageShell>
+  </ReadingPageShell>
 </template>
 
 <script setup lang="ts">
@@ -151,11 +167,7 @@
                   : 'danger'
           },
           () =>
-            row.status === 'approved'
-              ? '已通过'
-              : row.status === 'pending'
-                ? '待审核'
-                : '已驳回'
+            row.status === 'approved' ? '已通过' : row.status === 'pending' ? '待审核' : '已驳回'
         )
     },
     {
@@ -210,7 +222,7 @@
         content: item.content || '',
         username: item.user?.nickname || item.user?.username || '匿名',
         createTime: item.createdAt || '',
-        status: statusMap[item.status] || 'pending',
+        status: statusMap[item.status] || 'pending'
       }))
       total.value = res?.total || 0
     } catch {
@@ -299,16 +311,18 @@
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
-    }).then(async () => {
-      try {
-        await deleteReview(row.id)
-        ElMessage.success('删除成功')
-        loadReviews()
-      } catch (error: unknown) {
-        const err = error as ApiErrorResponse
-        ElMessage.error(err?.response?.data?.message || '删除失败')
-      }
-    }).catch(() => {})
+    })
+      .then(async () => {
+        try {
+          await deleteReview(row.id)
+          ElMessage.success('删除成功')
+          loadReviews()
+        } catch (error: unknown) {
+          const err = error as ApiErrorResponse
+          ElMessage.error(err?.response?.data?.message || '删除失败')
+        }
+      })
+      .catch(() => {})
   }
 
   // 监听筛选条件变化
@@ -325,14 +339,13 @@
   })
 </script>
 
-
 <style scoped>
   .comment-detail__meta {
     display: grid;
     grid-template-columns: 88px minmax(0, 1fr);
     gap: 10px 12px;
-    margin-bottom: 18px;
     padding: 14px;
+    margin-bottom: 18px;
     background: var(--el-fill-color-extra-light);
     border: 1px solid var(--el-border-color-lighter);
     border-radius: 8px;

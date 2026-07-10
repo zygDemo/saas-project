@@ -171,8 +171,8 @@
 
             <!-- 导出导入功能 -->
             <ArtExcelExport
-              :data="(data as unknown as ExportData[])"
-              :columns="(exportColumns as unknown as ExportColumn[])"
+              :data="data as unknown as ExportData[]"
+              :columns="exportColumns as unknown as ExportColumn[]"
               filename="用户数据"
               :auto-index="true"
               button-text="导出"

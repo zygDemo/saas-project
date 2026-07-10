@@ -6,7 +6,7 @@ export interface FilterOption {
   count: number;
 }
 
-export type BusinessNodeFilterValue = "all" | string;
+export type BusinessNodeFilterValue = "all" | "precheck" | "supplement" | "signing" | "disbursement";
 export type NodeStatusFilterValue = "all" | string;
 
 export interface OrderListViewItem extends CreditListItem {

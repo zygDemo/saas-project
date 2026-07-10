@@ -200,11 +200,11 @@ export const updatePaginationFromResponse = <T>(
  * 创建智能防抖函数 - 支持取消和立即执行
  */
 export const createSmartDebounce = <T extends (...args: unknown[]) => Promise<unknown>>(
- fn: T,
- delay: number
+  fn: T,
+  delay: number
 ): T & { cancel: () => void; flush: () => Promise<ReturnType<T>> } => {
- let timeoutId: NodeJS.Timeout | null = null
- let lastArgs: Parameters<T> | null = null
+  let timeoutId: NodeJS.Timeout | null = null
+  let lastArgs: Parameters<T> | null = null
   let lastResolve: ((value: ReturnType<T>) => void) | null = null
   let lastReject: ((reason: unknown) => void) | null = null
 

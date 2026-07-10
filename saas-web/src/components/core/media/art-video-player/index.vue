@@ -41,7 +41,7 @@
   // 设置属性默认值
 
   // 播放器实例引用
-  const playerInstance = ref<Player | null>(null)
+  const playerInstance = ref<any>(null)
 
   // 播放器样式接口定义
   interface VideoPlayerStyle {

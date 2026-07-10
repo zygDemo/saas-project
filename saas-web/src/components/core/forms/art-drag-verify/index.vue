@@ -230,7 +230,7 @@
 
   type DragEvent = MouseEvent | TouchEvent
   const getPageX = (e: DragEvent): number =>
-    'pageX' in e ? e.pageX : e.touches[0]?.pageX ?? e.changedTouches[0]?.pageX ?? 0
+    'pageX' in e ? e.pageX : (e.touches[0]?.pageX ?? e.changedTouches[0]?.pageX ?? 0)
 
   /**
    * 拖拽开始处理函数

@@ -65,8 +65,8 @@
   .file-gallery__item {
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 6px;
+    align-items: center;
     padding: 10px;
     cursor: pointer;
     border: 1px solid var(--el-border-color-lighter);

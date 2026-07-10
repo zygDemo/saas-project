@@ -11,8 +11,8 @@ export default defineConfig({
       '@views': path.resolve(__dirname, 'src/views'),
       '@utils': path.resolve(__dirname, 'src/utils'),
       '@stores': path.resolve(__dirname, 'src/store'),
-      '@styles': path.resolve(__dirname, 'src/assets/styles'),
-    },
+      '@styles': path.resolve(__dirname, 'src/assets/styles')
+    }
   },
   test: {
     environment: 'happy-dom',
@@ -21,7 +21,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['src/views/business/**', 'src/utils/**'],
-    },
-  },
+      include: ['src/views/business/**', 'src/utils/**']
+    }
+  }
 })

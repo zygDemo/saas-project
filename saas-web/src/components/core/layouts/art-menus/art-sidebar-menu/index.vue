@@ -233,8 +233,7 @@
    * 查找 iframe 对应的二级菜单列表
    */
   const findIframeMenuList = (currentPath: string, menuList: Record<string, unknown>[]) => {
-      let hasIframe = false
-      const hasPath = (items: Record<string, unknown>[]): boolean => {
+    const hasPath = (items: Record<string, unknown>[]): boolean => {
       for (const item of items) {
         if (item.path === currentPath) {
           return true

@@ -32,13 +32,13 @@ export interface MonitorStats {
 export function fetchMonitorLogs(params: PageQuery) {
   return request.get<BasePageResponse<MonitorLogItem>>({
     url: '/monitor/logs',
-    params,
+    params
   })
 }
 
 export function fetchMonitorStats(params?: PageQuery) {
   return request.get<MonitorStats>({
     url: '/monitor/stats',
-    params,
+    params
   })
 }

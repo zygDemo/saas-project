@@ -39,7 +39,7 @@
         </view>
       </view>
 
-      <scroll-view scroll-x class="pre-flow-scroll" :show-scrollbar="false">
+      <view class="pre-flow-scroll">
         <view class="pre-flow-tabs">
           <view
             v-for="tab in flowTabList"
@@ -49,13 +49,9 @@
             @click="activeFlowTab = tab.value"
           >
             <text class="pre-flow-tab__label">{{ tab.label }}</text>
-            <view
-              v-if="activeFlowTab === tab.value"
-              class="pre-flow-tab__indicator"
-            />
           </view>
         </view>
-      </scroll-view>
+      </view>
 
       <view class="pre-section-title">{{ activeStageTitle }}事项</view>
 
@@ -420,15 +416,19 @@ const signProgress = computed(() => {
 });
 
 const currentNodeCode = computed(() =>
-  String([
-    carloanStore.pageContext.nodeCode,
-    detail.value?.nodeCode,
-    detail.value?.currentNode,
-    detail.value?.businessNode,
-  ].find(Boolean) || ""),
+  String(
+    [
+      carloanStore.pageContext.nodeCode,
+      detail.value?.nodeCode,
+      detail.value?.currentNode,
+      detail.value?.businessNode,
+    ].find(Boolean) || "",
+  ),
 );
 
-const currentNodeLabel = computed(() => businessNodeText(currentNodeCode.value));
+const currentNodeLabel = computed(() =>
+  businessNodeText(currentNodeCode.value),
+);
 
 const isPreAuditDetail = computed(() =>
   ["1100", "1200", "PRE_AUDIT", "INITIAL_AUDIT"].includes(
@@ -446,10 +446,10 @@ const isLoanRequestDetail = computed(() => {
   const code = currentNodeCode.value;
   const numericCode = Number(code);
   const isLoanRequestNode =
-    Number.isFinite(numericCode) &&
-    numericCode >= 1700 &&
-    numericCode <= 1799;
-  return isLoanRequestNode || ["LOAN_REQUEST", "PENDING_LOAN_REQUEST"].includes(code);
+    Number.isFinite(numericCode) && numericCode >= 1700 && numericCode <= 1799;
+  return (
+    isLoanRequestNode || ["LOAN_REQUEST", "PENDING_LOAN_REQUEST"].includes(code)
+  );
 });
 
 /** 根据节点状态获取页面标题 */
@@ -567,7 +567,9 @@ function getEntryStepDone(code) {
   if (stepNodeCode) {
     // 查 flowNodes 判断是否并行子节点（已加载时）
     if (flowNodes.value.length > 0) {
-      const node = flowNodes.value.find((n) => Number(n.nodeCode) === stepNodeCode);
+      const node = flowNodes.value.find(
+        (n) => Number(n.nodeCode) === stepNodeCode,
+      );
       if (node?.parentNode) {
         // 并行子节点：父节点已过 或 自身节点已过 → 已完成
         return isNodeDone(node.parentNode) || isNodeDone(stepNodeCode);
@@ -903,7 +905,9 @@ function formatApprovalTime(value) {
 
 function buildLifecycleApprovalMeta() {
   const metaMap = {};
-  const approvals = Array.isArray(detail.value?.approvals) ? detail.value.approvals : [];
+  const approvals = Array.isArray(detail.value?.approvals)
+    ? detail.value.approvals
+    : [];
 
   approvals.forEach((approval) => {
     const nodeCode = normalizeApprovalStageNode(approval?.stage);
@@ -914,7 +918,8 @@ function buildLifecycleApprovalMeta() {
     if (!prev || currentTime >= prevTime) {
       metaMap[nodeCode] = {
         approveName: approval?.approverName || prev?.approveName || "",
-        approvalTime: formatApprovalTime(approval?.createdAt) || prev?.approvalTime || "",
+        approvalTime:
+          formatApprovalTime(approval?.createdAt) || prev?.approvalTime || "",
         approvalReason: approval?.opinion || prev?.approvalReason || "",
         rawCreatedAt: approval?.createdAt || "",
       };
@@ -925,7 +930,8 @@ function buildLifecycleApprovalMeta() {
     metaMap["1300"] = {
       ...(metaMap["1300"] || {}),
       approvalReason:
-        (metaMap["1300"] && metaMap["1300"].approvalReason) || detail.value.supplementReason,
+        (metaMap["1300"] && metaMap["1300"].approvalReason) ||
+        detail.value.supplementReason,
     };
   }
 
@@ -933,7 +939,8 @@ function buildLifecycleApprovalMeta() {
     metaMap["1800"] = {
       ...(metaMap["1800"] || {}),
       approvalReason:
-        (metaMap["1800"] && metaMap["1800"].approvalReason) || detail.value.disbursement.remark,
+        (metaMap["1800"] && metaMap["1800"].approvalReason) ||
+        detail.value.disbursement.remark,
     };
   }
 
@@ -1115,7 +1122,7 @@ async function handlePreAuditSubmit() {
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .pre-customer-phone {
@@ -1233,50 +1240,56 @@ async function handlePreAuditSubmit() {
 
 .pre-flow-scroll {
   width: 100%;
-  margin: 0 -24rpx 24rpx;
-  padding: 0 24rpx;
-  background: rgba(246, 248, 251, 0.96);
-  border-top: 1rpx solid rgba(229, 235, 244, 0.9);
-  border-bottom: 1rpx solid rgba(229, 235, 244, 0.9);
-  white-space: nowrap;
+  margin: 0 0 24rpx;
+  background: var(--app-page-bg-soft);
+  border-radius: 16rpx;
+  box-sizing: border-box;
 }
 
 .pre-flow-tabs {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  padding: 0;
-  min-width: 100%;
+  gap: 8rpx;
+  // padding: 6rpx;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 20rpx;
+  border: 1rpx solid var(--app-border);
+  box-shadow: var(--app-shadow-card);
 }
 
 .pre-flow-tab {
-  position: relative;
-  flex: 0 0 auto;
+  flex: 1 1 0;
   display: flex;
   justify-content: center;
-  min-width: 140rpx;
-  padding: 24rpx 14rpx 22rpx;
+  align-items: center;
+  padding: 16rpx 12rpx;
+  border-radius: 14rpx;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.96);
+  }
 }
 
 .pre-flow-tab__label {
-  font-size: 29rpx;
+  font-size: 28rpx;
   font-weight: 600;
-  color: #647084;
+  color: var(--app-text-secondary);
   line-height: 1.2;
+  transition: color 0.2s ease;
+}
+
+.pre-flow-tab--active {
+  background: linear-gradient(135deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%);
+  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.12);
 }
 
 .pre-flow-tab--active .pre-flow-tab__label {
-  color: #1f6feb;
-}
-
-.pre-flow-tab__indicator {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  width: 44rpx;
-  height: 6rpx;
-  border-radius: 8rpx;
-  background: linear-gradient(90deg, #1f6feb, #26a69a);
-  transform: translateX(-50%);
+  color: #fff;
 }
 
 .pre-section-title {

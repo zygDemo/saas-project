@@ -1,7 +1,10 @@
 <template>
   <div class="chapters-page art-full-height">
     <!-- 书籍信息 -->
-    <div v-if="bookInfo" class="book-info-bar bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 flex-shrink-0">
+    <div
+      v-if="bookInfo"
+      class="book-info-bar bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 flex-shrink-0"
+    >
       <div class="flex items-center gap-4">
         <img
           v-if="bookInfo.cover"
@@ -27,11 +30,7 @@
           <ElButton @click="$router.back()" icon="ri:arrow-left-line">返回书籍</ElButton>
         </template>
         <template #right>
-          <ElButton
-            v-if="selectedIds.length > 0"
-            type="danger"
-            @click="handleBatchDelete"
-          >
+          <ElButton v-if="selectedIds.length > 0" type="danger" @click="handleBatchDelete">
             批量删除 ({{ selectedIds.length }})
           </ElButton>
           <ElButton type="primary" @click="openAddDialog">新增章节</ElButton>
@@ -63,8 +62,16 @@
       />
 
       <!-- 查看内容弹窗 -->
-      <ElDialog v-model="showContentDialog" :title="viewChapter?.title || '章节内容'" width="800px" @open="resetContentScroll">
-        <div ref="contentRef" class="chapter-content max-h-96 overflow-y-auto whitespace-pre-wrap leading-7 text-sm">
+      <ElDialog
+        v-model="showContentDialog"
+        :title="viewChapter?.title || '章节内容'"
+        width="800px"
+        @open="resetContentScroll"
+      >
+        <div
+          ref="contentRef"
+          class="chapter-content max-h-96 overflow-y-auto whitespace-pre-wrap leading-7 text-sm"
+        >
           {{ viewChapter?.content || '暂无内容' }}
         </div>
       </ElDialog>
@@ -216,7 +223,9 @@
           try {
             await deleteChapter(id)
             successCount++
-          } catch { /* 单个失败继续 */ }
+          } catch {
+            /* 单个失败继续 */
+          }
         }
         ElMessage.success(`成功删除 ${successCount} 章`)
         selectedIds.value = []
@@ -298,7 +307,8 @@
   const handleImageError = (e: Event) => {
     const target = e.target as HTMLImageElement
     if (target) {
-      target.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 64%22%3E%3Crect fill=%22%23e5e7eb%22 width=%2248%22 height=%2264%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%239ca3af%22 font-size=%2210%22%3E无图%3C/text%3E%3C/svg%3E'
+      target.src =
+        'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 64%22%3E%3Crect fill=%22%23e5e7eb%22 width=%2248%22 height=%2264%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%239ca3af%22 font-size=%2210%22%3E无图%3C/text%3E%3C/svg%3E'
       target.onerror = null
     }
   }
@@ -306,7 +316,7 @@
   const loadBookInfo = async () => {
     if (!bookId.value) return
     try {
-      const res = await getBookById(bookId.value) as BookInfo
+      const res = (await getBookById(bookId.value)) as BookInfo
       if (res) {
         if (res._count?.chapters !== undefined) {
           res.chapterCount = res._count.chapters
@@ -331,7 +341,7 @@
         pageSize: pageSize.value
       }
       if (searchKeyword.value) params.keyword = searchKeyword.value
-      const res = await getChapters(params) as ChapterListResponse
+      const res = (await getChapters(params)) as ChapterListResponse
       const list = Array.isArray(res?.items) ? res.items : []
       chapterList.value = list
       total.value = res?.total || list.length
@@ -349,7 +359,7 @@
 
   const handleView = async (row: Chapter) => {
     try {
-      const res = await getChapterById(row.id) as Chapter
+      const res = (await getChapterById(row.id)) as Chapter
       viewChapter.value = res
       showContentDialog.value = true
     } catch {
@@ -378,7 +388,7 @@
     formData.content = ''
     // 先加载完整章节内容，再打开对话框避免闪烁
     try {
-      const res = await getChapterById(row.id) as Chapter
+      const res = (await getChapterById(row.id)) as Chapter
       formData.content = res?.content || ''
     } catch {
       // 加载内容失败不影响编辑其他字段
@@ -394,7 +404,13 @@
     saving.value = true
     try {
       if (isEdit.value) {
-        const data: { title: string; sort: number; isVip: boolean; price: number; content?: string } = {
+        const data: {
+          title: string
+          sort: number
+          isVip: boolean
+          price: number
+          content?: string
+        } = {
           title: formData.title,
           sort: formData.sort,
           isVip: formData.isVip,
@@ -417,7 +433,8 @@
       showEditDialog.value = false
       loadChapters()
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : (isEdit.value ? '编辑失败' : '新增失败')
+      const message =
+        error instanceof Error ? error.message : isEdit.value ? '编辑失败' : '新增失败'
       ElMessage.error(message)
     } finally {
       saving.value = false

@@ -46,9 +46,9 @@
 
   .reading-page-shell__header {
     display: flex;
+    gap: 16px;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
     padding: 16px 18px;
     background: var(--el-bg-color);
     border: 1px solid var(--el-border-color-lighter);
@@ -58,18 +58,18 @@
 
   .reading-page-shell__title-wrap {
     display: flex;
+    gap: 12px;
     align-items: center;
     min-width: 0;
-    gap: 12px;
   }
 
   .reading-page-shell__icon {
     display: flex;
+    flex: 0 0 42px;
     align-items: center;
     justify-content: center;
     width: 42px;
     height: 42px;
-    flex: 0 0 42px;
     font-size: 22px;
     color: var(--el-color-primary);
     background: var(--el-color-primary-light-9);
@@ -105,8 +105,8 @@
   .reading-page-shell__actions {
     display: flex;
     flex-wrap: wrap;
-    justify-content: flex-end;
     gap: 8px;
+    justify-content: flex-end;
   }
 
   :deep(.art-search-bar) {
@@ -122,15 +122,15 @@
 
   :deep(.art-table-card > .el-card__body) {
     display: flex;
-    min-height: 0;
     flex-direction: column;
     gap: 14px;
+    min-height: 0;
   }
 
-  @media (max-width: 768px) {
+  @media (width <= 768px) {
     .reading-page-shell__header {
-      align-items: stretch;
       flex-direction: column;
+      align-items: stretch;
       padding: 14px;
     }
 

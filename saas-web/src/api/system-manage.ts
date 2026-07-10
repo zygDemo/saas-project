@@ -284,7 +284,6 @@ export function fetchDeleteSystemParam(id: number) {
   })
 }
 
-
 // ===== 消息模板 =====
 export function fetchGetMsgTemplateList(params: Api.SystemManage.MsgTemplateSearchParams) {
   return request.get<Api.SystemManage.MsgTemplateList>({

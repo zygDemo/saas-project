@@ -82,7 +82,8 @@ axiosInstance.interceptors.request.use(
     const startTime = Date.now()
     const requestUrl = request.url || ''
     request.headers.set('X-Request-Id', `${startTime}-${Math.random().toString(36).slice(2, 9)}`)
-    ;(request as ExtendedAxiosRequestConfig & { __monitorStart?: number }).__monitorStart = startTime
+    ;(request as ExtendedAxiosRequestConfig & { __monitorStart?: number }).__monitorStart =
+      startTime
     ;(request as ExtendedAxiosRequestConfig & { __monitorUrl?: string }).__monitorUrl = requestUrl
 
     return request
@@ -98,8 +99,13 @@ axiosInstance.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
     const { code, msg } = response.data
     if (code === ApiStatus.success) {
-      const startTime = (response.config as ExtendedAxiosRequestConfig & { __monitorStart?: number }).__monitorStart
-      const requestUrl = (response.config as ExtendedAxiosRequestConfig & { __monitorUrl?: string }).__monitorUrl || response.config.url || ''
+      const startTime = (
+        response.config as ExtendedAxiosRequestConfig & { __monitorStart?: number }
+      ).__monitorStart
+      const requestUrl =
+        (response.config as ExtendedAxiosRequestConfig & { __monitorUrl?: string }).__monitorUrl ||
+        response.config.url ||
+        ''
       if (typeof startTime === 'number') {
         const duration = Date.now() - startTime
         reportPerformance({
@@ -107,7 +113,7 @@ axiosInstance.interceptors.response.use(
           name: requestUrl,
           duration,
           statusCode: response.status,
-          url: requestUrl,
+          url: requestUrl
         })
       }
       return response
@@ -117,8 +123,12 @@ axiosInstance.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === ApiStatus.unauthorized) handleUnauthorizedError()
-    const startTime = (error.config as ExtendedAxiosRequestConfig & { __monitorStart?: number }).__monitorStart
-    const requestUrl = (error.config as ExtendedAxiosRequestConfig & { __monitorUrl?: string }).__monitorUrl || error.config?.url || ''
+    const startTime = (error.config as ExtendedAxiosRequestConfig & { __monitorStart?: number })
+      .__monitorStart
+    const requestUrl =
+      (error.config as ExtendedAxiosRequestConfig & { __monitorUrl?: string }).__monitorUrl ||
+      error.config?.url ||
+      ''
     if (typeof startTime === 'number') {
       const duration = Date.now() - startTime
       reportPerformance({
@@ -126,14 +136,14 @@ axiosInstance.interceptors.response.use(
         name: requestUrl,
         duration,
         statusCode: error.response?.status,
-        url: requestUrl,
+        url: requestUrl
       })
     }
     reportError({
       type: 'request-error',
       message: error.message,
       source: requestUrl,
-      stack: error.stack,
+      stack: error.stack
     })
     return Promise.reject(handleError(error))
   }

@@ -191,7 +191,11 @@
   const loadOrgList = async () => {
     orgLoading.value = true
     try {
-      const res = await fetchBusinessList<BusinessOption>('org', { current: 1, size: 200, status: 'ACTIVE' })
+      const res = await fetchBusinessList<BusinessOption>('org', {
+        current: 1,
+        size: 200,
+        status: 'ACTIVE'
+      })
       orgList.value = res.records
     } finally {
       orgLoading.value = false

@@ -72,7 +72,7 @@ describe('DisbursementService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue({ id: 1 } as any)
       mockPrisma.disbursement.create!.mockResolvedValue(makeDisbursement())
 
-      const result = await service.create({
+      await service.create({
         applicationId: 1,
         status: 'PENDING_APPLICATION'
       })
@@ -95,7 +95,7 @@ describe('DisbursementService', () => {
       mockPrisma.disbursement.count!.mockResolvedValue(1)
       mockPrisma.disbursement.findMany!.mockResolvedValue([makeDisbursement()])
 
-      const result = await service.getList({ current: 1, size: 10 }) as any
+      await service.getList({ current: 1, size: 10 }) as any
 
       expect(result.records).toHaveLength(1)
       expect(result.total).toBe(1)
@@ -164,7 +164,7 @@ describe('DisbursementService', () => {
         makeDisbursement({ status: 'DISBURSED', disburseAmount: 100000 })
       )
 
-      const result = await service.update(1, {
+      await service.update(1, {
         applicationId: 1,
         status: 'DISBURSED',
         disburseAmount: 100000
@@ -188,7 +188,7 @@ describe('DisbursementService', () => {
       mockPrisma.disbursement.findFirst!.mockResolvedValue(makeDisbursement())
       mockPrisma.disbursement.update!.mockResolvedValue({ id: 1 })
 
-      const result = await service.remove(1)
+      await service.remove(1)
 
       expect(result.id).toBe(1)
     })

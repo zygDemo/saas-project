@@ -1,4 +1,4 @@
-import type { PageConfig, FieldConfig, ActionConfig } from './types'
+import type { PageConfig } from './types'
 import {
   orgStatusOptions,
   activeStatusOptions,
@@ -9,7 +9,6 @@ import {
   signingStatusOptions,
   disbursementStatusOptions,
   repaymentStatusOptions,
-  approvalActionOptions,
   productTypeOptions,
   repaymentMethodOptions,
   funderTypeOptions,
@@ -17,10 +16,6 @@ import {
   flowBusinessTypeOptions,
   flowNodeOptions,
   applicationStatusOptions,
-  yesNoOptions,
-  apiEnabledOptions,
-  orgExpireStateOptions,
-  toOption,
   commonStatusMap,
   tenantStatusOptions,
   packageBillingStatusOptions,
@@ -1010,111 +1005,116 @@ export const configs: Record<string, PageConfig> = {
     actions: []
   },
 
-'msg-template': {
-  title: '消息模板',
-  description: '维护短信、站内信、微信、邮件等通知模板，支持变量占位符配置。',
-  api: 'msg-template',
-  keywordField: 'name',
-  keywordParam: 'keyword',
-  keywordPlaceholder: '模板名称/编码/内容',
-  columns: [
-    { prop: 'name', label: '模板名称', width: 180 },
-    { prop: 'code', label: '模板编码', width: 180 },
-    { prop: 'channel', label: '渠道', width: 100 },
-    { prop: 'scene', label: '业务场景', width: 150 },
-    { prop: 'title', label: '标题/主题', width: 180 },
-    { prop: 'status', label: '状态', width: 100 },
-    { prop: 'updateTime', label: '更新时间', width: 170 }
-  ],
-  detailColumns: [
-    { prop: 'name', label: '模板名称' },
-    { prop: 'code', label: '模板编码' },
-    { prop: 'channel', label: '发送渠道' },
-    { prop: 'scene', label: '业务场景' },
-    { prop: 'title', label: '标题/主题' },
-    { prop: 'content', label: '模板内容' },
-    { prop: 'variables', label: '变量说明' },
-    { prop: 'status', label: '状态' },
-    { prop: 'remark', label: '备注' }
-  ],
-  formFields: [
-    { prop: 'name', label: '模板名称', required: true, group: '基础信息' },
-    { prop: 'code', label: '模板编码', required: true, placeholder: '建议使用英文大写，如 PRECHECK_PASS_SMS' },
-    {
-      prop: 'channel',
-      label: '发送渠道',
-      type: 'select',
-      options: msgTemplateChannelOptions,
-      defaultValue: 'SMS',
-      required: true
+  'msg-template': {
+    title: '消息模板',
+    description: '维护短信、站内信、微信、邮件等通知模板，支持变量占位符配置。',
+    api: 'msg-template',
+    keywordField: 'name',
+    keywordParam: 'keyword',
+    keywordPlaceholder: '模板名称/编码/内容',
+    columns: [
+      { prop: 'name', label: '模板名称', width: 180 },
+      { prop: 'code', label: '模板编码', width: 180 },
+      { prop: 'channel', label: '渠道', width: 100 },
+      { prop: 'scene', label: '业务场景', width: 150 },
+      { prop: 'title', label: '标题/主题', width: 180 },
+      { prop: 'status', label: '状态', width: 100 },
+      { prop: 'updateTime', label: '更新时间', width: 170 }
+    ],
+    detailColumns: [
+      { prop: 'name', label: '模板名称' },
+      { prop: 'code', label: '模板编码' },
+      { prop: 'channel', label: '发送渠道' },
+      { prop: 'scene', label: '业务场景' },
+      { prop: 'title', label: '标题/主题' },
+      { prop: 'content', label: '模板内容' },
+      { prop: 'variables', label: '变量说明' },
+      { prop: 'status', label: '状态' },
+      { prop: 'remark', label: '备注' }
+    ],
+    formFields: [
+      { prop: 'name', label: '模板名称', required: true, group: '基础信息' },
+      {
+        prop: 'code',
+        label: '模板编码',
+        required: true,
+        placeholder: '建议使用英文大写，如 PRECHECK_PASS_SMS'
+      },
+      {
+        prop: 'channel',
+        label: '发送渠道',
+        type: 'select',
+        options: msgTemplateChannelOptions,
+        defaultValue: 'SMS',
+        required: true
+      },
+      {
+        prop: 'scene',
+        label: '业务场景',
+        type: 'select',
+        options: msgTemplateSceneOptions,
+        defaultValue: 'GENERAL'
+      },
+      {
+        prop: 'status',
+        label: '状态',
+        type: 'select',
+        options: msgTemplateStatusOptions,
+        defaultValue: 'ACTIVE'
+      },
+      { prop: 'title', label: '标题/主题', group: '内容配置' },
+      {
+        prop: 'content',
+        label: '模板内容',
+        type: 'textarea',
+        required: true,
+        placeholder: '支持 {{customerName}}、{{applicationNo}} 等变量占位符'
+      },
+      {
+        prop: 'variables',
+        label: '变量说明',
+        type: 'json',
+        placeholder: '{"customerName":"客户姓名","applicationNo":"申请编号"}'
+      },
+      { prop: 'remark', label: '备注', type: 'textarea', group: '其他' }
+    ],
+    statusMap: {
+      SMS: '短信',
+      APP: '站内信',
+      WECHAT: '微信',
+      EMAIL: '邮件',
+      SYSTEM: '系统消息',
+      GENERAL: '通用通知',
+      CARLOAN_PRECHECK: '车贷预审',
+      CARLOAN_SUPPLEMENT: '补件提醒',
+      CARLOAN_APPROVAL: '审批结果',
+      CARLOAN_SIGNING: '签约通知',
+      CARLOAN_REPAYMENT: '还款提醒',
+      SYSTEM_ALERT: '系统告警',
+      ACTIVE: '启用',
+      INACTIVE: '停用',
+      DRAFT: '草稿'
     },
-    {
-      prop: 'scene',
-      label: '业务场景',
-      type: 'select',
-      options: msgTemplateSceneOptions,
-      defaultValue: 'GENERAL'
-    },
-    {
-      prop: 'status',
-      label: '状态',
-      type: 'select',
-      options: msgTemplateStatusOptions,
-      defaultValue: 'ACTIVE'
-    },
-    { prop: 'title', label: '标题/主题', group: '内容配置' },
-    {
-      prop: 'content',
-      label: '模板内容',
-      type: 'textarea',
-      required: true,
-      placeholder: '支持 {{customerName}}、{{applicationNo}} 等变量占位符'
-    },
-    {
-      prop: 'variables',
-      label: '变量说明',
-      type: 'json',
-      placeholder: '{"customerName":"客户姓名","applicationNo":"申请编号"}'
-    },
-    { prop: 'remark', label: '备注', type: 'textarea', group: '其他' }
-  ],
-  statusMap: {
-    SMS: '短信',
-    APP: '站内信',
-    WECHAT: '微信',
-    EMAIL: '邮件',
-    SYSTEM: '系统消息',
-    GENERAL: '通用通知',
-    CARLOAN_PRECHECK: '车贷预审',
-    CARLOAN_SUPPLEMENT: '补件提醒',
-    CARLOAN_APPROVAL: '审批结果',
-    CARLOAN_SIGNING: '签约通知',
-    CARLOAN_REPAYMENT: '还款提醒',
-    SYSTEM_ALERT: '系统告警',
-    ACTIVE: '启用',
-    INACTIVE: '停用',
-    DRAFT: '草稿'
+    filters: [
+      { prop: 'channel', label: '发送渠道', type: 'select', options: msgTemplateChannelOptions },
+      { prop: 'scene', label: '业务场景', type: 'select', options: msgTemplateSceneOptions }
+    ],
+    actions: [
+      {
+        name: 'enable',
+        label: '启用',
+        path: (row) => `/msg-template/${row.id}/enable`,
+        visible: (row) => String(row.status) !== 'ACTIVE'
+      },
+      {
+        name: 'disable',
+        label: '停用',
+        type: 'warning',
+        path: (row) => `/msg-template/${row.id}/disable`,
+        visible: (row) => String(row.status) === 'ACTIVE'
+      }
+    ]
   },
-  filters: [
-    { prop: 'channel', label: '发送渠道', type: 'select', options: msgTemplateChannelOptions },
-    { prop: 'scene', label: '业务场景', type: 'select', options: msgTemplateSceneOptions }
-  ],
-  actions: [
-    {
-      name: 'enable',
-      label: '启用',
-      path: (row) => `/msg-template/${row.id}/enable`,
-      visible: (row) => String(row.status) !== 'ACTIVE'
-    },
-    {
-      name: 'disable',
-      label: '停用',
-      type: 'warning',
-      path: (row) => `/msg-template/${row.id}/disable`,
-      visible: (row) => String(row.status) === 'ACTIVE'
-    }
-  ]
-},
   'work-order': {
     title: '运营工单中心',
     description: '提交、分配和处理平台运营工单，跟踪问题解决进度。',
@@ -1165,7 +1165,13 @@ export const configs: Record<string, PageConfig> = {
         options: workOrderStatusOptions,
         defaultValue: 'OPEN'
       },
-      { prop: 'description', label: '问题描述', type: 'textarea', required: true, group: '详细信息' },
+      {
+        prop: 'description',
+        label: '问题描述',
+        type: 'textarea',
+        required: true,
+        group: '详细信息'
+      },
       {
         prop: 'assigneeId',
         label: '处理人',

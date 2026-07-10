@@ -1,9 +1,7 @@
-import request, { API_BASE_URL } from '@/utils/http'
-import { useUserStore } from '@/store/modules/user'
+import request from '@/utils/http'
+import {} from '@/store/modules/user'
 
 // 租户ID（与 http/index.ts 保持一致）
-const TENANT_ID = import.meta.env.VITE_TENANT_ID || '1'
-const WITH_CREDENTIALS = import.meta.env.VITE_WITH_CREDENTIALS === 'true'
 
 // ==================== 书籍分类 ====================
 
@@ -302,7 +300,6 @@ export function cancelCrawlTask(taskId: string) {
   return request.post({ url: `/crawler/cancel/${taskId}` })
 }
 
-
 // ==================== 阅读笔记/高亮 ====================
 
 /** 获取当前用户的笔记列表 */
@@ -336,7 +333,7 @@ export function createReadingNote(data: {
 /** 更新笔记 */
 export function updateReadingNote(
   id: number,
-  data: { note?: string; color?: string; status?: number },
+  data: { note?: string; color?: string; status?: number }
 ) {
   return request.put({ url: `/reading/notes/${id}`, data, showSuccessMessage: true })
 }

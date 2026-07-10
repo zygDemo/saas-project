@@ -7,11 +7,10 @@
  * @author Art Design Pro Team
  */
 
-import { h, type Component } from 'vue'
+import { h } from 'vue'
 import { router } from '@/router'
 
 /** Module shape returned by Vite's import.meta.glob for .vue files */
-type VueModule = { default: Component }
 
 export class ComponentLoader {
   private modules: Record<string, () => Promise<{ default: unknown }>>

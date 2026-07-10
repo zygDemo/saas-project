@@ -36,10 +36,40 @@ export const platformRoutes: AppRouteRecord = {
   },
   children: [
     platformRoute('tenant', 'TenantMgmt', '租户机构管理', 'ri:building-2-line', 'tenant'),
-    platformRoute('package-billing', 'PackageBilling', '套餐与计费', 'ri:money-dollar-circle-line', 'package-billing'),
-    platformRoute('product-template', 'ProductTemplate', '产品与资方模板', 'ri:file-copy-line', 'product-template'),
-    platformRoute('supervision', 'PlatformSupervision', '平台业务监管', 'ri:eye-line', 'supervision'),
-    platformRoute('third-party', 'ThirdPartyService', '第三方服务管理', 'ri:plug-line', 'third-party'),
-    platformRoute('work-order', 'WorkOrder', '运营工单中心', 'ri:customer-service-2-line', 'work-order')
+    platformRoute(
+      'package-billing',
+      'PackageBilling',
+      '套餐与计费',
+      'ri:money-dollar-circle-line',
+      'package-billing'
+    ),
+    platformRoute(
+      'product-template',
+      'ProductTemplate',
+      '产品与资方模板',
+      'ri:file-copy-line',
+      'product-template'
+    ),
+    platformRoute(
+      'supervision',
+      'PlatformSupervision',
+      '平台业务监管',
+      'ri:eye-line',
+      'supervision'
+    ),
+    platformRoute(
+      'third-party',
+      'ThirdPartyService',
+      '第三方服务管理',
+      'ri:plug-line',
+      'third-party'
+    ),
+    platformRoute(
+      'work-order',
+      'WorkOrder',
+      '运营工单中心',
+      'ri:customer-service-2-line',
+      'work-order'
+    )
   ]
 }

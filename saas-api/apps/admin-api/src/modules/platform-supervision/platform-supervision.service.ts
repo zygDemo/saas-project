@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 
 @Injectable()
 export class PlatformSupervisionService {

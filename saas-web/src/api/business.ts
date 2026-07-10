@@ -63,10 +63,7 @@ export function fetchBusinessDetail<T = unknown>(module: string, id: number) {
   })
 }
 
-export function fetchBusinessCreate<T = unknown>(
-  module: string,
-  data: Record<string, unknown>
-) {
+export function fetchBusinessCreate<T = unknown>(module: string, data: Record<string, unknown>) {
   return request.post<T>({
     url: `/${module}`,
     data
@@ -90,10 +87,7 @@ export function fetchBusinessDelete(module: string, id: number) {
   })
 }
 
-export function fetchBusinessAction<T = unknown>(
-  url: string,
-  data?: Record<string, unknown>
-) {
+export function fetchBusinessAction<T = unknown>(url: string, data?: Record<string, unknown>) {
   return request.post<T>({
     url,
     data: data || {}

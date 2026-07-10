@@ -70,7 +70,7 @@ function buildCommon(extra: Record<string, unknown> = {}): Record<string, unknow
     route: getRoute(),
     userAgent: getUa(),
     timestamp: now(),
-    ...extra,
+    ...extra
   }
 }
 
@@ -88,7 +88,7 @@ function safeStringify(data: unknown): string {
 export async function report(item: MonitorReportItem): Promise<void> {
   if (!enabled) return
 
-  const payload = buildCommon((item as unknown) as Record<string, unknown>)
+  const payload = buildCommon(item as unknown as Record<string, unknown>)
 
   try {
     const send = () => {
@@ -100,7 +100,7 @@ export async function report(item: MonitorReportItem): Promise<void> {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: safeStringify(payload),
-          keepalive: true,
+          keepalive: true
         })
       }
     }
@@ -123,7 +123,7 @@ export function reportError(input: Omit<MonitorError, 'route' | 'userAgent' | 't
     ...input,
     route: getRoute(),
     userAgent: getUa(),
-    timestamp: now(),
+    timestamp: now()
   })
 }
 
@@ -134,7 +134,7 @@ export function reportPerformance(input: Omit<MonitorPerformance, 'route' | 'tim
   report({
     ...input,
     route: getRoute(),
-    timestamp: now(),
+    timestamp: now()
   })
 }
 
@@ -145,6 +145,6 @@ export function reportAction(input: Omit<MonitorAction, 'route' | 'timestamp'>):
   report({
     ...input,
     route: getRoute(),
-    timestamp: now(),
+    timestamp: now()
   })
 }

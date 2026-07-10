@@ -14,7 +14,11 @@
     />
 
     <ElCard class="art-table-card">
-      <ArtTableHeader :loading="loading" @refresh="fetchNotes" layout="refresh,size,fullscreen,columns,settings" />
+      <ArtTableHeader
+        :loading="loading"
+        @refresh="fetchNotes"
+        layout="refresh,size,fullscreen,columns,settings"
+      />
 
       <ArtTable
         :loading="loading"
@@ -140,11 +144,7 @@
       fixed: 'right' as const,
       align: 'center' as const,
       formatter: (row: ReadingNoteItem) =>
-        h(
-          ElButton,
-          { type: 'danger', link: true, onClick: () => handleDelete(row) },
-          () => '删除'
-        )
+        h(ElButton, { type: 'danger', link: true, onClick: () => handleDelete(row) }, () => '删除')
     }
   ])
 
@@ -197,20 +197,20 @@
 <style scoped>
   :deep(.reading-note-book) {
     display: flex;
+    gap: 10px;
     align-items: center;
     min-width: 0;
-    gap: 10px;
   }
 
   :deep(.reading-note-cover) {
+    flex: 0 0 34px;
     width: 34px;
     height: 46px;
-    flex: 0 0 34px;
     overflow: hidden;
-    border: 1px solid var(--el-border-color-lighter);
-    border-radius: 5px;
     object-fit: cover;
     background: var(--el-fill-color-light);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 5px;
   }
 
   :deep(.reading-note-cover--empty) {

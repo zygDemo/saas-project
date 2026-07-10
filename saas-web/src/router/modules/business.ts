@@ -62,11 +62,14 @@ export const businessRoutes: AppRouteRecord = {
       'R_SALES_MANAGER',
       'R_SALES'
     ]),
-    orderPhaseRoute('risk-approval', 'BusinessRiskApproval', '风控审批', 'ri:shield-check-line', 1400, [
-      'R_SUPER',
-      'R_ADMIN',
-      'R_APPROVER'
-    ]),
+    orderPhaseRoute(
+      'risk-approval',
+      'BusinessRiskApproval',
+      '风控审批',
+      'ri:shield-check-line',
+      1400,
+      ['R_SUPER', 'R_ADMIN', 'R_APPROVER']
+    ),
     orderPhaseRoute('funder-final', 'BusinessFunderFinal', '资方终审', 'ri:bank-line', 1500, [
       'R_SUPER',
       'R_ADMIN',
@@ -80,12 +83,14 @@ export const businessRoutes: AppRouteRecord = {
       'R_SALES',
       'R_FINANCE'
     ]),
-    orderPhaseRoute('disbursement', 'BusinessDisbursement', '请款放款', 'ri:money-cny-circle-line', 1700, [
-      'R_SUPER',
-      'R_ADMIN',
-      'R_FINANCE',
-      'R_SALES_MANAGER'
-    ]),
+    orderPhaseRoute(
+      'disbursement',
+      'BusinessDisbursement',
+      '请款放款',
+      'ri:money-cny-circle-line',
+      1700,
+      ['R_SUPER', 'R_ADMIN', 'R_FINANCE', 'R_SALES_MANAGER']
+    ),
     orderPhaseRoute('post-loan', 'BusinessPostLoan', '贷后阶段', 'ri:refund-line', 1900, [
       'R_SUPER',
       'R_ADMIN',

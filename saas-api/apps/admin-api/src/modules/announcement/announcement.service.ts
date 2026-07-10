@@ -144,7 +144,7 @@ export class AnnouncementService {
   }
 }
 
-type AnnouncementRecord = Prisma.AnnouncementGetPayload<{}>
+type AnnouncementRecord = Prisma.AnnouncementGetPayload<object>
 
 function mapAnnouncement(item: AnnouncementRecord) {
   return {

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { SigningService } from './signing.service'
 import { PrismaService } from '../prisma/prisma.service'
-import { BadRequestException, NotFoundException } from '@nestjs/common'
+import { NotFoundException } from '@nestjs/common'
 
 jest.mock('../../common/tenant/tenant-context', () => ({
   getCurrentTenantId: jest.fn(() => 1)

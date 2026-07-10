@@ -23,7 +23,7 @@
         />
         <ElDatePicker
           v-else-if="field.type === 'date'"
-          :model-value="actionModel[field.prop] as string | number | Date | string[] | undefined"
+          :model-value="actionModel[field.prop]"
           type="datetime"
           value-format="YYYY-MM-DDTHH:mm:ss.SSSZ"
           style="width: 100%"
@@ -38,7 +38,7 @@
           @update:model-value="updateField(field.prop, $event)"
         >
           <ElOption
-            v-for="opt in (field.options || [])"
+            v-for="opt in field.options || []"
             :key="opt.value"
             :label="opt.label"
             :value="opt.value"

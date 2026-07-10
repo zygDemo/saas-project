@@ -50,11 +50,7 @@
     />
 
     <!-- 移动端模块弹窗 -->
-    <RoleMobileDialog
-      v-model="mobileDialog"
-      :role-data="currentRoleData"
-      @success="refreshData"
-    />
+    <RoleMobileDialog v-model="mobileDialog" :role-data="currentRoleData" @success="refreshData" />
   </div>
 </template>
 

@@ -53,7 +53,7 @@ import {
  * Uses any return because these are type-erased generic utilities that work
  * with any Prisma delegate (customer, product, funder, etc.)
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type PrismaDelegate = { findFirst: (...args: any[]) => Promise<any> }
 
 /** Application with all possible includes for detail/flow/list mapping */

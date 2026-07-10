@@ -8,7 +8,12 @@
             <el-icon class="text-xl text-blue-500 mr-2"><i class="ri-database-2-line"></i></el-icon>
             <span class="font-medium">数据库运维</span>
           </div>
-          <el-button @click="loadDbStatus" :loading="statusLoading" icon="ri-refresh-line" size="small">
+          <el-button
+            @click="loadDbStatus"
+            :loading="statusLoading"
+            icon="ri-refresh-line"
+            size="small"
+          >
             刷新状态
           </el-button>
         </div>
@@ -165,9 +170,7 @@
             <el-button v-auth="'process'" type="success" link @click="handleProcess(row)">
               处理
             </el-button>
-            <el-button type="info" link @click="handleView(row)">
-              详情
-            </el-button>
+            <el-button type="info" link @click="handleView(row)"> 详情 </el-button>
             <el-button v-auth="'delete'" type="danger" link @click="handleDelete(row)">
               删除
             </el-button>
@@ -195,12 +198,7 @@
       width="600px"
       :close-on-click-modal="false"
     >
-      <el-form
-        ref="formRef"
-        :model="formData"
-        :rules="formRules"
-        label-width="100px"
-      >
+      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
         <el-form-item label="工单标题" prop="title">
           <el-input v-model="formData.title" placeholder="请输入工单标题" />
         </el-form-item>
@@ -313,7 +311,7 @@
   const loadDbStatus = async () => {
     statusLoading.value = true
     try {
-      const res = await getDbOpsStatus() as DbStatusInfo
+      const res = (await getDbOpsStatus()) as DbStatusInfo
       Object.assign(dbStatus, res)
     } catch (e) {
       console.error('获取数据库状态失败', e)
@@ -329,12 +327,16 @@
     opLoading.value = 'migrate'
     opResult.value = null
     try {
-      const res = await runDbMigrate() as DbOpsResponse
+      const res = (await runDbMigrate()) as DbOpsResponse
       opResult.value = { success: true, message: res.message, output: res.output }
       ElMessage.success(res.message)
       loadDbStatus()
     } catch (e: unknown) {
-      opResult.value = { success: false, message: '操作失败', output: e?.response?.data?.message || e.message }
+      opResult.value = {
+        success: false,
+        message: '操作失败',
+        output: e?.response?.data?.message || e.message
+      }
       ElMessage.error('迁移失败')
     } finally {
       opLoading.value = ''
@@ -348,12 +350,16 @@
     opLoading.value = 'seed'
     opResult.value = null
     try {
-      const res = await runDbSeed() as DbOpsResponse
+      const res = (await runDbSeed()) as DbOpsResponse
       opResult.value = { success: true, message: res.message, output: res.output }
       ElMessage.success(res.message)
       loadDbStatus()
     } catch (e: unknown) {
-      opResult.value = { success: false, message: '操作失败', output: e?.response?.data?.message || e.message }
+      opResult.value = {
+        success: false,
+        message: '操作失败',
+        output: e?.response?.data?.message || e.message
+      }
       ElMessage.error('种子数据执行失败')
     } finally {
       opLoading.value = ''
@@ -361,18 +367,26 @@
   }
 
   const handleSyncRoles = async () => {
-    await ElMessageBox.confirm('确定同步角色菜单权限？此操作将更新所有角色的菜单和按钮权限。', '确认', {
-      type: 'warning'
-    })
+    await ElMessageBox.confirm(
+      '确定同步角色菜单权限？此操作将更新所有角色的菜单和按钮权限。',
+      '确认',
+      {
+        type: 'warning'
+      }
+    )
     opLoading.value = 'sync-roles'
     opResult.value = null
     try {
-      const res = await runDbSyncRoles() as DbOpsResponse
+      const res = (await runDbSyncRoles()) as DbOpsResponse
       opResult.value = { success: true, message: res.message, output: res.output }
       ElMessage.success(res.message)
       loadDbStatus()
     } catch (e: unknown) {
-      opResult.value = { success: false, message: '操作失败', output: e?.response?.data?.message || e.message }
+      opResult.value = {
+        success: false,
+        message: '操作失败',
+        output: e?.response?.data?.message || e.message
+      }
       ElMessage.error('角色菜单同步失败')
     } finally {
       opLoading.value = ''
@@ -388,7 +402,7 @@
     opLoading.value = 'run-all'
     opResult.value = null
     try {
-      const res = await runDbOpsAll() as DbOpsResponse
+      const res = (await runDbOpsAll()) as DbOpsResponse
       opResult.value = {
         success: true,
         message: res.message,
@@ -397,7 +411,11 @@
       ElMessage.success(res.message)
       loadDbStatus()
     } catch (e: unknown) {
-      opResult.value = { success: false, message: '操作失败', output: e?.response?.data?.message || e.message }
+      opResult.value = {
+        success: false,
+        message: '操作失败',
+        output: e?.response?.data?.message || e.message
+      }
       ElMessage.error('全部执行失败')
     } finally {
       opLoading.value = ''
@@ -595,6 +613,7 @@
   }
 
   // 指派
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleAssign = (row: WorkOrder) => {
     assignDialogVisible.value = true
   }
@@ -610,6 +629,7 @@
   }
 
   // 删除
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDelete = (row: WorkOrder) => {
     ElMessageBox.confirm('确定要删除该工单吗？', '提示', {
       type: 'warning'
@@ -631,6 +651,7 @@
   }
 
   // 上传成功
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleUploadSuccess = (response: UploadResponse) => {
     ElMessage.success('上传成功')
   }
@@ -663,13 +684,13 @@
 
   .card-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
   }
 
   .pagination {
-    margin-top: 20px;
     display: flex;
     justify-content: flex-end;
+    margin-top: 20px;
   }
 </style>

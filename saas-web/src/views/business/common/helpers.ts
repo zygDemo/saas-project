@@ -1,6 +1,11 @@
 import type { FieldConfig, FilterConfig, OptionConfig } from './types'
 import type { FormModel } from './types'
-import { commonStatusMap, flowBusinessTypeOptions, flowNodeOptions, orgPackageOptions } from './constants'
+import {
+  commonStatusMap,
+  flowBusinessTypeOptions,
+  flowNodeOptions,
+  orgPackageOptions
+} from './constants'
 import type { PageConfig } from './types'
 
 // 关联实体类型（用于 flattenRelations 和 formatCell）
@@ -59,18 +64,35 @@ export function statusTagType(value: unknown): string {
   const statusValue = String(value)
   if (
     [
-      'ACTIVE', 'DISBURSED', 'PAID', 'SIGNED',
-      'RISK_PRE_PASSED', 'FUNDER_PRE_PASSED', 'FIRST_REVIEW_PASSED',
-      'FINAL_REVIEW_PASSED', 'FUNDER_REVIEW_PASSED', 'LOAN_REQUEST_APPROVED'
+      'ACTIVE',
+      'DISBURSED',
+      'PAID',
+      'SIGNED',
+      'RISK_PRE_PASSED',
+      'FUNDER_PRE_PASSED',
+      'FIRST_REVIEW_PASSED',
+      'FINAL_REVIEW_PASSED',
+      'FUNDER_REVIEW_PASSED',
+      'LOAN_REQUEST_APPROVED'
     ].includes(statusValue)
   )
     return 'success'
   if (
     [
-      'DRAFT', 'PENDING', 'SUBMITTED', 'PENDING_RISK_PRE', 'PENDING_FUNDER_PRE',
-      'PENDING_SUPPLEMENT', 'PENDING_FIRST_REVIEW', 'PENDING_FINAL_REVIEW',
-      'PENDING_FUNDER_REVIEW', 'PENDING_SIGN', 'SIGNING_PROGRESS',
-      'PENDING_LOAN_REQUEST', 'LOAN_REQUEST_REVIEWING', 'PENDING_DISBURSEMENT'
+      'DRAFT',
+      'PENDING',
+      'SUBMITTED',
+      'PENDING_RISK_PRE',
+      'PENDING_FUNDER_PRE',
+      'PENDING_SUPPLEMENT',
+      'PENDING_FIRST_REVIEW',
+      'PENDING_FINAL_REVIEW',
+      'PENDING_FUNDER_REVIEW',
+      'PENDING_SIGN',
+      'SIGNING_PROGRESS',
+      'PENDING_LOAN_REQUEST',
+      'LOAN_REQUEST_REVIEWING',
+      'PENDING_DISBURSEMENT'
     ].includes(statusValue)
   )
     return 'warning'
@@ -82,17 +104,12 @@ export function statusTagType(value: unknown): string {
   return 'info'
 }
 
-export function formatCell(
-  row: Record<string, unknown>,
-  prop: string,
-  config: PageConfig
-): string {
+export function formatCell(row: Record<string, unknown>, prop: string, config: PageConfig): string {
   const value = row[prop]
   if (prop === 'businessScale')
     return `部门${orgCount(row, 'departmentCount')} / 产品${orgCount(row, 'productCount')} / 资方${orgCount(row, 'funderCount')}`
   if (prop === 'apiEnabled') return value === false ? '已关闭' : '已开启'
-  if (['requireMaterials', 'requireApproval', 'autoPass'].includes(prop))
-    return value ? '是' : '否'
+  if (['requireMaterials', 'requireApproval', 'autoPass'].includes(prop)) return value ? '是' : '否'
   if (prop === 'businessType')
     return flowBusinessTypeOptions.find((option) => option.value === value)?.label || String(value)
   if (prop === 'nodeCode')
@@ -184,7 +201,10 @@ export function resetModel(
   }
 }
 
-export function cleanPayload(source: Record<string, unknown>, fields: FieldConfig[]): Record<string, unknown> {
+export function cleanPayload(
+  source: Record<string, unknown>,
+  fields: FieldConfig[]
+): Record<string, unknown> {
   const payload: Record<string, unknown> = {}
   const fieldMap = new Map(fields.map((field) => [field.prop, field]))
   for (const [key, value] of Object.entries(source)) {
@@ -237,6 +257,7 @@ export function getRemoteOptionParams(
   formModel: Record<string, unknown>
 ): Record<string, unknown> {
   const params = source.remoteOptions?.params
-  if (typeof params === 'function') return (params as (model: FormModel) => Record<string, unknown>)(formModel as FormModel)
+  if (typeof params === 'function')
+    return (params as (model: FormModel) => Record<string, unknown>)(formModel as FormModel)
   return params || {}
 }

@@ -1,6 +1,6 @@
-import { computed, h, reactive, ref, shallowRef, watch } from 'vue'
+import { computed, reactive, ref, shallowRef } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage, ElMessageBox, ElTag, ElButton, ElSpace } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   fetchBusinessAction,
   fetchBusinessCreate,
@@ -10,22 +10,54 @@ import {
   fetchBusinessUpdate
 } from '@/api/business'
 import { useUserStore } from '@/store/modules/user'
-import type { PageConfig, FieldConfig, FilterConfig, FormModel, FormValue, BusinessRouteMeta, ActionConfig, SearchFormItem, ColumnCheck, OptionConfig } from './types'
+import type {
+  FieldConfig,
+  FilterConfig,
+  FormModel,
+  FormValue,
+  BusinessRouteMeta,
+  ActionConfig,
+  SearchFormItem,
+  ColumnCheck,
+  OptionConfig
+} from './types'
 import {
-  applicationNodeByPath, applicationPhaseByPath, phaseNodeTabsMap, phaseTitleMap,
-  commonStatusMap,
-  orgStatusOptions, activeStatusOptions, leadStatusOptions,
-  applicationStatusOptions, signingStatusOptions,
-  disbursementStatusOptions, repaymentStatusOptions,
-  orgPackageOptions, apiEnabledOptions, orgExpireStateOptions,
-  flowNodeOptions, flowPhaseOptions, flowNodeStatusOptions, flowBusinessTypeOptions, funderTypeOptions,
-  approvalActionOptions, toOption
+  applicationNodeByPath,
+  applicationPhaseByPath,
+  phaseNodeTabsMap,
+  phaseTitleMap,
+  orgStatusOptions,
+  activeStatusOptions,
+  leadStatusOptions,
+  applicationStatusOptions,
+  signingStatusOptions,
+  disbursementStatusOptions,
+  repaymentStatusOptions,
+  orgPackageOptions,
+  apiEnabledOptions,
+  orgExpireStateOptions,
+  flowNodeOptions,
+  flowPhaseOptions,
+  flowNodeStatusOptions,
+  flowBusinessTypeOptions,
+  funderTypeOptions,
+  approvalActionOptions,
+  toOption
 } from './constants'
 import { configs } from './configs'
 import {
-  flattenRelations, formatCell, statusTagType, resetModel, cleanPayload,
-  validateRequired, shouldShowFieldGroup, fieldOptions, getRemoteOptionParams,
-  orgCount, orgExpiryMeta, getOrgExpireState, packageLabel
+  flattenRelations,
+  formatCell,
+  statusTagType,
+  resetModel,
+  cleanPayload,
+  validateRequired,
+  shouldShowFieldGroup,
+  fieldOptions,
+  orgCount,
+  orgExpiryMeta,
+  getOrgExpireState,
+  packageLabel
 } from './helpers'
 import { useRemoteOptions } from './useRemoteOptions'
 
@@ -65,7 +97,12 @@ export function useBusinessList() {
 
   // ==================== 路由/配置解析 ====================
   function getRoutePathModule(): string {
-    return String(route.path || '').split('/').filter(Boolean).pop() || ''
+    return (
+      String(route.path || '')
+        .split('/')
+        .filter(Boolean)
+        .pop() || ''
+    )
   }
 
   function resolveBusinessModule(): string {
@@ -107,8 +144,8 @@ export function useBusinessList() {
   const phaseNodeTabs = computed(() => {
     const phaseCode = Number(
       routeMeta.value.defaultQuery?.phaseCode ||
-      applicationPhaseByPath[getRoutePathModule()] ||
-      moduleDefaultPhase[moduleName.value]
+        applicationPhaseByPath[getRoutePathModule()] ||
+        moduleDefaultPhase[moduleName.value]
     )
     return phaseNodeTabsMap[phaseCode] || []
   })
@@ -122,9 +159,9 @@ export function useBusinessList() {
     const pathModule = getRoutePathModule()
     return Number(
       routeMeta.value.defaultQuery?.phaseCode ||
-      applicationPhaseByPath[pathModule] ||
-      moduleDefaultPhase[moduleName.value] ||
-      1000
+        applicationPhaseByPath[pathModule] ||
+        moduleDefaultPhase[moduleName.value] ||
+        1000
     )
   })
 
@@ -133,12 +170,6 @@ export function useBusinessList() {
     const runtime = await import('./phase-detail-runtime')
     phaseDetailRuntime.value = runtime
     return runtime
-  }
-
-  // 从综合查询进入时，用订单自身状态决定默认 Tab
-  function resolveRowPhaseCode(row: Record<string, unknown>): number {
-    if (!phaseDetailRuntime.value) return defaultPhaseCode.value
-    return phaseDetailRuntime.value.resolveRowPhaseCode(row, defaultPhaseCode.value)
   }
 
   // ==================== 搜索相关 ====================
@@ -162,22 +193,68 @@ export function useBusinessList() {
   const extraFilters = computed<FilterConfig[]>(() => {
     const m = moduleName.value
     const filters: FilterConfig[] = []
-    if (['dept', 'product', 'funder', 'flow-config', 'lead', 'customer', 'application', 'order-query'].includes(m)) {
-      filters.push({ prop: 'orgId', label: '所属机构', type: 'select', remoteOptions: { module: 'org', params: { status: 'ACTIVE' } } })
+    if (
+      [
+        'dept',
+        'product',
+        'funder',
+        'flow-config',
+        'lead',
+        'customer',
+        'application',
+        'order-query'
+      ].includes(m)
+    ) {
+      filters.push({
+        prop: 'orgId',
+        label: '所属机构',
+        type: 'select',
+        remoteOptions: { module: 'org', params: { status: 'ACTIVE' } }
+      })
     }
     if (m === 'org') {
-      filters.push({ prop: 'packageType', label: '套餐类型', type: 'select', options: orgPackageOptions })
-      filters.push({ prop: 'apiEnabled', label: 'API接入', type: 'select', options: apiEnabledOptions })
-      filters.push({ prop: 'expireState', label: '到期状态', type: 'select', options: orgExpireStateOptions })
+      filters.push({
+        prop: 'packageType',
+        label: '套餐类型',
+        type: 'select',
+        options: orgPackageOptions
+      })
+      filters.push({
+        prop: 'apiEnabled',
+        label: 'API接入',
+        type: 'select',
+        options: apiEnabledOptions
+      })
+      filters.push({
+        prop: 'expireState',
+        label: '到期状态',
+        type: 'select',
+        options: orgExpireStateOptions
+      })
     }
     if (m === 'application') {
       filters.push({ prop: 'customerId', label: '客户ID', type: 'number' })
       filters.push({ prop: 'creatorId', label: '创建人ID', type: 'number' })
     }
     if (m === 'order-query') {
-      filters.push({ prop: 'phaseCode', label: '流程阶段', type: 'select', options: flowPhaseOptions })
-      filters.push({ prop: 'nodeCode', label: '当前节点', type: 'select', options: flowNodeOptions })
-      filters.push({ prop: 'nodeStatus', label: '节点状态', type: 'select', options: flowNodeStatusOptions })
+      filters.push({
+        prop: 'phaseCode',
+        label: '流程阶段',
+        type: 'select',
+        options: flowPhaseOptions
+      })
+      filters.push({
+        prop: 'nodeCode',
+        label: '当前节点',
+        type: 'select',
+        options: flowNodeOptions
+      })
+      filters.push({
+        prop: 'nodeStatus',
+        label: '节点状态',
+        type: 'select',
+        options: flowNodeStatusOptions
+      })
       filters.push({ prop: 'orderNo', label: '订单号', type: 'text' })
       filters.push({ prop: 'customerName', label: '客户姓名', type: 'text' })
       filters.push({ prop: 'phone', label: '手机号', type: 'text' })
@@ -187,8 +264,18 @@ export function useBusinessList() {
       filters.push({ prop: 'applicationId', label: '进件ID', type: 'number' })
     }
     if (m === 'approval') {
-      filters.push({ prop: 'stage', label: '审批阶段', type: 'select', options: ['FIRST_REVIEW', 'FINAL_REVIEW', 'FUNDER_REVIEW', 'SUPPLEMENT'].map(toOption) })
-      filters.push({ prop: 'action', label: '审批动作', type: 'select', options: approvalActionOptions })
+      filters.push({
+        prop: 'stage',
+        label: '审批阶段',
+        type: 'select',
+        options: ['FIRST_REVIEW', 'FINAL_REVIEW', 'FUNDER_REVIEW', 'SUPPLEMENT'].map(toOption)
+      })
+      filters.push({
+        prop: 'action',
+        label: '审批动作',
+        type: 'select',
+        options: approvalActionOptions
+      })
     }
     if (m === 'lead') {
       filters.push({ prop: 'assigneeId', label: '负责人ID', type: 'number' })
@@ -197,14 +284,34 @@ export function useBusinessList() {
       filters.push({ prop: 'parentId', label: '上级部门ID', type: 'number' })
     }
     if (m === 'product') {
-      filters.push({ prop: 'productType', label: '产品类型', type: 'select', options: [{ label: '车贷', value: 'CAR_LOAN' }] })
+      filters.push({
+        prop: 'productType',
+        label: '产品类型',
+        type: 'select',
+        options: [{ label: '车贷', value: 'CAR_LOAN' }]
+      })
     }
     if (m === 'funder') {
-      filters.push({ prop: 'funderType', label: '资方类型', type: 'select', options: funderTypeOptions })
+      filters.push({
+        prop: 'funderType',
+        label: '资方类型',
+        type: 'select',
+        options: funderTypeOptions
+      })
     }
     if (m === 'flow-config') {
-      filters.push({ prop: 'businessType', label: '业务类型', type: 'select', options: flowBusinessTypeOptions })
-      filters.push({ prop: 'nodeCode', label: '流程节点', type: 'select', options: flowNodeOptions })
+      filters.push({
+        prop: 'businessType',
+        label: '业务类型',
+        type: 'select',
+        options: flowBusinessTypeOptions
+      })
+      filters.push({
+        prop: 'nodeCode',
+        label: '流程节点',
+        type: 'select',
+        options: flowNodeOptions
+      })
     }
     return filters
   })
@@ -213,26 +320,84 @@ export function useBusinessList() {
     const items: SearchFormItem[] = []
     const cfg = config.value
     if (cfg.keywordField) {
-      items.push({ key: cfg.keywordField, label: '关键词', type: 'input', placeholder: cfg.keywordPlaceholder || '请输入关键词', clearable: true })
+      items.push({
+        key: cfg.keywordField,
+        label: '关键词',
+        type: 'input',
+        placeholder: cfg.keywordPlaceholder || '请输入关键词',
+        clearable: true
+      })
     }
     if (phaseNodeTabs.value.length && moduleName.value !== 'order-query') {
-      items.push({ key: 'currentNode', label: '流程节点', type: 'select', props: { placeholder: '全部节点', clearable: true, filterable: true, options: phaseNodeTabs.value.map((tab) => ({ label: tab.label, value: tab.value })) } })
+      items.push({
+        key: 'currentNode',
+        label: '流程节点',
+        type: 'select',
+        props: {
+          placeholder: '全部节点',
+          clearable: true,
+          filterable: true,
+          options: phaseNodeTabs.value.map((tab) => ({ label: tab.label, value: tab.value }))
+        }
+      })
     }
     if (statusFilterOptions.value.length) {
-      items.push({ key: 'status', label: '状态', type: 'select', props: { placeholder: '请选择状态', clearable: true, filterable: true, options: statusFilterOptions.value } })
+      items.push({
+        key: 'status',
+        label: '状态',
+        type: 'select',
+        props: {
+          placeholder: '请选择状态',
+          clearable: true,
+          filterable: true,
+          options: statusFilterOptions.value
+        }
+      })
     }
     for (const filter of extraFilters.value) {
-      const options = filter.remoteOptions ? selectOptions[`filter:${filter.prop}`] || [] : filter.options || []
-      items.push({ key: filter.prop, label: filter.label, type: filter.type === 'number' ? 'number' : filter.type === 'text' ? 'input' : 'select', props: { placeholder: filter.label, clearable: true, filterable: filter.type !== 'text', options: filter.type === 'select' ? options : undefined } })
+      const options = filter.remoteOptions
+        ? selectOptions[`filter:${filter.prop}`] || []
+        : filter.options || []
+      items.push({
+        key: filter.prop,
+        label: filter.label,
+        type: filter.type === 'number' ? 'number' : filter.type === 'text' ? 'input' : 'select',
+        props: {
+          placeholder: filter.label,
+          clearable: true,
+          filterable: filter.type !== 'text',
+          options: filter.type === 'select' ? options : undefined
+        }
+      })
     }
     return items
   })
 
   const orgSummaryItems = computed(() => [
-    { label: '机构总数', value: pagination.value.total, icon: 'ri:building-2-line', tone: 'is-primary' },
-    { label: '当前页启用', value: records.value.filter((row) => row.status === 'ACTIVE').length, icon: 'ri:checkbox-circle-line', tone: 'is-success' },
-    { label: '当前页API已开启', value: records.value.filter((row) => row.apiEnabled !== false).length, icon: 'ri:cloud-line', tone: 'is-info' },
-    { label: '当前页30天内到期', value: records.value.filter((row) => getOrgExpireState(row.expireAt) === 'EXPIRING').length, icon: 'ri:calendar-event-line', tone: 'is-warning' }
+    {
+      label: '机构总数',
+      value: pagination.value.total,
+      icon: 'ri:building-2-line',
+      tone: 'is-primary'
+    },
+    {
+      label: '当前页启用',
+      value: records.value.filter((row) => row.status === 'ACTIVE').length,
+      icon: 'ri:checkbox-circle-line',
+      tone: 'is-success'
+    },
+    {
+      label: '当前页API已开启',
+      value: records.value.filter((row) => row.apiEnabled !== false).length,
+      icon: 'ri:cloud-line',
+      tone: 'is-info'
+    },
+    {
+      label: '当前页30天内到期',
+      value: records.value.filter((row) => getOrgExpireState(row.expireAt) === 'EXPIRING').length,
+      icon: 'ri:calendar-event-line',
+      tone: 'is-warning'
+    }
   ])
 
   // ==================== 数据操作 ====================
@@ -290,9 +455,15 @@ export function useBusinessList() {
   // ==================== 搜索 ====================
   function handleArtSearch(params: Record<string, FormValue>) {
     const cfg = config.value
-    keyword.value = cfg.keywordField && params[cfg.keywordField] ? String(params[cfg.keywordField]) : ''
+    keyword.value =
+      cfg.keywordField && params[cfg.keywordField] ? String(params[cfg.keywordField]) : ''
     status.value = params.status ? String(params.status) : ''
-    activeNodeTab.value = params.currentNode !== undefined ? (params.currentNode ? String(params.currentNode) : 'all') : 'all'
+    activeNodeTab.value =
+      params.currentNode !== undefined
+        ? params.currentNode
+          ? String(params.currentNode)
+          : 'all'
+        : 'all'
     for (const filter of extraFilters.value) {
       if (params[filter.prop] !== undefined) extraFilterModel[filter.prop] = params[filter.prop]
       else delete extraFilterModel[filter.prop]
@@ -327,12 +498,15 @@ export function useBusinessList() {
     loadRemoteOptions(formFields.value)
   }
 
-    async function openDetail(row: Record<string, unknown>) {
+  async function openDetail(row: Record<string, unknown>) {
     currentRow.value = row
     detailVisible.value = true
     const runtime = await ensurePhaseDetailRuntime()
     try {
-      const detail = await fetchBusinessDetail<Record<string, unknown>>(config.value.api, Number(row.id))
+      const detail = await fetchBusinessDetail<Record<string, unknown>>(
+        config.value.api,
+        Number(row.id)
+      )
       const flat = flattenRelations(detail)
       // 显式保留 customer 等嵌套对象，避免被展开后丢失
       if (detail.customer) flat.customer = detail.customer
@@ -349,12 +523,16 @@ export function useBusinessList() {
 
   async function submitForm() {
     const error = validateRequired(formFields.value, formModel)
-    if (error) { ElMessage.warning(error); return }
+    if (error) {
+      ElMessage.warning(error)
+      return
+    }
     submitting.value = true
     try {
       const payload = cleanPayload(formModel, formFields.value)
       if (formMode.value === 'create') await fetchBusinessCreate(config.value.api, payload)
-      else if (currentRow.value?.id) await fetchBusinessUpdate(config.value.api, Number(currentRow.value.id), payload)
+      else if (currentRow.value?.id)
+        await fetchBusinessUpdate(config.value.api, Number(currentRow.value.id), payload)
       ElMessage.success('保存成功')
       formVisible.value = false
       await loadData()
@@ -374,7 +552,9 @@ export function useBusinessList() {
       await fetchBusinessDelete(config.value.api, Number(row.id))
       ElMessage.success('删除成功')
       await loadData()
-    } catch { /* cancel */ }
+    } catch {
+      /* cancel */
+    }
   }
 
   // ==================== 业务动作 ====================
@@ -388,7 +568,11 @@ export function useBusinessList() {
     const defaults = action.defaults?.(row) || {}
     const operatorProps = ['approverId', 'reviewerId', 'createdBy']
     for (const prop of operatorProps) {
-      if (action.fields?.some((field: FieldConfig) => field.prop === prop) && defaults[prop] === undefined && currentUserId.value) {
+      if (
+        action.fields?.some((field: FieldConfig) => field.prop === prop) &&
+        defaults[prop] === undefined &&
+        currentUserId.value
+      ) {
         defaults[prop] = currentUserId.value
       }
     }
@@ -404,9 +588,15 @@ export function useBusinessList() {
 
   async function submitAction() {
     if (!activeAction.value || !actionRow.value) return
-    if (!activeAction.value.path) { ElMessage.warning('该操作未配置接口路径'); return }
+    if (!activeAction.value.path) {
+      ElMessage.warning('该操作未配置接口路径')
+      return
+    }
     const error = validateRequired(actionFields.value, actionModel)
-    if (error) { ElMessage.warning(error); return }
+    if (error) {
+      ElMessage.warning(error)
+      return
+    }
     submitting.value = true
     try {
       await fetchBusinessAction(
@@ -419,15 +609,21 @@ export function useBusinessList() {
       // 操作成功后更新详情抽屉中的 currentRow
       if (detailVisible.value && currentRow.value?.id) {
         try {
-          const detail = await fetchBusinessDetail<Record<string, unknown>>(config.value.api, Number(currentRow.value.id))
+          const detail = await fetchBusinessDetail<Record<string, unknown>>(
+            config.value.api,
+            Number(currentRow.value.id)
+          )
           const flat = flattenRelations(detail)
           if (detail.customer) flat.customer = detail.customer
           if (detail.vehicle) flat.vehicle = detail.vehicle
-          if (Array.isArray(detail.vehicles) && detail.vehicles.length) flat.vehicles = detail.vehicles
+          if (Array.isArray(detail.vehicles) && detail.vehicles.length)
+            flat.vehicles = detail.vehicles
           currentRow.value = { ...currentRow.value, ...flat }
         } catch {
           // 如果刷新详情失败，使用列表中的数据
-          const updatedRow = data.value.find((r: Record<string, unknown>) => r.id === currentRow.value?.id)
+          const updatedRow = data.value.find(
+            (r: Record<string, unknown>) => r.id === currentRow.value?.id
+          )
           if (updatedRow) currentRow.value = { ...currentRow.value, ...updatedRow }
         }
       }
@@ -459,7 +655,10 @@ export function useBusinessList() {
       formModel.parentId = undefined
       formModel.managerId = undefined
       if (value) loadRemoteOptions(formFields.value, ['parentId', 'managerId'])
-      else { selectOptions.parentId = []; selectOptions.managerId = [] }
+      else {
+        selectOptions.parentId = []
+        selectOptions.managerId = []
+      }
       return
     }
     if (moduleName.value === 'lead' && field.prop === 'orgId') {
@@ -472,28 +671,70 @@ export function useBusinessList() {
   // ==================== 返回 ====================
   return {
     // 状态
-    loading, submitting, keyword, status, showActions,
-    searchFormModel, columnChecks, records, currentRow,
-    detailVisible, formVisible, actionVisible, formMode,
-    formModel, actionModel, activeAction, actionRow,
-    pagination, activeNodeTab, selectOptions, selectLoading,
+    loading,
+    submitting,
+    keyword,
+    status,
+    showActions,
+    searchFormModel,
+    columnChecks,
+    records,
+    currentRow,
+    detailVisible,
+    formVisible,
+    actionVisible,
+    formMode,
+    formModel,
+    actionModel,
+    activeAction,
+    actionRow,
+    pagination,
+    activeNodeTab,
+    selectOptions,
+    selectLoading,
     extraFilterModel,
     // 计算属性
-    config, displayTitle, isOrgModule, showActionOverview,
-    formFields, actionFields, detailColumns, phaseNodeTabs, phaseTabs, defaultPhaseCode, activeMainTab,
-    statusFilterOptions, extraFilters, searchFormItems, orgSummaryItems,
+    config,
+    displayTitle,
+    isOrgModule,
+    showActionOverview,
+    formFields,
+    actionFields,
+    detailColumns,
+    phaseNodeTabs,
+    phaseTabs,
+    defaultPhaseCode,
+    activeMainTab,
+    statusFilterOptions,
+    extraFilters,
+    searchFormItems,
+    orgSummaryItems,
     moduleName,
     // 方法
-    loadData, handleSizeChange, handleCurrentChange,
-    handleArtSearch, handleArtReset,
-    openCreate, openEdit, openDetail, submitForm, handleDelete,
-    rowActions, openAction, submitAction, resetRuntimeState,
+    loadData,
+    handleSizeChange,
+    handleCurrentChange,
+    handleArtSearch,
+    handleArtReset,
+    openCreate,
+    openEdit,
+    openDetail,
+    submitForm,
+    handleDelete,
+    rowActions,
+    openAction,
+    submitAction,
+    resetRuntimeState,
     handleFieldChange,
     // 从 helpers 传出的格式化函数
     formatCell: (row: Record<string, unknown>, prop: string) => formatCell(row, prop, config.value),
-    statusTagType, shouldShowFieldGroup: (field: FieldConfig, index: number) =>
+    statusTagType,
+    shouldShowFieldGroup: (field: FieldConfig, index: number) =>
       shouldShowFieldGroup(formFields.value, field, index),
     fieldOptions: (field: FieldConfig) => fieldOptions(field, selectOptions),
-    orgCount, orgExpiryMeta, getOrgExpireState, packageLabel
+    orgCount,
+    orgExpiryMeta,
+    getOrgExpireState,
+    packageLabel
   }
 }

@@ -1,25 +1,6 @@
 <template>
   <layout :active-tab="1" nav-title="订单" show-tabbar tabbar-scope="carloan">
     <view class="order-list-page">
-      <view v-if="false" class="order-hero">
-        <view class="order-hero__main">
-          <text class="order-hero__eyebrow">CAR LOAN</text>
-          <text class="order-hero__title">订单中心</text>
-          <text class="order-hero__desc">跟进预审、补件、签约等业务节点</text>
-        </view>
-        <view class="order-hero__stats">
-          <view class="order-hero__stat">
-            <text class="order-hero__num">{{ totalCountLabel }}</text>
-            <text class="order-hero__label">全部订单</text>
-          </view>
-          <view class="order-hero__divider" />
-          <view class="order-hero__stat">
-            <text class="order-hero__num">{{ loadedCountLabel }}</text>
-            <text class="order-hero__label">当前展示</text>
-          </view>
-        </view>
-      </view>
-
       <!-- 搜索栏 -->
       <view class="search-bar">
         <u-search
@@ -102,9 +83,9 @@
           <view v-if="loading && orderList.length > 0" class="load-more">
             <u-loading mode="circle" />
           </view>
-          <view v-if="!hasMore && orderList.length > 0" class="no-more"
-            >没有更多了</view
-          >
+          <view v-if="!hasMore && orderList.length > 0" class="no-more">
+            没有更多了
+          </view>
           <view v-if="!loading && orderList.length === 0" class="empty-state">
             <u-empty mode="list" text="暂无订单数据" />
           </view>
@@ -122,7 +103,7 @@
       v-model:visible="flowRecordVisible"
       :loading="flowRecordLoading"
       :records="flowRecordList"
-      :get-node-label="getFlowNodeLabel"
+      :get-node-label="getBusinessNodeLabel"
     />
   </layout>
 </template>
@@ -132,12 +113,17 @@ import layout from "@/pages/layout/layout.vue";
 import { computed, ref } from "vue";
 import { onLoad, onReachBottom, onShow } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
-import type { CreditListItem, LoanBusinessNode, PageResult, FlowRecordItem } from "@/api/carloan";
+import type {
+  CreditListItem,
+  LoanBusinessNode,
+  FlowRecordItem,
+} from "@/api/carloan";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import {
   buildSignRouteQuery,
   buildDetailRouteQuery,
 } from "@/common/carloan-route-query";
+import { businessNodeText } from "./applyDetail-flow";
 import OrderCard from "./components/OrderCard.vue";
 import FlowRecordPopup from "./components/FlowRecordPopup.vue";
 import type {
@@ -151,6 +137,17 @@ const businessApi = useCarloanApi();
 const ORDER_FILTER_STORAGE_KEY = "WORKBENCH_ORDER_FILTER";
 const ORDER_FILTER_MAX_AGE = 60 * 1000;
 
+// 筛选值到业务节点代码的映射
+const businessNodeFilterMap: Record<string, (string | number)[]> = {
+  precheck: [1100, 1200, 1250, "INITIAL_AUDIT", "PRE_AUDIT", "FUNDER_PRE"],
+  supplement: [1300, 1350, "SUPPLEMENT_MATERIALS"],
+  signing: [1600, 1610, 1660, "SIGN_CONTRACT", "PENDING_SIGN", "SIGNING_PROGRESS"],
+  disbursement: [1700, 1800, 1900, "LOAN_REQUEST", "LOAN_DISBURSEMENT", "DISBURSEMENT", "POST_LOAN"],
+};
+
+// 有效的筛选值集合
+const VALID_NODE_FILTERS = new Set<string>(["all", "precheck", "supplement", "signing", "disbursement"]);
+
 const keyword = ref("");
 const lastKeyword = ref("");
 const isRefreshing = ref(false);
@@ -162,8 +159,7 @@ const SCROLL_THRESHOLD = 500;
 // 业务节点筛选项（从接口动态获取）
 const ORDER_NODE_OPTIONS = ref<Array<Omit<FilterOption, "count">>>([]);
 
-// 节点状态统一映射 — { 标签, CSS 类别 } 代替原来的 NODE_STATUS_OPTIONS + NODE_STATUS_CLASS
-// cls: 1=通过 2=拒绝 3=待处理/警告 4=进行中
+// 节点状态映射: cls 1=通过 2=拒绝 3=待处理 4=进行中
 const NODE_STATUS_META: Record<string, { label: string; cls: string }> = {
   10: { label: "处理中", cls: "4" },
   20: { label: "已通过", cls: "1" },
@@ -173,7 +169,7 @@ const NODE_STATUS_META: Record<string, { label: string; cls: string }> = {
   90: { label: "已完成", cls: "1" },
 };
 
-// 订单状态码 → { 标签, CSS 类别 }
+// 订单状态码 -> { 标签, CSS 类别 }
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   DRAFT: { label: "草稿", cls: "3" },
   SUBMITTED: { label: "已提交", cls: "4" },
@@ -215,36 +211,38 @@ const pageSize = 10;
 const hasMore = ref(true);
 const total = ref(0);
 
+// ---- 计算属性 ----
+
 const businessNodeMap = computed(() =>
-  ORDER_NODE_OPTIONS.value.reduce<Record<string, string>>((map, item) => {
-    map[item.value] = item.label;
-    return map;
-  }, {}),
+  Object.fromEntries(ORDER_NODE_OPTIONS.value.map((item) => [item.value, item.label])),
 );
+
 const businessNodeFilterList = computed<FilterOption[]>(() => [
-  { label: "全部", value: "all" as const, count: 0 },
-  ...ORDER_NODE_OPTIONS.value.map((item) => ({ ...item, count: 0 })),
+  { label: "全部", value: "all", count: 0 },
+  { label: "预审", value: "precheck", count: 0 },
+  { label: "补件", value: "supplement", count: 0 },
+  { label: "签约", value: "signing", count: 0 },
+  { label: "放款", value: "disbursement", count: 0 },
 ]);
+
 const nodeStatusFilterList = computed<FilterOption[]>(() => [
-  { label: "全部状态", value: "all" as const, count: 0 },
+  { label: "全部状态", value: "all", count: 0 },
   ...Object.entries(NODE_STATUS_META).map(([value, { label }]) => ({
     label,
     value,
     count: 0,
   })),
 ]);
-const businessNodeCodeList = computed(() =>
-  ORDER_NODE_OPTIONS.value.map((item) => item.value),
-);
-const totalCountLabel = computed(() => (total.value > 0 ? String(total.value) : "--"));
-const loadedCountLabel = computed(() => String(orderList.value.length));
+
 const activeFilterLabel = computed(() => {
   const nodeLabel =
-    businessNodeFilterList.value.find((item) => item.value === currentBusinessNode.value)?.label ||
-    "全部";
+    businessNodeFilterList.value.find(
+      (item) => item.value === currentBusinessNode.value,
+    )?.label || "全部";
   const statusLabel =
-    nodeStatusFilterList.value.find((item) => item.value === currentNodeStatus.value)?.label ||
-    "全部状态";
+    nodeStatusFilterList.value.find(
+      (item) => item.value === currentNodeStatus.value,
+    )?.label || "全部状态";
   return `${nodeLabel} · ${statusLabel}`;
 });
 
@@ -259,160 +257,90 @@ function firstText(...values: unknown[]): string {
   return "";
 }
 
-/** 返回第一个非空值 */
+/** 返回第一个有效值（排除 null/undefined/空串/NaN/boolean） */
 function first<T>(...values: Array<T | undefined | null>): T | undefined {
   for (const v of values) {
-    if (v === undefined || v === null) continue;
-    // 过滤掉 boolean（false 通常不是预期的有效数据值）
-    if (typeof v === "boolean") continue;
-    const num = Number(v);
-    if (Number.isNaN(num)) continue;
+    if (v == null || typeof v === "boolean") continue;
     if (typeof v === "string" && v.trim() === "") continue;
+    if (typeof v === "number" && Number.isNaN(v)) continue;
     return v;
   }
   return undefined;
 }
 
-/** 金额格式化（仅在 normalizeOrderItem 内使用） */
-const formatMoney = (v: unknown): string => {
-  if (v === undefined || v === null || String(v).trim() === "") return "";
+/** 金额格式化 */
+function formatMoney(v: unknown): string {
+  if (v == null || String(v).trim() === "") return "";
   const n = Number(v);
-  if (!Number.isFinite(n)) return String(v);
-  return n > 0 ? n.toFixed(2) : "";
-};
+  return Number.isFinite(n) && n > 0 ? n.toFixed(2) : "";
+}
 
-/** 日期时间格式化（仅在 normalizeOrderItem 内使用） */
-const formatDateTime = (v: unknown): string => {
+/** 日期时间格式化 */
+function formatDateTime(v: unknown): string {
   if (!v) return "";
-  const text = String(v);
-  const d = new Date(text);
-  if (Number.isNaN(d.getTime())) return text;
-  const pad = (num: number) => String(num).padStart(2, "0");
+  const d = new Date(String(v));
+  if (Number.isNaN(d.getTime())) return String(v);
+  const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
+}
 
 // ---- 业务节点相关 ----
 
-// 流程节点中文映射（lifecycle API 返回的节点 code）
-const FLOW_NODE_LABELS: Record<string, string> = {
-  INITIAL_AUDIT: "初审",
-  PRE_AUDIT: "预审",
-  SUPPLEMENT_MATERIALS: "补充资料",
-  SIGN_CONTRACT: "签约",
-  LOAN_DISBURSEMENT: "放款",
-  FUNDER_PRE: "资方预审",
-  FIRST_REVIEW: "初审",
-  FINAL_REVIEW: "终审",
-  FUNDER_REVIEW: "资方审批",
-  LOAN_REQUEST: "请款审批",
-  "1100": "初审", "1200": "预审", "1250": "资方预审",
-  "1300": "补件", "1400": "初审", "1450": "终审",
-  "1500": "资方审批", "1600": "签约", "1610": "面签",
-  "1700": "请款", "1800": "放款", "1900": "贷后",
-};
-
-function getBusinessNodeLabel(node: unknown) {
-  if (node === undefined || node === null || String(node) === "")
-    return "未知节点";
+/** 获取业务节点标签 */
+function getBusinessNodeLabel(node: unknown): string {
+  if (node == null || String(node) === "") return "未知节点";
   const code = String(node);
-  if (FLOW_NODE_LABELS[code]) return FLOW_NODE_LABELS[code];
-  if (code.startsWith("125"))
-    return businessNodeMap.value["1300"] || "资方预审";
-  const normalizedCode = code.length >= 3 ? `${code.slice(0, 2)}00` : code;
   return (
-    businessNodeMap.value[code] || businessNodeMap.value[normalizedCode] || FLOW_NODE_LABELS[normalizedCode] || code
+    businessNodeMap.value[code] ||
+    (code.startsWith("125") ? "资方预审" : "") ||
+    businessNodeText(code) ||
+    code
   );
 }
 
-function getFlowNodeLabel(key: unknown): string {
-  return getBusinessNodeLabel(key);
-}
-
-// 节点 → 路由（大部分指向 applyDetail，只列出例外）
-const NODE_ROUTE_OVERRIDE: Record<string, string> = {
-  1400: APP_ROUTES.carloan.supplement.supplementDetail,
-  1600: APP_ROUTES.carloan.supplement.supplementDetail,
-  4100: APP_ROUTES.carloan.signing.signCenter,
-  5100: APP_ROUTES.carloan.supplement.supplementDetail,
-};
-
-function normalizeNodeCode(node: unknown) {
+/** 标准化节点代码（用于路由跳转） */
+function normalizeNodeCode(node: unknown): string {
   const code = String(node || "");
   if (!code) return "";
-  if (NODE_ROUTE_OVERRIDE[code]) return code;
-  if (code.startsWith("125")) return "1300";
+  if (code.startsWith("125")) return "1250";
   return code.length >= 3 ? `${code.slice(0, 2)}00` : code;
 }
 
-function getNodeRoute(nodeCode: string) {
-  return (
-    NODE_ROUTE_OVERRIDE[nodeCode] || APP_ROUTES.carloan.precheck.applyDetail
-  );
-}
-
-function getNodeStatusLabel(status: unknown) {
-  if (status === undefined || status === null || String(status) === "")
-    return "";
+/** 获取节点状态标签 */
+function getNodeStatusLabel(status: unknown): string {
+  if (status == null || String(status) === "") return "";
   return NODE_STATUS_META[String(status)]?.label || String(status);
 }
 
-// ---- 订单筛选/路由 ----
-
-function buildOrderQuery(order: OrderListViewItem) {
-  const creditOrderId = firstText(
-    order?.creditOrderId,
-    order?.orderNo,
-    order?.applicationNo,
-    order?.id,
-  );
-  return buildDetailRouteQuery({
-    id: firstText(order?.id),
-    creditOrderId,
-    uuid: firstText(order?.uuid),
-    customerName: firstText(
-      order?.name,
-      order?.customerName,
-      order?.personName,
-    ),
-    customerPhone: firstText(order?.phone, order?.telephone),
-    nodeCode: normalizeNodeCode(
-      order?.nodeCode ?? order?.currentNode ?? order?.businessNode,
-    ),
-  });
+/** 解析状态 CSS 类别 */
+function resolveStatusClass(status: unknown, nodeStatus: unknown): string {
+  const s = String(status || "");
+  if (["1", "2", "3", "4"].includes(s)) return s;
+  return STATUS_META[s]?.cls || NODE_STATUS_META[String(nodeStatus || "")]?.cls || "4";
 }
 
-function isAfterPreAudit(node: unknown) {
+// ---- 订单路由判断 ----
+
+/** 判断是否在预审之后 */
+function isAfterPreAudit(node: unknown): boolean {
   const code = String(node || "");
   if (!code) return false;
   const numericCode = Number(code);
-  if (Number.isFinite(numericCode)) return numericCode >= 4100;
-  const codeList = businessNodeCodeList.value;
-  const preAuditIndex = codeList.indexOf("PRE_AUDIT");
-  const currentIndex = codeList.indexOf(code);
-  if (preAuditIndex >= 0 && currentIndex >= 0)
-    return currentIndex > preAuditIndex;
-  const fallbackOrder = [
-    "INITIAL_AUDIT",
-    "PRE_AUDIT",
-    "SUPPLEMENT_MATERIALS",
-    "SIGN_CONTRACT",
-    "FACE_RECOGNITION",
-    "FACE_SIGN",
-    "LOAN_DISBURSEMENT",
-  ];
-  return fallbackOrder.indexOf(code) > fallbackOrder.indexOf("PRE_AUDIT");
+  return Number.isFinite(numericCode) ? numericCode >= 4100 : false;
 }
 
-function resolveSignStatus(order: OrderListViewItem) {
+/** 解析签约状态 */
+function resolveSignStatus(order: OrderListViewItem): string {
   if (order.isSignContract === 1 || order.currentStatus === "SIGNED")
     return "SIGNED";
   const status = firstText(order.currentStatus, order.nodeStatus, order.status);
-  if (status === "SIGNING_PROGRESS" || status === "PENDING_SIGN")
-    return "CONFIRMING_AMOUNT";
-  return status || "CONFIRMING_AMOUNT";
+  return ["SIGNING_PROGRESS", "PENDING_SIGN"].includes(status)
+    ? "CONFIRMING_AMOUNT"
+    : status || "CONFIRMING_AMOUNT";
 }
 
-function canGoSign(order: OrderListViewItem) {
+/** 判断是否可以签约 */
+function canGoSign(order: OrderListViewItem): boolean {
   if (order.isSignContract === 1) return true;
   const node = order?.nodeCode ?? order?.currentNode ?? order?.businessNode;
   const status = String(order.currentStatus || order.status || "");
@@ -422,6 +350,8 @@ function canGoSign(order: OrderListViewItem) {
   );
 }
 
+// ---- 订单跳转 ----
+
 function handleSignButton(order: OrderListViewItem) {
   const creditOrderId =
     order?.creditOrderId || order?.orderNo || order?.applicationNo || order?.id;
@@ -429,45 +359,45 @@ function handleSignButton(order: OrderListViewItem) {
     uni.showToast({ title: "缺少订单编号", icon: "none" });
     return;
   }
-  const signRouteQuery = buildSignRouteQuery({
-    creditOrderId: String(creditOrderId),
-    uuid: firstText(order.uuid),
-    customerName: order.name || "",
-    customerPhone: order.phone || "",
-    signStatus: resolveSignStatus(order),
-  });
   uni.navigateTo({
-    url: buildRoute(APP_ROUTES.carloan.signing.signCenter, signRouteQuery),
+    url: buildRoute(
+      APP_ROUTES.carloan.signing.signCenter,
+      buildSignRouteQuery({
+        creditOrderId: String(creditOrderId),
+        uuid: firstText(order.uuid),
+        customerName: order.name || "",
+        customerPhone: order.phone || "",
+        signStatus: resolveSignStatus(order),
+      }),
+    ),
   });
 }
 
 function handleDetailButton(order: OrderListViewItem) {
-  const nodeCode = normalizeNodeCode(
-    order?.nodeCode ?? order?.currentNode ?? order?.businessNode,
+  const creditOrderId = firstText(
+    order?.creditOrderId,
+    order?.orderNo,
+    order?.applicationNo,
+    order?.id,
   );
-  const route = getNodeRoute(nodeCode);
-  if (route === APP_ROUTES.carloan.signing.signCenter) {
-    handleSignButton(order);
-    return;
-  }
-  uni.navigateTo({ url: buildRoute(route, buildOrderQuery(order)) });
+  uni.navigateTo({
+    url: buildRoute(
+      APP_ROUTES.carloan.precheck.applyDetail,
+      buildDetailRouteQuery({
+        id: firstText(order?.id),
+        creditOrderId,
+        uuid: firstText(order?.uuid),
+        customerName: firstText(order?.name, order?.customerName, order?.personName),
+        customerPhone: firstText(order?.phone, order?.telephone),
+        nodeCode: normalizeNodeCode(
+          order?.nodeCode ?? order?.currentNode ?? order?.businessNode,
+        ),
+      }),
+    ),
+  });
 }
 
 // ---- 数据标准化 ----
-
-function resolveStatusClass(status: unknown, nodeStatus: unknown) {
-  const statusText = String(status || "");
-  if (["1", "2", "3", "4"].includes(statusText)) return statusText;
-  if (STATUS_META[statusText]) return STATUS_META[statusText].cls;
-  return NODE_STATUS_META[String(nodeStatus || "")]?.cls || "4";
-}
-
-function buildVehicleDisplay(order: CreditListItem) {
-  return [order.vehicleBrand, order.vehicleModel]
-    .map((item) => firstText(item))
-    .filter(Boolean)
-    .join(" ");
-}
 
 function normalizeOrderItem(order: CreditListItem): OrderListViewItem {
   const node = first(order.currentNode, order.nodeCode, order.businessNode);
@@ -475,18 +405,11 @@ function normalizeOrderItem(order: CreditListItem): OrderListViewItem {
   const businessNode = firstText(node);
   return {
     ...order,
-    // 确保 id 一定有值：优先 applicationId，其次 creditOrderId，最后 order.id
-    id:
-      (order.applicationId ||
-        order.id ||
-        (order.creditOrderId ? Number(order.creditOrderId) : undefined)) as
+    id: (order.applicationId ||
+      order.id ||
+      (order.creditOrderId ? Number(order.creditOrderId) : undefined)) as
       number | undefined,
-    name: firstText(
-      order.name,
-      order.customerName,
-      order.personName,
-      "未知客户",
-    ),
+    name: firstText(order.name, order.customerName, order.personName, "未知客户"),
     phone: firstText(order.phone, order.telephone, "-"),
     creditOrderId: firstText(
       order.creditOrderId,
@@ -507,7 +430,10 @@ function normalizeOrderItem(order: CreditListItem): OrderListViewItem {
       getNodeStatusLabel(nodeStatus),
     ),
     statusClass: resolveStatusClass(order.status, nodeStatus),
-    vehicleDisplay: buildVehicleDisplay(order),
+    vehicleDisplay: [order.vehicleBrand, order.vehicleModel]
+      .map((item) => firstText(item))
+      .filter(Boolean)
+      .join(" "),
     pushQuota: formatMoney(first(order.pushQuota, order.amount)),
     periods: first(order.periods, order.term, order.approvedTerm),
     createTime: firstText(
@@ -520,21 +446,30 @@ function normalizeOrderItem(order: CreditListItem): OrderListViewItem {
 
 // ---- 列表请求 ----
 
+/** 从接口响应中提取列表数据 */
 function extractRows(res: unknown): CreditListItem[] {
-  const pageData = (res as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
-  if (Array.isArray(pageData?.records)) return pageData.records as CreditListItem[];
-  if (Array.isArray(pageData?.rows)) return pageData.rows as CreditListItem[];
-  if (Array.isArray((res as Record<string, unknown>)?.records)) return (res as Record<string, unknown>).records as CreditListItem[];
-  if (Array.isArray((res as Record<string, unknown>)?.rows)) return (res as Record<string, unknown>).rows as CreditListItem[];
-  return [];
+  const data = (res as Record<string, unknown>)?.data as
+    | Record<string, unknown>
+    | undefined;
+  if (!data) return [];
+  return (
+    (data.list as CreditListItem[]) ||
+    (data.records as CreditListItem[]) ||
+    (data.rows as CreditListItem[]) ||
+    (Array.isArray(data) ? (data as CreditListItem[]) : [])
+  );
 }
 
-function extractTotal(res: unknown, rowsLength: number) {
-  const pageData = (res as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
-  const numericTotal = Number(first(pageData?.total, (res as Record<string, unknown>)?.total));
-  return Number.isFinite(numericTotal) ? numericTotal : rowsLength;
+/** 从接口响应中提取总数 */
+function extractTotal(res: unknown, fallback: number): number {
+  const data = (res as Record<string, unknown>)?.data as
+    | Record<string, unknown>
+    | undefined;
+  if (!data) return fallback;
+  return Number(data.total ?? data.totalCount ?? data.count) || fallback;
 }
 
+/** 拉取订单列表 */
 async function fetchList(isRefresh = false) {
   if (loading.value) return;
   if (!isRefresh && !hasMore.value) return;
@@ -548,8 +483,12 @@ async function fetchList(isRefresh = false) {
       pageNum: pageNum.value,
       pageSize,
     };
-    if (currentBusinessNode.value !== "all")
-      params.businessNode = currentBusinessNode.value;
+    if (currentBusinessNode.value !== "all") {
+      const nodeCodes = businessNodeFilterMap[currentBusinessNode.value];
+      if (nodeCodes && nodeCodes.length > 0) {
+        params.businessNode = nodeCodes;
+      }
+    }
     if (currentNodeStatus.value !== "all")
       params.nodeStatus = Number(currentNodeStatus.value);
     const kw = keyword.value.trim();
@@ -569,36 +508,32 @@ async function fetchList(isRefresh = false) {
   }
 }
 
-// ---- 搜索/筛选 ----
-
-function handleSearch() {
-  if (keyword.value.trim() === lastKeyword.value.trim()) return;
-  lastKeyword.value = keyword.value.trim();
-  fetchList(true);
+/** 拉取业务节点枚举 */
+async function fetchBusinessNodes() {
+  try {
+    const res = await businessApi.getLoanBusinessNodes();
+    if (res?.code === 200 && Array.isArray(res.data)) {
+      ORDER_NODE_OPTIONS.value = (res.data as LoanBusinessNode[]).map((item) => ({
+        value: item.code,
+        label: item.name || item.description || item.code,
+      }));
+    }
+  } catch {
+    // 静默失败
+  }
 }
 
-function handleBusinessNodeChange(node: BusinessNodeFilterValue) {
-  if (currentBusinessNode.value === node) return;
-  currentBusinessNode.value = node;
-  fetchList(true);
-}
-
-function handleNodeStatusChange(status: NodeStatusFilterValue) {
-  if (currentNodeStatus.value === status) return;
-  currentNodeStatus.value = status;
-  fetchList(true);
-}
-
-function applyWorkbenchFilter() {
+/** 应用工作台传来的筛选条件 */
+function applyWorkbenchFilter(): boolean {
   const filter = uni.getStorageSync(ORDER_FILTER_STORAGE_KEY) || {};
   const nodeCode = String(filter.nodeCode || "");
   const updatedAt = Number(filter.updatedAt || 0);
   if (
     nodeCode &&
-    ORDER_NODE_OPTIONS.value.some((item) => item.value === nodeCode) &&
+    VALID_NODE_FILTERS.has(nodeCode) &&
     Date.now() - updatedAt < ORDER_FILTER_MAX_AGE
   ) {
-    currentBusinessNode.value = nodeCode;
+    currentBusinessNode.value = nodeCode as BusinessNodeFilterValue;
     uni.removeStorageSync(ORDER_FILTER_STORAGE_KEY);
     fetchList(true);
     return true;
@@ -606,52 +541,41 @@ function applyWorkbenchFilter() {
   return false;
 }
 
-async function loadNodeOptions() {
-  try {
-    const res = await businessApi.getLoanBusinessNodes();
-    const nodes = (res?.data || res || []) as LoanBusinessNode[];
-    if (Array.isArray(nodes) && nodes.length > 0) {
-      ORDER_NODE_OPTIONS.value = nodes.map((n) => ({
-        label: n.name,
-        value: n.code,
-      }));
-    }
-  } catch {
-    console.warn("获取业务节点失败");
-  }
+// ---- 事件处理 ----
+
+function handleSearch() {
+  const kw = keyword.value.trim();
+  if (kw === lastKeyword.value) return;
+  lastKeyword.value = kw;
+  fetchList(true);
 }
 
-// ---- 生命周期 ----
+function handleBusinessNodeChange(value: string) {
+  if (currentBusinessNode.value === value) return;
+  currentBusinessNode.value = value as BusinessNodeFilterValue;
+  fetchList(true);
+}
 
-onLoad(async () => {
-  await loadNodeOptions();
-  if (!applyWorkbenchFilter()) fetchList(true);
-  isFirstLoadDone.value = true;
-});
+function handleNodeStatusChange(value: string) {
+  if (currentNodeStatus.value === value) return;
+  currentNodeStatus.value = value as NodeStatusFilterValue;
+  fetchList(true);
+}
 
-onShow(() => {
-  // 首次加载完成后的每次 onShow 都刷新列表，确保从详情页返回后数据是最新的
-  if (isFirstLoadDone.value) {
-    fetchList(true);
-  }
-});
-onReachBottom(() => {
-  fetchList();
-});
-
-async function onRefresh() {
+function onRefresh() {
   isRefreshing.value = true;
-  await fetchList(true);
-  isRefreshing.value = false;
+  fetchList(true).finally(() => {
+    isRefreshing.value = false;
+  });
 }
 
-function onScroll(e: unknown) {
-  const detail = (e as Record<string, unknown>)?.detail as Record<string, unknown> | undefined;
-  showBackToTop.value = Number(detail?.scrollTop ?? 0) > SCROLL_THRESHOLD;
+function onScroll(e: { detail: { scrollTop: number } }) {
+  const top = e.detail.scrollTop || 0;
+  showBackToTop.value = top > SCROLL_THRESHOLD;
 }
 
 function handleBackToTop() {
-  scrollTopValue.value = 0;
+  scrollTopValue.value = scrollTopValue.value === 0 ? 1 : 0;
 }
 
 // ---- 流程记录弹窗 ----
@@ -661,200 +585,90 @@ const flowRecordLoading = ref(false);
 const flowRecordList = ref<FlowRecordItem[]>([]);
 
 async function handleFlowRecord(order: OrderListViewItem) {
+  flowRecordVisible.value = true;
   flowRecordLoading.value = true;
   flowRecordList.value = [];
   try {
-    const res = await businessApi.getLifecycle(String(order.id));
-    if (res.code === 200 && Array.isArray(res.data)) {
-      flowRecordList.value = res.data;
-      flowRecordVisible.value = true;
-    } else {
-      throw new Error("接口返回异常");
+    const orderId = order.id || order.creditOrderId;
+    if (!orderId) return;
+    const res = await businessApi.getLifecycle(orderId);
+    if (res?.code === 200 && Array.isArray(res.data)) {
+      flowRecordList.value = res.data as FlowRecordItem[];
     }
   } catch {
-    uni.showToast({ title: "加载失败", icon: "none" });
+    console.error("获取流程记录失败");
   } finally {
     flowRecordLoading.value = false;
   }
 }
+
+// ---- 生命周期 ----
+
+onLoad(() => {
+  fetchBusinessNodes();
+  if (!applyWorkbenchFilter()) {
+    fetchList(true);
+  }
+});
+
+onShow(() => {
+  if (isFirstLoadDone.value) {
+    applyWorkbenchFilter();
+  }
+  isFirstLoadDone.value = true;
+});
+
+onReachBottom(() => {
+  fetchList(false);
+});
 </script>
 
 <style lang="scss" scoped>
-$bg-page: #f5f7fa;
-$bg-surface: #ffffff;
-$border-subtle: #ebedf2;
-$text-main: #1a1d29;
-$text-body: #4e5566;
-$text-hint: #8b93a7;
-$text-light: #b0b8cc;
-$primary: #437cff;
-$primary-light: #eef1ff;
-$accent-red: #ff6b6b;
-$ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-
 .order-list-page {
-  height: 100%;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(circle at 85% 0%, rgba(65, 198, 168, 0.18), transparent 34%),
-    linear-gradient(180deg, var(--app-page-bg-soft, #edf3ff) 0%, $bg-page 36%, #f8fafc 100%);
+  min-height: 100vh;
+  background: #f5f6fa;
 }
 
-.order-list-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.list__inner {
-  padding: 22rpx 24rpx calc(32rpx + env(safe-area-inset-bottom));
-  box-sizing: border-box;
-  width: 100%;
-}
-
-/* ===== 顶部概览 ===== */
-.order-hero {
-  margin: 22rpx 24rpx 0;
-  padding: 30rpx;
-  border-radius: 28rpx;
-  background:
-    linear-gradient(135deg, rgba(67, 124, 255, 0.95), rgba(65, 198, 168, 0.9)),
-    #437cff;
-  box-shadow: 0 18rpx 38rpx rgba(67, 124, 255, 0.22);
-  color: #fff;
-  overflow: hidden;
-
-  &__main {
-    display: flex;
-    flex-direction: column;
-  }
-
-  &__eyebrow {
-    font-size: 20rpx;
-    font-weight: 700;
-    letter-spacing: 0;
-    color: rgba(255, 255, 255, 0.72);
-    line-height: 1.3;
-  }
-
-  &__title {
-    margin-top: 8rpx;
-    font-size: 42rpx;
-    font-weight: 800;
-    color: #fff;
-    line-height: 1.25;
-  }
-
-  &__desc {
-    margin-top: 10rpx;
-    font-size: 24rpx;
-    color: rgba(255, 255, 255, 0.82);
-    line-height: 1.45;
-  }
-
-  &__stats {
-    margin-top: 28rpx;
-    padding: 20rpx 22rpx;
-    border-radius: 22rpx;
-    background: rgba(255, 255, 255, 0.16);
-    display: flex;
-    align-items: center;
-    backdrop-filter: blur(8rpx);
-  }
-
-  &__stat {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  &__num {
-    font-size: 38rpx;
-    font-weight: 800;
-    color: #fff;
-    line-height: 1.1;
-  }
-
-  &__label {
-    margin-top: 8rpx;
-    font-size: 22rpx;
-    color: rgba(255, 255, 255, 0.72);
-  }
-
-  &__divider {
-    width: 1rpx;
-    height: 52rpx;
-    background: rgba(255, 255, 255, 0.24);
-  }
-}
-
-/* ===== 搜索栏 ===== */
 .search-bar {
-  padding: 18rpx 24rpx 12rpx;
-  background: transparent;
-
-  :deep(.u-search) {
-    box-shadow: 0 10rpx 24rpx rgba(31, 45, 86, 0.08);
-    border-radius: 20rpx;
-    overflow: hidden;
-  }
+  padding: 16rpx 24rpx;
+  background: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 }
 
-/* ===== 筛选区 ===== */
 .filter-card {
-  margin: 0 24rpx 20rpx;
-  padding: 0;
-  background: $bg-surface;
-  border: 1rpx solid rgba(221, 228, 240, 0.9);
-  border-radius: 24rpx;
-  box-shadow: 0 12rpx 30rpx rgba(31, 45, 86, 0.07);
-  overflow: hidden;
+  margin: 16rpx 24rpx 0;
+  padding: 24rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
 
   &__header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: 20rpx;
-    padding: 24rpx 24rpx 6rpx;
-  }
-
-  &__title,
-  &__desc {
-    display: block;
+    margin-bottom: 20rpx;
   }
 
   &__title {
     font-size: 30rpx;
-    font-weight: 800;
-    color: $text-main;
-    line-height: 1.3;
+    font-weight: 600;
+    color: #1a1a1a;
   }
 
   &__desc {
-    margin-top: 6rpx;
-    max-width: 480rpx;
-    font-size: 23rpx;
-    color: $text-hint;
-    line-height: 1.4;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    margin-left: 16rpx;
+    font-size: 24rpx;
+    color: #999;
   }
 
   &__chip {
-    flex-shrink: 0;
-    padding: 8rpx 16rpx;
-    border-radius: 999rpx;
-    background: #eef7f4;
-
-    text {
-      font-size: 22rpx;
-      font-weight: 700;
-      color: #20a986;
-      line-height: 1;
-    }
+    padding: 6rpx 20rpx;
+    font-size: 22rpx;
+    color: #4c7bfd;
+    background: rgba(76, 123, 253, 0.1);
+    border-radius: 20rpx;
   }
 }
 
@@ -862,130 +676,84 @@ $ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 
   &--sub {
-    border-top: 1rpx solid rgba($border-subtle, 0.6);
+    margin-top: 16rpx;
   }
 }
 
 .filter-tabs {
   display: inline-flex;
-  padding: 18rpx 24rpx;
-  gap: 12rpx;
+  gap: 16rpx;
 
   &--sub {
-    padding: 14rpx 24rpx 18rpx;
+    gap: 12rpx;
   }
 }
 
 .filter-tab {
-  position: relative;
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
-  gap: 6rpx;
-  height: 56rpx;
-  padding: 0 22rpx;
-  border-radius: 999rpx;
-  background: #f6f8fb;
-  border: 1rpx solid transparent;
-  transition: all 0.2s $ease-out;
+  gap: 8rpx;
+  padding: 12rpx 28rpx;
+  font-size: 26rpx;
+  color: #666;
+  background: #f5f6fa;
+  border-radius: 32rpx;
+  transition: all 0.2s;
 
-  &__label {
-    font-size: 26rpx;
-    font-weight: 500;
-    color: $text-body;
-    white-space: nowrap;
-  }
-
-  &__badge {
-    min-width: 28rpx;
-    height: 28rpx;
-    padding: 0 8rpx;
-    border-radius: 14rpx;
-    background: rgba($primary, 0.15);
-    font-size: 20rpx;
-    font-weight: 600;
-    color: $primary;
-    text-align: center;
-    line-height: 28rpx;
+  &--sub {
+    padding: 8rpx 20rpx;
+    font-size: 24rpx;
   }
 
   &--on {
-    background: #eaf1ff;
-    border-color: rgba($primary, 0.22);
-    box-shadow: 0 8rpx 18rpx rgba(67, 124, 255, 0.12);
-
-    .filter-tab__label {
-      color: $primary;
-      font-weight: 700;
-    }
-    .filter-tab__badge {
-      background: rgba($primary, 0.14);
-      color: $primary;
-    }
+    color: #fff;
+    background: #4c7bfd;
   }
 
-  &--sub {
-    height: 48rpx;
-    padding: 0 20rpx;
-
-    .filter-tab__label {
-      font-size: 24rpx;
-    }
-  }
-
-  &:active {
-    transform: scale(0.95);
+  &__badge {
+    min-width: 32rpx;
+    padding: 2rpx 8rpx;
+    font-size: 20rpx;
+    color: #fff;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 16rpx;
   }
 }
 
-/* ===== 空状态 / 加载 ===== */
-.empty-state {
-  margin: 26rpx 0 40rpx;
-  padding: 100rpx 40rpx;
-  background: $bg-surface;
-  border: 1rpx solid rgba(221, 228, 240, 0.9);
-  border-radius: 24rpx;
-  box-shadow: 0 12rpx 30rpx rgba(31, 45, 86, 0.07);
-
-  :deep(.u-empty__text) {
-    color: $text-hint !important;
-    font-size: 26rpx !important;
-  }
+.order-list-scroll {
+  flex: 1;
+  height: 0;
 }
 
-.load-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40rpx 0;
+.list__inner {
+  padding: 24rpx;
 }
 
+.load-more,
 .no-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40rpx 0;
+  padding: 32rpx 0;
   font-size: 24rpx;
-  color: $text-light;
-  font-weight: 500;
+  color: #bbb;
+  text-align: center;
+}
+
+.empty-state {
+  padding: 120rpx 0;
 }
 
 .back-to-top {
   position: fixed;
-  right: 30rpx;
-  bottom: 200rpx;
-  width: 88rpx;
-  height: 88rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4f7cff, #41c6a8);
+  right: 32rpx;
+  bottom: 160rpx;
+  width: 80rpx;
+  height: 80rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(67, 124, 255, 0.35);
-  z-index: 999;
-
-  &:active {
-    transform: scale(0.92);
-    opacity: 0.9;
-  }
+  background: rgba(76, 123, 253, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 4rpx 16rpx rgba(76, 123, 253, 0.4);
 }
 </style>

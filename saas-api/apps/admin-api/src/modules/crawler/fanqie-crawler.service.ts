@@ -4,7 +4,7 @@ import * as cheerio from 'cheerio'
 import { PrismaService } from '../prisma/prisma.service'
 
 let pw: typeof import('playwright')
-try { pw = require('playwright') } catch { /* 按需安装 */ }
+try { pw = require('playwright') } catch { /* 按需安装 */ } // eslint-disable-line @typescript-eslint/no-require-imports
 
 const HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/125.0.0.0 Safari/537.36',

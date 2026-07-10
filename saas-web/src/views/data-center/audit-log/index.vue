@@ -106,7 +106,9 @@
             <template #header>
               <div class="card-header">
                 <h4>模块调用排行</h4>
-                <ElTag type="success" size="small">Top {{ Math.min(stats.modules?.length || 0, 10) }}</ElTag>
+                <ElTag type="success" size="small"
+                  >Top {{ Math.min(stats.modules?.length || 0, 10) }}</ElTag
+                >
               </div>
             </template>
             <div ref="modulesChartRef" style="width: 100%; height: 280px"></div>
@@ -715,7 +717,7 @@
     transition: all 0.3s;
 
     &:hover {
-      box-shadow: 0 4px 12px rgba(245, 175, 25, 0.3);
+      box-shadow: 0 4px 12px rgb(245 175 25 / 30%);
       transform: translateY(-2px);
     }
 
@@ -741,20 +743,20 @@
   }
 
   .ua-text {
-    word-break: break-all;
     font-size: 12px;
     color: var(--el-text-color-secondary);
+    word-break: break-all;
   }
 
   .json-block {
     max-height: 360px;
     padding: 16px;
     overflow: auto;
-    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-family: Monaco, Menlo, Consolas, monospace;
     font-size: 12px;
     line-height: 1.6;
-    white-space: pre-wrap;
     word-break: break-all;
+    white-space: pre-wrap;
     background: var(--el-fill-color-light);
     border: 1px solid var(--el-border-color-lighter);
     border-radius: 8px;
@@ -763,6 +765,7 @@
   :deep(.el-divider) {
     margin: 20px 0 12px;
   }
+
   :deep(.el-divider__text) {
     font-size: 14px;
   }

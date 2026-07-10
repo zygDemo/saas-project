@@ -53,10 +53,8 @@ function renderOrgPackageCell(row: Record<string, unknown>, formatCell: FormatCe
 }
 
 function renderOrgApiEnabledCell(row: Record<string, unknown>) {
-  return h(
-    ElTag,
-    { type: row.apiEnabled === false ? 'info' : 'success', effect: 'light' },
-    () => (row.apiEnabled === false ? '已关闭' : '已开启')
+  return h(ElTag, { type: row.apiEnabled === false ? 'info' : 'success', effect: 'light' }, () =>
+    row.apiEnabled === false ? '已关闭' : '已开启'
   )
 }
 
@@ -75,10 +73,8 @@ function renderStatusCell(
   statusTagType: (value: unknown) => string,
   normalizeTagType: NormalizeTagType
 ) {
-  return h(
-    ElTag,
-    { type: normalizeTagType(statusTagType(row[prop])), effect: 'light' },
-    () => formatCell(row, prop)
+  return h(ElTag, { type: normalizeTagType(statusTagType(row[prop])), effect: 'light' }, () =>
+    formatCell(row, prop)
   )
 }
 
@@ -88,8 +84,16 @@ function renderOperationCell(row: Record<string, unknown>, args: BuildTableColum
   ]
 
   if (!args.readonly) {
-    buttons.push(h(ElButton, { link: true, type: 'primary', onClick: () => args.openEdit(row) }, () => '编辑'))
-    buttons.push(h(ElButton, { link: true, type: 'danger', onClick: () => args.handleDelete(row) }, () => '删除'))
+    buttons.push(
+      h(ElButton, { link: true, type: 'primary', onClick: () => args.openEdit(row) }, () => '编辑')
+    )
+    buttons.push(
+      h(
+        ElButton,
+        { link: true, type: 'danger', onClick: () => args.handleDelete(row) },
+        () => '删除'
+      )
+    )
   }
 
   for (const action of args.rowActions(row)) {
@@ -109,7 +113,9 @@ function renderOperationCell(row: Record<string, unknown>, args: BuildTableColum
   return h(ElSpace, { wrap: true }, () => buttons)
 }
 
-export function buildBusinessTableColumns(args: BuildTableColumnsArgs): Array<Record<string, unknown>> {
+export function buildBusinessTableColumns(
+  args: BuildTableColumnsArgs
+): Array<Record<string, unknown>> {
   const cols: Array<Record<string, unknown>> = [{ type: 'index', width: 60, label: '序号' }]
 
   for (const column of args.configColumns) {
@@ -118,15 +124,26 @@ export function buildBusinessTableColumns(args: BuildTableColumnsArgs): Array<Re
       label: column.label,
       minWidth: column.width || 140,
       showOverflowTooltip:
-        !args.isOrgModule || !['name', 'contactName', 'packageType', 'businessScale'].includes(column.prop),
+        !args.isOrgModule ||
+        !['name', 'contactName', 'packageType', 'businessScale'].includes(column.prop),
       formatter: (row: Record<string, unknown>) => {
-        if (args.isOrgModule && column.prop === 'name') return renderOrgNameCell(row, args.formatCell)
-        if (args.isOrgModule && column.prop === 'contactName') return renderOrgContactCell(row, args.formatCell)
-        if (args.isOrgModule && column.prop === 'packageType') return renderOrgPackageCell(row, args.formatCell)
+        if (args.isOrgModule && column.prop === 'name')
+          return renderOrgNameCell(row, args.formatCell)
+        if (args.isOrgModule && column.prop === 'contactName')
+          return renderOrgContactCell(row, args.formatCell)
+        if (args.isOrgModule && column.prop === 'packageType')
+          return renderOrgPackageCell(row, args.formatCell)
         if (args.isOrgModule && column.prop === 'apiEnabled') return renderOrgApiEnabledCell(row)
-        if (args.isOrgModule && column.prop === 'businessScale') return renderOrgScaleCell(row, args.formatCell)
+        if (args.isOrgModule && column.prop === 'businessScale')
+          return renderOrgScaleCell(row, args.formatCell)
         if (column.prop === 'status') {
-          return renderStatusCell(row, column.prop, args.formatCell, args.statusTagType, args.normalizeTagType)
+          return renderStatusCell(
+            row,
+            column.prop,
+            args.formatCell,
+            args.statusTagType,
+            args.normalizeTagType
+          )
         }
         return h('span', {}, args.formatCell(row, column.prop))
       }

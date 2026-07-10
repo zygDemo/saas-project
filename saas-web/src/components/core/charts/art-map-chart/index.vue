@@ -18,7 +18,9 @@
 
   const chinaMapRef = ref<HTMLElement | null>(null)
   const chartInstance = shallowRef<echarts.ECharts | null>(null)
-  const chinaMapJson = shallowRef<{ features: Array<{ properties: Record<string, unknown> }> } | null>(null)
+  const chinaMapJson = shallowRef<{
+    features: Array<{ properties: Record<string, unknown> }>
+  } | null>(null)
   const settingStore = useSettingStore()
   const { isDark } = storeToRefs(settingStore)
 

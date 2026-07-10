@@ -22,10 +22,17 @@
           <template #header>
             <div class="reading-card-header">
               <span>热门书籍 TOP 10</span>
-              <ElButton link type="primary" @click="$router.push('/reading/books')">查看全部</ElButton>
+              <ElButton link type="primary" @click="$router.push('/reading/books')"
+                >查看全部</ElButton
+              >
             </div>
           </template>
-          <ArtTable :data="hotBooks" :columns="hotBookColumns" :pagination="undefined" size="small" />
+          <ArtTable
+            :data="hotBooks"
+            :columns="hotBookColumns"
+            :pagination="undefined"
+            size="small"
+          />
         </ElCard>
       </ElCol>
 
@@ -34,7 +41,9 @@
           <template #header>
             <div class="reading-card-header">
               <span>最新书评</span>
-              <ElButton link type="primary" @click="$router.push('/reading/comment')">查看全部</ElButton>
+              <ElButton link type="primary" @click="$router.push('/reading/comment')"
+                >查看全部</ElButton
+              >
             </div>
           </template>
           <ElEmpty v-if="recentReviews.length === 0" description="暂无书评" :image-size="90" />
@@ -43,7 +52,10 @@
               <ElRate :model-value="review.rating" disabled size="small" />
               <span class="text-sm text-gray-500">{{ review.book?.title }}</span>
             </div>
-            <div class="text-sm">{{ review.content?.slice(0, 80) || '用户未填写评价内容' }}{{ review.content?.length > 80 ? '...' : '' }}</div>
+            <div class="text-sm"
+              >{{ review.content?.slice(0, 80) || '用户未填写评价内容'
+              }}{{ review.content?.length > 80 ? '...' : '' }}</div
+            >
             <div class="text-xs text-gray-400 mt-1">{{ review.createdAt }}</div>
           </div>
         </ElCard>
@@ -56,7 +68,12 @@
           <span>分类书籍分布</span>
         </div>
       </template>
-      <ArtTable :data="categories" :columns="categoryColumns" :pagination="undefined" size="small" />
+      <ArtTable
+        :data="categories"
+        :columns="categoryColumns"
+        :pagination="undefined"
+        size="small"
+      />
     </ElCard>
   </ReadingPageShell>
 </template>
@@ -64,7 +81,12 @@
 <script setup lang="ts">
   import { h, ref, computed, onMounted } from 'vue'
   import { ElProgress } from 'element-plus'
-  import { getReadingStatistics, getHotBooks, getBookReviews, getBookCategories } from '@/api/reading'
+  import {
+    getReadingStatistics,
+    getHotBooks,
+    getBookReviews,
+    getBookCategories
+  } from '@/api/reading'
   import ArtStatsCard from '@/components/core/cards/art-stats-card/index.vue'
   import ReadingPageShell from '../components/ReadingPageShell.vue'
 
@@ -74,13 +96,39 @@
   const hotBooks = ref<any[]>([])
   const recentReviews = ref<any[]>([])
   const categories = ref<any[]>([])
-  const totalBooks = computed(() => categories.value.reduce((sum, c) => sum + (c._count?.books || 0), 0))
+  const totalBooks = computed(() =>
+    categories.value.reduce((sum, c) => sum + (c._count?.books || 0), 0)
+  )
 
   const statCards = computed(() => [
-    { title: '书籍总数', value: stats.value.bookCount || 0, description: '已入库图书', icon: 'ri:book-open-line', iconStyle: 'bg-primary' },
-    { title: '分类数', value: stats.value.categoryCount || 0, description: '启用分类', icon: 'ri:folder-2-line', iconStyle: 'bg-success' },
-    { title: '活跃读者', value: stats.value.activeReaderCount || 0, description: '近期活跃用户', icon: 'ri:user-3-line', iconStyle: 'bg-warning' },
-    { title: '总阅读量', value: stats.value.totalReads || 0, description: '累计阅读次数', icon: 'ri:bar-chart-2-line', iconStyle: 'bg-danger' }
+    {
+      title: '书籍总数',
+      value: stats.value.bookCount || 0,
+      description: '已入库图书',
+      icon: 'ri:book-open-line',
+      iconStyle: 'bg-primary'
+    },
+    {
+      title: '分类数',
+      value: stats.value.categoryCount || 0,
+      description: '启用分类',
+      icon: 'ri:folder-2-line',
+      iconStyle: 'bg-success'
+    },
+    {
+      title: '活跃读者',
+      value: stats.value.activeReaderCount || 0,
+      description: '近期活跃用户',
+      icon: 'ri:user-3-line',
+      iconStyle: 'bg-warning'
+    },
+    {
+      title: '总阅读量',
+      value: stats.value.totalReads || 0,
+      description: '累计阅读次数',
+      icon: 'ri:bar-chart-2-line',
+      iconStyle: 'bg-danger'
+    }
   ])
 
   const hotBookColumns = computed(() => [
@@ -105,7 +153,9 @@
       minWidth: 240,
       formatter: (row: any) =>
         h(ElProgress, {
-          percentage: categories.value.length ? Math.round(((row._count?.books || 0) / totalBooks.value) * 100) : 0,
+          percentage: categories.value.length
+            ? Math.round(((row._count?.books || 0) / totalBooks.value) * 100)
+            : 0,
           strokeWidth: 14,
           textInside: true
         })
@@ -117,7 +167,7 @@
       getReadingStatistics(),
       getHotBooks(10),
       getBookReviews({ pageSize: 5 }),
-      getBookCategories(),
+      getBookCategories()
     ])
     if (s.status === 'fulfilled') stats.value = s.value?.data || {}
     if (h.status === 'fulfilled') hotBooks.value = Array.isArray(h.value?.data) ? h.value.data : []
@@ -142,9 +192,9 @@
 
   .reading-card-header {
     display: flex;
+    gap: 12px;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
     font-weight: 600;
     color: var(--el-text-color-primary);
   }

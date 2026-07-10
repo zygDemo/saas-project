@@ -215,9 +215,6 @@ export class DataCenterService {
   /** 实际的热力图查询（未缓存） */
   private async fetchHeatmapData(query: DateRangeQueryDto) {
     const tenantId = this.currentTenantId()
-    const dateWhere = this.buildDateWhere(query, 'createdAt')
-    const tenantWhere = tenantId ? { tenantId } : {}
-    const where = { ...tenantWhere, ...dateWhere }
 
     // 查询最近7天的订单时间分布
     const heatmapRows = await this.prisma.$queryRaw<Array<{ day_of_week: number; hour: number; count: number }>>`

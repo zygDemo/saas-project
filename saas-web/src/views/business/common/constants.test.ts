@@ -18,13 +18,11 @@ import {
   funderTypeOptions,
   flowBusinessTypeOptions,
   flowNodeOptions,
-  flowPhaseOptions,
-  flowNodeStatusOptions,
   applicationStatusOptions,
   applicationNodeByPath,
   applicationPhaseByPath,
   phaseTitleMap,
-  phaseNodeTabsMap,
+  phaseNodeTabsMap
 } from './constants'
 
 // ==================== toOption ====================
@@ -76,14 +74,17 @@ describe('option arrays', () => {
   it('yesNoOptions has boolean values', () => {
     expect(yesNoOptions).toEqual([
       { label: '是', value: true },
-      { label: '否', value: false },
+      { label: '否', value: false }
     ])
   })
 
   it('orgPackageOptions has 4 tiers', () => {
     expect(orgPackageOptions).toHaveLength(4)
     expect(orgPackageOptions.map((o) => o.value)).toEqual([
-      'STANDARD', 'PRO', 'ENTERPRISE', 'TRIAL',
+      'STANDARD',
+      'PRO',
+      'ENTERPRISE',
+      'TRIAL'
     ])
   })
 
@@ -101,7 +102,10 @@ describe('option arrays', () => {
   it('funderTypeOptions has 4 types', () => {
     expect(funderTypeOptions).toHaveLength(4)
     expect(funderTypeOptions.map((o) => o.value)).toEqual([
-      'BANK', 'CONSUMER_FINANCE', 'LEASING', 'MICRO_LOAN',
+      'BANK',
+      'CONSUMER_FINANCE',
+      'LEASING',
+      'MICRO_LOAN'
     ])
   })
 
@@ -125,7 +129,11 @@ describe('option arrays', () => {
 
   it('signingStatusOptions covers signing lifecycle', () => {
     expect(signingStatusOptions.map((o) => o.value)).toEqual([
-      'PENDING', 'SENT', 'SIGNED', 'CANCELLED', 'EXPIRED',
+      'PENDING',
+      'SENT',
+      'SIGNED',
+      'CANCELLED',
+      'EXPIRED'
     ])
   })
 
@@ -141,7 +149,10 @@ describe('option arrays', () => {
 
   it('approvalActionOptions has 4 actions', () => {
     expect(approvalActionOptions.map((o) => o.value)).toEqual([
-      'PASS', 'REJECT', 'SUPPLEMENT', 'RETURN',
+      'PASS',
+      'REJECT',
+      'SUPPLEMENT',
+      'RETURN'
     ])
   })
 

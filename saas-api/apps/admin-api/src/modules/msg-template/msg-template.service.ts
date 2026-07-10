@@ -127,7 +127,7 @@ export class MsgTemplateService {
   }
 }
 
-type MsgTemplateRecord = Prisma.MessageTemplateGetPayload<{}>
+type MsgTemplateRecord = Prisma.MessageTemplateGetPayload<object>
 
 function normalizeVariables(value: Record<string, unknown> | undefined) {
   return value === undefined ? undefined : (value as Prisma.InputJsonValue)

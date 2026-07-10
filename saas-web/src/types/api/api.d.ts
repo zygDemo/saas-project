@@ -344,41 +344,41 @@ declare namespace Api {
       Pick<SystemParamItem, 'group' | 'name' | 'key' | 'value' | 'type' | 'status' | 'remark'>
     >
 
+    // ===== 消息模板 =====
+    interface MsgTemplateItem {
+      id: number
+      name: string
+      code: string
+      channel: string
+      scene: string
+      title?: string
+      content: string
+      variables?: Record<string, unknown>
+      status: string
+      remark?: string
+      createTime: string
+      updateTime: string
+    }
 
-// ===== 消息模板 =====
-interface MsgTemplateItem {
-  id: number
-  name: string
-  code: string
-  channel: string
-  scene: string
-  title?: string
-  content: string
-  variables?: Record<string, unknown>
-  status: string
-  remark?: string
-  createTime: string
-  updateTime: string
-}
-
-type MsgTemplateList = Api.Common.PaginatedResponse<MsgTemplateItem>
-type MsgTemplateSearchParams = Partial<
-  Pick<MsgTemplateItem, 'name' | 'code' | 'channel' | 'scene' | 'status'> & Api.Common.CommonSearchParams
->
-type SaveMsgTemplateParams = Partial<
-  Pick<
-    MsgTemplateItem,
-    | 'name'
-    | 'code'
-    | 'channel'
-    | 'scene'
-    | 'title'
-    | 'content'
-    | 'variables'
-    | 'status'
-    | 'remark'
-  >
->
+    type MsgTemplateList = Api.Common.PaginatedResponse<MsgTemplateItem>
+    type MsgTemplateSearchParams = Partial<
+      Pick<MsgTemplateItem, 'name' | 'code' | 'channel' | 'scene' | 'status'> &
+        Api.Common.CommonSearchParams
+    >
+    type SaveMsgTemplateParams = Partial<
+      Pick<
+        MsgTemplateItem,
+        | 'name'
+        | 'code'
+        | 'channel'
+        | 'scene'
+        | 'title'
+        | 'content'
+        | 'variables'
+        | 'status'
+        | 'remark'
+      >
+    >
 
     // ===== 公告管理 =====
     interface AnnouncementItem {
