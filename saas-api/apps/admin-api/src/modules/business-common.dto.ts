@@ -1,6 +1,7 @@
 ﻿import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
 import { Transform, Type } from 'class-transformer'
 import {
+  IsArray,
   IsBoolean,
   IsDate,
   IsEnum,
@@ -357,9 +358,31 @@ export class CreateProductDto {
   @IsString()
   status?: string
 
-  @ApiPropertyOptional({ description: '文件清单JSON' })
+  @ApiPropertyOptional({
+    description: '附件清单配置，数组每项含 code(文件编码)/name(文件名称)/fileTypes(允许扩展名)/maxCount(最大张数)/required(是否必传)/remark(备注)',
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        code: { type: 'string', example: 'ID_CARD_FRONT' },
+        name: { type: 'string', example: '身份证人像面' },
+        fileTypes: { type: 'array', items: { type: 'string' }, example: ['jpg', 'png', 'pdf'] },
+        maxCount: { type: 'integer', example: 1, minimum: 1, maximum: 20 },
+        required: { type: 'boolean', example: true },
+        remark: { type: 'string', example: '需清晰可见' }
+      }
+    }
+  })
   @IsOptional()
-  fileChecklist?: unknown
+  @IsArray()
+  fileChecklist?: Array<{
+    code: string
+    name: string
+    fileTypes: string[]
+    maxCount: number
+    required: boolean
+    remark?: string
+  }>
 }
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {}

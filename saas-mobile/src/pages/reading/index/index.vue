@@ -1,5 +1,10 @@
 <template>
-  <layout :active-tab="0" nav-title="我的书架" :show-tabbar="true" tabbar-scope="reading" back back-url="/pages/index/index">
+  <layout
+    :active-tab="0"
+    nav-title="我的书架"
+    :show-tabbar="true"
+    tabbar-scope="reading"
+  >
     <scroll-view
       class="bookshelf-scroll"
       scroll-y
@@ -10,35 +15,64 @@
       <view class="bookshelf-page">
         <!-- 顶部渐变头部 -->
         <view class="header-section">
-          <view class="header-bg">
-
-          </view>
+          <view class="header-bg"> </view>
           <view class="header-content">
             <view class="header-left">
               <text class="header-title">我的书架</text>
-              <text class="header-sub">{{ bookshelf.length }}本在读 · 已读{{ totalReadCount }}本</text>
+              <text class="header-sub">
+                {{ bookshelf.length }}本在读 · 已读{{ totalReadCount }}本
+              </text>
             </view>
             <view class="header-right">
-              <view class="sign-btn" :class="{ signed: hasSigned }" role="button" tabindex="0" @click="handleSign" @keyup.enter="handleSign">
+              <view
+                class="sign-btn"
+                :class="{ signed: hasSigned }"
+                role="button"
+                tabindex="0"
+                @click="handleSign"
+                @keyup.enter="handleSign"
+              >
                 <view class="sign-icon-wrap">
-                  <u-icon :name="hasSigned ? 'checkmark-circle' : 'gift'" color="#fff" size="32" />
+                  <u-icon
+                    :name="hasSigned ? 'checkmark-circle' : 'gift'"
+                    color="#fff"
+                    size="32"
+                  />
                 </view>
-                <text>{{ hasSigned ? '已签到' : '签到' }}</text>
+                <text>{{ hasSigned ? "已签到" : "签到" }}</text>
                 <view v-if="!hasSigned" class="sign-pulse" />
               </view>
             </view>
           </view>
 
           <view class="header-shortcuts">
-            <view class="header-shortcut" role="button" tabindex="0" @click="goBookStore" @keyup.enter="goBookStore">
+            <view
+              class="header-shortcut"
+              role="button"
+              tabindex="0"
+              @click="goBookStore"
+              @keyup.enter="goBookStore"
+            >
               <u-icon name="shopping-cart" color="#fff" size="30" />
               <text>去书城</text>
             </view>
-            <view class="header-shortcut" role="button" tabindex="0" @click="goDownload" @keyup.enter="goDownload">
+            <view
+              class="header-shortcut"
+              role="button"
+              tabindex="0"
+              @click="goDownload"
+              @keyup.enter="goDownload"
+            >
               <u-icon name="download" color="#fff" size="30" />
               <text>下载管理</text>
             </view>
-            <view class="header-shortcut" role="button" tabindex="0" @click="goPortal" @keyup.enter="goPortal">
+            <view
+              class="header-shortcut"
+              role="button"
+              tabindex="0"
+              @click="goPortal"
+              @keyup.enter="goPortal"
+            >
               <u-icon name="home" color="#fff" size="30" />
               <text>项目选择</text>
             </view>
@@ -48,29 +82,77 @@
         <!-- 阅读统计卡片 -->
         <view class="stats-card">
           <view class="stats-row">
-            <view class="stat-item" role="button" tabindex="0" @click="goReadingHistory" @keyup.enter="goReadingHistory">
-              <view class="stat-icon-wrap" style="background: linear-gradient(135deg, var(--u-type-primary-dark, #3b2f8a) 0%, var(--u-type-primary, #5240FE) 100%)">
+            <view
+              class="stat-item"
+              role="button"
+              tabindex="0"
+              @click="goReadingHistory"
+              @keyup.enter="goReadingHistory"
+            >
+              <view
+                class="stat-icon-wrap"
+                style="
+                  background: linear-gradient(
+                    135deg,
+                    var(--u-type-primary-dark, #3b2f8a) 0%,
+                    var(--u-type-primary, #5240fe) 100%
+                  );
+                "
+              >
                 <u-icon name="clock" color="#fff" size="28" />
               </view>
               <text class="stat-value">{{ todayReadMinutes }}</text>
               <text class="stat-label">今日(分钟)</text>
             </view>
-            <view class="stat-item" role="button" tabindex="0" @click="goReadingHistory" @keyup.enter="goReadingHistory">
-              <view class="stat-icon-wrap" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
+            <view
+              class="stat-item"
+              role="button"
+              tabindex="0"
+              @click="goReadingHistory"
+              @keyup.enter="goReadingHistory"
+            >
+              <view
+                class="stat-icon-wrap"
+                style="
+                  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                "
+              >
                 <u-icon name="checkmark-circle" color="#fff" size="28" />
               </view>
               <text class="stat-value">{{ totalReadCount }}</text>
               <text class="stat-label">已读完</text>
             </view>
-            <view class="stat-item" role="button" tabindex="0" @click="goReadingHistory" @keyup.enter="goReadingHistory">
-              <view class="stat-icon-wrap" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)">
+            <view
+              class="stat-item"
+              role="button"
+              tabindex="0"
+              @click="goReadingHistory"
+              @keyup.enter="goReadingHistory"
+            >
+              <view
+                class="stat-icon-wrap"
+                style="
+                  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                "
+              >
                 <u-icon name="heart" color="#fff" size="28" />
               </view>
               <text class="stat-value">{{ bookshelf.length }}</text>
               <text class="stat-label">在读</text>
             </view>
-            <view class="stat-item" role="button" tabindex="0" @click="goDownload" @keyup.enter="goDownload">
-              <view class="stat-icon-wrap" style="background: linear-gradient(135deg, #a8e6cf 0%, #3dc1d3 100%)">
+            <view
+              class="stat-item"
+              role="button"
+              tabindex="0"
+              @click="goDownload"
+              @keyup.enter="goDownload"
+            >
+              <view
+                class="stat-icon-wrap"
+                style="
+                  background: linear-gradient(135deg, #a8e6cf 0%, #3dc1d3 100%);
+                "
+              >
                 <u-icon name="download" color="#fff" size="28" />
               </view>
               <text class="stat-value">{{ downloadCount }}</text>
@@ -86,26 +168,41 @@
               <text class="section-icon">📖</text>
               <text class="section-title">今日推荐</text>
             </view>
-            <view class="refresh-btn" role="button" tabindex="0" @click="refreshRecommend" @keyup.enter="refreshRecommend">
+            <view
+              class="refresh-btn"
+              role="button"
+              tabindex="0"
+              @click="refreshRecommend"
+              @keyup.enter="refreshRecommend"
+            >
               <u-icon name="reload" color="var(--u-type-primary)" size="28" />
               <text>换一批</text>
             </view>
           </view>
           <view class="recommend-card" @click="goDetail(todayRecommend)">
             <view class="recommend-cover-wrap">
-              <image class="recommend-cover" :src="todayRecommend.cover" mode="aspectFill" alt="推荐书籍封面" />
+              <image
+                class="recommend-cover"
+                :src="todayRecommend.cover"
+                mode="aspectFill"
+                alt="推荐书籍封面"
+              />
               <view class="recommend-cover-shadow" />
             </view>
             <view class="recommend-info">
               <text class="recommend-title">{{ todayRecommend.title }}</text>
               <view class="recommend-author-row">
                 <u-icon name="account" color="#909399" size="20" />
-                <text class="recommend-author">{{ todayRecommend.author }}</text>
+                <text class="recommend-author">{{
+                  todayRecommend.author
+                }}</text>
               </view>
               <view class="recommend-tags">
                 <text class="tag category">{{ todayRecommend.category }}</text>
                 <text class="tag words">{{ todayRecommend.wordCount }}</text>
-                <text v-if="todayRecommend.isSerial" class="tag serial">连载中</text>
+                <text v-if="todayRecommend.isSerial" class="tag serial">
+                  连载中
+                </text>
                 <text v-else class="tag finish">已完结</text>
               </view>
               <text class="recommend-desc">{{ todayRecommend.desc }}</text>
@@ -116,7 +213,7 @@
                 </view>
                 <view class="stat">
                   <u-icon name="star" color="#ffa502" size="18" />
-                  <text>{{ todayRecommend.rating?.toFixed(1) || '4.5' }}</text>
+                  <text>{{ todayRecommend.rating?.toFixed(1) || "4.5" }}</text>
                 </view>
               </view>
             </view>
@@ -132,16 +229,74 @@
               <text class="section-count">{{ bookshelf.length }}本</text>
             </view>
             <view class="section-actions">
-              <view class="action-btn" :class="{ active: sortMode === 'time' }" role="button" tabindex="0" @click="sortMode = 'time'" @keyup.enter="sortMode = 'time'">
-                <u-icon name="clock" :color="sortMode === 'time' ? 'var(--u-type-primary, #5240FE)' : '#909399'" size="24" />
-                <text :style="{ color: sortMode === 'time' ? 'var(--u-type-primary, #5240FE)' : '#909399' }">时间</text>
+              <view
+                class="action-btn"
+                :class="{ active: sortMode === 'time' }"
+                role="button"
+                tabindex="0"
+                @click="sortMode = 'time'"
+                @keyup.enter="sortMode = 'time'"
+              >
+                <u-icon
+                  name="clock"
+                  :color="
+                    sortMode === 'time'
+                      ? 'var(--u-type-primary, #5240FE)'
+                      : '#909399'
+                  "
+                  size="24"
+                />
+                <text
+                  :style="{
+                    color:
+                      sortMode === 'time'
+                        ? 'var(--u-type-primary, #5240FE)'
+                        : '#909399',
+                  }"
+                >
+                  时间
+                </text>
               </view>
-              <view class="action-btn" :class="{ active: sortMode === 'name' }" role="button" tabindex="0" @click="sortMode = 'name'" @keyup.enter="sortMode = 'name'">
-                <u-icon name="list" :color="sortMode === 'name' ? 'var(--u-type-primary, #5240FE)' : '#909399'" size="24" />
-                <text :style="{ color: sortMode === 'name' ? 'var(--u-type-primary, #5240FE)' : '#909399' }">名称</text>
+              <view
+                class="action-btn"
+                :class="{ active: sortMode === 'name' }"
+                role="button"
+                tabindex="0"
+                @click="sortMode = 'name'"
+                @keyup.enter="sortMode = 'name'"
+              >
+                <u-icon
+                  name="list"
+                  :color="
+                    sortMode === 'name'
+                      ? 'var(--u-type-primary, #5240FE)'
+                      : '#909399'
+                  "
+                  size="24"
+                />
+                <text
+                  :style="{
+                    color:
+                      sortMode === 'name'
+                        ? 'var(--u-type-primary, #5240FE)'
+                        : '#909399',
+                  }"
+                >
+                  名称
+                </text>
               </view>
-              <view class="action-btn add-btn" role="button" tabindex="0" @click="goBookStore" @keyup.enter="goBookStore">
-                <u-icon name="plus-circle-fill" color="var(--u-type-primary)" size="28" />
+              <view
+                class="action-btn add-btn"
+                role="button"
+                tabindex="0"
+                @click="goBookStore"
+                @keyup.enter="goBookStore"
+              >
+                <u-icon
+                  name="plus-circle-fill"
+                  color="var(--u-type-primary)"
+                  size="28"
+                />
               </view>
             </view>
           </view>
@@ -158,7 +313,14 @@
                 confirm-type="search"
                 @input="onSearchInput"
               />
-              <view v-if="keyword" class="clear-btn" role="button" tabindex="0" @click="keyword = ''" @keyup.enter="keyword = ''">
+              <view
+                v-if="keyword"
+                class="clear-btn"
+                role="button"
+                tabindex="0"
+                @click="keyword = ''"
+                @keyup.enter="keyword = ''"
+              >
                 <u-icon name="close-circle-fill" color="#c0c4cc" size="28" />
               </view>
             </view>
@@ -169,13 +331,20 @@
             <view
               v-for="(book, index) in filteredBooks"
               :key="book.id"
-              class="book-card" role="button" tabindex="0"
+              class="book-card"
+              role="button"
+              tabindex="0"
               :style="{ animationDelay: index * 0.05 + 's' }"
               @click="openBook(book)"
               @longpress="showBookMenu(book)"
             >
               <view class="book-cover-wrap">
-                <image class="book-cover" :src="book.cover" mode="aspectFill" :alt="book.title" />
+                <image
+                  class="book-cover"
+                  :src="book.cover"
+                  mode="aspectFill"
+                  :alt="book.title"
+                />
                 <view v-if="book.hasUpdate" class="update-badge">
                   <text>更新</text>
                 </view>
@@ -190,8 +359,12 @@
                 </view>
                 <text class="book-author">{{ book.author }}</text>
                 <view class="book-meta">
-                  <text class="last-read">{{ book.lastReadChapter || '未开始阅读' }}</text>
-                  <text class="last-time">{{ formatTime(book.lastReadTime) }}</text>
+                  <text class="last-read">{{
+                    book.lastReadChapter || "未开始阅读"
+                  }}</text>
+                  <text class="last-time">{{
+                    formatTime(book.lastReadTime)
+                  }}</text>
                 </view>
                 <view class="book-actions-row">
                   <view class="continue-btn" @click.stop="openBook(book)">
@@ -201,7 +374,10 @@
                 </view>
                 <view class="book-progress-bar">
                   <view class="progress-bg" />
-                  <view class="progress-fill" :style="{ width: book.progress + '%' }" />
+                  <view
+                    class="progress-fill"
+                    :style="{ width: book.progress + '%' }"
+                  />
                   <text class="progress-text">{{ book.progress }}%</text>
                 </view>
               </view>
@@ -219,10 +395,20 @@
               <view class="empty-icon-wrap">
                 <u-icon name="file-text" color="#ddd" size="120" />
               </view>
-              <text class="empty-title">{{ keyword ? '没有找到匹配的书籍' : '书架还是空的' }}</text>
-              <text class="empty-desc">{{ keyword ? '换个关键词试试' : '去书城找找喜欢的书吧' }}</text>
-              <view class="empty-btn" role="button" tabindex="0" @click="keyword ? clearSearch() : goBookStore()" @keyup.enter="keyword ? clearSearch() : goBookStore()">
-                <text>{{ keyword ? '清除搜索' : '去书城逛逛' }}</text>
+              <text class="empty-title">{{
+                keyword ? "没有找到匹配的书籍" : "书架还是空的"
+              }}</text>
+              <text class="empty-desc">{{
+                keyword ? "换个关键词试试" : "去书城找找喜欢的书吧"
+              }}</text>
+              <view
+                class="empty-btn"
+                role="button"
+                tabindex="0"
+                @click="keyword ? clearSearch() : goBookStore()"
+                @keyup.enter="keyword ? clearSearch() : goBookStore()"
+              >
+                <text>{{ keyword ? "清除搜索" : "去书城逛逛" }}</text>
               </view>
             </view>
           </view>
@@ -235,7 +421,13 @@
               <text class="section-icon">🕐</text>
               <text class="section-title">最近阅读</text>
             </view>
-            <view class="more-link" role="button" tabindex="0" @click="goReadingHistory" @keyup.enter="goReadingHistory">
+            <view
+              class="more-link"
+              role="button"
+              tabindex="0"
+              @click="goReadingHistory"
+              @keyup.enter="goReadingHistory"
+            >
               <text>全部</text>
               <u-icon name="arrow-right" color="#909399" size="20" />
             </view>
@@ -249,7 +441,12 @@
                 @click="openBook(book)"
               >
                 <view class="recent-cover-wrap">
-                  <image class="recent-cover" :src="book.cover" mode="aspectFill" :alt="book.title" />
+                  <image
+                    class="recent-cover"
+                    :src="book.cover"
+                    mode="aspectFill"
+                    :alt="book.title"
+                  />
                   <view class="recent-progress">{{ book.progress }}%</view>
                 </view>
                 <text class="recent-title">{{ book.title }}</text>
@@ -301,7 +498,11 @@ const readingStore = useReadingStore();
 const localStore = useLocalStore();
 
 // 真实阅读统计
-const realStats = ref<{ totalReadCount: number; todayReadMinutes: number; shelfCount: number } | null>(null);
+const realStats = ref<{
+  totalReadCount: number;
+  todayReadMinutes: number;
+  shelfCount: number;
+} | null>(null);
 
 const onSearchInput = () => {
   if (searchTimer.value) clearTimeout(searchTimer.value);
@@ -309,8 +510,12 @@ const onSearchInput = () => {
 };
 
 const bookshelf = computed(() => readingStore.bookshelf);
-const totalReadCount = computed(() => realStats.value?.totalReadCount ?? readingStore.totalReadCount);
-const todayReadMinutes = computed(() => realStats.value?.todayReadMinutes ?? readingStore.todayReadMinutes);
+const totalReadCount = computed(
+  () => realStats.value?.totalReadCount ?? readingStore.totalReadCount,
+);
+const todayReadMinutes = computed(
+  () => realStats.value?.todayReadMinutes ?? readingStore.todayReadMinutes,
+);
 const downloadCount = computed(() => readingStore.downloads.length);
 
 const todayRecommend = ref<BookItem | null>({
@@ -331,7 +536,10 @@ const todayRecommend = ref<BookItem | null>({
 const recentlyRead = computed(() => {
   return bookshelf.value
     .filter((b: BookItem) => b.lastReadTime)
-    .sort((a: BookItem, b: BookItem) => (b.lastReadTime || 0) - (a.lastReadTime || 0))
+    .sort(
+      (a: BookItem, b: BookItem) =>
+        (b.lastReadTime || 0) - (a.lastReadTime || 0),
+    )
     .slice(0, 5);
 });
 
@@ -343,12 +551,14 @@ const filteredBooks = computed(() => {
     books = books.filter(
       (book: BookItem) =>
         book.title.toLowerCase().includes(kw) ||
-        book.author.toLowerCase().includes(kw)
+        book.author.toLowerCase().includes(kw),
     );
   }
 
   if (sortMode.value === "name") {
-    books = [...books].sort((a: BookItem, b: BookItem) => a.title.localeCompare(b.title));
+    books = [...books].sort((a: BookItem, b: BookItem) =>
+      a.title.localeCompare(b.title),
+    );
   }
 
   return books;
@@ -395,9 +605,14 @@ const fetchBookshelf = async () => {
             author: book.author || "",
             cover: book.cover || "/static/reading/covers/default.svg",
             progress: item.progress ?? localProgress?.progress ?? 0,
-            lastReadChapter: item.lastReadChapter || localProgress?.chapterTitle,
-            lastReadChapterId: item.lastReadChapterId ? String(item.lastReadChapterId) : localProgress?.chapterId,
-            lastReadTime: item.lastReadTime ? new Date(item.lastReadTime).getTime() : localProgress?.lastReadTime,
+            lastReadChapter:
+              item.lastReadChapter || localProgress?.chapterTitle,
+            lastReadChapterId: item.lastReadChapterId
+              ? String(item.lastReadChapterId)
+              : localProgress?.chapterId,
+            lastReadTime: item.lastReadTime
+              ? new Date(item.lastReadTime).getTime()
+              : localProgress?.lastReadTime,
             hasUpdate: false,
             totalChapters: book.chapterCount || 0,
             category: book.category?.name || "",
@@ -416,9 +631,15 @@ const fetchBookshelf = async () => {
     }
     if (false) {
       // 记录后端返回的 bookId 集合
-      const backendIds = new Set(items.map((item) => item.book?.id ? String(item.book.id) : null).filter(Boolean));
+      const backendIds = new Set(
+        items
+          .map((item) => (item.book?.id ? String(item.book.id) : null))
+          .filter(Boolean),
+      );
       // 移除本地有但后端没有的书籍
-      readingStore.bookshelf = readingStore.bookshelf.filter(b => backendIds.has(b.id));
+      readingStore.bookshelf = readingStore.bookshelf.filter((b) =>
+        backendIds.has(b.id),
+      );
       // 将 API 数据同步到 store
       items.forEach((item) => {
         const book = item.book;
@@ -442,11 +663,7 @@ const fetchBookshelf = async () => {
   }
 };
 
-const particleStyle = (index: number) => ({
-  left: (index * 18) + '%',
-  animationDelay: (index * 0.5) + 's',
-  animationDuration: (3 + index * 0.5) + 's',
-});
+
 
 const formatNumber = (num: number) => {
   if (num >= 10000000) return (num / 10000000).toFixed(1) + "千万";
@@ -489,7 +706,9 @@ const formatTime = (timestamp?: number) => {
 };
 
 const openBook = (book: BookItem) => {
-  const chapterQuery = book.lastReadChapterId ? `&chapterId=${book.lastReadChapterId}` : "";
+  const chapterQuery = book.lastReadChapterId
+    ? `&chapterId=${book.lastReadChapterId}`
+    : "";
   uni.navigateTo({
     url: `/pages/reading/reader/index?bookId=${book.id}${chapterQuery}`,
   });
@@ -575,7 +794,12 @@ const refreshRecommend = () => {
 
 .bookshelf-page {
   min-height: 100%;
-  background: linear-gradient(180deg, var(--app-page-bg-soft, #f0f3ff) 0%, var(--app-page-bg, #f5f7fa) 34%, #f8fafc 100%);
+  background: linear-gradient(
+    180deg,
+    var(--app-page-bg-soft, #f0f3ff) 0%,
+    var(--app-page-bg, #f5f7fa) 34%,
+    #f8fafc 100%
+  );
   padding-bottom: 160rpx;
 }
 
@@ -612,7 +836,7 @@ const refreshRecommend = () => {
   }
 
   .recommend-title {
-  text-wrap: balance;
+    text-wrap: balance;
     color: #e5e6eb;
   }
 
@@ -650,7 +874,7 @@ const refreshRecommend = () => {
   }
 
   .book-title {
-  text-wrap: balance;
+    text-wrap: balance;
     color: #e5e6eb;
   }
 
@@ -727,7 +951,11 @@ const refreshRecommend = () => {
   }
 
   .continue-btn {
-    background: linear-gradient(135deg, var(--u-type-primary-dark, #3b2f8a), var(--u-type-primary, #5240FE));
+    background: linear-gradient(
+      135deg,
+      var(--u-type-primary-dark, #3b2f8a),
+      var(--u-type-primary, #5240fe)
+    );
   }
 }
 
@@ -766,7 +994,8 @@ const refreshRecommend = () => {
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0) scale(1);
     opacity: 0.3;
   }
@@ -869,7 +1098,9 @@ const refreshRecommend = () => {
   border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
   padding: 30rpx 20rpx;
-  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255,255,255,0.8);
+  box-shadow:
+    4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06),
+    -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
   position: relative;
   z-index: 2;
 }
@@ -924,7 +1155,6 @@ const refreshRecommend = () => {
   font-size: 36rpx;
   margin-right: 12rpx;
 }
-
 
 .section-title {
   font-size: 32rpx;
@@ -995,7 +1225,9 @@ const refreshRecommend = () => {
   border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
   padding: 24rpx;
-  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255,255,255,0.8);
+  box-shadow:
+    4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06),
+    -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
 }
 
 .recommend-cover-wrap {
@@ -1113,7 +1345,9 @@ const refreshRecommend = () => {
   border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
   padding: 24rpx;
-  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255,255,255,0.8);
+  box-shadow:
+    4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06),
+    -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
 }
 
 /* 搜索栏 */
@@ -1126,7 +1360,7 @@ const refreshRecommend = () => {
   align-items: center;
   background: linear-gradient(180deg, #f0f2f5 0%, #f8fafc 100%);
   border: 1rpx solid #e0e4ea;
-  box-shadow: inset 2rpx 2rpx 4rpx rgba(0,0,0,0.04);
+  box-shadow: inset 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.04);
   border-radius: 16rpx;
   padding: 16rpx 24rpx;
   gap: 12rpx;
@@ -1336,7 +1570,11 @@ const refreshRecommend = () => {
   top: 0;
   left: 0;
   bottom: 0;
-  background: linear-gradient(90deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--u-type-primary) 0%,
+    var(--u-type-primary-dark) 100%
+  );
   border-radius: 4rpx;
   transition: width 0.5s ease;
 }
@@ -1483,7 +1721,6 @@ const refreshRecommend = () => {
   }
 }
 
-
 .header-shortcuts {
   position: relative;
   z-index: 1;
@@ -1502,7 +1739,7 @@ const refreshRecommend = () => {
   border: 1rpx solid rgba(255, 255, 255, 0.28);
   border-radius: 16rpx;
   background: rgba(255, 255, 255, 0.16);
-  box-shadow: 0 2rpx 6rpx rgba(0,0,0,0.06);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.06);
   backdrop-filter: blur(12px);
 
   text {
@@ -1519,15 +1756,33 @@ const refreshRecommend = () => {
 
 .bookshelf-page {
   background:
-    radial-gradient(circle at 14% 0%, rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.12), transparent 34%),
-    linear-gradient(180deg, var(--app-page-bg-soft, #eef3ff) 0%, var(--app-page-bg, #f6f8fc) 38%, #f8fafc 100%);
+    radial-gradient(
+      circle at 14% 0%,
+      rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.12),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      var(--app-page-bg-soft, #eef3ff) 0%,
+      var(--app-page-bg, #f6f8fc) 38%,
+      #f8fafc 100%
+    );
   padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
 }
 
 .header-bg {
   background:
-    radial-gradient(circle at 82% 16%, rgba(255, 255, 255, 0.26), transparent 24%),
-    linear-gradient(135deg, var(--u-type-primary-dark) 0%, var(--u-type-primary) 64%, #35b6c8 100%);
+    radial-gradient(
+      circle at 82% 16%,
+      rgba(255, 255, 255, 0.26),
+      transparent 24%
+    ),
+    linear-gradient(
+      135deg,
+      var(--u-type-primary-dark) 0%,
+      var(--u-type-primary) 64%,
+      #35b6c8 100%
+    );
 }
 
 .book-card {
@@ -1540,7 +1795,9 @@ const refreshRecommend = () => {
 
 .recent-cover,
 .book-cover {
-  box-shadow: 4rpx 4rpx 12rpx rgba(17, 24, 39, 0.12), -2rpx -2rpx 6rpx rgba(255,255,255,0.6);
+  box-shadow:
+    4rpx 4rpx 12rpx rgba(17, 24, 39, 0.12),
+    -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.6);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1558,10 +1815,13 @@ const refreshRecommend = () => {
     border-bottom-color: rgba(255, 255, 255, 0.06);
   }
 }
-
 </style>
 <style>
 /* 覆盖全局竖线 */
-.section-title::before { display: none !important; }
-.section-title { padding-left: 0 !important; }
+.section-title::before {
+  display: none !important;
+}
+.section-title {
+  padding-left: 0 !important;
+}
 </style>

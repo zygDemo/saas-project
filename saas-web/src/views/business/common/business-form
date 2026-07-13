@@ -24,7 +24,7 @@
           </ElInputNumber>
           <ElSelect
             v-else-if="field.type === 'select'"
-            :model-value="formModel[field.prop] as any"
+            :model-value="formModel[field.prop]"
             clearable
             filterable
             :placeholder="field.placeholder || `请选择${field.label}`"
@@ -47,7 +47,7 @@
           />
           <ElDatePicker
             v-else-if="field.type === 'date'"
-            :model-value="formModel[field.prop] as any"
+            :model-value="formModel[field.prop]"
             type="datetime"
             value-format="YYYY-MM-DDTHH:mm:ss.SSSZ"
             :placeholder="field.placeholder || `请选择${field.label}`"
@@ -220,7 +220,7 @@
     }
   })
 
-  const dialogWidth = computed(() => (props.displayTitle.includes('产品') ? '1200px' : '680px'))
+  const dialogWidth = computed(() => (props.displayTitle.includes('产品') ? '900px' : '600px'))
 
   const emit = defineEmits<{
     'update:modelValue': [value: boolean]

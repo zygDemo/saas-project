@@ -82,7 +82,36 @@ export class MobileFileService {
     return { id }
   }
 
-  getProductFileList() {
+  async getProductFileList(creditOrderId?: string) {
+    // 1. 如果有 creditOrderId，尝试从订单关联的产品读取 fileChecklist
+    if (creditOrderId) {
+      try {
+        const application = await findApplication(this.prisma, creditOrderId)
+        const checklist = application.product?.fileChecklist
+        if (Array.isArray(checklist) && checklist.length > 0) {
+          return [
+            {
+              id: 1,
+              fileName: '产品所需资料',
+              children: checklist.map((item: any, index: number) => ({
+                fileCode: item.code || `PFL${String(index + 1).padStart(3, '0')}`,
+                fileType: item.code || `PFL${String(index + 1).padStart(3, '0')}`,
+                fileName: item.name || `文件${index + 1}`,
+                fileSort: index + 1,
+                requireFlag: item.required ? 1 : 2,
+                acceptType: Array.isArray(item.fileTypes) ? item.fileTypes.join('|') : 'jpg|jpeg|png|webp|pdf',
+                maxCount: item.maxCount || 1,
+                remark: item.remark || ''
+              }))
+            }
+          ]
+        }
+      } catch {
+        // 订单不存在或其他错误，降级到默认清单
+      }
+    }
+
+    // 2. 降级：默认硬编码清单（身份证正反面）
     return [
       {
         id: 1,
@@ -102,28 +131,6 @@ export class MobileFileService {
             fileName: '身份证国徽面',
             fileSort: 2,
             requireFlag: 1,
-            acceptType: 'jpg|jpeg|png|webp'
-          }
-        ]
-      },
-      {
-        id: 2,
-        fileName: '车辆证明资料',
-        children: [
-          {
-            fileCode: 'PFL006',
-            fileType: 'VEHICLE_LICENSE',
-            fileName: '行驶证',
-            fileSort: 6,
-            requireFlag: 1,
-            acceptType: 'jpg|jpeg|png|webp'
-          },
-          {
-            fileCode: 'PFL008',
-            fileType: 'VEHICLE_IMAGE',
-            fileName: '车辆照片',
-            fileSort: 8,
-            requireFlag: 2,
             acceptType: 'jpg|jpeg|png|webp'
           }
         ]

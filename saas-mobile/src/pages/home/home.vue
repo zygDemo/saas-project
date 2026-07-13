@@ -64,8 +64,11 @@
       <!-- 业务快捷入口 -->
       <view class="section-card">
         <view class="section-header">
-          <u-icon name="grid" size="32" color="#8c8c8c" class="section-icon" />
-          <text class="section-heading">业务快捷入口</text>
+          <view class="section-title-wrapper">
+            <view class="section-dot"></view>
+            <text class="section-heading">业务快捷入口</text>
+          </view>
+          <text class="section-sub">快速办理常用业务</text>
         </view>
         <view class="section-body">
           <view class="feature-list">
@@ -103,8 +106,11 @@
       <!-- 车贷业务功能 -->
       <view class="section-card">
         <view class="section-header">
-          <u-icon name="list" size="32" color="#8c8c8c" class="section-icon" />
-          <text class="section-heading">车贷业务功能</text>
+          <view class="section-title-wrapper">
+            <view class="section-dot"></view>
+            <text class="section-heading">车贷业务功能</text>
+          </view>
+          <text class="section-sub">完整业务流程处理</text>
         </view>
         <view class="section-body">
           <view class="feature-list">
@@ -144,9 +150,10 @@
 
 <script setup lang="ts">
 import type { ColorType } from "uview-pro/types/global";
+import type { StatisticsOverview } from "@/api/business";
 import { $u } from "uview-pro";
 import layout from "@/pages/layout/layout.vue";
-import { useBusinessApi, type StatisticsOverview } from "@/api/business";
+import { useBusinessApi } from "@/api/business";
 import { useLocalStore } from "@/stores";
 import { storeToRefs } from "pinia";
 import { computed, ref } from "vue";
@@ -291,25 +298,27 @@ function navigateToFeature(url: string, _title: string) {
 
 <style lang="scss" scoped>
 .app-container {
-  padding: 24rpx;
+  padding: 0;
   background: linear-gradient(
     180deg,
-    rgba(41, 121, 255, 0.03) 0%,
-    transparent 100%
+    #f5f8ff 0%,
+    #f8fafc 50%,
+    #fafbfc 100%
   );
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   gap: 24rpx;
+  padding-bottom: 24rpx;
 }
 
 // Hero区域
 .hero-section {
   position: relative;
-  margin: 0 0 8rpx;
-  border-radius: 24rpx;
+  margin: 0;
+  border-radius: 0 0 32rpx 32rpx;
   overflow: hidden;
-  box-shadow: 0 12rpx 32rpx rgba(41, 121, 255, 0.2);
+  box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.25);
   transition: all 0.3s ease;
 
   &:active {
@@ -323,8 +332,8 @@ function navigateToFeature(url: string, _title: string) {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, #2979ff 0%, #19be6b 50%, #ff9900 100%);
-    opacity: 0.95;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    opacity: 0.98;
   }
 
   &::after {
@@ -411,37 +420,49 @@ function navigateToFeature(url: string, _title: string) {
 
 // 区块卡片
 .section-card {
+  margin: 0 24rpx;
   background: #fff;
-  border-radius: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.06);
   overflow: hidden;
   transition: all 0.3s ease;
-
-  &:active {
-    transform: scale(0.99);
-  }
 }
 
 .section-header {
   display: flex;
-  align-items: center;
-  gap: 12rpx;
-  padding: 28rpx 28rpx 20rpx;
+  flex-direction: column;
+  gap: 8rpx;
+  padding: 28rpx 24rpx 20rpx;
 }
 
-.section-icon {
-  flex-shrink: 0;
+.section-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.section-dot {
+  width: 8rpx;
+  height: 30rpx;
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8rpx;
 }
 
 .section-heading {
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #1f1f1f;
-  letter-spacing: 1rpx;
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: 0.5rpx;
+}
+
+.section-sub {
+  font-size: 24rpx;
+  color: #8c8c8c;
+  margin-left: 20rpx;
 }
 
 .section-body {
-  padding: 4rpx 16rpx 16rpx;
+  padding: 0 24rpx 24rpx;
 }
 
 // 统一功能列表

@@ -1,6 +1,7 @@
 // common-list 业务组件类型定义
 
-export type FieldType = 'text' | 'number' | 'textarea' | 'json' | 'select' | 'switch' | 'date'
+export type FieldType =
+  'text' | 'number' | 'textarea' | 'json' | 'select' | 'switch' | 'date' | 'fileChecklist'
 
 export type OptionConfig = { label: string; value: string | number | boolean }
 
@@ -21,6 +22,24 @@ export type FilterConfig = {
 
 export type ColumnConfig = { prop: string; label: string; width?: number }
 
+export type FileChecklistItemConfig = {
+  label: string
+  value: string
+  fileTypes: string[] // 允许的文件扩展名，如 ['jpg', 'png', 'pdf']
+  maxCount: number // 最大上传数量
+  required: boolean // 是否必传
+  remark?: string // 备注
+}
+
+export type FileChecklistItem = {
+  code: string // 文件编码，对应 ApplicationFile.fileType
+  name: string // 文件名称
+  fileTypes: string[] // 允许的文件扩展名
+  maxCount: number // 最大上传数量
+  required: boolean // 是否必传
+  remark?: string // 备注
+}
+
 export type FieldConfig = {
   prop: string
   label: string
@@ -34,6 +53,7 @@ export type FieldConfig = {
   group?: string
   unit?: string
   transform?: 'percent'
+  fileChecklistConfig?: FileChecklistItemConfig
 }
 
 export type ActionConfig = {

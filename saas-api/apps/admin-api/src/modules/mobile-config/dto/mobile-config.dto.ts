@@ -1,34 +1,34 @@
-﻿import { Optional } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsOptional, IsString, ArrayNotEmpty } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger'
+import { IsArray, IsBoolean, IsOptional, IsString, ArrayNotEmpty } from 'class-validator'
 
 export class UpdateMobileConfigDto {
-  @Optional({ description: '已启用的移动端模块列表', example: ['carloan', 'food'] })
+  @ApiPropertyOptional({ description: '已启用的移动端模块列表', example: ['carloan', 'food'] })
   @IsArray()
   @ArrayNotEmpty()
   @IsString({ each: true })
-  mobileModules!: string[];
+  mobileModules!: string[]
 
-  @Optional({ description: '默认模块 key（单模块模式）', example: 'carloan' })
+  @ApiPropertyOptional({ description: '默认模块 key（单模块模式）', example: 'carloan' })
   @IsOptional()
   @IsString()
-  defaultMobileModule?: string;
+  defaultMobileModule?: string
 }
 
 /** 角色/用户级移动端模块配置 */
 export class SaveEntityMobileConfigDto {
-  @Optional({ description: '已启用的移动端模块列表', example: ['carloan', 'food'] })
+  @ApiPropertyOptional({ description: '已启用的移动端模块列表', example: ['carloan', 'food'] })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  mobileModules?: string[];
+  mobileModules?: string[]
 
-  @Optional({ description: '是否支持多业务模块', example: true })
+  @ApiPropertyOptional({ description: '是否支持多业务模块', example: true })
   @IsOptional()
   @IsBoolean()
-  mobileMultiModule?: boolean;
+  mobileMultiModule?: boolean
 
-  @Optional({ description: '默认模块 key（单模块/不支持多模块时生效）', example: 'carloan' })
+  @ApiPropertyOptional({ description: '默认模块 key（单模块/不支持多模块时生效）', example: 'carloan' })
   @IsOptional()
   @IsString()
-  defaultMobileModule?: string;
+  defaultMobileModule?: string
 }

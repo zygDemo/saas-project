@@ -143,8 +143,8 @@ export class MobileFileController {
 
   @Get('getProductFileList')
   @ApiOperation({ summary: '移动端产品资料清单' })
-  getProductFileList() {
-    return this.fileService.getProductFileList()
+  getProductFileList(@Query('creditOrderId') creditOrderId?: string) {
+    return this.fileService.getProductFileList(creditOrderId)
   }
 }
 

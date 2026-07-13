@@ -249,7 +249,13 @@ export const configs: Record<string, PageConfig> = {
         unit: '%',
         transform: 'percent'
       },
-      { prop: 'regions', label: '适用区域', placeholder: '如：上海、苏州、杭州' }
+      { prop: 'regions', label: '适用区域', placeholder: '如：上海、苏州、杭州' },
+      {
+        prop: 'fileChecklist',
+        label: '附件清单',
+        type: 'fileChecklist',
+        group: '附件管理'
+      }
     ],
     actions: []
   },

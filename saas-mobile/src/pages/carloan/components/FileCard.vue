@@ -22,6 +22,7 @@
       <text v-if="required" class="required-star">*</text>
       <text class="file-label">{{ label }}</text>
     </view>
+    <text v-if="remark" class="file-remark">{{ remark }}</text>
   </view>
 </template>
 
@@ -49,6 +50,10 @@ const props = defineProps({
   required: {
     type: Boolean,
     default: false,
+  },
+  remark: {
+    type: String,
+    default: "",
   },
 });
 
@@ -140,6 +145,17 @@ function isImageFile(file) {
   font-size: 24rpx;
   color: #666;
   text-align: center;
+}
+
+.file-remark {
+  font-size: 20rpx;
+  color: #999;
+  text-align: center;
+  line-height: 1.3;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 深色模式适配 */

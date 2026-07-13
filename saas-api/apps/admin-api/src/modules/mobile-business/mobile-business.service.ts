@@ -67,8 +67,8 @@ export class MobileBusinessService {
   deleteFile(id: number) {
     return this.fileService.deleteFile(id)
   }
-  getProductFileList() {
-    return this.fileService.getProductFileList()
+  getProductFileList(creditOrderId?: string) {
+    return this.fileService.getProductFileList(creditOrderId)
   }
 
   // ==================== OCR ====================

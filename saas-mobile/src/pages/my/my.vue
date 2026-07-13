@@ -39,7 +39,7 @@
           </view>
         </view>
 
-        <view class="section-card">
+        <view v-if="isCarLoanModule" class="section-card">
           <view class="section-head">
             <view>
               <text class="section-title">业务概览</text>
@@ -241,6 +241,11 @@ const activeTabIndex = computed(() => {
   if (currentTabbarScope.value === TABBAR_SCOPES.portal) return 1;
   if (currentTabbarScope.value === TABBAR_SCOPES.credit) return 1;
   return 2;
+});
+
+// 判断是否是车贷模块
+const isCarLoanModule = computed(() => {
+  return localStore.currentSystem === CurrentSystem.CARLOAN;
 });
 
 const displayName = computed(() => {
@@ -473,7 +478,9 @@ function handleLogout() {
 }
 
 onShow(() => {
-  void loadBusinessStats();
+  if (isCarLoanModule.value) {
+    void loadBusinessStats();
+  }
 });
 </script>
 

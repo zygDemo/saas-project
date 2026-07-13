@@ -22,11 +22,50 @@
               :max-count="maxFiles[item.key]"
               :readonly="readonly"
               :required="item.required"
+              :remark="item.remark || ''"
               @click="openUpload(item)"
             />
           </view>
         </view>
       </template>
+
+      <!-- 其他已传文件（不在产品配置清单中的） -->
+      <view v-if="unmatchedFiles.length" class="file-section unmatched-section">
+        <view class="section-title">
+          <text class="section-title-text">其他已传文件</text>
+          <text class="section-title-count">({{ unmatchedFiles.length }})</text>
+        </view>
+        <view class="unmatched-list">
+          <view
+            v-for="(item, idx) in unmatchedFiles"
+            :key="'unmatched-' + idx"
+            class="unmatched-item"
+            @click="previewUnmatched(item)"
+          >
+            <u-icon
+              :name="isImageUrl(item.url) ? 'photo' : 'file-text'"
+              size="40rpx"
+              color="var(--u-type-primary)"
+            />
+            <text class="unmatched-name">{{ item.name || '未命名文件' }}</text>
+            <u-icon
+              v-if="!readonly"
+              name="close-circle-fill"
+              size="36rpx"
+              color="#ff4d4f"
+              @click.stop="removeUnmatched(idx, item)"
+            />
+          </view>
+        </view>
+      </view>
+
+      <!-- 必传文件未传提示 -->
+      <view v-if="!readonly && missingRequired.length" class="missing-hint">
+        <u-icon name="info-circle-fill" size="32rpx" color="#ff9900" />
+        <text class="missing-hint-text">
+          还有 {{ missingRequired.length }} 项必传文件未上传：{{ missingRequired.map((i) => i.label).join('、') }}
+        </text>
+      </view>
 
       <view class="footer-btn">
         <u-button type="default" shape="circle" @click="goApplyDetail">
@@ -119,8 +158,16 @@ const maxFiles = reactive({});
 const fileIdMap = reactive({});
 const fileGroups = ref([]);
 const fileList = ref([]);
+const unmatchedFiles = ref([]);
 const IMAGE_TYPES = ["jpg", "jpeg", "png", "gif", "webp", "bmp"];
 const VIDEO_TYPES = ["mp4", "mov", "avi", "mkv", "wmv", "m4v"];
+
+/** 必传但尚未上传的文件项 */
+const missingRequired = computed(() =>
+  fileList.value.filter(
+    (item) => item.required && (files[item.key] || []).length === 0,
+  ),
+);
 
 const applyDetailUrl = computed(() =>
   buildRoute(
@@ -330,6 +377,7 @@ function normalizeProductFile(item, index) {
       ? maxCount
       : isIdCardFile(fileCode) || isIdCardFile(fileType) ? 1 : 1,
     required: isRequiredFile({ ...item, fileCode, fileType }),
+    remark: item.remark || '',
   };
 }
 
@@ -463,6 +511,7 @@ async function loadFileList() {
   fileList.value.forEach((item) => {
     files[item.key] = [];
   });
+  unmatchedFiles.value = [];
   Object.keys(fileIdMap).forEach((key) => delete fileIdMap[key]);
 
   try {
@@ -471,6 +520,7 @@ async function loadFileList() {
       creditOrderId: carloanStore.pageContext.creditOrderId,
     });
     if (res?.code === 200 && Array.isArray(res.data)) {
+      const productKeys = new Set(fileList.value.map((item) => item.key));
       res.data.forEach((file) => {
         const key = getFileKeyFromRecord(file);
         if (key && files[key]) {
@@ -478,6 +528,13 @@ async function loadFileList() {
           files[key].push(uploadItem);
           if (file.id && uploadItem.url) {
             fileIdMap[uploadItem.url] = file.id;
+          }
+        } else if (!productKeys.has(key)) {
+          // 已上传但不在产品配置清单中，归入"其他已传文件"
+          unmatchedFiles.value.push(mapServerFileToUploadItem(file));
+          if (file.id) {
+            const uploadItem = unmatchedFiles.value[unmatchedFiles.value.length - 1];
+            if (uploadItem.url) fileIdMap[uploadItem.url] = file.id;
           }
         }
       });
@@ -645,6 +702,35 @@ async function beforeRemoveFile(index, lists) {
   }
 }
 
+function previewUnmatched(item) {
+  const url = item.url || item.path || "";
+  if (!url) return;
+  if (isImageUrl(url)) {
+    uni.previewImage({ urls: [toFilePreviewUrl(url)], current: toFilePreviewUrl(url) });
+  } else {
+    window.open(toFilePreviewUrl(url), "_blank");
+  }
+}
+
+async function removeUnmatched(idx, item) {
+  if (readonly.value) return;
+  const url = item.url || item.path || "";
+  const id = fileIdMap[url] || item?.response?.id || item?.response?.fileId;
+  if (!id) {
+    unmatchedFiles.value.splice(idx, 1);
+    return;
+  }
+  try {
+    await businessApi.deleteFile(id);
+    if (url) delete fileIdMap[url];
+    unmatchedFiles.value.splice(idx, 1);
+    $u.toast("删除成功", "success");
+  } catch (e) {
+    console.error("删除文件失败:", e);
+    $u.toast("删除失败", "error");
+  }
+}
+
 async function handleSubmit() {
   if (readonly.value) return;
 
@@ -727,6 +813,60 @@ async function handleSubmit() {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20rpx;
+}
+
+.unmatched-section {
+  margin-top: 12rpx;
+}
+
+.section-title-count {
+  font-size: 24rpx;
+  color: #999;
+  font-weight: 400;
+  margin-left: 8rpx;
+}
+
+.unmatched-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.unmatched-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 24rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  border: 1rpx solid #eee;
+}
+
+.unmatched-name {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.missing-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+  padding: 20rpx 24rpx;
+  margin-bottom: 24rpx;
+  background: #fffbe6;
+  border: 1rpx solid #ffe58f;
+  border-radius: 12rpx;
+}
+
+.missing-hint-text {
+  flex: 1;
+  font-size: 26rpx;
+  color: #ad6800;
+  line-height: 1.5;
 }
 
 .empty-wrap {
