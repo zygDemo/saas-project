@@ -450,6 +450,64 @@
         ]
       }
     },
+    "/saas/api/role/{id}/data-scope": {
+      "get": {
+        "description": "获取角色的数据范围配置和自定义部门列表",
+        "operationId": "RolesController_getDataScope",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "获取角色数据权限",
+        "tags": [
+          "角色管理"
+        ]
+      },
+      "post": {
+        "description": "保存角色数据范围配置（ALL/DEPT/SELF/CUSTOM）和自定义部门列表",
+        "operationId": "RolesController_saveDataScope",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "保存角色数据权限",
+        "tags": [
+          "角色管理"
+        ]
+      }
+    },
     "/saas/api/v3/system/menus": {
       "get": {
         "description": "获取当前用户可访问的菜单树",
@@ -2019,6 +2077,27 @@
           }
         ],
         "summary": "列表查询",
+        "tags": [
+          "部门管理"
+        ]
+      }
+    },
+    "/saas/api/dept/tree": {
+      "get": {
+        "description": "获取部门树形结构，用于数据权限配置选择部门",
+        "operationId": "DeptController_tree",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "部门树",
         "tags": [
           "部门管理"
         ]
@@ -4198,6 +4277,45 @@
         ]
       }
     },
+    "/saas/api/application/{id}/risk-pre-return": {
+      "post": {
+        "operationId": "ApplicationController_riskPreReturn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrecheckActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "风控预审驳回上一节点",
+        "tags": [
+          "订单管理"
+        ]
+      }
+    },
     "/saas/api/application/{id}/funder-pre-pass": {
       "post": {
         "operationId": "ApplicationController_funderPrePass",
@@ -4929,6 +5047,45 @@
         ]
       }
     },
+    "/saas/api/application/{id}/register-repayment": {
+      "post": {
+        "operationId": "ApplicationController_registerRepaymentByApplication",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRepaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "按订单登记还款（自动选择第一个未还清计划）",
+        "tags": [
+          "订单管理"
+        ]
+      }
+    },
     "/saas/api/application/{id}/settle": {
       "post": {
         "operationId": "ApplicationController_settle",
@@ -5217,6 +5374,392 @@
         "summary": "获取订单生命周期节点列表，用于时间轴展示",
         "tags": [
           "订单管理"
+        ]
+      }
+    },
+    "/saas/api/repayment/list": {
+      "get": {
+        "operationId": "RepaymentController_list",
+        "parameters": [
+          {
+            "name": "current",
+            "required": false,
+            "in": "query",
+            "description": "当前页",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "size",
+            "required": false,
+            "in": "query",
+            "description": "每页数量",
+            "schema": {
+              "maximum": 200,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "applicationId",
+            "required": false,
+            "in": "query",
+            "description": "进件ID",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "状态",
+            "schema": {
+              "enum": [
+                "NOT_DUE",
+                "PENDING",
+                "PARTIAL",
+                "PAID",
+                "OVERDUE",
+                "SETTLED"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "列表查询",
+        "tags": [
+          "还款管理"
+        ]
+      }
+    },
+    "/saas/api/repayment/{id}": {
+      "get": {
+        "operationId": "RepaymentController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "详情",
+        "tags": [
+          "还款管理"
+        ]
+      },
+      "post": {
+        "operationId": "RepaymentController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRepaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "编辑",
+        "tags": [
+          "还款管理"
+        ]
+      }
+    },
+    "/saas/api/repayment": {
+      "post": {
+        "operationId": "RepaymentController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRepaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "新增",
+        "tags": [
+          "还款管理"
+        ]
+      }
+    },
+    "/saas/api/repayment/{id}/delete": {
+      "post": {
+        "operationId": "RepaymentController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "删除",
+        "tags": [
+          "还款管理"
+        ]
+      }
+    },
+    "/saas/api/disbursement/list": {
+      "get": {
+        "operationId": "DisbursementController_list",
+        "parameters": [
+          {
+            "name": "current",
+            "required": false,
+            "in": "query",
+            "description": "当前页",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "size",
+            "required": false,
+            "in": "query",
+            "description": "每页数量",
+            "schema": {
+              "maximum": 200,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "applicationId",
+            "required": false,
+            "in": "query",
+            "description": "进件ID",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "放款状态",
+            "schema": {
+              "enum": [
+                "PENDING_APPLICATION",
+                "PENDING_APPROVAL",
+                "GPS_INSTALLED",
+                "MORTGAGE_DONE",
+                "DISBURSED",
+                "FAILED"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "列表查询",
+        "tags": [
+          "放款管理"
+        ]
+      }
+    },
+    "/saas/api/disbursement/{id}": {
+      "get": {
+        "operationId": "DisbursementController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "详情",
+        "tags": [
+          "放款管理"
+        ]
+      },
+      "post": {
+        "operationId": "DisbursementController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDisbursementDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "编辑",
+        "tags": [
+          "放款管理"
+        ]
+      }
+    },
+    "/saas/api/disbursement": {
+      "post": {
+        "operationId": "DisbursementController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDisbursementDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "新增",
+        "tags": [
+          "放款管理"
+        ]
+      }
+    },
+    "/saas/api/disbursement/{id}/delete": {
+      "post": {
+        "operationId": "DisbursementController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "删除",
+        "tags": [
+          "放款管理"
         ]
       }
     },
@@ -5644,392 +6187,6 @@
         ]
       }
     },
-    "/saas/api/disbursement/list": {
-      "get": {
-        "operationId": "DisbursementController_list",
-        "parameters": [
-          {
-            "name": "current",
-            "required": false,
-            "in": "query",
-            "description": "当前页",
-            "schema": {
-              "default": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "size",
-            "required": false,
-            "in": "query",
-            "description": "每页数量",
-            "schema": {
-              "maximum": 200,
-              "default": 20,
-              "type": "number"
-            }
-          },
-          {
-            "name": "applicationId",
-            "required": false,
-            "in": "query",
-            "description": "进件ID",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "description": "放款状态",
-            "schema": {
-              "enum": [
-                "PENDING_APPLICATION",
-                "PENDING_APPROVAL",
-                "GPS_INSTALLED",
-                "MORTGAGE_DONE",
-                "DISBURSED",
-                "FAILED"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "列表查询",
-        "tags": [
-          "放款管理"
-        ]
-      }
-    },
-    "/saas/api/disbursement/{id}": {
-      "get": {
-        "operationId": "DisbursementController_detail",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "详情",
-        "tags": [
-          "放款管理"
-        ]
-      },
-      "post": {
-        "operationId": "DisbursementController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateDisbursementDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "编辑",
-        "tags": [
-          "放款管理"
-        ]
-      }
-    },
-    "/saas/api/disbursement": {
-      "post": {
-        "operationId": "DisbursementController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateDisbursementDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "新增",
-        "tags": [
-          "放款管理"
-        ]
-      }
-    },
-    "/saas/api/disbursement/{id}/delete": {
-      "post": {
-        "operationId": "DisbursementController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "删除",
-        "tags": [
-          "放款管理"
-        ]
-      }
-    },
-    "/saas/api/repayment/list": {
-      "get": {
-        "operationId": "RepaymentController_list",
-        "parameters": [
-          {
-            "name": "current",
-            "required": false,
-            "in": "query",
-            "description": "当前页",
-            "schema": {
-              "default": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "size",
-            "required": false,
-            "in": "query",
-            "description": "每页数量",
-            "schema": {
-              "maximum": 200,
-              "default": 20,
-              "type": "number"
-            }
-          },
-          {
-            "name": "applicationId",
-            "required": false,
-            "in": "query",
-            "description": "进件ID",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "description": "状态",
-            "schema": {
-              "enum": [
-                "NOT_DUE",
-                "PENDING",
-                "PARTIAL",
-                "PAID",
-                "OVERDUE",
-                "SETTLED"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "列表查询",
-        "tags": [
-          "还款管理"
-        ]
-      }
-    },
-    "/saas/api/repayment/{id}": {
-      "get": {
-        "operationId": "RepaymentController_detail",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "详情",
-        "tags": [
-          "还款管理"
-        ]
-      },
-      "post": {
-        "operationId": "RepaymentController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateRepaymentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "编辑",
-        "tags": [
-          "还款管理"
-        ]
-      }
-    },
-    "/saas/api/repayment": {
-      "post": {
-        "operationId": "RepaymentController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateRepaymentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "新增",
-        "tags": [
-          "还款管理"
-        ]
-      }
-    },
-    "/saas/api/repayment/{id}/delete": {
-      "post": {
-        "operationId": "RepaymentController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "删除",
-        "tags": [
-          "还款管理"
-        ]
-      }
-    },
     "/saas/api/m/file/upload": {
       "post": {
         "operationId": "MobileFileController_upload",
@@ -6176,7 +6333,16 @@
     "/saas/api/m/file/getProductFileList": {
       "get": {
         "operationId": "MobileFileController_getProductFileList",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "creditOrderId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""
@@ -6600,6 +6766,26 @@
         ]
       }
     },
+    "/saas/api/m/credit/updateSupplementStatus": {
+      "post": {
+        "operationId": "MobileCreditController_updateSupplementStatus",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "更新补件子节点状态",
+        "tags": [
+          "移动端授信"
+        ]
+      }
+    },
     "/saas/api/m/credit/getCreditList": {
       "get": {
         "operationId": "MobileCreditController_getCreditList",
@@ -6847,6 +7033,35 @@
         ]
       }
     },
+    "/saas/api/m/enum/flow-nodes": {
+      "get": {
+        "operationId": "MobileEnumController_getFlowNodes",
+        "parameters": [
+          {
+            "name": "businessType",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "获取全部流程节点列表",
+        "tags": [
+          "移动端枚举"
+        ]
+      }
+    },
     "/saas/api/m/statistics/overview": {
       "get": {
         "operationId": "MobileStatisticsController_overview",
@@ -6867,7 +7082,7 @@
         ]
       }
     },
-    "/saas/api/m/user/addOrUpdateContact": {
+    "/saas/api/m/contact/addOrUpdateContact": {
       "post": {
         "operationId": "MobileContactController_addOrUpdateContact",
         "parameters": [],
@@ -6897,7 +7112,7 @@
         ]
       }
     },
-    "/saas/api/m/user/getContacts": {
+    "/saas/api/m/contact/getContacts": {
       "get": {
         "operationId": "MobileContactController_getContacts",
         "parameters": [
@@ -6926,7 +7141,7 @@
         ]
       }
     },
-    "/saas/api/m/user/deleteContact/{id}": {
+    "/saas/api/m/contact/deleteContact/{id}": {
       "delete": {
         "operationId": "MobileContactController_deleteContact",
         "parameters": [
@@ -7281,6 +7496,21 @@
         ]
       }
     },
+    "/saas/api/m/post-loan/confirm-amount": {
+      "post": {
+        "operationId": "MobilePostLoanController_confirmAmount",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "确认额度",
+        "tags": [
+          "移动端-贷后管理"
+        ]
+      }
+    },
     "/saas/api/m/post-loan/repayment-plans/{applicationId}": {
       "get": {
         "operationId": "MobilePostLoanController_getRepaymentPlans",
@@ -7339,6 +7569,21 @@
           }
         },
         "summary": "获取订单详情",
+        "tags": [
+          "移动端-贷后管理"
+        ]
+      }
+    },
+    "/saas/api/m/post-loan/register-repayment": {
+      "post": {
+        "operationId": "MobilePostLoanController_registerRepayment",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "登记还款",
         "tags": [
           "移动端-贷后管理"
         ]
@@ -9909,6 +10154,64 @@
         ]
       }
     },
+    "/saas/api/announcement/{id}/unpublish": {
+      "post": {
+        "operationId": "AnnouncementController_unpublish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "撤回公告",
+        "tags": [
+          "公告管理"
+        ]
+      }
+    },
+    "/saas/api/announcement/{id}/expire": {
+      "post": {
+        "operationId": "AnnouncementController_expire",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "设为过期",
+        "tags": [
+          "公告管理"
+        ]
+      }
+    },
     "/saas/api/announcement/{id}/delete": {
       "post": {
         "operationId": "AnnouncementController_delete",
@@ -9935,6 +10238,297 @@
         "summary": "删除公告",
         "tags": [
           "公告管理"
+        ]
+      }
+    },
+    "/saas/api/msg-template/list": {
+      "get": {
+        "operationId": "MsgTemplateController_list",
+        "parameters": [
+          {
+            "name": "current",
+            "required": false,
+            "in": "query",
+            "description": "当前页",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "size",
+            "required": false,
+            "in": "query",
+            "description": "每页数量",
+            "schema": {
+              "maximum": 200,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "description": "关键词，匹配名称、编码、标题、内容",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "description": "模板名称",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "required": false,
+            "in": "query",
+            "description": "模板编码",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channel",
+            "required": false,
+            "in": "query",
+            "description": "发送渠道",
+            "schema": {
+              "enum": [
+                "SMS",
+                "APP",
+                "WECHAT",
+                "EMAIL",
+                "SYSTEM"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "scene",
+            "required": false,
+            "in": "query",
+            "description": "业务场景",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "状态",
+            "schema": {
+              "enum": [
+                "ACTIVE",
+                "INACTIVE",
+                "DRAFT"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "获取消息模板列表",
+        "tags": [
+          "消息模板"
+        ]
+      }
+    },
+    "/saas/api/msg-template/{id}": {
+      "get": {
+        "operationId": "MsgTemplateController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "获取消息模板详情",
+        "tags": [
+          "消息模板"
+        ]
+      },
+      "post": {
+        "operationId": "MsgTemplateController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMsgTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "编辑消息模板",
+        "tags": [
+          "消息模板"
+        ]
+      }
+    },
+    "/saas/api/msg-template": {
+      "post": {
+        "operationId": "MsgTemplateController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMsgTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "新增消息模板",
+        "tags": [
+          "消息模板"
+        ]
+      }
+    },
+    "/saas/api/msg-template/{id}/enable": {
+      "post": {
+        "operationId": "MsgTemplateController_enable",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "启用消息模板",
+        "tags": [
+          "消息模板"
+        ]
+      }
+    },
+    "/saas/api/msg-template/{id}/disable": {
+      "post": {
+        "operationId": "MsgTemplateController_disable",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "停用消息模板",
+        "tags": [
+          "消息模板"
+        ]
+      }
+    },
+    "/saas/api/msg-template/{id}/delete": {
+      "post": {
+        "operationId": "MsgTemplateController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "删除消息模板",
+        "tags": [
+          "消息模板"
         ]
       }
     },
@@ -10988,6 +11582,29 @@
             "type": "boolean",
             "description": "是否启用角色",
             "example": true
+          },
+          "dataScope": {
+            "type": "string",
+            "description": "数据范围：ALL=全部, DEPT=本部门及下级, SELF=仅自己, CUSTOM=自定义部门",
+            "enum": [
+              "ALL",
+              "DEPT",
+              "SELF",
+              "CUSTOM"
+            ],
+            "default": "ALL"
+          },
+          "departmentIds": {
+            "description": "自定义数据范围的部门 ID 列表（仅 dataScope=CUSTOM 时生效）",
+            "example": [
+              1,
+              2,
+              3
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -11016,6 +11633,29 @@
             "type": "boolean",
             "description": "是否启用角色",
             "example": true
+          },
+          "dataScope": {
+            "type": "string",
+            "description": "数据范围：ALL=全部, DEPT=本部门及下级, SELF=仅自己, CUSTOM=自定义部门",
+            "enum": [
+              "ALL",
+              "DEPT",
+              "SELF",
+              "CUSTOM"
+            ],
+            "default": "ALL"
+          },
+          "departmentIds": {
+            "description": "自定义数据范围的部门 ID 列表（仅 dataScope=CUSTOM 时生效）",
+            "example": [
+              1,
+              2,
+              3
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -11815,8 +12455,46 @@
             "description": "状态"
           },
           "fileChecklist": {
-            "type": "object",
-            "description": "文件清单JSON"
+            "type": "array",
+            "description": "附件清单配置，数组每项含 code(文件编码)/name(文件名称)/fileTypes(允许扩展名)/maxCount(最大张数)/required(是否必传)/remark(备注)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "example": "ID_CARD_FRONT"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "身份证人像面"
+                },
+                "fileTypes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "jpg",
+                    "png",
+                    "pdf"
+                  ]
+                },
+                "maxCount": {
+                  "type": "integer",
+                  "example": 1,
+                  "minimum": 1,
+                  "maximum": 20
+                },
+                "required": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "remark": {
+                  "type": "string",
+                  "example": "需清晰可见"
+                }
+              }
+            }
           }
         },
         "required": [
@@ -11920,8 +12598,46 @@
             "description": "状态"
           },
           "fileChecklist": {
-            "type": "object",
-            "description": "文件清单JSON"
+            "type": "array",
+            "description": "附件清单配置，数组每项含 code(文件编码)/name(文件名称)/fileTypes(允许扩展名)/maxCount(最大张数)/required(是否必传)/remark(备注)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "example": "ID_CARD_FRONT"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "身份证人像面"
+                },
+                "fileTypes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "jpg",
+                    "png",
+                    "pdf"
+                  ]
+                },
+                "maxCount": {
+                  "type": "integer",
+                  "example": 1,
+                  "minimum": 1,
+                  "maximum": 20
+                },
+                "required": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "remark": {
+                  "type": "string",
+                  "example": "需清晰可见"
+                }
+              }
+            }
           }
         }
       },
@@ -12969,6 +13685,10 @@
             "type": "number",
             "description": "预审人ID"
           },
+          "approverId": {
+            "type": "number",
+            "description": "审批人ID，兼容通用审批弹窗"
+          },
           "opinion": {
             "type": "string",
             "description": "预审意见"
@@ -13254,6 +13974,295 @@
           }
         }
       },
+      "CreateRepaymentDto": {
+        "type": "object",
+        "properties": {
+          "applicationId": {
+            "type": "number",
+            "description": "进件ID"
+          },
+          "period": {
+            "type": "number",
+            "description": "期数"
+          },
+          "dueDate": {
+            "format": "date-time",
+            "type": "string",
+            "description": "应还日期"
+          },
+          "principal": {
+            "type": "number",
+            "description": "应还本金"
+          },
+          "interest": {
+            "type": "number",
+            "description": "应还利息"
+          },
+          "totalAmount": {
+            "type": "number",
+            "description": "应还总额"
+          },
+          "paidPrincipal": {
+            "type": "number",
+            "description": "已还本金"
+          },
+          "paidInterest": {
+            "type": "number",
+            "description": "已还利息"
+          },
+          "paidTotal": {
+            "type": "number",
+            "description": "已还总额"
+          },
+          "status": {
+            "type": "string",
+            "description": "状态",
+            "enum": [
+              "NOT_DUE",
+              "PENDING",
+              "PARTIAL",
+              "PAID",
+              "OVERDUE",
+              "SETTLED"
+            ]
+          },
+          "overdueDays": {
+            "type": "number",
+            "description": "逾期天数"
+          },
+          "penaltyAmount": {
+            "type": "number",
+            "description": "违约金"
+          },
+          "paidAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "还清时间"
+          }
+        },
+        "required": [
+          "applicationId",
+          "period",
+          "dueDate",
+          "principal",
+          "interest",
+          "totalAmount"
+        ]
+      },
+      "UpdateRepaymentDto": {
+        "type": "object",
+        "properties": {
+          "applicationId": {
+            "type": "number",
+            "description": "进件ID"
+          },
+          "period": {
+            "type": "number",
+            "description": "期数"
+          },
+          "dueDate": {
+            "format": "date-time",
+            "type": "string",
+            "description": "应还日期"
+          },
+          "principal": {
+            "type": "number",
+            "description": "应还本金"
+          },
+          "interest": {
+            "type": "number",
+            "description": "应还利息"
+          },
+          "totalAmount": {
+            "type": "number",
+            "description": "应还总额"
+          },
+          "paidPrincipal": {
+            "type": "number",
+            "description": "已还本金"
+          },
+          "paidInterest": {
+            "type": "number",
+            "description": "已还利息"
+          },
+          "paidTotal": {
+            "type": "number",
+            "description": "已还总额"
+          },
+          "status": {
+            "type": "string",
+            "description": "状态",
+            "enum": [
+              "NOT_DUE",
+              "PENDING",
+              "PARTIAL",
+              "PAID",
+              "OVERDUE",
+              "SETTLED"
+            ]
+          },
+          "overdueDays": {
+            "type": "number",
+            "description": "逾期天数"
+          },
+          "penaltyAmount": {
+            "type": "number",
+            "description": "违约金"
+          },
+          "paidAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "还清时间"
+          }
+        }
+      },
+      "CreateDisbursementDto": {
+        "type": "object",
+        "properties": {
+          "applicationId": {
+            "type": "number",
+            "description": "进件ID"
+          },
+          "status": {
+            "type": "string",
+            "description": "放款状态",
+            "enum": [
+              "PENDING_APPLICATION",
+              "PENDING_APPROVAL",
+              "GPS_INSTALLED",
+              "MORTGAGE_DONE",
+              "DISBURSED",
+              "FAILED"
+            ]
+          },
+          "gpsDeviceNo": {
+            "type": "string",
+            "description": "GPS设备号"
+          },
+          "gpsInstallImg": {
+            "type": "string",
+            "description": "GPS安装照片"
+          },
+          "gpsInstallAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "GPS安装时间"
+          },
+          "mortgageStatus": {
+            "type": "string",
+            "description": "抵押状态"
+          },
+          "mortgageImg": {
+            "type": "string",
+            "description": "抵押回执"
+          },
+          "mortgageAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "抵押时间"
+          },
+          "disburseAmount": {
+            "type": "number",
+            "description": "实际放款金额"
+          },
+          "disburseAccount": {
+            "type": "string",
+            "description": "放款账户"
+          },
+          "disburseAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "放款时间"
+          },
+          "transactionNo": {
+            "type": "string",
+            "description": "流水号"
+          },
+          "voucherUrl": {
+            "type": "string",
+            "description": "放款凭证"
+          },
+          "remark": {
+            "type": "string",
+            "description": "备注"
+          }
+        },
+        "required": [
+          "applicationId"
+        ]
+      },
+      "UpdateDisbursementDto": {
+        "type": "object",
+        "properties": {
+          "applicationId": {
+            "type": "number",
+            "description": "进件ID"
+          },
+          "status": {
+            "type": "string",
+            "description": "放款状态",
+            "enum": [
+              "PENDING_APPLICATION",
+              "PENDING_APPROVAL",
+              "GPS_INSTALLED",
+              "MORTGAGE_DONE",
+              "DISBURSED",
+              "FAILED"
+            ]
+          },
+          "gpsDeviceNo": {
+            "type": "string",
+            "description": "GPS设备号"
+          },
+          "gpsInstallImg": {
+            "type": "string",
+            "description": "GPS安装照片"
+          },
+          "gpsInstallAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "GPS安装时间"
+          },
+          "mortgageStatus": {
+            "type": "string",
+            "description": "抵押状态"
+          },
+          "mortgageImg": {
+            "type": "string",
+            "description": "抵押回执"
+          },
+          "mortgageAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "抵押时间"
+          },
+          "disburseAmount": {
+            "type": "number",
+            "description": "实际放款金额"
+          },
+          "disburseAccount": {
+            "type": "string",
+            "description": "放款账户"
+          },
+          "disburseAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "放款时间"
+          },
+          "transactionNo": {
+            "type": "string",
+            "description": "流水号"
+          },
+          "voucherUrl": {
+            "type": "string",
+            "description": "放款凭证"
+          },
+          "remark": {
+            "type": "string",
+            "description": "备注"
+          }
+        }
+      },
       "CreateApprovalDto": {
         "type": "object",
         "properties": {
@@ -13436,295 +14445,6 @@
           "cancelledReason": {
             "type": "string",
             "description": "取消原因"
-          }
-        }
-      },
-      "CreateDisbursementDto": {
-        "type": "object",
-        "properties": {
-          "applicationId": {
-            "type": "number",
-            "description": "进件ID"
-          },
-          "status": {
-            "type": "string",
-            "description": "放款状态",
-            "enum": [
-              "PENDING_APPLICATION",
-              "PENDING_APPROVAL",
-              "GPS_INSTALLED",
-              "MORTGAGE_DONE",
-              "DISBURSED",
-              "FAILED"
-            ]
-          },
-          "gpsDeviceNo": {
-            "type": "string",
-            "description": "GPS设备号"
-          },
-          "gpsInstallImg": {
-            "type": "string",
-            "description": "GPS安装照片"
-          },
-          "gpsInstallAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "GPS安装时间"
-          },
-          "mortgageStatus": {
-            "type": "string",
-            "description": "抵押状态"
-          },
-          "mortgageImg": {
-            "type": "string",
-            "description": "抵押回执"
-          },
-          "mortgageAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "抵押时间"
-          },
-          "disburseAmount": {
-            "type": "number",
-            "description": "实际放款金额"
-          },
-          "disburseAccount": {
-            "type": "string",
-            "description": "放款账户"
-          },
-          "disburseAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "放款时间"
-          },
-          "transactionNo": {
-            "type": "string",
-            "description": "流水号"
-          },
-          "voucherUrl": {
-            "type": "string",
-            "description": "放款凭证"
-          },
-          "remark": {
-            "type": "string",
-            "description": "备注"
-          }
-        },
-        "required": [
-          "applicationId"
-        ]
-      },
-      "UpdateDisbursementDto": {
-        "type": "object",
-        "properties": {
-          "applicationId": {
-            "type": "number",
-            "description": "进件ID"
-          },
-          "status": {
-            "type": "string",
-            "description": "放款状态",
-            "enum": [
-              "PENDING_APPLICATION",
-              "PENDING_APPROVAL",
-              "GPS_INSTALLED",
-              "MORTGAGE_DONE",
-              "DISBURSED",
-              "FAILED"
-            ]
-          },
-          "gpsDeviceNo": {
-            "type": "string",
-            "description": "GPS设备号"
-          },
-          "gpsInstallImg": {
-            "type": "string",
-            "description": "GPS安装照片"
-          },
-          "gpsInstallAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "GPS安装时间"
-          },
-          "mortgageStatus": {
-            "type": "string",
-            "description": "抵押状态"
-          },
-          "mortgageImg": {
-            "type": "string",
-            "description": "抵押回执"
-          },
-          "mortgageAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "抵押时间"
-          },
-          "disburseAmount": {
-            "type": "number",
-            "description": "实际放款金额"
-          },
-          "disburseAccount": {
-            "type": "string",
-            "description": "放款账户"
-          },
-          "disburseAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "放款时间"
-          },
-          "transactionNo": {
-            "type": "string",
-            "description": "流水号"
-          },
-          "voucherUrl": {
-            "type": "string",
-            "description": "放款凭证"
-          },
-          "remark": {
-            "type": "string",
-            "description": "备注"
-          }
-        }
-      },
-      "CreateRepaymentDto": {
-        "type": "object",
-        "properties": {
-          "applicationId": {
-            "type": "number",
-            "description": "进件ID"
-          },
-          "period": {
-            "type": "number",
-            "description": "期数"
-          },
-          "dueDate": {
-            "format": "date-time",
-            "type": "string",
-            "description": "应还日期"
-          },
-          "principal": {
-            "type": "number",
-            "description": "应还本金"
-          },
-          "interest": {
-            "type": "number",
-            "description": "应还利息"
-          },
-          "totalAmount": {
-            "type": "number",
-            "description": "应还总额"
-          },
-          "paidPrincipal": {
-            "type": "number",
-            "description": "已还本金"
-          },
-          "paidInterest": {
-            "type": "number",
-            "description": "已还利息"
-          },
-          "paidTotal": {
-            "type": "number",
-            "description": "已还总额"
-          },
-          "status": {
-            "type": "string",
-            "description": "状态",
-            "enum": [
-              "NOT_DUE",
-              "PENDING",
-              "PARTIAL",
-              "PAID",
-              "OVERDUE",
-              "SETTLED"
-            ]
-          },
-          "overdueDays": {
-            "type": "number",
-            "description": "逾期天数"
-          },
-          "penaltyAmount": {
-            "type": "number",
-            "description": "违约金"
-          },
-          "paidAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "还清时间"
-          }
-        },
-        "required": [
-          "applicationId",
-          "period",
-          "dueDate",
-          "principal",
-          "interest",
-          "totalAmount"
-        ]
-      },
-      "UpdateRepaymentDto": {
-        "type": "object",
-        "properties": {
-          "applicationId": {
-            "type": "number",
-            "description": "进件ID"
-          },
-          "period": {
-            "type": "number",
-            "description": "期数"
-          },
-          "dueDate": {
-            "format": "date-time",
-            "type": "string",
-            "description": "应还日期"
-          },
-          "principal": {
-            "type": "number",
-            "description": "应还本金"
-          },
-          "interest": {
-            "type": "number",
-            "description": "应还利息"
-          },
-          "totalAmount": {
-            "type": "number",
-            "description": "应还总额"
-          },
-          "paidPrincipal": {
-            "type": "number",
-            "description": "已还本金"
-          },
-          "paidInterest": {
-            "type": "number",
-            "description": "已还利息"
-          },
-          "paidTotal": {
-            "type": "number",
-            "description": "已还总额"
-          },
-          "status": {
-            "type": "string",
-            "description": "状态",
-            "enum": [
-              "NOT_DUE",
-              "PENDING",
-              "PARTIAL",
-              "PAID",
-              "OVERDUE",
-              "SETTLED"
-            ]
-          },
-          "overdueDays": {
-            "type": "number",
-            "description": "逾期天数"
-          },
-          "penaltyAmount": {
-            "type": "number",
-            "description": "违约金"
-          },
-          "paidAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "还清时间"
           }
         }
       },
@@ -13999,9 +14719,7 @@
         },
         "required": [
           "uuid",
-          "plateNumber",
           "vehicleModel",
-          "vehicleOwner",
           "vehicleCode"
         ]
       },
@@ -14059,6 +14777,26 @@
           "deposit": {
             "type": "number",
             "description": "押金"
+          },
+          "loanPurpose": {
+            "type": "string",
+            "description": "贷款用途"
+          },
+          "productId": {
+            "type": "number",
+            "description": "产品ID"
+          },
+          "repaymentMethod": {
+            "type": "number",
+            "description": "还款方式"
+          },
+          "executeRate": {
+            "type": "number",
+            "description": "执行利率"
+          },
+          "id": {
+            "type": "string",
+            "description": "申请ID"
           }
         },
         "required": [
@@ -14119,6 +14857,26 @@
           "deposit": {
             "type": "number",
             "description": "押金"
+          },
+          "loanPurpose": {
+            "type": "string",
+            "description": "贷款用途"
+          },
+          "productId": {
+            "type": "number",
+            "description": "产品ID"
+          },
+          "repaymentMethod": {
+            "type": "number",
+            "description": "还款方式"
+          },
+          "executeRate": {
+            "type": "number",
+            "description": "执行利率"
+          },
+          "id": {
+            "type": "string",
+            "description": "申请ID"
           }
         }
       },
@@ -14169,9 +14927,17 @@
             "type": "string",
             "description": "客户姓名"
           },
+          "customerName": {
+            "type": "string",
+            "description": "客户姓名（前端兼容字段）"
+          },
           "telephone": {
             "type": "string",
             "description": "手机号"
+          },
+          "phone": {
+            "type": "string",
+            "description": "手机号（前端兼容字段）"
           },
           "idCard": {
             "type": "string",
@@ -14197,15 +14963,23 @@
             "type": "string",
             "description": "备注"
           },
+          "province": {
+            "type": "string",
+            "description": "省"
+          },
+          "city": {
+            "type": "string",
+            "description": "市"
+          },
+          "salesmanId": {
+            "type": "number",
+            "description": "业务员ID"
+          },
           "creditOrderId": {
             "type": "string",
             "description": "授信订单号（兼容旧前端透传字段）"
           }
-        },
-        "required": [
-          "personName",
-          "telephone"
-        ]
+        }
       },
       "MobileFollowUpDto": {
         "type": "object",
@@ -15065,6 +15839,11 @@
             "type": "string",
             "description": "过期时间"
           },
+          "target": {
+            "type": "string",
+            "description": "发布范围",
+            "example": "全部用户"
+          },
           "topFlag": {
             "type": "boolean",
             "description": "是否置顶",
@@ -15129,10 +15908,136 @@
             "type": "string",
             "description": "过期时间"
           },
+          "target": {
+            "type": "string",
+            "description": "发布范围",
+            "example": "全部用户"
+          },
           "topFlag": {
             "type": "boolean",
             "description": "是否置顶",
             "example": false
+          },
+          "remark": {
+            "type": "string",
+            "description": "备注"
+          }
+        }
+      },
+      "CreateMsgTemplateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "模板名称",
+            "example": "预审通过通知"
+          },
+          "code": {
+            "type": "string",
+            "description": "模板编码",
+            "example": "PRECHECK_PASS_SMS"
+          },
+          "channel": {
+            "type": "string",
+            "description": "发送渠道",
+            "enum": [
+              "SMS",
+              "APP",
+              "WECHAT",
+              "EMAIL",
+              "SYSTEM"
+            ],
+            "example": "SMS"
+          },
+          "scene": {
+            "type": "string",
+            "description": "业务场景",
+            "example": "CARLOAN_PRECHECK"
+          },
+          "title": {
+            "type": "string",
+            "description": "标题/主题"
+          },
+          "content": {
+            "type": "string",
+            "description": "模板内容，支持 {{变量名}} 占位符"
+          },
+          "variables": {
+            "type": "object",
+            "description": "变量说明 JSON 对象或数组"
+          },
+          "status": {
+            "type": "string",
+            "description": "状态",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "DRAFT"
+            ],
+            "example": "ACTIVE"
+          },
+          "remark": {
+            "type": "string",
+            "description": "备注"
+          }
+        },
+        "required": [
+          "name",
+          "code",
+          "content"
+        ]
+      },
+      "UpdateMsgTemplateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "模板名称",
+            "example": "预审通过通知"
+          },
+          "code": {
+            "type": "string",
+            "description": "模板编码",
+            "example": "PRECHECK_PASS_SMS"
+          },
+          "channel": {
+            "type": "string",
+            "description": "发送渠道",
+            "enum": [
+              "SMS",
+              "APP",
+              "WECHAT",
+              "EMAIL",
+              "SYSTEM"
+            ],
+            "example": "SMS"
+          },
+          "scene": {
+            "type": "string",
+            "description": "业务场景",
+            "example": "CARLOAN_PRECHECK"
+          },
+          "title": {
+            "type": "string",
+            "description": "标题/主题"
+          },
+          "content": {
+            "type": "string",
+            "description": "模板内容，支持 {{变量名}} 占位符"
+          },
+          "variables": {
+            "type": "object",
+            "description": "变量说明 JSON 对象或数组"
+          },
+          "status": {
+            "type": "string",
+            "description": "状态",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "DRAFT"
+            ],
+            "example": "ACTIVE"
           },
           "remark": {
             "type": "string",
