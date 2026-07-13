@@ -10,7 +10,7 @@ type DeptManagerOption = {
   phone: string | null
 }
 
-interface DeptTreeNode {
+export interface DeptTreeNode {
   id: number
   name: string
   parentId: number | null

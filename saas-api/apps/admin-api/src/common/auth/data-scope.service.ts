@@ -98,6 +98,6 @@ export class DataScopeService {
       where: { roleId: { in: roleIds } },
       select: { departmentId: true }
     })
-    return [...new Set(roleDepts.map((rd: { departmentId: number }) => rd.departmentId))]
+    return [...new Set<number>(roleDepts.map((rd) => (rd as { departmentId: number }).departmentId))]
   }
 }
