@@ -10,6 +10,7 @@ import { DictModule } from './modules/dict/dict.module'
 import { FileModule } from './modules/file/file.module'
 import { OcrModule } from './modules/ocr/ocr.module'
 import { PrismaModule } from './modules/prisma/prisma.module'
+import { DataScopeModule } from './common/auth/data-scope.module'
 import { QueueModule } from './modules/queue/queue.module'
 import { RedisModule } from './modules/redis/redis.module'
 import { RolesModule } from './modules/roles/roles.module'
@@ -75,6 +76,7 @@ const envFilePaths = [
       })
     }),
     PrismaModule,
+    DataScopeModule,
     RedisModule,
     QueueModule,
     AuthModule,

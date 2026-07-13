@@ -10,6 +10,13 @@ type DeptManagerOption = {
   phone: string | null
 }
 
+interface DeptTreeNode {
+  id: number
+  name: string
+  parentId: number | null
+  children: DeptTreeNode[]
+}
+
 @Injectable()
 export class DeptService extends BaseBusinessCrudService<CreateDeptDto, UpdateDeptDto, DeptQueryDto> {
   constructor(private readonly prisma: PrismaService) {
@@ -53,6 +60,32 @@ export class DeptService extends BaseBusinessCrudService<CreateDeptDto, UpdateDe
         }
       })
     }
+  }
+
+  /** 获取部门树形结构 */
+  async getTree(): Promise<DeptTreeNode[]> {
+    const depts = await this.prisma.department.findMany({
+      where: { deletedAt: null },
+      select: { id: true, name: true, parentId: true },
+      orderBy: { sort: 'asc' }
+    })
+
+    // O(n) 树构建
+    const map = new Map<number, DeptTreeNode>()
+    for (const dept of depts) {
+      map.set(dept.id, { id: dept.id, name: dept.name, parentId: dept.parentId, children: [] })
+    }
+
+    const roots: DeptTreeNode[] = []
+    for (const node of map.values()) {
+      if (node.parentId && map.has(node.parentId)) {
+        map.get(node.parentId)!.children.push(node)
+      } else {
+        roots.push(node)
+      }
+    }
+
+    return roots
   }
 
   private async validateDept(dto: CreateDeptDto | UpdateDeptDto, id?: number) {

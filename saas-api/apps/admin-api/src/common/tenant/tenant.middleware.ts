@@ -45,9 +45,10 @@ export class TenantMiddleware implements NestMiddleware {
       let tokenTenantId: number | null = null
 
       const auth = req.headers.authorization
+      let jwtPayload: Record<string, unknown> | null = null
       if (typeof auth === 'string' && auth.startsWith('Bearer ')) {
-        const payload = decodeJwtPayload(auth.slice(7))
-        tokenTenantId = parseTenantId(payload?.tenantId, 'Token tenantId')
+        jwtPayload = decodeJwtPayload(auth.slice(7))
+        tokenTenantId = parseTenantId(jwtPayload?.tenantId, 'Token tenantId')
       }
 
       if (tokenTenantId && headerTenantId && tokenTenantId !== headerTenantId) {
@@ -58,7 +59,15 @@ export class TenantMiddleware implements NestMiddleware {
         throw new UnauthorizedException('token 中的 tenantId 无效')
       }
 
-      tenantStorage.run({ tenantId: tokenTenantId ?? headerTenantId }, () => next())
+      // 从 JWT 中提取用户信息
+      let userId: number | undefined
+      let userRoles: number[] | undefined
+      if (jwtPayload) {
+        if (jwtPayload.sub) userId = Number(jwtPayload.sub)
+        if (Array.isArray(jwtPayload.roleIds)) userRoles = jwtPayload.roleIds as number[]
+      }
+
+      tenantStorage.run({ tenantId: tokenTenantId ?? headerTenantId, userId, userRoles }, () => next())
     } catch (error) {
       const status = error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR
       const body = error instanceof HttpException ? error.getResponse() : null

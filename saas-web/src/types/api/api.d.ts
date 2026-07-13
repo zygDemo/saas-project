@@ -145,6 +145,7 @@ declare namespace Api {
       roleCode: string
       description: string
       enabled: boolean
+      dataScope: string
       createTime: string
     }
 
@@ -162,6 +163,8 @@ declare namespace Api {
       roleCode: string
       description?: string
       enabled?: boolean
+      dataScope?: string
+      departmentIds?: number[]
     }
 
     type UpdateRoleParams = Partial<CreateRoleParams>
@@ -175,6 +178,27 @@ declare namespace Api {
     interface SaveRolePermissionParams {
       menuIds: number[]
       permissionIds: number[]
+    }
+
+    /** 角色数据权限配置 */
+    interface RoleDataScope {
+      roleId: number
+      dataScope: string
+      departmentIds: number[]
+    }
+
+    /** 保存角色数据权限参数 */
+    interface SaveRoleDataScopeParams {
+      dataScope: string
+      departmentIds?: number[]
+    }
+
+    /** 部门树节点 */
+    interface DeptTreeNode {
+      id: number
+      name: string
+      parentId: number | null
+      children: DeptTreeNode[]
     }
 
     interface SaveMenuParams {

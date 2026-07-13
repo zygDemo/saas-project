@@ -31,7 +31,8 @@ export class AuthService {
     if (!matched) throw new UnauthorizedException('用户名或密码错误')
 
     const roles = user.roles.map(({ role }: { role: { code: string } }) => role.code)
-    const payload = { sub: user.id, userName: user.userName, tenantId, roles }
+    const roleIds = user.roles.map(({ role }: { role: { id: number } }) => role.id)
+    const payload = { sub: user.id, userName: user.userName, tenantId, roles, roleIds }
 
     const token = `Bearer ${await this.jwt.signAsync(payload)}`
     const refreshToken = `Bearer ${await this.jwt.signAsync(payload, {

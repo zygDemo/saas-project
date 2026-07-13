@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { DeptService } from './dept.service'
@@ -15,6 +15,12 @@ export class DeptController {
   @ApiOperation({ summary: '列表查询' })
   list(@Query() query: DeptQueryDto) {
     return this.service.getList(query)
+  }
+
+  @Get('tree')
+  @ApiOperation({ summary: '部门树', description: '获取部门树形结构，用于数据权限配置选择部门' })
+  tree() {
+    return this.service.getTree()
   }
 
   @Get(':id')

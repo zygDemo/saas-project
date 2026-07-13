@@ -210,6 +210,8 @@ model Role {
   mobileModules       Json?    // ["carloan","food"] 角色可访问的移动端模块
   mobileMultiModule   Boolean  @default(false) // 是否支持多业务模块
 
+  departments  RoleDepartment[]
+
   @@unique([tenantId, code])
   @@index([tenantId])
   deletedAt    DateTime?   // 软删除时间戳
@@ -260,6 +262,15 @@ model RoleMenu {
 
   @@id([roleId, menuId])
   deletedAt    DateTime?   // 软删除时间戳
+}
+
+model RoleDepartment {
+  roleId       Int
+  departmentId Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, departmentId])
 }
 
 model Permission {
@@ -456,6 +467,7 @@ model Department {
   parent   Department?  @relation("DeptTree", fields: [parentId], references: [id], onDelete: Cascade)
   children Department[] @relation("DeptTree")
   users    User[]
+  roles    RoleDepartment[]
 
   @@unique([orgId, name])
   @@index([tenantId])

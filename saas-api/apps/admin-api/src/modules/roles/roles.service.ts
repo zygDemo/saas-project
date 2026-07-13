@@ -49,9 +49,18 @@ export class RolesService {
         name: dto.roleName,
         code: dto.roleCode,
         description: dto.description ?? '',
-        enabled: dto.enabled ?? true
+        enabled: dto.enabled ?? true,
+        dataScope: dto.dataScope ?? 'ALL'
       }
     })
+
+    // 如果是 CUSTOM 范围，保存自定义部门关联
+    if (dto.dataScope === 'CUSTOM' && dto.departmentIds?.length) {
+      await this.prisma.roleDepartment.createMany({
+        data: dto.departmentIds.map((deptId) => ({ roleId: role.id, departmentId: deptId })),
+        skipDuplicates: true
+      })
+    }
 
     return mapRoleListItem(role)
   }
@@ -64,17 +73,35 @@ export class RolesService {
       await this.assertRoleCodeAvailable(dto.roleCode, id)
     }
 
-    const updatedRole = await this.prisma.role.update({
-      where: { id },
-      data: {
-        name: dto.roleName,
-        code: dto.roleCode,
-        description: dto.description,
-        enabled: dto.enabled
-      }
-    })
+    const updateData: Prisma.RoleUpdateInput = {}
+    if (dto.roleName !== undefined) updateData.name = dto.roleName
+    if (dto.roleCode !== undefined) updateData.code = dto.roleCode
+    if (dto.description !== undefined) updateData.description = dto.description
+    if (dto.enabled !== undefined) updateData.enabled = dto.enabled
+    if (dto.dataScope !== undefined) updateData.dataScope = dto.dataScope
 
-    return mapRoleListItem(updatedRole)
+    await this.prisma.role.update({ where: { id }, data: updateData })
+
+    // 如果更新了 dataScope 或 departmentIds，同步部门关联
+    if (dto.dataScope !== undefined || dto.departmentIds !== undefined) {
+      const newScope = dto.dataScope ?? role.dataScope
+      if (newScope === 'CUSTOM' && dto.departmentIds) {
+        // 先删后建
+        await this.prisma.roleDepartment.deleteMany({ where: { roleId: id } })
+        if (dto.departmentIds.length) {
+          await this.prisma.roleDepartment.createMany({
+            data: dto.departmentIds.map((deptId) => ({ roleId: id, departmentId: deptId })),
+            skipDuplicates: true
+          })
+        }
+      } else if (newScope !== 'CUSTOM') {
+        // 切换为非 CUSTOM 时清理部门关联
+        await this.prisma.roleDepartment.deleteMany({ where: { roleId: id } })
+      }
+    }
+
+    const updatedRole = await this.prisma.role.findFirst({ where: { id } })
+    return mapRoleListItem(updatedRole!)
   }
 
   async deleteRole(id: number) {
@@ -83,6 +110,47 @@ export class RolesService {
 
     await this.prisma.role.update({ where: { id }, data: { deletedAt: new Date() } })
     return { id }
+  }
+
+  /** 获取角色数据权限配置（dataScope + 自定义部门 ID 列表） */
+  async getRoleDataScope(id: number) {
+    const role = await this.prisma.role.findFirst({
+      where: { id },
+      include: {
+        departments: { select: { departmentId: true } }
+      }
+    })
+    if (!role) throw new NotFoundException('角色不存在')
+
+    return {
+      roleId: role.id,
+      dataScope: role.dataScope,
+      departmentIds: role.departments.map((d: { departmentId: number }) => d.departmentId)
+    }
+  }
+
+  /** 保存角色数据权限配置 */
+  async saveRoleDataScope(id: number, dto: { dataScope: string; departmentIds?: number[] }) {
+    const role = await this.prisma.role.findFirst({ where: { id } })
+    if (!role) throw new NotFoundException('角色不存在')
+
+    await this.prisma.role.update({
+      where: { id },
+      data: { dataScope: dto.dataScope }
+    })
+
+    // 清理旧的部门关联
+    await this.prisma.roleDepartment.deleteMany({ where: { roleId: id } })
+
+    // 如果是 CUSTOM 范围，保存新的部门关联
+    if (dto.dataScope === 'CUSTOM' && dto.departmentIds?.length) {
+      await this.prisma.roleDepartment.createMany({
+        data: dto.departmentIds.map((deptId) => ({ roleId: id, departmentId: deptId })),
+        skipDuplicates: true
+      })
+    }
+
+    return this.getRoleDataScope(id)
   }
 
   async getRolePermission(id: number) {
@@ -185,6 +253,7 @@ function mapRoleListItem(role: RoleListItem) {
     roleCode: role.code,
     description: role.description,
     enabled: role.enabled,
+    dataScope: role.dataScope,
     createTime: role.createdAt.toISOString().replace('T', ' ').slice(0, 19)
   }
 }

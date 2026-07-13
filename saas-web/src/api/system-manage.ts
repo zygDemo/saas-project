@@ -78,6 +78,29 @@ export function fetchSaveRolePermissions(
   })
 }
 
+/** 获取角色数据权限配置 */
+export function fetchGetRoleDataScope(id: number) {
+  return request.get<Api.SystemManage.RoleDataScope>({
+    url: `/role/${id}/data-scope`
+  })
+}
+
+/** 保存角色数据权限配置 */
+export function fetchSaveRoleDataScope(id: number, params: Api.SystemManage.SaveRoleDataScopeParams) {
+  return request.post<Api.SystemManage.RoleDataScope>({
+    url: `/role/${id}/data-scope`,
+    data: params,
+    showSuccessMessage: true
+  })
+}
+
+/** 获取部门树 */
+export function fetchGetDeptTree() {
+  return request.get<Api.SystemManage.DeptTreeNode[]>({
+    url: '/dept/tree'
+  })
+}
+
 export function fetchGetMenuList() {
   return request.get<AppRouteRecord[]>({
     url: '/v3/system/menus'

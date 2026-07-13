@@ -19,6 +19,8 @@ interface CrudOptions<TCreate, TUpdate, TQuery> {
   validateCreate?: (dto: TCreate) => Promise<void> | void
   validateUpdate?: (id: number, dto: TUpdate) => Promise<void> | void
   buildWhere?: (query: TQuery) => Record<string, unknown>
+  /** 异步钩子：在 buildWhere 之后调用，用于注入数据权限等动态条件 */
+  getExtraWhere?: (query: TQuery) => Promise<Record<string, unknown>> | Record<string, unknown>
   skipTenantFilter?: boolean
 }
 
@@ -28,7 +30,11 @@ export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate ex
 
   async getList(query: TQuery) {
     const pagination = getPagination(query)
-    const where = this.buildWhere(query)
+    let where = this.buildWhere(query)
+    if (this.options.getExtraWhere) {
+      const extra = await this.options.getExtraWhere(query)
+      where = { ...where, ...extra }
+    }
     const findArgs: Record<string, unknown> = {
       where,
       skip: pagination.skip,

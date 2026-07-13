@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { CreateRoleDto, SaveRolePermissionDto, UpdateRoleDto } from './dto/role.dto'
@@ -48,5 +48,20 @@ export class RolesController {
   @ApiOperation({ summary: '保存角色权限', description: '保存角色菜单和按钮权限配置' })
   savePermissions(@Param('id', ParseIntPipe) id: number, @Body() dto: SaveRolePermissionDto) {
     return this.rolesService.saveRolePermission(id, dto)
+  }
+
+  @Get(':id/data-scope')
+  @ApiOperation({ summary: '获取角色数据权限', description: '获取角色的数据范围配置和自定义部门列表' })
+  getDataScope(@Param('id', ParseIntPipe) id: number) {
+    return this.rolesService.getRoleDataScope(id)
+  }
+
+  @Post(':id/data-scope')
+  @ApiOperation({ summary: '保存角色数据权限', description: '保存角色数据范围配置（ALL/DEPT/SELF/CUSTOM）和自定义部门列表' })
+  saveDataScope(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: { dataScope: string; departmentIds?: number[] }
+  ) {
+    return this.rolesService.saveRoleDataScope(id, dto)
   }
 }

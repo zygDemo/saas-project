@@ -148,6 +148,21 @@
           }
         },
         {
+          prop: 'dataScope',
+          label: '数据范围',
+          width: 120,
+          formatter: (row) => {
+            const scopeMap: Record<string, { type: string; text: string }> = {
+              ALL: { type: 'info', text: '全部' },
+              DEPT: { type: 'success', text: '本部门' },
+              SELF: { type: 'warning', text: '仅自己' },
+              CUSTOM: { type: 'danger', text: '自定义' }
+            }
+            const config = scopeMap[row.dataScope] || { type: 'info', text: row.dataScope || '全部' }
+            return h(ElTag, { type: config.type as 'info' | 'success' | 'warning' | 'danger' }, () => config.text)
+          }
+        },
+        {
           prop: 'createTime',
           label: '创建日期',
           width: 180,

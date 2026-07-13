@@ -2,7 +2,7 @@
   <ElDialog
     v-model="visible"
     :title="dialogType === 'add' ? '新增角色' : '编辑角色'"
-    width="30%"
+    width="480px"
     align-center
     @close="handleClose"
   >
@@ -21,22 +21,49 @@
           placeholder="请输入角色描述"
         />
       </ElFormItem>
+      <ElFormItem label="数据范围" prop="dataScope">
+        <ElSelect v-model="form.dataScope" placeholder="请选择数据范围" style="width: 100%">
+          <ElOption label="全部数据" value="ALL" />
+          <ElOption label="本部门及下级" value="DEPT" />
+          <ElOption label="仅自己" value="SELF" />
+          <ElOption label="自定义部门" value="CUSTOM" />
+        </ElSelect>
+        <div class="data-scope-tip">{{ dataScopeTip }}</div>
+      </ElFormItem>
+      <ElFormItem v-if="form.dataScope === 'CUSTOM'" label="选择部门">
+        <ElTree
+          ref="deptTreeRef"
+          :data="deptTree"
+          show-checkbox
+          node-key="id"
+          default-expand-all
+          :props="{ children: 'children', label: 'name' }"
+          style="width: 100%; max-height: 240px; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; padding: 8px"
+        />
+      </ElFormItem>
       <ElFormItem label="启用">
         <ElSwitch v-model="form.enabled" />
       </ElFormItem>
     </ElForm>
     <template #footer>
       <ElButton @click="handleClose">取消</ElButton>
-      <ElButton type="primary" @click="handleSubmit">提交</ElButton>
+      <ElButton type="primary" :loading="submitting" @click="handleSubmit">提交</ElButton>
     </template>
   </ElDialog>
 </template>
 
 <script setup lang="ts">
-  import { fetchCreateRole, fetchUpdateRole } from '@/api/system-manage'
+  import {
+    fetchCreateRole,
+    fetchUpdateRole,
+    fetchGetRoleDataScope,
+    fetchSaveRoleDataScope,
+    fetchGetDeptTree
+  } from '@/api/system-manage'
   import type { FormInstance, FormRules } from 'element-plus'
 
   type RoleListItem = Api.SystemManage.RoleListItem
+  type DeptTreeNode = Api.SystemManage.DeptTreeNode
 
   interface Props {
     modelValue: boolean
@@ -58,18 +85,25 @@
   const emit = defineEmits<Emits>()
 
   const formRef = ref<FormInstance>()
+  const deptTreeRef = ref()
+  const submitting = ref(false)
+  const deptTree = ref<DeptTreeNode[]>([])
 
-  /**
-   * 弹窗显示状态双向绑定
-   */
   const visible = computed({
     get: () => props.modelValue,
     set: (value) => emit('update:modelValue', value)
   })
 
-  /**
-   * 表单验证规则
-   */
+  const dataScopeTip = computed(() => {
+    const tips: Record<string, string> = {
+      ALL: '可查看所有数据',
+      DEPT: '可查看本部门及下级部门的数据',
+      SELF: '仅可查看自己创建的数据',
+      CUSTOM: '可查看指定部门的数据'
+    }
+    return tips[form.dataScope] || ''
+  })
+
   const rules = reactive<FormRules>({
     roleName: [
       { required: true, message: '请输入角色名称', trigger: 'blur' },
@@ -82,86 +116,126 @@
     description: [{ required: true, message: '请输入角色描述', trigger: 'blur' }]
   })
 
-  /**
-   * 表单数据
-   */
-  const form = reactive<RoleListItem>({
+  const form = reactive({
     roleId: 0,
     roleName: '',
     roleCode: '',
     description: '',
-    createTime: '',
-    enabled: true
+    enabled: true,
+    dataScope: 'ALL' as string
   })
 
-  /**
-   * 监听弹窗打开，初始化表单数据
-   */
+  /** 加载部门树 */
+  const loadDeptTree = async () => {
+    try {
+      deptTree.value = await fetchGetDeptTree()
+    } catch {
+      deptTree.value = []
+    }
+  }
+
+  /** 加载角色数据权限配置 */
+  const loadDataScope = async (roleId: number) => {
+    try {
+      const data = await fetchGetRoleDataScope(roleId)
+      form.dataScope = data.dataScope || 'ALL'
+      // 等部门树加载完后再设置选中状态
+      await nextTick()
+      if (form.dataScope === 'CUSTOM' && data.departmentIds?.length && deptTreeRef.value) {
+        deptTreeRef.value.setCheckedKeys(data.departmentIds)
+      }
+    } catch {
+      form.dataScope = 'ALL'
+    }
+  }
+
   watch(
     () => props.modelValue,
-    (newVal) => {
-      if (newVal) initForm()
+    async (newVal) => {
+      if (newVal) {
+        await loadDeptTree()
+        await initForm()
+      }
     }
   )
 
-  /**
-   * 监听角色数据变化，更新表单
-   */
   watch(
     () => props.roleData,
-    (newData) => {
-      if (newData && props.modelValue) initForm()
+    async (newData) => {
+      if (newData && props.modelValue) {
+        await initForm()
+      }
     },
     { deep: true }
   )
 
-  /**
-   * 初始化表单数据
-   * 根据弹窗类型填充表单或重置表单
-   */
-  const initForm = () => {
+  const initForm = async () => {
     if (props.dialogType === 'edit' && props.roleData) {
-      Object.assign(form, props.roleData)
+      Object.assign(form, {
+        roleId: props.roleData.roleId,
+        roleName: props.roleData.roleName,
+        roleCode: props.roleData.roleCode,
+        description: props.roleData.description,
+        enabled: props.roleData.enabled,
+        dataScope: props.roleData.dataScope || 'ALL'
+      })
+      await loadDataScope(props.roleData.roleId)
     } else {
       Object.assign(form, {
         roleId: 0,
         roleName: '',
         roleCode: '',
         description: '',
-        createTime: '',
-        enabled: true
+        enabled: true,
+        dataScope: 'ALL'
+      })
+      nextTick(() => {
+        deptTreeRef.value?.setCheckedKeys([])
       })
     }
   }
 
-  /**
-   * 关闭弹窗并重置表单
-   */
   const handleClose = () => {
     visible.value = false
     formRef.value?.resetFields()
+    deptTreeRef.value?.setCheckedKeys([])
   }
 
-  /**
-   * 提交表单
-   * 验证通过后调用接口保存数据
-   */
   const handleSubmit = async () => {
     if (!formRef.value) return
 
     try {
+      submitting.value = true
       await formRef.value.validate()
-      const params = {
-        roleName: form.roleName,
-        roleCode: form.roleCode,
-        description: form.description,
-        enabled: form.enabled
-      }
+
+      // 获取选中的部门 ID
+      const departmentIds =
+        form.dataScope === 'CUSTOM' && deptTreeRef.value
+          ? deptTreeRef.value.getCheckedKeys() as number[]
+          : []
 
       if (props.dialogType === 'add') {
-        await fetchCreateRole(params)
+        const role = await fetchCreateRole({
+          roleName: form.roleName,
+          roleCode: form.roleCode,
+          description: form.description,
+          enabled: form.enabled,
+          dataScope: form.dataScope,
+          departmentIds
+        })
+        // 如果是 CUSTOM 范围，单独保存数据权限（createRole 已处理，这里保险起见）
+        if (form.dataScope === 'CUSTOM' && role?.roleId) {
+          await fetchSaveRoleDataScope(role.roleId, { dataScope: form.dataScope, departmentIds })
+        }
       } else {
-        await fetchUpdateRole(form.roleId, params)
+        await fetchUpdateRole(form.roleId, {
+          roleName: form.roleName,
+          roleCode: form.roleCode,
+          description: form.description,
+          enabled: form.enabled,
+          dataScope: form.dataScope,
+          departmentIds
+        })
       }
 
       const message = props.dialogType === 'add' ? '新增成功' : '修改成功'
@@ -170,6 +244,17 @@
       handleClose()
     } catch (error) {
       console.log('表单验证失败:', error)
+    } finally {
+      submitting.value = false
     }
   }
 </script>
+
+<style scoped>
+.data-scope-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+</style>

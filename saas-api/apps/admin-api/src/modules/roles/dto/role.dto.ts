@@ -1,5 +1,7 @@
-﻿import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
-import { IsArray, IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
+import { IsArray, IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator'
+
+const DATA_SCOPE_OPTIONS = ['ALL', 'DEPT', 'SELF', 'CUSTOM'] as const
 
 export class CreateRoleDto {
   @ApiProperty({ description: '角色名称', example: '运营人员' })
@@ -26,6 +28,18 @@ export class CreateRoleDto {
   @IsOptional()
   @IsBoolean()
   enabled?: boolean
+
+  @ApiPropertyOptional({ description: '数据范围：ALL=全部, DEPT=本部门及下级, SELF=仅自己, CUSTOM=自定义部门', enum: DATA_SCOPE_OPTIONS, default: 'ALL' })
+  @IsOptional()
+  @IsString()
+  @IsIn(DATA_SCOPE_OPTIONS)
+  dataScope?: string
+
+  @ApiPropertyOptional({ description: '自定义数据范围的部门 ID 列表（仅 dataScope=CUSTOM 时生效）', example: [1, 2, 3] })
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  departmentIds?: number[]
 }
 
 export class UpdateRoleDto extends PartialType(CreateRoleDto) {}
