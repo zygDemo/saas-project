@@ -3,16 +3,31 @@ import { Prisma, RepaymentStatus } from '@prisma/client'
 import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PrismaService } from '../prisma/prisma.service'
+import { DataScopeService } from '../../common/auth/data-scope.service'
+import { getCurrentUserRoles } from '../../common/tenant/tenant-context'
 import { CreateRepaymentDto, UpdateRepaymentDto, RepaymentQueryDto } from './dto/repayment.dto'
 
 @Injectable()
 export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto, UpdateRepaymentDto, RepaymentQueryDto> {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly dataScopeService: DataScopeService
+  ) {
     super({
       model: prisma.repaymentPlan,
       prisma,
       exactFields: ['applicationId', 'status'],
       include: { application: true, records: true },
+      getExtraWhere: async () => {
+        const roleIds = getCurrentUserRoles()
+        if (!roleIds.length) return {}
+        const roles = await prisma.role.findMany({ where: { id: { in: roleIds } }, select: { dataScope: true } })
+        const scopePriority: Record<string, number> = { SELF: 1, DEPT: 2, CUSTOM: 3, ALL: 4 }
+        const minScope = roles.map(r => r.dataScope).sort((a, b) => (scopePriority[a] ?? 99) - (scopePriority[b] ?? 99))[0]
+        if (!minScope || minScope === 'ALL') return {}
+        const visibleIds = await dataScopeService.getVisibleUserIds(minScope)
+        return { application: { creatorId: { in: visibleIds } } }
+      },
       validateCreate: async (dto) => {
         await this.ensureRelatedExists(this.prisma.application, dto.applicationId, '进件不存在')
       },

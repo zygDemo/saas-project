@@ -10,6 +10,8 @@ import { buildUploadUrl, normalizeFileUrl } from '../../common/utils/file-url'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
+import { DataScopeService } from '../../common/auth/data-scope.service'
+import { getCurrentUserRoles } from '../../common/tenant/tenant-context'
 import { CreateFileAssetDto, FileQueryDto, UpdateFileAssetDto } from './dto/file.dto'
 
 interface FileAssetModel {
@@ -49,7 +51,8 @@ export interface UploadedImageFile {
 export class FileService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService
+    private readonly config: ConfigService,
+    private readonly dataScopeService: DataScopeService
   ) {}
 
   async uploadImage(file: UploadedImageFile | undefined, user: RequestUser) {
@@ -308,6 +311,18 @@ export class FileService {
     if (hasValue(query.status)) where.status = query.status
     if (hasValue(query.fileName)) where.fileName = { contains: query.fileName, mode: 'insensitive' }
     return this.withTenant(where)
+  }
+
+  /** 注入数据权限：根据角色 dataScope 过滤 uploadedBy */
+  private async injectDataScope(where: Record<string, unknown>): Promise<void> {
+    const roleIds = getCurrentUserRoles()
+    if (!roleIds.length) return
+    const roles = await this.prisma.role.findMany({ where: { id: { in: roleIds } }, select: { dataScope: true } })
+    const scopePriority: Record<string, number> = { SELF: 1, DEPT: 2, CUSTOM: 3, ALL: 4 }
+    const minScope = roles.map(r => r.dataScope).sort((a, b) => (scopePriority[a] ?? 99) - (scopePriority[b] ?? 99))[0]
+    if (!minScope || minScope === 'ALL') return
+    const visibleIds = await this.dataScopeService.getVisibleUserIds(minScope)
+    where.uploadedBy = { in: visibleIds }
   }
 
   private buildLegacyApplicationFileWhere(query: FileQueryDto) {
