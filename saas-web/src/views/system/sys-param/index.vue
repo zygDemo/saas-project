@@ -94,14 +94,36 @@
   const searchForm = reactive({ group: '', name: '', key: '', status: '' })
 
   const searchItems = [
-    { key: 'group', label: '分组', type: 'input' as const, props: { placeholder: '参数分组', clearable: true } },
-    { key: 'name', label: '名称', type: 'input' as const, props: { placeholder: '参数名称', clearable: true } },
-    { key: 'key', label: '键', type: 'input' as const, props: { placeholder: '参数键', clearable: true } },
+    {
+      key: 'group',
+      label: '分组',
+      type: 'input' as const,
+      props: { placeholder: '参数分组', clearable: true }
+    },
+    {
+      key: 'name',
+      label: '名称',
+      type: 'input' as const,
+      props: { placeholder: '参数名称', clearable: true }
+    },
+    {
+      key: 'key',
+      label: '键',
+      type: 'input' as const,
+      props: { placeholder: '参数键', clearable: true }
+    },
     {
       key: 'status',
       label: '状态',
       type: 'select' as const,
-      props: { placeholder: '全部', clearable: true, options: [{ label: '启用', value: 'ACTIVE' }, { label: '停用', value: 'INACTIVE' }] }
+      props: {
+        placeholder: '全部',
+        clearable: true,
+        options: [
+          { label: '启用', value: 'ACTIVE' },
+          { label: '停用', value: 'INACTIVE' }
+        ]
+      }
     }
   ]
   const pagination = reactive({ current: 1, size: 20, total: 0 })

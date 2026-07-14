@@ -158,8 +158,15 @@
               SELF: { type: 'warning', text: '仅自己' },
               CUSTOM: { type: 'danger', text: '自定义' }
             }
-            const config = scopeMap[row.dataScope] || { type: 'info', text: row.dataScope || '全部' }
-            return h(ElTag, { type: config.type as 'info' | 'success' | 'warning' | 'danger' }, () => config.text)
+            const config = scopeMap[row.dataScope] || {
+              type: 'info',
+              text: row.dataScope || '全部'
+            }
+            return h(
+              ElTag,
+              { type: config.type as 'info' | 'success' | 'warning' | 'danger' },
+              () => config.text
+            )
           }
         },
         {

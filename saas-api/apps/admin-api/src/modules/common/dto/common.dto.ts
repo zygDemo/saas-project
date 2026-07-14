@@ -1,30 +1,6 @@
-﻿import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
-import { Transform, Type } from 'class-transformer'
-import {
-  IsArray,
-  IsBoolean,
-  IsDate,
-  IsEnum,
-  IsIn,
-  IsInt,
-  IsNumber,
-  IsObject,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-  ValidateNested
-} from 'class-validator'
-import {
-  ApplicationStatus,
-  ApprovalAction,
-  DisbursementStatus,
-  Gender,
-  LeadStatus,
-  OrgStatus,
-  RepaymentStatus,
-  SignStatus
-} from '@prisma/client'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { Transform } from 'class-transformer'
+import { IsInt, IsOptional, Max, Min } from 'class-validator'
 
 export function ToNumber() {
   return Transform(({ value }) => {

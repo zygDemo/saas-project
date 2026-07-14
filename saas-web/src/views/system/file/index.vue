@@ -259,7 +259,12 @@
   })
 
   const searchItems = computed(() => [
-    { key: 'fileName', label: '文件名', type: 'input' as const, props: { placeholder: '文件名', clearable: true } },
+    {
+      key: 'fileName',
+      label: '文件名',
+      type: 'input' as const,
+      props: { placeholder: '文件名', clearable: true }
+    },
     {
       key: 'businessType',
       label: '业务类型',

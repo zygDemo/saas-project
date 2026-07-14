@@ -89,11 +89,23 @@
           :data="roleList"
           :columns="roleColumns"
           :pagination="{ current: rolePage, size: rolePageSize, total: roleTotal }"
-          @pagination:size-change="(v: number) => { rolePageSize = v; loadRoles() }"
-          @pagination:current-change="(v: number) => { rolePage = v; loadRoles() }"
+          @pagination:size-change="
+            (v: number) => {
+              rolePageSize = v
+              loadRoles()
+            }
+          "
+          @pagination:current-change="
+            (v: number) => {
+              rolePage = v
+              loadRoles()
+            }
+          "
         >
           <template #operation="{ row }">
-            <ElButton size="small" type="primary" link @click="openRoleConfig(row)">配置模块</ElButton>
+            <ElButton size="small" type="primary" link @click="openRoleConfig(row)"
+              >配置模块</ElButton
+            >
           </template>
         </ArtTable>
       </ElCard>
@@ -129,11 +141,23 @@
           :data="userList"
           :columns="userColumns"
           :pagination="{ current: userPage, size: userPageSize, total: userTotal }"
-          @pagination:size-change="(v: number) => { userPageSize = v; loadUsers() }"
-          @pagination:current-change="(v: number) => { userPage = v; loadUsers() }"
+          @pagination:size-change="
+            (v: number) => {
+              userPageSize = v
+              loadUsers()
+            }
+          "
+          @pagination:current-change="
+            (v: number) => {
+              userPage = v
+              loadUsers()
+            }
+          "
         >
           <template #operation="{ row }">
-            <ElButton size="small" type="primary" link @click="openUserConfig(row)">配置模块</ElButton>
+            <ElButton size="small" type="primary" link @click="openUserConfig(row)"
+              >配置模块</ElButton
+            >
           </template>
         </ArtTable>
       </ElCard>
@@ -431,7 +455,8 @@
 
   const dialogTitle = computed(() => {
     if (currentRole.value) return `角色配置 - ${currentRole.value.name || ''}`
-    if (currentUser.value) return `用户配置 - ${currentUser.value.nickname || currentUser.value.username || ''}`
+    if (currentUser.value)
+      return `用户配置 - ${currentUser.value.nickname || currentUser.value.username || ''}`
     return '配置模块'
   })
 

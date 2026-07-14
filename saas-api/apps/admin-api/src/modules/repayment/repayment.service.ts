@@ -216,9 +216,9 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
         }),
         orderBy: { period: 'asc' }
       })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       principal = unpaidPlans.reduce((sum: number, p: any) => sum + Number(p.principal), 0)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       interest = unpaidPlans.reduce((sum: number, p: any) => sum + Number(p.interest), 0)
       amount = Math.round((principal + interest) * 100) / 100
     }

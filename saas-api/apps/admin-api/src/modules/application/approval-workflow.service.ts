@@ -9,6 +9,7 @@ import type { PrismaModelDelegate } from '../base-business-crud.service'
 /**
  * 集中式状态转换表：定义每个操作允许的源状态与目标状态
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const TRANSITIONS = {
   SUBMIT: {
     from: [ApplicationStatus.DRAFT, ApplicationStatus.PENDING_SUPPLEMENT],

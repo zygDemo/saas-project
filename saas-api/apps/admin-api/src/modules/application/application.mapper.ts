@@ -1,7 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import {
-  ApplicationStatus,
-  ApprovalAction,
   Application as ApplicationModel,
   ApplicationFile,
   ApprovalRecord,

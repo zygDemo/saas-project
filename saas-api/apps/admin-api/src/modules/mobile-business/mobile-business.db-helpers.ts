@@ -1,9 +1,8 @@
-import { ApplicationStatus } from '@prisma/client'
 import { BadRequestException, NotFoundException } from '@nestjs/common'
+import { ApplicationStatus } from '@prisma/client'
 import { createApplicationWithUniqueNo } from '../../common/utils/application-no'
 import { RequestUser } from '../../common/types/request-user'
 import { PrismaService } from '../prisma/prisma.service'
-
 export async function getDefaultOrg(prisma: PrismaService, orgId?: number) {
   if (orgId && Number.isInteger(orgId) && orgId > 0) {
     const headerOrg = await prisma.organization.findFirst({ where: { id: orgId } })
@@ -13,7 +12,6 @@ export async function getDefaultOrg(prisma: PrismaService, orgId?: number) {
   if (!org) throw new BadRequestException('请先配置机构')
   return org
 }
-
 export async function getDefaultProduct(prisma: PrismaService, orgId: number) {
   const active = await prisma.product.findFirst({
     where: { orgId, status: 'ACTIVE' },
@@ -25,14 +23,12 @@ export async function getDefaultProduct(prisma: PrismaService, orgId: number) {
     orderBy: { id: 'asc' }
   })
 }
-
 export async function getDefaultFunder(prisma: PrismaService, orgId: number) {
   return prisma.funder.findFirst({
     where: { orgId, status: 'ACTIVE' },
     orderBy: [{ priority: 'desc' }, { id: 'asc' }]
   })
 }
-
 export async function findCustomerByUuid(prisma: PrismaService, uuid: string, tenantId?: number) {
   const id = Number(uuid)
   if (!Number.isInteger(id) || id <= 0) return null
@@ -43,13 +39,11 @@ export async function findCustomerByUuid(prisma: PrismaService, uuid: string, te
     } 
   })
 }
-
 export async function getCustomerByUuid(prisma: PrismaService, uuid: string, tenantId?: number) {
   const customer = await findCustomerByUuid(prisma, uuid, tenantId)
   if (!customer) throw new NotFoundException('客户信息不存在')
   return customer
 }
-
 export async function findApplication(
   prisma: PrismaService,
   idOrNo: string | number
@@ -78,14 +72,12 @@ export async function findApplication(
   if (!application) throw new NotFoundException('授信申请不存在')
   return application
 }
-
 export async function findApplicationByOrderId(prisma: PrismaService, creditOrderId: string) {
   if (!creditOrderId) return null
   return prisma.application.findFirst({
     where: { applicationNo: creditOrderId }
   })
 }
-
 export async function findLatestDraftApplication(prisma: PrismaService, customerId: number) {
   return prisma.application.findFirst({
     where: {
@@ -95,7 +87,6 @@ export async function findLatestDraftApplication(prisma: PrismaService, customer
     orderBy: { id: 'desc' }
   })
 }
-
 export async function findDraftApplicationByNo(
   prisma: PrismaService,
   customerId: number,
@@ -109,7 +100,6 @@ export async function findDraftApplicationByNo(
     }
   })
 }
-
 export async function ensureCustomerDraftApplication(
   prisma: PrismaService,
   customer: any,
@@ -126,11 +116,9 @@ export async function ensureCustomerDraftApplication(
     }
     return current
   }
-
   const product = await getDefaultProduct(prisma, customer.orgId)
   const funder = await getDefaultFunder(prisma, customer.orgId)
   const rate = product ? Number(product.minRate) : 0.006
-
   return createApplicationWithUniqueNo((applicationNo) =>
     prisma.application.create({
       data: {
@@ -153,7 +141,6 @@ export async function ensureCustomerDraftApplication(
     })
   )
 }
-
 export function getFileAssetModel(prisma: PrismaService) {
   return (
     prisma as unknown as {
@@ -165,7 +152,6 @@ export function getFileAssetModel(prisma: PrismaService) {
     }
   ).fileAsset
 }
-
 export async function getCustomerApplicationIds(prisma: PrismaService, customerId: number) {
   const applications = await prisma.application.findMany({
     where: { customerId },
@@ -173,7 +159,6 @@ export async function getCustomerApplicationIds(prisma: PrismaService, customerI
   })
   return applications.map((item: { id: number }) => item.id)
 }
-
 export async function getCustomerVehicleIds(prisma: PrismaService, customerId: number) {
   const vehicles = await prisma.vehicle.findMany({
     where: { customerId },

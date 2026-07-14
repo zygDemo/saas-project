@@ -4,7 +4,6 @@ import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateDisbursementDto, UpdateDisbursementDto, DisbursementQueryDto } from './dto/disbursement.dto'
-
 @Injectable()
 export class DisbursementService extends BaseBusinessCrudService<CreateDisbursementDto, UpdateDisbursementDto, DisbursementQueryDto> {
   constructor(private readonly prisma: PrismaService) {
@@ -21,9 +20,7 @@ export class DisbursementService extends BaseBusinessCrudService<CreateDisbursem
       },
     })
   }
-
   // ==================== GPS安装 ====================
-
   /** 登记GPS安装完成 */
   async completeGpsInstall(applicationId: number, dto: {
     gpsDeviceNo?: string
@@ -48,9 +45,7 @@ export class DisbursementService extends BaseBusinessCrudService<CreateDisbursem
       }
     })
   }
-
   // ==================== 抵押登记 ====================
-
   /** 登记抵押完成 */
   async completeMortgage(applicationId: number, dto: {
     mortgageStatus?: string
@@ -75,9 +70,7 @@ export class DisbursementService extends BaseBusinessCrudService<CreateDisbursem
       }
     })
   }
-
   // ==================== 出账申请 ====================
-
   /** 提交出账申请 */
   async requestDisbursement(applicationId: number, dto: { remark?: string }) {
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -88,13 +81,11 @@ export class DisbursementService extends BaseBusinessCrudService<CreateDisbursem
         existed?.status === DisbursementStatus.MORTGAGE_DONE
           ? existed.status
           : DisbursementStatus.PENDING_APPROVAL
-
       await tx.disbursement.upsert({
         where: { applicationId },
         update: { status: nextStatus, remark: dto.remark },
         create: { tenantId, applicationId, status: nextStatus, remark: dto.remark }
       })
-
       return tx.application.update({
         where: { id: applicationId },
         data: {
@@ -105,9 +96,7 @@ export class DisbursementService extends BaseBusinessCrudService<CreateDisbursem
       })
     })
   }
-
   // ==================== 放款确认（含强校验） ====================
-
   /** 放款确认 — 强制校验GPS安装和抵押状态 */
   async confirmDisbursement(applicationId: number, dto: {
     disburseAmount: number
@@ -121,24 +110,19 @@ export class DisbursementService extends BaseBusinessCrudService<CreateDisbursem
     const disbursement = await this.prisma.disbursement.findFirst({
       where: { applicationId }
     })
-
     if (!disbursement || !['PENDING_APPROVAL', 'GPS_INSTALLED', 'MORTGAGE_DONE'].includes(disbursement.status)) {
       throw new BadRequestException('请先提交出账申请')
     }
-
     // 🔴 强校验：GPS必须已安装
     if (!disbursement.gpsInstallAt) {
       throw new BadRequestException('请先完成GPS安装后再确认放款')
     }
-
     // 🔴 强校验：抵押必须已完成
     if (!disbursement.mortgageAt) {
       throw new BadRequestException('请先完成抵押登记后再确认放款')
     }
-
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const tenantId = getCurrentTenantId()!
-
       await tx.disbursement.upsert({
         where: { applicationId },
         update: {
@@ -162,7 +146,6 @@ export class DisbursementService extends BaseBusinessCrudService<CreateDisbursem
           remark: dto.remark
         }
       })
-
       return tx.application.update({
         where: { id: applicationId },
         data: {

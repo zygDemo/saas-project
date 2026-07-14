@@ -86,7 +86,10 @@ export function fetchGetRoleDataScope(id: number) {
 }
 
 /** 保存角色数据权限配置 */
-export function fetchSaveRoleDataScope(id: number, params: Api.SystemManage.SaveRoleDataScopeParams) {
+export function fetchSaveRoleDataScope(
+  id: number,
+  params: Api.SystemManage.SaveRoleDataScopeParams
+) {
   return request.post<Api.SystemManage.RoleDataScope>({
     url: `/role/${id}/data-scope`,
     data: params,

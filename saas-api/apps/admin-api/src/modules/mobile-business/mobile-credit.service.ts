@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { ApplicationStatus } from '@prisma/client'
+import { ConfigService } from '@nestjs/config'
 import { hasValue } from '../../common/utils/helpers'
 import { createApplicationWithUniqueNo } from '../../common/utils/application-no'
 import { getPagination } from '../../common/utils/pagination'
@@ -15,7 +15,6 @@ import { mapCreditStatus, mapBusinessNode, statusFromBusinessNode, mapApplicatio
 import { getCustomerByUuid, getDefaultProduct, getDefaultFunder, findApplication, findLatestDraftApplication } from './mobile-business.db-helpers'
 import { MobileFileService } from './mobile-file.service'
 import { getRequiredTenantId } from '../../common/utils/helpers'
-
 @Injectable()
 export class MobileCreditService {
   constructor(
@@ -23,7 +22,6 @@ export class MobileCreditService {
     private readonly config: ConfigService,
     private readonly fileService: MobileFileService
   ) {}
-
   async creditApply(dto: MobileCreditApplyDto, user: RequestUser) {
     const tenantId = getRequiredTenantId()
     const customer = await getCustomerByUuid(this.prisma, dto.uuid, tenantId)
@@ -41,16 +39,13 @@ export class MobileCreditService {
       hasValue(dto.deposit) ? `deposit=${dto.deposit}` : undefined,
       dto.remark
     ].filter(Boolean)
-
     // 有订单编号 → 按 applicationNo 查找已有订单（任意状态，跨客户）；无订单编号 → 查找当前客户最新草稿
     const existingApplication = dto.creditOrderId
       ? await this.prisma.application.findFirst({
           where: { applicationNo: dto.creditOrderId }
         })
       : await findLatestDraftApplication(this.prisma, customer.id)
-
     const isUpdate = Boolean(existingApplication)
-
     const resolvedAmount = hasValue(dto.amount)
       ? dto.amount
       : existingApplication
@@ -61,7 +56,6 @@ export class MobileCreditService {
       : existingApplication
         ? existingApplication.term
         : product?.minTerm || 12
-
     // 已提交的订单只更新金额/期数等资料字段，不覆盖状态和节点
     const baseData = {
       amount: resolvedAmount,
@@ -69,7 +63,6 @@ export class MobileCreditService {
       rate,
       remark: remarkParts.join('；') || undefined
     }
-
     const applicationData = isUpdate
       ? baseData
       : {
@@ -85,7 +78,6 @@ export class MobileCreditService {
           currentStatus: 10,
           creatorId: user.sub,
         }
-
     const application = isUpdate
       ? await this.prisma.application.update({
           where: { id: existingApplication.id },
@@ -99,9 +91,7 @@ export class MobileCreditService {
             }
           })
         )
-
     await this.fileService.linkApplicationFiles(application, customer)
-
     return {
       uuid: String(customer.id),
       creditOrderId: application.applicationNo,
@@ -110,7 +100,6 @@ export class MobileCreditService {
       businessNode: mapBusinessNode(application.status)
     }
   }
-
   async updateCredit(dto: MobileCreditUpdateDto) {
     const application = await this.prisma.application.findFirst({
       where: { applicationNo: dto.creditOrderId }
@@ -131,16 +120,13 @@ export class MobileCreditService {
     const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
     return mapApplication(updated, apiPrefix)
   }
-
   async updateSupplementStatus(creditOrderId: string, field: string, value: number) {
     const application = await this.prisma.application.findFirst({
       where: { applicationNo: creditOrderId }
     })
     if (!application) throw new NotFoundException('授信申请不存在')
-
     const validFields = ['isSupplementCustomer', 'isSupplementVehicle', 'isSupplementOrder', 'isSupplementFile']
     if (!validFields.includes(field)) throw new BadRequestException('无效的字段名')
-
     const updated = await this.prisma.application.update({
       where: { id: application.id },
       data: { [field]: value }
@@ -148,7 +134,6 @@ export class MobileCreditService {
     const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
     return mapApplication(updated, apiPrefix)
   }
-
   async getCreditList(query: MobileCreditListQueryDto) {
     const pagination = getPagination(query)
     const where: Record<string, unknown> = {}
@@ -157,7 +142,6 @@ export class MobileCreditService {
       const status = statusFromBusinessNode(query.businessNode)
       if (status) where.status = status
     }
-
     if (query.status !== undefined && query.status !== null) {
       const statusMap: Record<number, string> = {
         1: 'DRAFT',
@@ -173,11 +157,9 @@ export class MobileCreditService {
         where.status = query.status
       }
     }
-
     if (query.personName) {
       where.customer = { name: { contains: query.personName, mode: 'insensitive' } }
     }
-
     const [records, total] = await this.prisma.$transaction([
       this.prisma.application.findMany({
         where,
@@ -191,10 +173,8 @@ export class MobileCreditService {
       }),
       this.prisma.application.count({ where })
     ])
-
     const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
     const rows = records.map((item: any) => mapApplication(item, apiPrefix))
-
     return {
       code: 200,
       msg: 'success',
@@ -203,19 +183,16 @@ export class MobileCreditService {
       total
     }
   }
-
   async getCreditDetail(id: string | number) {
     const application = await findApplication(this.prisma, id)
     const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
     return mapApplication(application, apiPrefix, true)
   }
-
   async getCreditDetailByOrderId(creditOrderId: string) {
     const application = await findApplication(this.prisma, creditOrderId)
     const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
     return mapApplication(application, apiPrefix, true)
   }
-
   getLoanBusinessNodes() {
     return [
       { code: 'INITIAL_AUDIT', name: '初审', description: '待业务初审' },
@@ -225,7 +202,6 @@ export class MobileCreditService {
       { code: 'LOAN_DISBURSEMENT', name: '放款', description: '等待放款' }
     ]
   }
-
   async getFlowConfigByNodeCode(nodeCode: string, businessType = 'CAR_LOAN') {
     const config = await this.prisma.flowConfig.findFirst({
       where: {
@@ -235,7 +211,6 @@ export class MobileCreditService {
       }
     })
     if (!config) return null
-
     const ruleConfig = (config.ruleConfig as Record<string, unknown>) || {}
     return {
       id: config.id,
@@ -248,15 +223,12 @@ export class MobileCreditService {
       ruleConfig
     }
   }
-
   async getFlowSteps(nodeCode: string, businessType = 'CAR_LOAN') {
     const config = await this.getFlowConfigByNodeCode(nodeCode, businessType)
     if (!config) return []
-
     const ruleConfig = config.ruleConfig as Record<string, unknown>
     return (ruleConfig?.steps as Array<Record<string, unknown>>) || []
   }
-
   async getFlowNodes(businessType = 'CAR_LOAN') {
     const configs = await this.prisma.flowConfig.findMany({
       where: { businessType, status: 'ACTIVE' },
@@ -292,7 +264,6 @@ export class MobileCreditService {
       }
     })
   }
-
   getStatisticsOverview() {
     return {
       todayLeads: 0,

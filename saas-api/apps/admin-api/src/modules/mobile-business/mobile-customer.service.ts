@@ -3,11 +3,11 @@ import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../prisma/prisma.service'
 import { RequestUser } from '../../common/types/request-user'
 import { MobileIdCardInfoDto, MobileCustomerExtraDto, MobileUserListQueryDto } from './dto/mobile-business.dto'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { mapGender, parseBirthDate, formatDateTime, mapCustomer, guardMobileEntryStorageAsync } from './mobile-business.utils'
 import { getDefaultOrg, findCustomerByUuid, getCustomerByUuid, ensureCustomerDraftApplication } from './mobile-business.db-helpers'
 import { MobileFileService } from './mobile-file.service'
 import { getRequiredTenantId } from '../../common/utils/helpers'
-
 @Injectable()
 export class MobileCustomerService {
   constructor(
@@ -15,7 +15,6 @@ export class MobileCustomerService {
     private readonly config: ConfigService,
     private readonly fileService: MobileFileService
   ) {}
-
   async addOrUpdateUserBasic(dto: MobileIdCardInfoDto & Partial<MobileCustomerExtraDto>, user: RequestUser, headerOrgId?: number) {
     return guardMobileEntryStorageAsync(async () => {
       const org = await getDefaultOrg(this.prisma, headerOrgId)
@@ -40,7 +39,6 @@ export class MobileCustomerService {
         address: dto.personAddress,
         status: 'ACTIVE'
       }
-
       if (dto.dwellingCondition !== undefined) data.dwellingCondition = dto.dwellingCondition
       if (dto.liveProvince !== undefined) data.liveProvince = dto.liveProvince
       if (dto.liveCity !== undefined) data.liveCity = dto.liveCity
@@ -67,7 +65,6 @@ export class MobileCustomerService {
       if (dto.workingDistrict !== undefined) data.workingDistrict = dto.workingDistrict
       if (dto.workingDetailedAddress !== undefined) data.workingDetailedAddress = dto.workingDetailedAddress
       if (dto.workingTelephone !== undefined) data.workingTelephone = dto.workingTelephone
-
       const customer =
         customerByUuid || customerByPhone
           ? await this.prisma.customer.update({
@@ -75,18 +72,14 @@ export class MobileCustomerService {
               data
             })
           : await this.prisma.customer.create({ data })
-
       await this.fileService.linkCustomerImages(customer, dto.idcardFront, dto.idcardBack, user)
-
       const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
       const mappedCustomer = mapCustomer(customer, apiPrefix)
       if (!dto.createOrder) return mappedCustomer
-
       const application = await ensureCustomerDraftApplication(this.prisma, customer, user, {
         businessType: dto.businessType
       })
       await this.fileService.linkApplicationFiles(application, customer)
-
       return {
         ...mappedCustomer,
         creditOrderId: application.applicationNo,
@@ -96,7 +89,6 @@ export class MobileCustomerService {
       }
     })
   }
-
   async getUserBasic(uuid: string) {
     return guardMobileEntryStorageAsync(async () => {
       const tenantId = getRequiredTenantId()
@@ -105,18 +97,15 @@ export class MobileCustomerService {
       return mapCustomer(customer, apiPrefix)
     })
   }
-
   async getUserList(query: MobileUserListQueryDto) {
     return guardMobileEntryStorageAsync(async () => {
       const where: Record<string, unknown> = {}
       if (query.personName) where.name = { contains: query.personName, mode: 'insensitive' }
-
       const customers = await this.prisma.customer.findMany({
         where,
         orderBy: { id: 'desc' },
         take: 100
       })
-
       const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
       const rows = customers.map((customer: any) => ({
         ...mapCustomer(customer, apiPrefix),
@@ -124,7 +113,6 @@ export class MobileCustomerService {
         approval: 4,
         updateTime: formatDateTime(customer.updatedAt)
       }))
-
       return {
         code: 200,
         msg: 'success',

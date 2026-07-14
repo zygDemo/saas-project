@@ -38,7 +38,14 @@
           node-key="id"
           default-expand-all
           :props="{ children: 'children', label: 'name' }"
-          style="width: 100%; max-height: 240px; overflow-y: auto; border: 1px solid #dcdfe6; border-radius: 4px; padding: 8px"
+          style="
+            width: 100%;
+            max-height: 240px;
+            overflow-y: auto;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            padding: 8px;
+          "
         />
       </ElFormItem>
       <ElFormItem label="启用">
@@ -211,7 +218,7 @@
       // 获取选中的部门 ID
       const departmentIds =
         form.dataScope === 'CUSTOM' && deptTreeRef.value
-          ? deptTreeRef.value.getCheckedKeys() as number[]
+          ? (deptTreeRef.value.getCheckedKeys() as number[])
           : []
 
       if (props.dialogType === 'add') {
@@ -251,10 +258,10 @@
 </script>
 
 <style scoped>
-.data-scope-tip {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
-  line-height: 1.4;
-}
+  .data-scope-tip {
+    font-size: 12px;
+    color: #909399;
+    margin-top: 4px;
+    line-height: 1.4;
+  }
 </style>
