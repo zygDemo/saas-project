@@ -46,3 +46,31 @@ export class CreateSystemParamDto {
 }
 
 export class UpdateSystemParamDto extends PartialType(CreateSystemParamDto) {}
+
+export class SystemParamQueryDto {
+  @ApiPropertyOptional({ description: '参数分组' })
+  @IsOptional()
+  @IsString()
+  group?: string
+
+  @ApiPropertyOptional({ description: '参数名称（模糊搜索）' })
+  @IsOptional()
+  @IsString()
+  name?: string
+
+  @ApiPropertyOptional({ description: '参数键（模糊搜索）' })
+  @IsOptional()
+  @IsString()
+  key?: string
+
+  @ApiPropertyOptional({ description: '状态', enum: STATUS_VALUES })
+  @IsOptional()
+  @IsIn(STATUS_VALUES)
+  status?: string
+
+  @ApiPropertyOptional({ description: '当前页码' })
+  current?: number
+
+  @ApiPropertyOptional({ description: '每页条数' })
+  size?: number
+}

@@ -19,7 +19,7 @@ export class DictService {
     private readonly cache: CacheService
   ) {}
 
-  async getTypeList(query: Record<string, string | undefined>): Promise<PaginatedResponse<unknown>> {
+  async getTypeList(query: DictTypeQueryDto): Promise<PaginatedResponse<unknown>> {
     const tenantId = getRequiredTenantId()
     const pagination = getPagination(query)
     const where: Prisma.DictTypeWhereInput = {
@@ -124,7 +124,7 @@ export class DictService {
     return { id }
   }
 
-  async getDataList(query: Record<string, string | undefined>): Promise<PaginatedResponse<unknown>> {
+  async getDataList(query: DictDataQueryDto): Promise<PaginatedResponse<unknown>> {
     const tenantId = getRequiredTenantId()
     const pagination = getPagination(query)
     const typeId = query.typeId ? Number(query.typeId) : undefined

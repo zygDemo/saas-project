@@ -4,13 +4,13 @@ import { PaginatedResponse } from '../../common/types/pagination'
 import { getRequiredTenantId, formatDate } from '../../common/utils/helpers'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
-import { CreateAnnouncementDto, UpdateAnnouncementDto } from './dto/announcement.dto'
+import { CreateAnnouncementDto, UpdateAnnouncementDto, AnnouncementQueryDto } from './dto/announcement.dto'
 
 @Injectable()
 export class AnnouncementService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getList(query: Record<string, string | undefined>): Promise<PaginatedResponse<unknown>> {
+  async getList(query: AnnouncementQueryDto): Promise<PaginatedResponse<unknown>> {
     const tenantId = getRequiredTenantId()
     const pagination = getPagination(query)
     const where: Prisma.AnnouncementWhereInput = {

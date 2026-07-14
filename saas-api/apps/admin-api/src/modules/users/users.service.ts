@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service'
 import { formatDate } from '../../common/utils/helpers'
 import { CreateUserDto } from './dto/create-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
+import { UserQueryDto } from './dto/user-query.dto'
 
 const statusCodeMap: Record<UserStatus, string> = {
   ONLINE: '1',
@@ -61,7 +62,7 @@ export class UsersService {
     }
   }
 
-  async getUserList(query: Record<string, string | undefined>): Promise<PaginatedResponse<unknown>> {
+  async getUserList(query: UserQueryDto): Promise<PaginatedResponse<unknown>> {
     const pagination = getPagination(query)
     const where: Prisma.UserWhereInput = {
       id: query.id ? Number(query.id) : undefined,

@@ -19,7 +19,7 @@ export class SystemParamService {
     private readonly cache: CacheService
   ) {}
 
-  async getList(query: Record<string, string | undefined>): Promise<PaginatedResponse<unknown>> {
+  async getList(query: SystemParamQueryDto): Promise<PaginatedResponse<unknown>> {
     const tenantId = getRequiredTenantId()
     const pagination = getPagination(query)
     const where: Prisma.SystemParamWhereInput = {

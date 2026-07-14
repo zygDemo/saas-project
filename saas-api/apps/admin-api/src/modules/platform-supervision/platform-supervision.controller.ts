@@ -2,6 +2,7 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { PlatformSupervisionService } from './platform-supervision.service'
+import { PlatformStatsQueryDto } from './dto/platform-supervision.dto'
 
 @ApiTags('平台监管')
 @ApiBearerAuth()
@@ -12,7 +13,7 @@ export class PlatformSupervisionController {
 
   @Get('stats')
   @ApiOperation({ summary: '平台监管列表（各机构业务统计）' })
-  stats(@Query() query: Record<string, string>) {
+  stats(@Query() query: PlatformStatsQueryDto) {
     return this.service.getStats(query)
   }
 

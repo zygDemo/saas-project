@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
+import { PlatformStatsQueryDto } from './dto/platform-supervision.dto'
 
  
 
@@ -9,7 +10,7 @@ export class PlatformSupervisionService {
   constructor(private readonly prisma: PrismaService) {}
 
   /** 平台监管列表（各机构业务统计，分页） */
-  async getStats(query: Record<string, string>) {
+  async getStats(query: PlatformStatsQueryDto) {
     const pagination = getPagination(query)
 
     const orgs: any[] = await this.prisma.organization.findMany({

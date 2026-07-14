@@ -2,6 +2,7 @@ import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { MonitorService } from './monitor.service'
+import { MonitorLogQueryDto, MonitorStatsQueryDto } from './dto/monitor.dto'
 
 @ApiTags('系统监控')
 @ApiBearerAuth()
@@ -12,7 +13,7 @@ export class MonitorController {
 
   @Get('logs')
   @ApiOperation({ summary: '查询监控日志' })
-  logs(@Query() query: Record<string, string | undefined>) {
+  logs(@Query() query: MonitorLogQueryDto) {
     return this.service.getLogs(query)
   }
 
@@ -24,7 +25,7 @@ export class MonitorController {
 
   @Get('stats')
   @ApiOperation({ summary: '监控统计概览' })
-  stats(@Query() query: Record<string, string | undefined>) {
+  stats(@Query() query: MonitorStatsQueryDto) {
     return this.service.getStats(query)
   }
 }

@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards } fr
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { AnnouncementService } from './announcement.service'
-import { CreateAnnouncementDto, UpdateAnnouncementDto } from './dto/announcement.dto'
+import { CreateAnnouncementDto, UpdateAnnouncementDto, AnnouncementQueryDto } from './dto/announcement.dto'
 
 @ApiTags('公告管理')
 @ApiBearerAuth()
@@ -13,7 +13,7 @@ export class AnnouncementController {
 
   @Get('list')
   @ApiOperation({ summary: '获取公告列表' })
-  list(@Query() query: Record<string, string | undefined>) {
+  list(@Query() query: AnnouncementQueryDto) {
     return this.service.getList(query)
   }
 

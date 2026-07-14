@@ -70,3 +70,53 @@ export class CreateDictDataDto {
 }
 
 export class UpdateDictDataDto extends PartialType(CreateDictDataDto) {}
+
+export class DictTypeQueryDto {
+  @ApiPropertyOptional({ description: '字典名称（模糊搜索）' })
+  @IsOptional()
+  @IsString()
+  name?: string
+
+  @ApiPropertyOptional({ description: '字典编码（模糊搜索）' })
+  @IsOptional()
+  @IsString()
+  code?: string
+
+  @ApiPropertyOptional({ description: '状态', enum: STATUS_VALUES })
+  @IsOptional()
+  @IsIn(STATUS_VALUES)
+  status?: string
+
+  @ApiPropertyOptional({ description: '当前页码' })
+  current?: number
+
+  @ApiPropertyOptional({ description: '每页条数' })
+  size?: number
+}
+
+export class DictDataQueryDto {
+  @ApiPropertyOptional({ description: '字典类型 ID' })
+  @IsOptional()
+  typeId?: number
+
+  @ApiPropertyOptional({ description: '字典标签（模糊搜索）' })
+  @IsOptional()
+  @IsString()
+  label?: string
+
+  @ApiPropertyOptional({ description: '字典值（模糊搜索）' })
+  @IsOptional()
+  @IsString()
+  value?: string
+
+  @ApiPropertyOptional({ description: '状态', enum: STATUS_VALUES })
+  @IsOptional()
+  @IsIn(STATUS_VALUES)
+  status?: string
+
+  @ApiPropertyOptional({ description: '当前页码' })
+  current?: number
+
+  @ApiPropertyOptional({ description: '每页条数' })
+  size?: number
+}

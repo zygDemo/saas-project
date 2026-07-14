@@ -1,4 +1,4 @@
-﻿import { ValidationPipe } from '@nestjs/common'
+﻿import { Logger, ValidationPipe } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard'
 import { ConfigService } from '@nestjs/config'
@@ -73,7 +73,7 @@ async function bootstrap() {
     const outputPath = join(process.cwd(), openApiExport)
     fs.mkdirSync(dirname(outputPath), { recursive: true })
     fs.writeFileSync(outputPath, JSON.stringify(document, null, 2), 'utf8')
-    console.log(`OpenAPI exported to ${outputPath}`)
+    Logger.log(`OpenAPI exported to ${outputPath}`, 'Bootstrap')
     await app.close()
     process.exit(0)
   }

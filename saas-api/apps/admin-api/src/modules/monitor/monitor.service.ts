@@ -2,12 +2,13 @@ import { HttpException, Injectable } from '@nestjs/common'
 import { PaginatedResponse } from '../../common/types/pagination'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../../modules/prisma/prisma.service'
+import { MonitorLogQueryDto, MonitorStatsQueryDto } from './dto/monitor.dto'
 
 @Injectable()
 export class MonitorService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getLogs(query: Record<string, string | undefined>): Promise<PaginatedResponse<unknown>> {
+  async getLogs(query: MonitorLogQueryDto): Promise<PaginatedResponse<unknown>> {
     const pagination = getPagination(query)
     const where: Record<string, unknown> = {}
 
@@ -113,7 +114,7 @@ export class MonitorService {
     return { id: log.id }
   }
 
-  async getStats(query: Record<string, string | undefined>) {
+  async getStats(query: MonitorStatsQueryDto) {
     const now = new Date()
     const defaultFrom = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
     const from = query.startTime || defaultFrom

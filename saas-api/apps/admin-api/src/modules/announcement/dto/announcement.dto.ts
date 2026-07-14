@@ -62,3 +62,31 @@ export class CreateAnnouncementDto {
 }
 
 export class UpdateAnnouncementDto extends PartialType(CreateAnnouncementDto) {}
+
+export class AnnouncementQueryDto {
+  @ApiPropertyOptional({ description: '公告标题（模糊搜索）' })
+  @IsOptional()
+  @IsString()
+  title?: string
+
+  @ApiPropertyOptional({ description: '公告类型', enum: ANNOUNCE_TYPE })
+  @IsOptional()
+  @IsIn(ANNOUNCE_TYPE)
+  type?: string
+
+  @ApiPropertyOptional({ description: '重要程度', enum: ANNOUNCE_LEVEL })
+  @IsOptional()
+  @IsIn(ANNOUNCE_LEVEL)
+  level?: string
+
+  @ApiPropertyOptional({ description: '状态', enum: ANNOUNCE_STATUS })
+  @IsOptional()
+  @IsIn(ANNOUNCE_STATUS)
+  status?: string
+
+  @ApiPropertyOptional({ description: '当前页码' })
+  current?: string | number
+
+  @ApiPropertyOptional({ description: '每页条数' })
+  size?: string | number
+}

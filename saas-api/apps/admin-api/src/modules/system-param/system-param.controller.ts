@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards } fr
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { SystemParamService } from './system-param.service'
-import { CreateSystemParamDto, UpdateSystemParamDto } from './dto/system-param.dto'
+import { CreateSystemParamDto, UpdateSystemParamDto, SystemParamQueryDto } from './dto/system-param.dto'
 
 @ApiTags('系统参数管理')
 @ApiBearerAuth()
@@ -13,7 +13,7 @@ export class SystemParamController {
 
   @Get('list')
   @ApiOperation({ summary: '获取系统参数列表' })
-  list(@Query() query: Record<string, string | undefined>) {
+  list(@Query() query: SystemParamQueryDto) {
     return this.service.getList(query)
   }
 

@@ -3,13 +3,13 @@ import { Prisma } from '@prisma/client'
 import { PaginatedResponse } from '../../common/types/pagination'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
-import { CreateRoleDto, SaveRolePermissionDto, UpdateRoleDto } from './dto/role.dto'
+import { CreateRoleDto, SaveRolePermissionDto, UpdateRoleDto, RoleQueryDto } from './dto/role.dto'
 
 @Injectable()
 export class RolesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getRoleList(query: Record<string, string | undefined>): Promise<PaginatedResponse<unknown>> {
+  async getRoleList(query: RoleQueryDto): Promise<PaginatedResponse<unknown>> {
     const pagination = getPagination(query)
     const where: Prisma.RoleWhereInput = {
       id: query.roleId ? Number(query.roleId) : undefined,

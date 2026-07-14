@@ -44,6 +44,49 @@ export class CreateRoleDto {
 
 export class UpdateRoleDto extends PartialType(CreateRoleDto) {}
 
+export class RoleQueryDto {
+  @ApiPropertyOptional({ description: '角色 ID' })
+  @IsOptional()
+  @IsString()
+  roleId?: string
+
+  @ApiPropertyOptional({ description: '角色名称（模糊搜索）' })
+  @IsOptional()
+  @IsString()
+  roleName?: string
+
+  @ApiPropertyOptional({ description: '角色编码（模糊搜索）' })
+  @IsOptional()
+  @IsString()
+  roleCode?: string
+
+  @ApiPropertyOptional({ description: '描述（模糊搜索）' })
+  @IsOptional()
+  @IsString()
+  description?: string
+
+  @ApiPropertyOptional({ description: '是否启用' })
+  @IsOptional()
+  @IsString()
+  enabled?: string
+
+  @ApiPropertyOptional({ description: '创建开始时间' })
+  @IsOptional()
+  @IsString()
+  startTime?: string
+
+  @ApiPropertyOptional({ description: '创建结束时间' })
+  @IsOptional()
+  @IsString()
+  endTime?: string
+
+  @ApiPropertyOptional({ description: '当前页码' })
+  current?: string | number
+
+  @ApiPropertyOptional({ description: '每页条数' })
+  size?: string | number
+}
+
 export class SaveRolePermissionDto {
   @ApiPropertyOptional({ description: '分配给角色的菜单 ID 列表', example: [1, 2, 3] })
   @IsOptional()

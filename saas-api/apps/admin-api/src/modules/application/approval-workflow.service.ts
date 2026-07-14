@@ -1,8 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { ApplicationStatus, ApprovalAction, Prisma } from '@prisma/client'
+import type { Application } from '@prisma/client'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PrismaService } from '../prisma/prisma.service'
 import { NotificationService } from './notification.service'
+import type { PrismaModelDelegate } from '../base-business-crud.service'
 
 /**
  * 集中式状态转换表：定义每个操作允许的源状态与目标状态
@@ -121,7 +123,7 @@ export class ApprovalWorkflowService {
     id: number,
     allowedStatuses: ApplicationStatus[],
     statusMessage: string
-  ) {
+  ): Promise<Application> {
     const application = await this.prisma.application.findFirst({
       where: this.addTenantId({ id, status: { in: allowedStatuses } })
     })
@@ -141,7 +143,7 @@ export class ApprovalWorkflowService {
   }
 
   /** 确保关联数据存在 */
-  async ensureRelatedExists(model: { findFirst: (...args: any[]) => any }, id: number | undefined, message: string) {
+  async ensureRelatedExists(model: PrismaModelDelegate, id: number | undefined, message: string) {
     if (id === undefined || id === null) return
     const item = await model.findFirst({ where: { id } })
     if (!item) throw new BadRequestException(message)
@@ -310,7 +312,7 @@ export class ApprovalWorkflowService {
         application
       )
       // 🆕 通知：审批拒绝
-      await this.notificationService.sendOnApprovalRejected(id, application as any, '风控预审', dto.opinion!).catch(() => {})
+      await this.notificationService.sendOnApprovalRejected(id, application, '风控预审', dto.opinion!).catch(() => {})
       return result
     }
     return this.prisma.application.update({
@@ -318,7 +320,7 @@ export class ApprovalWorkflowService {
       data: {
         status: ApplicationStatus.RISK_PRE_REJECTED,
         ...flowPatch(ApplicationStatus.RISK_PRE_REJECTED),
-        remark: dto.opinion ?? (application as any).remark
+        remark: dto.opinion ?? application.remark
       }
     })
   }
@@ -356,7 +358,7 @@ export class ApprovalWorkflowService {
       '当前状态不允许资方预审通过',
       { approverId: dto.approverId, stage: 'FUNDER_PRE', action: ApprovalAction.PASS, opinion: dto.opinion || dto.funderApprovalNo, amount: dto.amount, term: dto.term, rate: dto.rate },
       ApplicationStatus.PENDING_SUPPLEMENT,
-      { approvedAmount: dto.amount ?? (application as any).approvedAmount, approvedTerm: dto.term ?? (application as any).approvedTerm, approvedRate: dto.rate ?? (application as any).approvedRate },
+      { approvedAmount: dto.amount ?? application.approvedAmount, approvedTerm: dto.term ?? application.approvedTerm, approvedRate: dto.rate ?? application.approvedRate },
       application
     )
   }
@@ -383,8 +385,8 @@ export class ApprovalWorkflowService {
       data: {
         status: ApplicationStatus.PENDING_FIRST_REVIEW,
         ...flowPatch(ApplicationStatus.PENDING_FIRST_REVIEW),
-        supplementReason: dto.reason ?? (application as any).supplementReason,
-        supplementDeadline: dto.deadline ? new Date(dto.deadline) : (application as any).supplementDeadline
+        supplementReason: dto.reason ?? application.supplementReason,
+        supplementDeadline: dto.deadline ? new Date(dto.deadline) : application.supplementDeadline
       }
     })
   }
@@ -403,7 +405,7 @@ export class ApprovalWorkflowService {
       '当前状态不允许审批通过',
       { approverId: dto.approverId, stage: dto.stage || this.resolveApprovalStage(application.status), action: ApprovalAction.PASS, opinion: dto.opinion, amount: dto.amount, term: dto.term, rate: dto.rate },
       nextStatus,
-      { approvedAmount: dto.amount ?? (application as any).approvedAmount, approvedTerm: dto.term ?? (application as any).approvedTerm, approvedRate: dto.rate ?? (application as any).approvedRate },
+      { approvedAmount: dto.amount ?? application.approvedAmount, approvedTerm: dto.term ?? application.approvedTerm, approvedRate: dto.rate ?? application.approvedRate },
       application
     )
   }
@@ -442,7 +444,7 @@ export class ApprovalWorkflowService {
       application
     )
     // 🆕 通知：审批驳回
-    await this.notificationService.sendOnApprovalRejected(id, application as any, dto.stage || '审批', dto.opinion || '').catch(() => {})
+    await this.notificationService.sendOnApprovalRejected(id, application, dto.stage || '审批', dto.opinion || '').catch(() => {})
     return result
   }
 
@@ -472,7 +474,7 @@ export class ApprovalWorkflowService {
       [ApplicationStatus.FINAL_REVIEW_PASSED],
       '当前状态不允许提交资方审批'
     )
-    if (!(application as any).funderId) throw new BadRequestException('未选择资方，不能提交资方审批')
+    if (!application.funderId) throw new BadRequestException('未选择资方，不能提交资方审批')
     return this.prisma.application.update({
       where: { id },
       data: {
@@ -495,7 +497,7 @@ export class ApprovalWorkflowService {
       '当前状态不允许资方审批通过',
       { approverId: dto.approverId, stage: 'FUNDER_REVIEW', action: ApprovalAction.PASS, opinion: dto.opinion || dto.funderApprovalNo, amount: dto.amount, term: dto.term, rate: dto.rate },
       ApplicationStatus.FUNDER_REVIEW_PASSED,
-      { approvedAmount: dto.amount ?? (application as any).approvedAmount, approvedTerm: dto.term ?? (application as any).approvedTerm, approvedRate: dto.rate ?? (application as any).approvedRate },
+      { approvedAmount: dto.amount ?? application.approvedAmount, approvedTerm: dto.term ?? application.approvedTerm, approvedRate: dto.rate ?? application.approvedRate },
       application
     )
   }

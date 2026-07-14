@@ -2,7 +2,7 @@
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { DictService } from './dict.service'
-import { CreateDictDataDto, CreateDictTypeDto, UpdateDictDataDto, UpdateDictTypeDto } from './dto/dict.dto'
+import { CreateDictDataDto, CreateDictTypeDto, UpdateDictDataDto, UpdateDictTypeDto, DictTypeQueryDto, DictDataQueryDto } from './dto/dict.dto'
 
 @ApiTags('字典管理')
 @ApiBearerAuth()
@@ -49,7 +49,7 @@ export class DictController {
 
   @Get('data/list')
   @ApiOperation({ summary: '获取字典项列表' })
-  dataList(@Query() query: Record<string, string | undefined>) {
+  dataList(@Query() query: DictDataQueryDto) {
     return this.dictService.getDataList(query)
   }
 

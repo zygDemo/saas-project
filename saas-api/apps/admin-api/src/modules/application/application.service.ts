@@ -39,8 +39,7 @@ import { NotificationService } from './notification.service'
 import { RepaymentService } from '../repayment/repayment.service'
 import { DisbursementService } from '../disbursement/disbursement.service'
 import { ApplicationMapper, ApplicationWithFlow, ApplicationWithIncludes } from './application.mapper'
-
-type PrismaDelegate = { findFirst: (...args: any[]) => Promise<any> }
+import type { PrismaModelDelegate } from '../base-business-crud.service'
 
 function hasQueryValue(value: unknown) { return value !== undefined && value !== null && value !== '' }
 
@@ -250,7 +249,7 @@ export class ApplicationService extends BaseBusinessCrudService<
       id, [ApplicationStatus.SIGNED, ApplicationStatus.PENDING_LOAN_REQUEST, ApplicationStatus.LOAN_REQUEST_REJECTED], '当前状态不允许提交请款资料'
     )
     return this.prisma.application.update({
-      where: { id }, data: { status: ApplicationStatus.LOAN_REQUEST_REVIEWING, ...flowPatch(ApplicationStatus.LOAN_REQUEST_REVIEWING), remark: dto.remark ?? (application as any).remark }
+      where: { id }, data: { status: ApplicationStatus.LOAN_REQUEST_REVIEWING, ...flowPatch(ApplicationStatus.LOAN_REQUEST_REVIEWING), remark: dto.remark ?? application.remark }
     })
   }
 
@@ -310,8 +309,8 @@ export class ApplicationService extends BaseBusinessCrudService<
 
       await this.repaymentService.createRepaymentPlansIfNeeded(tx, application, dto)
 
-      if ((application as any).sourceLeadId) {
-        await tx.lead.update({ where: { id: (application as any).sourceLeadId }, data: { status: LeadStatus.CONVERTED } })
+      if (application.sourceLeadId) {
+        await tx.lead.update({ where: { id: application.sourceLeadId }, data: { status: LeadStatus.CONVERTED } })
       }
 
       const result = await tx.application.update({
@@ -342,7 +341,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await this.repaymentService.settleApplication(tx, id)
       const result = await tx.application.update({
-        where: { id }, data: { status: ApplicationStatus.SETTLED, ...flowPatch(ApplicationStatus.SETTLED), remark: dto.remark ?? (application as any).remark }
+        where: { id }, data: { status: ApplicationStatus.SETTLED, ...flowPatch(ApplicationStatus.SETTLED), remark: dto.remark ?? application.remark }
       })
       await this.notificationService.sendOnLoanSettled(id, result).catch(() => {})
       return result
@@ -395,13 +394,13 @@ export class ApplicationService extends BaseBusinessCrudService<
 
   private async ensureOrgExists(orgId: number) { await this.getScopedRelated(this.prisma.organization, orgId, '机构不存在') }
 
-  private async assertSameOrg(model: PrismaDelegate, id: number | undefined, orgId: number, notFoundMessage: string, mismatchMessage: string) {
+  private async assertSameOrg(model: PrismaModelDelegate, id: number | undefined, orgId: number, notFoundMessage: string, mismatchMessage: string) {
     if (id === undefined || id === null) return
     const item = await this.getScopedRelated(model, id, notFoundMessage)
     if (item.orgId !== orgId) throw new BadRequestException(mismatchMessage)
   }
 
-  private async getScopedRelated(model: PrismaDelegate, id: number | undefined, message: string) {
+  private async getScopedRelated(model: PrismaModelDelegate, id: number | undefined, message: string) {
     if (id === undefined || id === null) throw new BadRequestException(message)
     const tenantId = getCurrentTenantId()
     const where = tenantId ? { id, tenantId } : { id }
