@@ -150,7 +150,7 @@ function showDetail(item: Record<string, unknown>) {
 
 function contactService() {
   uni.showToast({
-    title: "客服电话：400-XXX-XXXX",
+    title: "客服电话：13818821494",
     icon: "none",
     duration: 3000,
   });
