@@ -436,7 +436,7 @@ function handleCallback(
   else if (type === "contract") handleContractCallback(creditOrderId, options);
 }
 
-/** 人脸识别回调：有 creditOrderId 调用接口，否则用 URL 参数 / mock */
+/** 人脸识别回调：有 creditOrderId 调用接口，否则用 URL 参数回显 */
 async function handleFaceCallback(
   creditOrderId: string,
   options: Record<string, string>,
@@ -452,10 +452,10 @@ async function handleFaceCallback(
       applyFaceApiData(data, options);
     } catch (err) {
       console.error("查询人脸识别结果失败:", err);
-      applyUrlOrMock(options);
+      applyUrlParams(options);
     }
   } else {
-    applyUrlOrMock(options);
+    applyUrlParams(options);
   }
 
   pageFinalize("人脸识别");
@@ -516,8 +516,8 @@ function applyFaceApiData(data: unknown, options: Record<string, string>) {
     getNowTime();
 }
 
-/** 用 URL 参数或 mock 数据填充 */
-function applyUrlOrMock(options: Record<string, string>) {
+/** 用 URL 参数回显客户信息，缺失时使用默认值 */
+function applyUrlParams(options: Record<string, string>) {
   const passed = parsePassed(options.passed);
   const hasResult =
     passed !== undefined || options.result !== undefined || options.msg;
@@ -694,7 +694,7 @@ async function handleAuthCallback(
   creditOrderId: string,
   options: Record<string, string>,
 ) {
-  applyUrlOrMock(options);
+  applyUrlParams(options);
   await fetchCustomerInfoByOrderId(creditOrderId, options);
 
   // 三方签署回调：tsignType=SIGN&tsignCode=0 表示成功
@@ -730,7 +730,7 @@ async function handleContractCallback(
   options: Record<string, string>,
 ) {
   // 回显 URL 参数中的客户信息
-  applyUrlOrMock(options);
+  applyUrlParams(options);
   await fetchCustomerInfoByOrderId(creditOrderId, options);
 
   const isThirdSign = options.tsignType === "SIGN";
@@ -764,7 +764,7 @@ async function handleContractCallback(
 // ========== 加载结果数据 ==========
 
 function loadResultData(options: Record<string, string>) {
-  applyUrlOrMock(options);
+  applyUrlParams(options);
 
   contractSigned.value = options.contractSigned !== "false";
   try {

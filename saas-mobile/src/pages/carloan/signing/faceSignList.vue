@@ -210,21 +210,7 @@ function isSignRelated(row) {
   return Number.isFinite(numericNode) && numericNode >= 4100;
 }
 
-function buildLocalMockList() {
-  const progressMap = getProgressMap();
-  return Object.keys(progressMap).map((creditOrderId, index) => {
-    const item = progressMap[creditOrderId] || {};
-    return normalizeItem({
-      id: creditOrderId,
-      creditOrderId,
-      uuid: item.uuid,
-      customerName: item.customerName || "本地签约客户",
-      phone: item.customerPhone,
-      signStatus: item.status,
-      updatedAt: item.updatedAt ? new Date(item.updatedAt).toLocaleString("zh-CN") : "-",
-    }, index);
-  });
-}
+
 
 async function fetchList(isRefresh = false) {
   if (loading.value) return;
@@ -236,17 +222,11 @@ async function fetchList(isRefresh = false) {
     };
     const res = await businessApi.getOrderList(params);
     const rows = extractRows(res).filter(isSignRelated).map(normalizeItem);
-    const localRows = buildLocalMockList();
-    const mergedMap = new Map();
-    [...rows, ...localRows].forEach((item) => {
-      const key = item.creditOrderId || item.uuid || String(item.id);
-      if (key) mergedMap.set(key, { ...(mergedMap.get(key) || {}), ...item });
-    });
-    allList.value = Array.from(mergedMap.values());
+    allList.value = rows;
     applyFilter();
   } catch (e) {
-    console.error("获取签约列表失败，使用本地mock兜底", e);
-    allList.value = buildLocalMockList();
+    console.error("获取签约列表失败", e);
+    allList.value = [];
     applyFilter();
   } finally {
     loading.value = false;

@@ -16,22 +16,22 @@
       <view class="approval-list">
         <view
           v-for="(item, index) in list"
-          :key="index"
+          :key="item.creditOrderId || index"
           class="approval-card"
-          :class="`status-${getStageType(item.stage)}`"
+          :class="`status-${getStageType(item)}`"
           :style="{ animationDelay: `${index * 0.06}s` }"
           @click="goToDetail(item)"
         >
           <view class="approval-header">
             <view class="approval-name">
-              <view class="avatar" :class="`avatar--${getStageType(item.stage)}`">
-                {{ item.customerName?.charAt(0) || '?' }}
+              <view class="avatar" :class="`avatar--${getStageType(item)}`">
+                {{ item.name?.charAt(0) || '?' }}
               </view>
               <view class="title-block">
-                <text class="name">{{ item.customerName }}</text>
+                <text class="name">{{ item.name || '未知客户' }}</text>
                 <u-tag
-                  :text="item.stage"
-                  :type="getStageType(item.stage)"
+                  :text="getStageLabel(item)"
+                  :type="getStageType(item)"
                   size="mini"
                   plain
                 />
@@ -44,22 +44,22 @@
             <view class="info-row">
               <view class="info-icon"><u-icon name="coupon" size="24" color="#8c8c8c" /></view>
               <text class="label">申请金额</text>
-              <text class="value amount-value">￥{{ item.amount }}</text>
+              <text class="value amount-value">￥{{ item.pushQuota || '-' }}</text>
             </view>
             <view class="info-row">
               <view class="info-icon"><u-icon name="grid" size="24" color="#8c8c8c" /></view>
               <text class="label">申请产品</text>
-              <text class="value">{{ item.product }}</text>
+              <text class="value">{{ item.productName || '-' }}</text>
             </view>
             <view class="info-row">
               <view class="info-icon"><u-icon name="clock" size="24" color="#8c8c8c" /></view>
-              <text class="label">当前阶段</text>
-              <text class="value">{{ item.currentStage }}</text>
+              <text class="label">订单编号</text>
+              <text class="value">{{ item.creditOrderId || '-' }}</text>
             </view>
           </view>
 
           <view class="approval-footer">
-            <text class="sales">业务员：{{ item.salesName }}</text>
+            <text class="sales">客户电话：{{ item.phone || '-' }}</text>
             <u-button
               type="primary"
               size="mini"
@@ -88,73 +88,88 @@
 
 <script setup>
 import { ref } from "vue";
+import { onShow } from "@dcloudio/uni-app";
+import { useCarloanApi } from "@/api/carloan";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildDetailRouteQuery } from "@/common/carloan-route-query";
 
+const carloanApi = useCarloanApi();
 const currentTab = ref(0);
 const loading = ref(false);
+const list = ref([]);
 
 const tabList = [{ name: "待初审" }, { name: "待终审" }, { name: "已审批" }];
 
-const list = ref([
-  {
-    id: 1,
-    customerName: "张三",
-    amount: "150,000",
-    product: "车贷 A 产品",
-    stage: "待初审",
-    currentStage: "初审",
-    salesName: "李销售",
-    createTime: "2026-04-08 10:30",
-  },
-  {
-    id: 2,
-    customerName: "李四",
-    amount: "200,000",
-    product: "车贷 B 产品",
-    stage: "待终审",
-    currentStage: "终审",
-    salesName: "王销售",
-    createTime: "2026-04-08 09:15",
-  },
-]);
+/** Tab 对应的 API 查询参数 */
+const tabParams = [
+  { businessNode: "INITIAL_AUDIT" },
+  { businessNode: "PRE_AUDIT" },
+  { status: 1 },
+];
 
-function getStageType(stage) {
-  const typeMap = {
-    待初审: "warning",
-    待终审: "primary",
-    已审批: "success",
-    已拒绝: "error",
-  };
-  return typeMap[stage] || "info";
+async function loadList() {
+  if (loading.value) return;
+  loading.value = true;
+  try {
+    const params = { pageNum: 1, pageSize: 50, ...tabParams[currentTab.value] };
+    const res = await carloanApi.getCreditList(params);
+    const rows = res?.data?.rows || res?.rows || res?.data || [];
+    list.value = Array.isArray(rows) ? rows : [];
+  } catch (e) {
+    console.error("获取审批列表失败", e);
+    list.value = [];
+  } finally {
+    loading.value = false;
+  }
+}
+
+function getStageType(item) {
+  if (item.status === 1) return "success";
+  if (item.status === 2) return "error";
+  if (item.businessNode === "PRE_AUDIT") return "primary";
+  return "warning";
+}
+
+function getStageLabel(item) {
+  if (item.status === 1) return "已通过";
+  if (item.status === 2) return "已拒绝";
+  if (item.businessNode === "PRE_AUDIT") return "待终审";
+  if (item.businessNode === "INITIAL_AUDIT") return "待初审";
+  if (item.businessNode === "SUPPLEMENT_MATERIALS") return "补件中";
+  return "处理中";
 }
 
 function onTabClick(index) {
   currentTab.value = index;
-  loading.value = true;
-  setTimeout(() => {
-    loading.value = false;
-  }, 500);
+  list.value = [];
+  loadList();
 }
 
 function goToDetail(item) {
   uni.navigateTo({
-    url: buildRoute(APP_ROUTES.carloan.precheck.applyDetail, buildDetailRouteQuery({ id: item.id })),
+    url: buildRoute(
+      APP_ROUTES.carloan.precheck.applyDetail,
+      buildDetailRouteQuery({ id: item.id, uuid: item.uuid, creditOrderId: item.creditOrderId })
+    ),
   });
 }
 
 function handleAudit(item) {
   uni.navigateTo({
-    url: buildRoute(APP_ROUTES.carloan.precheck.applyDetail, buildDetailRouteQuery({ id: item.id })),
+    url: buildRoute(
+      APP_ROUTES.carloan.precheck.applyDetail,
+      buildDetailRouteQuery({ id: item.id, uuid: item.uuid, creditOrderId: item.creditOrderId })
+    ),
   });
 }
+
+onShow(loadList);
 </script>
 
 <style lang="scss" scoped>
 .approval-list-page {
   padding: 24rpx;
   background: linear-gradient(180deg, #f2f4f8 0%, #f8f9fb 100%);
-
 }
 
 .filter-box {
@@ -333,37 +348,5 @@ function handleAudit(item) {
 
 .approval-card {
   animation: slideUp 0.4s ease-out both;
-}
-
-/* 深色模式适配 */
-@media (prefers-color-scheme: dark) {
-  .page-container { background-color: #121212; }
-  .card { background-color: #1e1e1e; }
-  .card-item { background-color: #1e1e1e; }
-  .list-item { background-color: #1e1e1e; }
-  .section { background-color: #1e1e1e; }
-  .header { background-color: #1e1e1e; }
-  .title { color: #e5e6eb; }
-  .subtitle { color: #8b8c91; }
-  .desc { color: #8b8c91; }
-  .label { color: #b0b3b8; }
-  .value { color: #e5e6eb; }
-  .name { color: #e5e6eb; }
-  .info { color: #b0b3b8; }
-  .text { color: #e5e6eb; }
-  .tip { color: #8b8c91; }
-  .empty-text { color: #666; }
-  .divider { background-color: #2a2a2a; }
-  .border { border-color: #2a2a2a; }
-  .input { background-color: #2a2a2a; color: #e5e6eb; }
-  .search-bar { background-color: #2a2a2a; }
-  .tab-bar { background-color: #1e1e1e; border-color: #2a2a2a; }
-  .tab-item { color: #b0b3b8; }
-  .tab-item.active { color: var(--u-type-primary); }
-  .status-bar { background-color: #1e1e1e; }
-  .footer { background-color: #1e1e1e; }
-  .modal { background-color: #1e1e1e; }
-  .popup { background-color: #1e1e1e; }
-  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
 }
 </style>
