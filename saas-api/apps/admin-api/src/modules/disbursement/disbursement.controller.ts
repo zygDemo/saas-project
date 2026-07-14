@@ -2,7 +2,10 @@
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { DisbursementService } from './disbursement.service'
-import { DisbursementQueryDto, CreateDisbursementDto, UpdateDisbursementDto } from './dto/disbursement.dto'
+import {
+  DisbursementQueryDto, CreateDisbursementDto, UpdateDisbursementDto,
+  GpsInstallDto, MortgageDto, RequestDisbursementDto, ConfirmDisbursementDto
+} from './dto/disbursement.dto'
 
 @ApiTags('放款管理')
 @ApiBearerAuth()
@@ -49,7 +52,7 @@ export class DisbursementController {
   @ApiOperation({ summary: '登记GPS安装完成' })
   completeGpsInstall(
     @Param('applicationId') applicationId: string,
-    @Body() dto: { gpsDeviceNo?: string; gpsInstallImg?: string; gpsInstallAt?: string }
+    @Body() dto: GpsInstallDto
   ) {
     return this.service.completeGpsInstall(Number(applicationId), dto)
   }
@@ -60,7 +63,7 @@ export class DisbursementController {
   @ApiOperation({ summary: '登记抵押完成' })
   completeMortgage(
     @Param('applicationId') applicationId: string,
-    @Body() dto: { mortgageStatus?: string; mortgageImg?: string; mortgageAt?: string }
+    @Body() dto: MortgageDto
   ) {
     return this.service.completeMortgage(Number(applicationId), dto)
   }
@@ -71,7 +74,7 @@ export class DisbursementController {
   @ApiOperation({ summary: '提交出账申请' })
   requestDisbursement(
     @Param('applicationId') applicationId: string,
-    @Body() dto: { remark?: string }
+    @Body() dto: RequestDisbursementDto
   ) {
     return this.service.requestDisbursement(Number(applicationId), dto)
   }
@@ -82,11 +85,7 @@ export class DisbursementController {
   @ApiOperation({ summary: '放款确认（含GPS+抵押强校验）' })
   confirmDisbursement(
     @Param('applicationId') applicationId: string,
-    @Body() dto: {
-      disburseAmount: number; disburseAccount?: string
-      transactionNo?: string; voucherUrl?: string
-      remark?: string; disburseAt?: string
-    }
+    @Body() dto: ConfirmDisbursementDto
   ) {
     return this.service.confirmDisbursement(Number(applicationId), dto)
   }

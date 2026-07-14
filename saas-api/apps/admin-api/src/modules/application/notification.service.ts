@@ -5,11 +5,10 @@ import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 /**
  * 信贷业务关键节点通知服务
  *
- * 当前阶段：记录通知日志到数据库，后续可扩展为：
- *   - SMS 短信发送
- *   - 微信公众号/小程序模板消息
- *   - 邮件通知
- *   - 站内信
+ * 支持多渠道通知（当前优先落库沉淀，渠道按需扩展）：
+ *   - operation_log 数据库记录（即时生效）
+ *   - messageTemplate 消息模板变量替换（如已配置）
+ *   - 后续扩展：SMS / 微信模板消息 / 邮件 / 站内信
  *
  * 关键节点触发清单：
  *   线索分配 → LEAD_ASSIGNED
@@ -50,7 +49,9 @@ export class NotificationService {
 
   /**
    * 统一通知发送入口
-   * 当前记录到 operation_log，后续对接短信/微信等外部服务
+   *
+   * 流程：消息模板匹配 → 变量替换 → 写入 operation_log → 日志记录
+   * 后续通过 channel 字段扩展短信/微信等渠道分发
    */
   async send(event: NotificationEvent): Promise<void> {
     try {
@@ -75,13 +76,35 @@ export class NotificationService {
         // 模板查询失败不影响通知主流程
       }
 
-      // 记录通知日志（后续可扩展为写入独立的 notification 表）
+      // 持久化到 operation_log，便于审计追溯
+      await this.prisma.operationLog.create({
+        data: {
+          tenantId,
+          userId: event.targetUserId,
+          module: 'NOTIFICATION',
+          action: event.eventCode,
+          description: `${title}：${content}`,
+          requestData: {
+            channel: event.channel || 'IN_APP',
+            applicationId: event.applicationId,
+            applicationNo: event.applicationNo,
+            targetPhone: event.targetPhone
+          },
+          responseData: { sent: true }
+        }
+      })
+
       this.logger.log(
-        `[${event.eventCode}] applicationId=${event.applicationId} targetUserId=${event.targetUserId} title="${title}"`
+        `[${event.eventCode}] persisted to operation_log | applicationId=${event.applicationId} targetUserId=${event.targetUserId}`
       )
 
-      // TODO: 对接实际消息通道
-      // if (event.channel === 'SMS') { await this.smsService.send(event.targetPhone, content) }
+      // 后续扩展：根据 channel 分发到具体消息通道
+      // switch (event.channel) {
+      //   case 'SMS':    await this.smsService.send(event.targetPhone!, content); break
+      //   case 'WECHAT': await this.wechatService.sendTemplate(...); break
+      //   case 'EMAIL':  await this.emailService.send(...); break
+      //   // IN_APP 默认已由 operation_log 覆盖
+      // }
     } catch (error) {
       this.logger.error(`通知发送失败 [${event.eventCode}]: ${(error as Error).message}`)
     }

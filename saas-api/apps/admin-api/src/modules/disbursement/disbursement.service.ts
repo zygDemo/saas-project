@@ -1,5 +1,5 @@
 ﻿import { BadRequestException, Injectable } from '@nestjs/common'
-import { DisbursementStatus, Prisma } from '@prisma/client'
+import { ApplicationStatus, DisbursementStatus, Prisma } from '@prisma/client'
 import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PrismaService } from '../prisma/prisma.service'
@@ -98,7 +98,7 @@ export class DisbursementService extends BaseBusinessCrudService<CreateDisbursem
       return tx.application.update({
         where: { id: applicationId },
         data: {
-          status: 'PENDING_DISBURSEMENT' as any,
+          status: ApplicationStatus.PENDING_DISBURSEMENT,
           currentNode: 1800,
           currentStatus: 10
         }
@@ -166,7 +166,7 @@ export class DisbursementService extends BaseBusinessCrudService<CreateDisbursem
       return tx.application.update({
         where: { id: applicationId },
         data: {
-          status: 'DISBURSED' as any,
+          status: ApplicationStatus.DISBURSED,
           currentNode: 1900,
           currentStatus: 90
         }

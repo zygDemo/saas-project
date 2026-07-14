@@ -2,14 +2,24 @@ import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { getPagination, toPaginatedResponse } from '../common/utils/pagination'
 import { getCurrentTenantId } from '../common/tenant/tenant-context'
 import { hasValue } from '../common/utils/helpers'
+import type { PrismaService } from '../prisma/prisma.service'
+import type { Prisma } from '@prisma/client'
 
-type ModelDelegate = any  // TODO: proper generic delegate interface
+/** Prisma 模型委托接口 — 涵盖 BaseBusinessCrudService 需要的所有方法 */
+interface PrismaModelDelegate {
+  findMany(args: unknown): Promise<unknown[]>
+  count(args: unknown): Promise<number>
+  findFirst(args: unknown): Promise<unknown | null>
+  create(args: unknown): Promise<unknown>
+  update(args: unknown): Promise<unknown>
+}
 
-type PrismaWithTransaction = any  // TODO: PrismaClient type
+/** Prisma 事务上下文 — 支持普通服务和事务内调用 */
+type PrismaTransaction = Pick<PrismaService | Prisma.TransactionClient, '$transaction'>
 
 interface CrudOptions<TCreate, TUpdate, TQuery> {
-  model: ModelDelegate
-  prisma: PrismaWithTransaction
+  model: PrismaModelDelegate
+  prisma: PrismaTransaction
   searchableFields?: string[]
   exactFields?: string[]
   include?: unknown
@@ -92,7 +102,7 @@ export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate ex
     return item
   }
 
-  protected async ensureRelatedExists(model: ModelDelegate, id: number | undefined, message: string) {
+  protected async ensureRelatedExists(model: PrismaModelDelegate, id: number | undefined, message: string) {
     if (!hasValue(id)) return
     const item = await model.findFirst({ where: { id } })
     if (!item) throw new BadRequestException(message)

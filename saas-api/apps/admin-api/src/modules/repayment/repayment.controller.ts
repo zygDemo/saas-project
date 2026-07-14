@@ -2,7 +2,11 @@
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { RepaymentService } from './repayment.service'
-import { RepaymentQueryDto, CreateRepaymentDto, UpdateRepaymentDto } from './dto/repayment.dto'
+import {
+  RepaymentQueryDto, CreateRepaymentDto, UpdateRepaymentDto,
+  RegisterRepaymentDto, OverdueQueryDto, AddCollectionRecordDto,
+  ApplyEarlyRepaymentDto, ApproveEarlyRepaymentDto
+} from './dto/repayment.dto'
 
 @ApiTags('还款管理')
 @ApiBearerAuth()
@@ -57,11 +61,7 @@ export class RepaymentController {
   @ApiOperation({ summary: '按进件还款登记（自动选择第一个未还清计划）' })
   registerRepaymentByApplication(
     @Param('applicationId') applicationId: string,
-    @Body() dto: {
-      amount: number; principal?: number; interest?: number; penalty?: number
-      paymentMethod: string; transactionNo?: string; voucherUrl?: string
-      remark?: string; createdBy?: number
-    }
+    @Body() dto: RegisterRepaymentDto
   ) {
     return this.service.registerRepaymentByApplication(Number(applicationId), dto)
   }
@@ -70,11 +70,7 @@ export class RepaymentController {
   @ApiOperation({ summary: '按计划ID还款登记' })
   registerRepayment(
     @Param('planId') planId: string,
-    @Body() dto: {
-      amount: number; principal?: number; interest?: number; penalty?: number
-      paymentMethod: string; transactionNo?: string; voucherUrl?: string
-      remark?: string; createdBy?: number
-    }
+    @Body() dto: RegisterRepaymentDto
   ) {
     return this.service.registerRepayment(Number(planId), dto)
   }
@@ -83,7 +79,7 @@ export class RepaymentController {
 
   @Get('overdue/list')
   @ApiOperation({ summary: '逾期还款计划列表' })
-  getOverduePlans(@Query() query: { page?: number; pageSize?: number }) {
+  getOverduePlans(@Query() query: OverdueQueryDto) {
     return this.service.getOverduePlans(query)
   }
 
@@ -91,10 +87,7 @@ export class RepaymentController {
   @ApiOperation({ summary: '添加催收记录' })
   addCollectionRecord(
     @Param('applicationId') applicationId: string,
-    @Body() dto: {
-      collectorId?: number; collectType?: string; content: string
-      result?: string; nextAction?: string; nextDate?: string
-    }
+    @Body() dto: AddCollectionRecordDto
   ) {
     return this.service.addCollectionRecord(Number(applicationId), dto)
   }
@@ -111,10 +104,7 @@ export class RepaymentController {
   @ApiOperation({ summary: '申请提前还款' })
   applyEarlyRepayment(
     @Param('applicationId') applicationId: string,
-    @Body() dto: {
-      repayType?: string; amount?: number; principal?: number
-      interest?: number; penalty?: number; reason?: string
-    }
+    @Body() dto: ApplyEarlyRepaymentDto
   ) {
     return this.service.applyEarlyRepayment(Number(applicationId), dto)
   }
@@ -123,7 +113,7 @@ export class RepaymentController {
   @ApiOperation({ summary: '审批提前还款' })
   approveEarlyRepayment(
     @Param('id') id: string,
-    @Body() dto: { approvedBy: number; remark?: string }
+    @Body() dto: ApproveEarlyRepaymentDto
   ) {
     return this.service.approveEarlyRepayment(Number(id), dto)
   }
