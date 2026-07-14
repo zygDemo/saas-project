@@ -1036,7 +1036,8 @@ async function validateChapterAccess(chapter: Chapter): Promise<boolean> {
 async function handlePurchaseChapter(chapter: Chapter) {
   try {
     uni.showLoading({ title: '处理中...' });
-    // TODO: 接入真实购买接口；此处先写入本地已购标记用于验证流程
+    const readingApi = useReadingApi();
+    await readingApi.purchaseChapter(chapter.id);
     readingStore.markChapterPurchased(bookId.value, chapter.id, chapter.title);
     uni.hideLoading();
     uni.showToast({ title: '购买成功，已解锁章节', icon: 'success' });

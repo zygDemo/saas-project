@@ -1,4 +1,5 @@
 import { RequestUser } from '../../common/types/request-user'
+import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import {
   Controller,
   Get,
@@ -321,4 +322,15 @@ export class ReadingController {
     return this.readingService.deleteNote(+id, req.tenantId, req.sub);
   }
 
+
+  // ==================== 评论点赞 ====================
+
+  @Post('reviews/:id/like')
+  @ApiOperation({ summary: '点赞/取消点赞评论' })
+  async likeReview(
+    @Param('id') id: string,
+    @CurrentUser() user: RequestUser
+  ) {
+    return this.readingService.likeReview(user.sub, +id)
+  }
 }

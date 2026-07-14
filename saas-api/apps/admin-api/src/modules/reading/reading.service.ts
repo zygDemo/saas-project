@@ -1031,4 +1031,40 @@ export class ReadingService {
     });
   }
 
+
+  async likeReview(userId: number, reviewId: number) {
+    const review = await this.prisma.bookReview.findUnique({
+      where: { id: reviewId }
+    })
+    if (!review) throw new NotFoundException('评论不存在')
+
+    // 检查是否已点赞
+    const existing = await this.prisma.reviewLike.findUnique({
+      where: { reviewId_userId: { reviewId, userId } }
+    })
+
+    if (existing) {
+      // 取消点赞
+      await this.prisma.$transaction([
+        this.prisma.reviewLike.delete({ where: { id: existing.id } }),
+        this.prisma.bookReview.update({
+          where: { id: reviewId },
+          data: { likeCount: { decrement: 1 } }
+        })
+      ])
+      return { liked: false }
+    } else {
+      // 点赞
+      await this.prisma.$transaction([
+        this.prisma.reviewLike.create({
+          data: { reviewId: reviewId, userId: userId }
+        }),
+        this.prisma.bookReview.update({
+          where: { id: reviewId },
+          data: { likeCount: { increment: 1 } }
+        })
+      ])
+      return { liked: true }
+    }
+  }
 }

@@ -27,3 +27,14 @@ export function fetchGetUserInfo() {
     // }
   })
 }
+/**
+ * 用户注册
+ * @param params 注册参数
+ * @returns 注册响应
+ */
+export function fetchRegister(params: { userName: string; password: string; nickName: string }) {
+  return request.post({
+    url: '/auth/register',
+    data: params
+  })
+}

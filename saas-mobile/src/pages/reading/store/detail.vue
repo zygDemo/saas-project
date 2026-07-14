@@ -618,8 +618,17 @@ const showWriteReview = () => {
   showReviewForm.value = true;
 };
 
-// 本地模拟点赞（TODO: 接入后端 API）
-const likeReview = (review: Review) => {
+// 点赞评论
+const likeReview = async (review: Review) => {
+  try {
+    const readingApi = useReadingApi();
+    const res = await readingApi.likeReview(review.id);
+    const data = res.data || res;
+    review.liked = data.liked;
+    review.likes += data.liked ? 1 : -1;
+  } catch (e) {
+    console.error('点赞失败', e);
+  }
   if (review.liked) {
     review.liked = false;
     review.likes--;

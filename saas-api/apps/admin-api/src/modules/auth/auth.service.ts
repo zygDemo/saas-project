@@ -5,6 +5,7 @@ import * as bcrypt from 'bcryptjs'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PrismaService } from '../prisma/prisma.service'
 import { LoginDto } from './dto/login.dto'
+import { RegisterDto } from './dto/register.dto'
 
 @Injectable()
 export class AuthService {
@@ -43,6 +44,42 @@ export class AuthService {
     return {
       token,
       refreshToken
+    }
+  }
+
+  async register(dto: RegisterDto) {
+    const tenantId = getCurrentTenantId()
+    if (!tenantId) {
+      throw new BadRequestException('请求头 X-Tenant-ID 不能为空')
+    }
+
+    // 检查用户名是否已存在
+    const existing = await this.prisma.user.findFirst({
+      where: { tenantId, userName: { equals: dto.userName, mode: 'insensitive' } }
+    })
+    if (existing) {
+      throw new BadRequestException('用户名已存在')
+    }
+
+    // 加密密码
+    const salt = await bcrypt.genSalt(10)
+    const passwordHash = await bcrypt.hash(dto.password, salt)
+
+    // 创建用户
+    const user = await this.prisma.user.create({
+      data: {
+        tenantId,
+        userName: dto.userName,
+        passwordHash,
+        nickName: dto.nickName,
+        status: 'ACTIVE'
+      }
+    })
+
+    return {
+      id: user.id,
+      userName: user.userName,
+      nickName: user.nickName
     }
   }
 }

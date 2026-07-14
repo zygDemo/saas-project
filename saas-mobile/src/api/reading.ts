@@ -30,7 +30,7 @@ export type {
   ReviewItem,
   NoteItem,
   ReviewListResult,
-}
+};
 
 export function useReadingApi() {
   return {
@@ -46,68 +46,72 @@ export function useReadingApi() {
     getCategories: () =>
       http.get<ApiResponse<CategoryItem[]>>("/reading/categories"),
 
-    /** 获取章节目录（轻量版，仅 id/title/sort/isVip，无分页） */
-    getChaptersLite: (bookId: number | string) =>
-      http.get<ApiResponse<{ items: ChapterLiteItem[] }>>(`/reading/chapters/lite`, { bookId }),
+    /** 获取章节列表 */
+    getChapters: (params?: { bookId?: number; page?: number; pageSize?: number }) =>
+      http.get<ApiResponse<ChapterListResult>>("/reading/chapters", params),
 
-    /** 获取章节目录（分页版） */
-    getChapters: (bookId: number | string, params?: { page?: number; pageSize?: number }) =>
-      http.get<ApiResponse<ChapterListResult>>(`/reading/chapters`, { bookId, ...(params || {}) }),
+    /** 获取章节详情 */
+    getChapterDetail: (id: number | string) =>
+      http.get<ApiResponse<ChapterContent>>(`/reading/chapters/${id}`),
 
-    /** 根据章节ID获取章节详情（含 content） */
-    getChapterDetail: (chapterId: number | string) =>
-      http.get<ApiResponse<ChapterContent>>(`/reading/chapters/${chapterId}`),
-
-    /** 加入书架 */
-    addToBookshelf: (bookId: number | string) =>
-      http.post<ApiResponse<BookshelfItem>>("/reading/bookshelf", { bookId }),
-
-    /** 移出书架 */
-    removeFromBookshelf: (bookId: number | string) =>
-      http.delete<ApiResponse<unknown>>(`/reading/bookshelf/${bookId}`),
-
-    /** 获取书架列表 */
+    /** 获取书架 */
     getBookshelf: () =>
       http.get<ApiResponse<BookshelfItem[]>>("/reading/bookshelf"),
 
-    /** 获取推荐图书 */
-    getRecommend: (params?: { pageSize?: number }) =>
-      http.get<ApiResponse<BookItem[]>>("/reading/recommend", params),
+    /** 加入书架 */
+    addToBookshelf: (bookId: number | string) =>
+      http.post<ApiResponse<void>>("/reading/bookshelf", { bookId }),
+
+    /** 移出书架 */
+    removeFromBookshelf: (bookId: number | string) =>
+      http.delete<ApiResponse<void>>(`/reading/bookshelf/${bookId}`),
 
     /** 获取阅读进度 */
-    getProgress: (bookId: number | string) =>
-      http.get<ApiResponse<{ chapterId: number; page: number; progress: number }>>(`/reading/progress/${bookId}`),
+    getReadingProgress: (bookId: number | string) =>
+      http.get<ApiResponse<any>>(`/reading/progress/${bookId}`),
 
-    /** 保存阅读进度 */
-    saveProgress: (data: { bookId: number | string; chapterId: number | string; page?: number; progress?: number; readTime?: number }) =>
-      http.post<ApiResponse<unknown>>("/reading/progress", data),
+    /** 更新阅读进度 */
+    updateReadingProgress: (data: { bookId: number; chapterId: number; progress: number }) =>
+      http.post<ApiResponse<void>>("/reading/progress", data),
 
-    /** 获取阅读统计（personal=1 查询用户个人统计） */
-    getStatistics: (personal?: string) =>
-      http.get<ApiResponse<ReadingStatistics>>("/reading/statistics", { personal: personal || undefined }),
-
-    /** 获取书籍评价 */
-    getReviews: (params: { bookId?: number | string; page?: number; pageSize?: number }) =>
+    /** 获取评论列表 */
+    getReviews: (params?: { bookId?: number; page?: number; pageSize?: number }) =>
       http.get<ApiResponse<ReviewListResult>>("/reading/reviews", params),
 
-    /** 提交书籍评价 */
-    createReview: (data: { bookId: number | string; rating: number; content?: string }) =>
-      http.post<ApiResponse<ReviewItem>>("/reading/reviews", data),
+    /** 发表评论 */
+    createReview: (data: { bookId: number; content: number; rating?: number }) =>
+      http.post<ApiResponse<void>>("/reading/reviews", data),
 
-      // 笔记/高亮
-      getNotes: (params?: { bookId?: number | string; chapterId?: number | string; page?: number; pageSize?: number }) =>
-        http.get<ApiResponse<{ items: NoteItem[]; total: number }>>('/reading/notes', params),
+    /** 删除评论 */
+    deleteReview: (id: number | string) =>
+      http.delete<ApiResponse<void>>(`/reading/reviews/${id}`),
 
-      getNotesByChapter: (bookId: number | string, chapterId: number | string) =>
-        http.get<ApiResponse<NoteItem[]>>(`/reading/notes/chapter/${bookId}/${chapterId}`),
+    /** 获取阅读统计 */
+    getStatistics: () =>
+      http.get<ApiResponse<ReadingStatistics>>("/reading/statistics"),
 
-      createNote: (data: { bookId: number | string; chapterId: number | string; highlight?: string; note?: string; color?: string; startPos?: number; endPos?: number }) =>
-        http.post<ApiResponse<NoteItem>>('/reading/notes', data),
+    /** 获取热门图书 */
+    getHotBooks: (limit?: number) =>
+      http.get<ApiResponse<BookItem[]>>("/reading/hot", { limit }),
 
-      updateNote: (id: number | string, data: { note?: string; color?: string }) =>
-        http.put<ApiResponse<unknown>>(`/reading/notes/${id}`, data),
+    /** 获取推荐图书 */
+    getRecommendBooks: (limit?: number) =>
+      http.get<ApiResponse<BookItem[]>>("/reading/recommend", { limit }),
 
-      deleteNote: (id: number | string) =>
-        http.delete<ApiResponse<unknown>>(`/reading/notes/${id}`),
-    };
+    /** 购买章节 */
+    purchaseChapter: (chapterId: number | string) =>
+      http.post<ApiResponse<{ purchased: boolean }>>(`/reading/chapters/${chapterId}/purchase`),
+
+    /** 检查章节是否已购买 */
+    checkChapterPurchased: (chapterId: number | string) =>
+      http.get<ApiResponse<{ purchased: boolean }>>(`/reading/chapters/${chapterId}/purchased`),
+
+    /** 获取已购买章节列表 */
+    getPurchasedChapters: (bookId: number | string) =>
+      http.get<ApiResponse<number[]>>(`/reading/chapters/purchased/${bookId}`),
+
+    /** 点赞/取消点赞评论 */
+    likeReview: (reviewId: number | string) =>
+      http.post<ApiResponse<{ liked: boolean }>>(`/reading/reviews/${reviewId}/like`),
+  };
 }

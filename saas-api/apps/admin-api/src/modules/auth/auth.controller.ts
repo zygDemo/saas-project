@@ -4,6 +4,7 @@ import { Public } from '../../common/decorators/public.decorator'
 import { ApiTenantHeader } from '../../common/decorators/tenant-header.decorator'
 import { AuthService } from './auth.service'
 import { LoginDto } from './dto/login.dto'
+import { RegisterDto } from './dto/register.dto'
 
 @ApiTags('认证管理')
 @Controller('auth')
@@ -20,5 +21,11 @@ export class AuthController {
   })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto)
+  }
+
+  @Post('register')
+  @ApiOperation({ summary: '用户注册' })
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto)
   }
 }

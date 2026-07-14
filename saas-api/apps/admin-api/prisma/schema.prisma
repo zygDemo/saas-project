@@ -1311,3 +1311,87 @@ model ReadingNote {
   @@index([chapterId])
   deletedAt  DateTime?
 }
+// ==================== 文章管理 ====================
+model Article {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int
+  title       String
+  content     String?  @db.LongText
+  summary     String?  @db.VarChar(500)
+  coverImg    String?
+  typeId      Int?
+  typeName    String?
+  status      String   @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+  viewCount   Int      @default(0)
+  likeCount   Int      @default(0)
+  isTop       Boolean  @default(false)
+  publishAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([typeId])
+}
+
+model ArticleType {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  name      String
+  sort      Int      @default(0)
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+
+model ChapterPurchase {
+  id        Int      @id @default(autoincrement())
+  chapterId Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  chapter BookChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chapterId, userId])
+  @@index([chapterId])
+  @@index([userId])
+}
+
+model ReviewLike {
+  id        Int      @id @default(autoincrement())
+  reviewId  Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  review BookReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([reviewId])
+  @@index([userId])
+}
+
+model ArticleLike {
+  id        Int      @id @default(autoincrement())
+  articleId Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, userId])
+  @@index([articleId])
+  @@index([userId])
+}
