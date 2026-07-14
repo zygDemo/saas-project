@@ -107,19 +107,25 @@ import { useCarloanStore } from "@/stores/carloan";
 const businessApi = useCarloanApi();
 
 const sessionStore = useSessionStore();
-const localStore = useLocalStore()
+const localStore = useLocalStore();
 const carloanStore = useCarloanStore();
 const { userInfo } = storeToRefs(localStore);
 
 const submitLoading = ref(false);
 const isPawnMode = ref(false);
-const pageTitle = computed(() => isPawnMode.value ? "典当身份证信息" : "身份证信息");
+const pageTitle = computed(() =>
+  isPawnMode.value ? "典当身份证信息" : "身份证信息",
+);
 const isCustomerRole = computed(() => {
   const roleTags = String(sessionStore.transferInfo?.roleTags || "");
   return roleTags === "客户" || roleTags.includes("客户");
 });
 const currentSalesmanId = computed(() => {
-  return userInfo.value?.userId || Number(sessionStore.transferInfo?.salesmanId || 0) || undefined;
+  return (
+    userInfo.value?.userId ||
+    Number(sessionStore.transferInfo?.salesmanId || 0) ||
+    undefined
+  );
 });
 
 const frontImage = ref("");
@@ -136,7 +142,7 @@ const idInfo = reactive({
   telephone: "",
   personIdcard: "",
   gender: undefined,
-  race: "",
+  race: "", // 民族
   personAddress: "",
   personIssuingAuthority: "",
   personValidDateStart: "",
@@ -176,9 +182,12 @@ onLoad((query) => {
   isPawnMode.value = query.businessType === "pawn";
   isEditMode.value = !!carloanStore.pageContext.uuid;
   fromEntry.value = query.fromEntry === "1";
-  carloanStore.pageContext.creditOrderId = query.creditOrderId || previousContext.creditOrderId || "";
-  carloanStore.pageContext.customerName = query.name || previousContext.customerName || "";
-  carloanStore.pageContext.customerPhone = query.phone || previousContext.customerPhone || "";
+  carloanStore.pageContext.creditOrderId =
+    query.creditOrderId || previousContext.creditOrderId || "";
+  carloanStore.pageContext.customerName =
+    query.name || previousContext.customerName || "";
+  carloanStore.pageContext.customerPhone =
+    query.phone || previousContext.customerPhone || "";
 });
 
 onMounted(() => {
@@ -188,9 +197,24 @@ onMounted(() => {
 });
 
 const formItems = [
-  { key: "personName", label: "姓名", placeholder: "请输入姓名", required: true },
-  { key: "telephone", label: "手机号", placeholder: "请输入手机号", required: true },
-  { key: "personIdcard", label: "身份证号", placeholder: "请输入身份证号", required: true },
+  {
+    key: "personName",
+    label: "姓名",
+    placeholder: "请输入姓名",
+    required: true,
+  },
+  {
+    key: "telephone",
+    label: "手机号",
+    placeholder: "请输入手机号",
+    required: true,
+  },
+  {
+    key: "personIdcard",
+    label: "身份证号",
+    placeholder: "请输入身份证号",
+    required: true,
+  },
   {
     key: "gender",
     label: "性别",
@@ -210,7 +234,12 @@ const formItems = [
     required: true,
     options: NationConst,
   },
-  { key: "personAddress", label: "户籍地址", placeholder: "请输入户籍地址", required: true },
+  {
+    key: "personAddress",
+    label: "户籍地址",
+    placeholder: "请输入户籍地址",
+    required: true,
+  },
   {
     key: "personIssuingAuthority",
     label: "签发机关",
@@ -238,7 +267,9 @@ function isBlank(value) {
 }
 
 function parseDateText(value) {
-  const match = String(value || "").trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  const match = String(value || "")
+    .trim()
+    .match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (!match) return null;
   const [, year, month, day] = match;
   const date = new Date(Number(year), Number(month) - 1, Number(day));
@@ -262,16 +293,25 @@ function isValidPhone(value) {
 
 function isValidIdCard(value) {
   const card = String(value).trim().toUpperCase();
-  if (!/^[1-9]\d{5}(?:18|19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}[\dX]$/.test(card)) {
+  if (
+    !/^[1-9]\d{5}(?:18|19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}[\dX]$/.test(
+      card,
+    )
+  ) {
     return false;
   }
 
-  const birthday = parseDateText(`${card.slice(6, 10)}-${card.slice(10, 12)}-${card.slice(12, 14)}`);
+  const birthday = parseDateText(
+    `${card.slice(6, 10)}-${card.slice(10, 12)}-${card.slice(12, 14)}`,
+  );
   if (!birthday) return false;
 
   const factors = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
   const checks = ["1", "0", "X", "9", "8", "7", "6", "5", "4", "3", "2"];
-  const sum = factors.reduce((total, factor, index) => total + Number(card[index]) * factor, 0);
+  const sum = factors.reduce(
+    (total, factor, index) => total + Number(card[index]) * factor,
+    0,
+  );
   return checks[sum % 11] === card[17];
 }
 
@@ -378,11 +418,15 @@ function pickImage(side) {
           }
           // 兼容返回结构：data 可能是对象 { url } 或直接是字符串
           const uploadData = uploadRes?.data || uploadRes || {};
-          const imageUrl = toFilePreviewUrl(uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url);
-          const objectKey = uploadData.objectKey || uploadData.fileKey || uploadRes?.objectKey;
+          const imageUrl = toFilePreviewUrl(
+            uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url,
+          );
+          const objectKey =
+            uploadData.objectKey || uploadData.fileKey || uploadRes?.objectKey;
           console.log("[idInfo] image src before render:", {
             side,
-            raw: uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url,
+            raw:
+              uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url,
             normalized: imageUrl,
           });
 
@@ -407,7 +451,11 @@ function pickImage(side) {
 /** 后端 OCR 识别并自动填表 */
 async function doIdCardOcr(imagePath, side) {
   try {
-    const result = await recognizeIdCard(imagePath, side === "front" ? "front" : "back", { compress: false });
+    const result = await recognizeIdCard(
+      imagePath,
+      side === "front" ? "front" : "back",
+      { compress: false },
+    );
     if (!result) return;
 
     if (side === "front") {
@@ -416,7 +464,9 @@ async function doIdCardOcr(imagePath, side) {
       if (data.idNum) idInfo.personIdcard = data.idNum;
       if (data.gender === "男") idInfo.gender = 1;
       else if (data.gender === "女") idInfo.gender = 2;
-      if (data.race || data.nation) idInfo.race = data.race || nationLabelToValue(data.nation) || data.nation;
+      if (data.race || data.nation)
+        idInfo.race =
+          data.race || nationLabelToValue(data.nation) || data.nation;
       if (data.address) idInfo.personAddress = data.address;
       if (data.birth) {
         // birth 格式: yyyy-MM-dd，暂存到 session 供有效期计算参考
@@ -426,14 +476,17 @@ async function doIdCardOcr(imagePath, side) {
       const data = result;
       if (data.authority) idInfo.personIssuingAuthority = data.authority;
       if (data.validDateStart || data.validDateEnd) {
-        if (data.validDateStart) idInfo.personValidDateStart = data.validDateStart;
+        if (data.validDateStart)
+          idInfo.personValidDateStart = data.validDateStart;
         if (data.validDateEnd) idInfo.personValidDateEnd = data.validDateEnd;
         $u.toast("已自动识别，请核对修改", "success");
         return;
       }
       if (data.validDate) {
         if (data.validDate.includes("长期")) {
-          const startMatch = data.validDate.match(/(\d{4}[.\-\\/]\d{2}[.\-\\/]\d{2})/);
+          const startMatch = data.validDate.match(
+            /(\d{4}[.\-\\/]\d{2}[.\-\\/]\d{2})/,
+          );
           idInfo.personValidDateStart = startMatch
             ? startMatch[1].replace(/\./g, "-")
             : "";
@@ -482,7 +535,7 @@ const doSubmit = async () => {
   };
 
   const cleanData = Object.fromEntries(
-    Object.entries(submitData).filter(([, v]) => v !== undefined && v !== "")
+    Object.entries(submitData).filter(([, v]) => v !== undefined && v !== ""),
   );
 
   const res = await businessApi.addOrUpdateUserBasic(cleanData);
@@ -500,7 +553,10 @@ const doSubmit = async () => {
       sessionStore.setOrderInfo({ businessType: "pawn" });
     }
     // 更新进件进度：标记身份证信息已完成
-    const progressKey = carloanStore.pageContext.creditOrderId || carloanStore.pageContext.uuid || "";
+    const progressKey =
+      carloanStore.pageContext.creditOrderId ||
+      carloanStore.pageContext.uuid ||
+      "";
     if (progressKey) {
       const progressMap = uni.getStorageSync("ENTRY_PROGRESS_MAP") || {};
       progressMap[progressKey] = progressMap[progressKey] || {};
@@ -673,26 +729,72 @@ const handleNext = async () => {
 
 /* 深色模式适配 */
 @media (prefers-color-scheme: dark) {
-  .page-container { background-color: #121212; }
-  .card { background-color: #1e1e1e; }
-  .card-item { background-color: #1e1e1e; }
-  .list-item { background-color: #1e1e1e; }
-  .section { background-color: #1e1e1e; }
-  .form-item { background-color: #1e1e1e; border-color: #2a2a2a; }
-  .title { color: #e5e6eb; }
-  .subtitle { color: #8b8c91; }
-  .desc { color: #8b8c91; }
-  .label { color: #b0b3b8; }
-  .value { color: #e5e6eb; }
-  .name { color: #e5e6eb; }
-  .info { color: #b0b3b8; }
-  .text { color: #e5e6eb; }
-  .tip { color: #8b8c91; }
-  .divider { background-color: #2a2a2a; }
-  .border { border-color: #2a2a2a; }
-  .input { background-color: #2a2a2a; color: #e5e6eb; }
-  .textarea { background-color: #2a2a2a; color: #e5e6eb; }
-  .picker { background-color: #2a2a2a; color: #e5e6eb; }
-  .footer { background-color: #1e1e1e; }
+  .page-container {
+    background-color: #121212;
+  }
+  .card {
+    background-color: #1e1e1e;
+  }
+  .card-item {
+    background-color: #1e1e1e;
+  }
+  .list-item {
+    background-color: #1e1e1e;
+  }
+  .section {
+    background-color: #1e1e1e;
+  }
+  .form-item {
+    background-color: #1e1e1e;
+    border-color: #2a2a2a;
+  }
+  .title {
+    color: #e5e6eb;
+  }
+  .subtitle {
+    color: #8b8c91;
+  }
+  .desc {
+    color: #8b8c91;
+  }
+  .label {
+    color: #b0b3b8;
+  }
+  .value {
+    color: #e5e6eb;
+  }
+  .name {
+    color: #e5e6eb;
+  }
+  .info {
+    color: #b0b3b8;
+  }
+  .text {
+    color: #e5e6eb;
+  }
+  .tip {
+    color: #8b8c91;
+  }
+  .divider {
+    background-color: #2a2a2a;
+  }
+  .border {
+    border-color: #2a2a2a;
+  }
+  .input {
+    background-color: #2a2a2a;
+    color: #e5e6eb;
+  }
+  .textarea {
+    background-color: #2a2a2a;
+    color: #e5e6eb;
+  }
+  .picker {
+    background-color: #2a2a2a;
+    color: #e5e6eb;
+  }
+  .footer {
+    background-color: #1e1e1e;
+  }
 }
 </style>

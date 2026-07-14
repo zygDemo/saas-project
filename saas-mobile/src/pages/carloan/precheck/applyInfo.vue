@@ -33,7 +33,7 @@
           type="primary"
           shape="circle"
           :loading="submitLoading"
-          @click="isEditMode ? handleNext() : handleSubmit()"
+          @click="handleSubmit()"
         >
           {{ isEditMode ? "下一步" : "提交申请" }}
         </u-button>
@@ -192,12 +192,15 @@ async function handleSubmit() {
   try {
     const result = await doSubmit();
     if (result) {
-      const { creditOrderId } = result;
-
+      const { creditOrderId, uuid } = result;
       setTimeout(() => {
         uni.$u.route({
-          url: buildRoute(APP_ROUTES.carloan.precheck.applyProgress, {
+          url: buildRoute(APP_ROUTES.carloan.signing.videoFaceSign, {
             creditOrderId,
+            uuid,
+            name: carloanStore.pageContext.customerName || "",
+            phone: carloanStore.pageContext.customerPhone || "",
+            mode: "credit",
           }),
           type: "redirectTo",
         });
@@ -218,32 +221,6 @@ async function handleSave() {
       setTimeout(() => {
         uni.navigateBack();
       }, 800);
-    }
-  } catch {
-    // 错误已由拦截器处理
-  } finally {
-    submitLoading.value = false;
-  }
-}
-
-async function handleNext() {
-  submitLoading.value = true;
-  try {
-    const result = await doSubmit();
-    if (result) {
-      const { creditOrderId, uuid } = result;
-      setTimeout(() => {
-        uni.$u.route({
-          url: buildRoute(APP_ROUTES.carloan.signing.videoFaceSign, {
-            creditOrderId,
-            uuid,
-            name: carloanStore.pageContext.customerName || "",
-            phone: carloanStore.pageContext.customerPhone || "",
-            mode: "credit",
-          }),
-          type: "redirectTo",
-        });
-      }, 600);
     }
   } catch {
     // 错误已由拦截器处理

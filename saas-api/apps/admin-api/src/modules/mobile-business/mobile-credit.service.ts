@@ -63,8 +63,15 @@ export class MobileCreditService {
       rate,
       remark: remarkParts.join('；') || undefined
     }
+    // 草稿阶段的订单补充申请信息时，推进到征信阶段(1200)
+    const shouldAdvanceNode = isUpdate
+      && existingApplication
+      && existingApplication.status === ApplicationStatus.DRAFT
+      && existingApplication.currentNode < 1200
     const applicationData = isUpdate
-      ? baseData
+      ? shouldAdvanceNode
+        ? { ...baseData, currentNode: 1200, currentStatus: 10, status: ApplicationStatus.PENDING_RISK_PRE }
+        : baseData
       : {
           ...baseData,
           orgId: customer.orgId,
