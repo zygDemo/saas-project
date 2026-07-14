@@ -4,13 +4,14 @@ import { RepaymentModule } from '../repayment/repayment.module'
 import { DisbursementModule } from '../disbursement/disbursement.module'
 import { ApplicationController } from './application.controller'
 import { ApplicationService } from './application.service'
+import { ApplicationMapper } from './application.mapper'
 import { ApprovalWorkflowService } from './approval-workflow.service'
 import { NotificationService } from './notification.service'
 
 @Module({
   imports: [FlowConfigModule, RepaymentModule, DisbursementModule],
   controllers: [ApplicationController],
-  providers: [ApplicationService, ApprovalWorkflowService, NotificationService],
+  providers: [ApplicationService, ApplicationMapper, ApprovalWorkflowService, NotificationService],
   exports: [ApplicationService]
 })
 export class ApplicationModule {}

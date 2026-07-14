@@ -11,6 +11,8 @@ import { RepaymentQueryDto, CreateRepaymentDto, UpdateRepaymentDto } from './dto
 export class RepaymentController {
   constructor(private readonly service: RepaymentService) {}
 
+  // ==================== 基础 CRUD ====================
+
   @Get('list')
   @ApiOperation({ summary: '列表查询' })
   list(@Query() query: RepaymentQueryDto) {
@@ -39,5 +41,102 @@ export class RepaymentController {
   @ApiOperation({ summary: '删除' })
   remove(@Param('id') id: string) {
     return this.service.remove(Number(id))
+  }
+
+  // ==================== 还款计划查询 ====================
+
+  @Get('plans/:applicationId')
+  @ApiOperation({ summary: '获取进件还款计划列表' })
+  getRepaymentPlans(@Param('applicationId') applicationId: string) {
+    return this.service.getRepaymentPlans(Number(applicationId))
+  }
+
+  // ==================== 还款登记 ====================
+
+  @Post('register/:applicationId')
+  @ApiOperation({ summary: '按进件还款登记（自动选择第一个未还清计划）' })
+  registerRepaymentByApplication(
+    @Param('applicationId') applicationId: string,
+    @Body() dto: {
+      amount: number; principal?: number; interest?: number; penalty?: number
+      paymentMethod: string; transactionNo?: string; voucherUrl?: string
+      remark?: string; createdBy?: number
+    }
+  ) {
+    return this.service.registerRepaymentByApplication(Number(applicationId), dto)
+  }
+
+  @Post('register-plan/:planId')
+  @ApiOperation({ summary: '按计划ID还款登记' })
+  registerRepayment(
+    @Param('planId') planId: string,
+    @Body() dto: {
+      amount: number; principal?: number; interest?: number; penalty?: number
+      paymentMethod: string; transactionNo?: string; voucherUrl?: string
+      remark?: string; createdBy?: number
+    }
+  ) {
+    return this.service.registerRepayment(Number(planId), dto)
+  }
+
+  // ==================== 逾期催收 ====================
+
+  @Get('overdue/list')
+  @ApiOperation({ summary: '逾期还款计划列表' })
+  getOverduePlans(@Query() query: { page?: number; pageSize?: number }) {
+    return this.service.getOverduePlans(query)
+  }
+
+  @Post('collection/:applicationId')
+  @ApiOperation({ summary: '添加催收记录' })
+  addCollectionRecord(
+    @Param('applicationId') applicationId: string,
+    @Body() dto: {
+      collectorId?: number; collectType?: string; content: string
+      result?: string; nextAction?: string; nextDate?: string
+    }
+  ) {
+    return this.service.addCollectionRecord(Number(applicationId), dto)
+  }
+
+  @Get('collection/:applicationId')
+  @ApiOperation({ summary: '获取催收记录列表' })
+  getCollectionRecords(@Param('applicationId') applicationId: string) {
+    return this.service.getCollectionRecords(Number(applicationId))
+  }
+
+  // ==================== 提前还款 ====================
+
+  @Post('early-repayment/apply/:applicationId')
+  @ApiOperation({ summary: '申请提前还款' })
+  applyEarlyRepayment(
+    @Param('applicationId') applicationId: string,
+    @Body() dto: {
+      repayType?: string; amount?: number; principal?: number
+      interest?: number; penalty?: number; reason?: string
+    }
+  ) {
+    return this.service.applyEarlyRepayment(Number(applicationId), dto)
+  }
+
+  @Post('early-repayment/:id/approve')
+  @ApiOperation({ summary: '审批提前还款' })
+  approveEarlyRepayment(
+    @Param('id') id: string,
+    @Body() dto: { approvedBy: number; remark?: string }
+  ) {
+    return this.service.approveEarlyRepayment(Number(id), dto)
+  }
+
+  @Post('early-repayment/:id/complete')
+  @ApiOperation({ summary: '完成提前还款' })
+  completeEarlyRepayment(@Param('id') id: string) {
+    return this.service.completeEarlyRepayment(Number(id))
+  }
+
+  @Get('early-repayment/list/:applicationId')
+  @ApiOperation({ summary: '获取提前还款记录列表' })
+  getEarlyRepayments(@Param('applicationId') applicationId: string) {
+    return this.service.getEarlyRepayments(Number(applicationId))
   }
 }
