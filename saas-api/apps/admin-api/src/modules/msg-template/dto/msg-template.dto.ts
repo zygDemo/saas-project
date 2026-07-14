@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
 import { Transform } from 'class-transformer'
 import { IsIn, IsNotEmpty, IsObject, IsOptional, IsString, MaxLength } from 'class-validator'
-import { PageQueryDto } from '../../business-common.dto'
+import { PageQueryDto } from '../../common/dto/common.dto'
 
 const TEMPLATE_CHANNELS = ['SMS', 'APP', 'WECHAT', 'EMAIL', 'SYSTEM'] as const
 const TEMPLATE_STATUS = ['ACTIVE', 'INACTIVE', 'DRAFT'] as const

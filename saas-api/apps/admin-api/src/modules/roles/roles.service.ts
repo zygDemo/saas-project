@@ -44,23 +44,28 @@ export class RolesService {
   async createRole(dto: CreateRoleDto) {
     await this.assertRoleCodeAvailable(dto.roleCode)
 
-    const role = await this.prisma.role.create({
-      data: {
-        name: dto.roleName,
-        code: dto.roleCode,
-        description: dto.description ?? '',
-        enabled: dto.enabled ?? true,
-        dataScope: dto.dataScope ?? 'ALL'
-      }
-    })
-
-    // 如果是 CUSTOM 范围，保存自定义部门关联
-    if (dto.dataScope === 'CUSTOM' && dto.departmentIds?.length) {
-      await this.prisma.roleDepartment.createMany({
-        data: dto.departmentIds.map((deptId) => ({ roleId: role.id, departmentId: deptId })),
-        skipDuplicates: true
+    // 用事务保证 role 创建 + department 关联的原子性
+    const role = await this.prisma.$transaction(async (tx: any) => {
+      const created = await tx.role.create({
+        data: {
+          name: dto.roleName,
+          code: dto.roleCode,
+          description: dto.description ?? '',
+          enabled: dto.enabled ?? true,
+          dataScope: dto.dataScope ?? 'ALL'
+        }
       })
-    }
+
+      // 如果是 CUSTOM 范围，保存自定义部门关联
+      if (dto.dataScope === 'CUSTOM' && dto.departmentIds?.length) {
+        await tx.roleDepartment.createMany({
+          data: dto.departmentIds.map((deptId) => ({ roleId: created.id, departmentId: deptId })),
+          skipDuplicates: true
+        })
+      }
+
+      return created
+    })
 
     return mapRoleListItem(role)
   }
@@ -80,25 +85,26 @@ export class RolesService {
     if (dto.enabled !== undefined) updateData.enabled = dto.enabled
     if (dto.dataScope !== undefined) updateData.dataScope = dto.dataScope
 
-    await this.prisma.role.update({ where: { id }, data: updateData })
+    // 用事务保证 role 更新 + department 关联的原子性
+    await this.prisma.$transaction(async (tx: any) => {
+      await tx.role.update({ where: { id }, data: updateData })
 
-    // 如果更新了 dataScope 或 departmentIds，同步部门关联
-    if (dto.dataScope !== undefined || dto.departmentIds !== undefined) {
-      const newScope = dto.dataScope ?? role.dataScope
-      if (newScope === 'CUSTOM' && dto.departmentIds) {
-        // 先删后建
-        await this.prisma.roleDepartment.deleteMany({ where: { roleId: id } })
-        if (dto.departmentIds.length) {
-          await this.prisma.roleDepartment.createMany({
-            data: dto.departmentIds.map((deptId) => ({ roleId: id, departmentId: deptId })),
-            skipDuplicates: true
-          })
+      // 如果更新了 dataScope 或 departmentIds，同步部门关联
+      if (dto.dataScope !== undefined || dto.departmentIds !== undefined) {
+        const newScope = dto.dataScope ?? role.dataScope
+        if (newScope === 'CUSTOM' && dto.departmentIds) {
+          await tx.roleDepartment.deleteMany({ where: { roleId: id } })
+          if (dto.departmentIds.length) {
+            await tx.roleDepartment.createMany({
+              data: dto.departmentIds.map((deptId) => ({ roleId: id, departmentId: deptId })),
+              skipDuplicates: true
+            })
+          }
+        } else if (newScope !== 'CUSTOM') {
+          await tx.roleDepartment.deleteMany({ where: { roleId: id } })
         }
-      } else if (newScope !== 'CUSTOM') {
-        // 切换为非 CUSTOM 时清理部门关联
-        await this.prisma.roleDepartment.deleteMany({ where: { roleId: id } })
       }
-    }
+    })
 
     const updatedRole = await this.prisma.role.findFirst({ where: { id } })
     return mapRoleListItem(updatedRole!)
@@ -134,21 +140,17 @@ export class RolesService {
     const role = await this.prisma.role.findFirst({ where: { id } })
     if (!role) throw new NotFoundException('角色不存在')
 
-    await this.prisma.role.update({
-      where: { id },
-      data: { dataScope: dto.dataScope }
+    // 用事务保证原子性
+    await this.prisma.$transaction(async (tx: any) => {
+      await tx.role.update({ where: { id }, data: { dataScope: dto.dataScope } })
+      await tx.roleDepartment.deleteMany({ where: { roleId: id } })
+      if (dto.dataScope === 'CUSTOM' && dto.departmentIds?.length) {
+        await tx.roleDepartment.createMany({
+          data: dto.departmentIds.map((deptId) => ({ roleId: id, departmentId: deptId })),
+          skipDuplicates: true
+        })
+      }
     })
-
-    // 清理旧的部门关联
-    await this.prisma.roleDepartment.deleteMany({ where: { roleId: id } })
-
-    // 如果是 CUSTOM 范围，保存新的部门关联
-    if (dto.dataScope === 'CUSTOM' && dto.departmentIds?.length) {
-      await this.prisma.roleDepartment.createMany({
-        data: dto.departmentIds.map((deptId) => ({ roleId: id, departmentId: deptId })),
-        skipDuplicates: true
-      })
-    }
 
     return this.getRoleDataScope(id)
   }

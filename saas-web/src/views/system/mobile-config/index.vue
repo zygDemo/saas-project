@@ -1,13 +1,17 @@
 <template>
-  <div class="page-content !mb-5">
-    <div class="mb-5">
-      <h1 class="text-2xl font-medium">移动端模块配置</h1>
-      <p class="text-gray-400 text-sm mt-1"
-        >管理移动端 App 中显示的业务模块，支持租户/角色/用户三级配置</p
-      >
+  <div class="mobile-config-page art-full-height">
+    <div class="page-hero">
+      <div class="page-hero__icon">
+        <i class="ri-smartphone-line"></i>
+      </div>
+      <div class="page-hero__content">
+        <div class="page-hero__eyebrow">Mobile Configuration</div>
+        <h2>移动端模块配置</h2>
+        <p>管理移动端 App 中显示的业务模块，支持租户/角色/用户三级配置</p>
+      </div>
     </div>
 
-    <ElTabs v-model="activeTab" @tab-change="handleTabChange">
+    <ElTabs v-model="activeTab" class="mt-3" @tab-change="handleTabChange">
       <ElTabPane label="租户配置" name="tenant" />
       <ElTabPane label="角色配置" name="role" />
       <ElTabPane label="用户配置" name="user" />
@@ -20,44 +24,46 @@
         type="info"
         :closable="false"
         show-icon
-        class="mb-5"
+        class="mb-4"
       />
-      <ElForm label-width="120px">
-        <ElFormItem label="多业务模块">
-          <ElSwitch
-            :model-value="tenantConfig.isMultiModule"
-            @update:model-value="onTenantMultiModuleChange"
-          />
-          <span class="text-gray-400 text-xs ml-2">开启后，移动端可选择多个业务模块</span>
-        </ElFormItem>
-        <ElFormItem label="可用模块">
-          <ElCheckboxGroup v-model="tenantSelectedModules" class="flex flex-wrap gap-3">
-            <ElCheckbox
-              v-for="m in tenantAvailableModules"
-              :key="m.key"
-              :value="m.key"
-              :border="true"
-              class="!mr-0"
-            >
-              <div class="flex items-center gap-2 px-1">
-                <span class="text-lg">{{ m.icon }}</span>
-                <div>
-                  <div class="text-sm font-medium">{{ m.name }}</div>
-                  <div class="text-xs text-gray-400">{{ m.desc }}</div>
+      <ElCard class="art-card-xs">
+        <ElForm label-width="120px">
+          <ElFormItem label="多业务模块">
+            <ElSwitch
+              :model-value="tenantConfig.isMultiModule"
+              @update:model-value="onTenantMultiModuleChange"
+            />
+            <span class="text-gray-400 text-xs ml-2">开启后，移动端可选择多个业务模块</span>
+          </ElFormItem>
+          <ElFormItem label="可用模块">
+            <ElCheckboxGroup v-model="tenantSelectedModules" class="flex flex-wrap gap-3">
+              <ElCheckbox
+                v-for="m in tenantAvailableModules"
+                :key="m.key"
+                :value="m.key"
+                :border="true"
+                class="!mr-0"
+              >
+                <div class="flex items-center gap-2 px-1">
+                  <span class="text-lg">{{ m.icon }}</span>
+                  <div>
+                    <div class="text-sm font-medium">{{ m.name }}</div>
+                    <div class="text-xs text-gray-400">{{ m.desc }}</div>
+                  </div>
                 </div>
-              </div>
-            </ElCheckbox>
-          </ElCheckboxGroup>
-          <div v-if="tenantAvailableModules.length === 0" class="text-gray-400 text-sm">
-            暂无可用模块
-          </div>
-        </ElFormItem>
-        <ElFormItem>
-          <ElButton type="primary" @click="saveTenantConfig" :loading="tenantSaving"
-            >保存配置</ElButton
-          >
-        </ElFormItem>
-      </ElForm>
+              </ElCheckbox>
+            </ElCheckboxGroup>
+            <div v-if="tenantAvailableModules.length === 0" class="text-gray-400 text-sm">
+              暂无可用模块
+            </div>
+          </ElFormItem>
+          <ElFormItem>
+            <ElButton type="primary" @click="saveTenantConfig" :loading="tenantSaving"
+              >保存配置</ElButton
+            >
+          </ElFormItem>
+        </ElForm>
+      </ElCard>
     </div>
 
     <!-- 角色级配置 -->
@@ -67,37 +73,30 @@
         type="info"
         :closable="false"
         show-icon
-        class="mb-5"
+        class="mb-4"
       />
-      <ElTable
-        :data="roleList"
-        border
-        stripe
-        v-loading="roleLoading"
-        element-loading-text="加载中..."
-      >
-        <ElTableColumn type="index" label="序号" width="60" align="center" />
-        <ElTableColumn prop="name" label="角色名称" min-width="150" />
-        <ElTableColumn prop="code" label="角色编码" width="150" />
-        <ElTableColumn prop="description" label="描述" min-width="200" show-overflow-tooltip />
-        <ElTableColumn label="操作" width="150" fixed="right" align="center">
-          <template #default="{ row }">
-            <ElButton size="small" type="primary" link @click="openRoleConfig(row)"
-              >配置模块</ElButton
-            >
+      <ElCard class="art-table-card">
+        <ArtTableHeader :loading="roleLoading" @refresh="loadRoles">
+          <template #left>
+            <div class="table-title">
+              <span>角色列表</span>
+              <ElTag effect="plain" size="small">共 {{ roleTotal }} 条</ElTag>
+            </div>
           </template>
-        </ElTableColumn>
-      </ElTable>
-      <div class="flex justify-center mt-5">
-        <ElPagination
-          v-model:current-page="rolePage"
-          v-model:page-size="rolePageSize"
-          :total="roleTotal"
-          background
-          layout="prev, pager, next"
-          @current-change="loadRoles"
-        />
-      </div>
+        </ArtTableHeader>
+        <ArtTable
+          :loading="roleLoading"
+          :data="roleList"
+          :columns="roleColumns"
+          :pagination="{ current: rolePage, size: rolePageSize, total: roleTotal }"
+          @pagination:size-change="(v: number) => { rolePageSize = v; loadRoles() }"
+          @pagination:current-change="(v: number) => { rolePage = v; loadRoles() }"
+        >
+          <template #operation="{ row }">
+            <ElButton size="small" type="primary" link @click="openRoleConfig(row)">配置模块</ElButton>
+          </template>
+        </ArtTable>
+      </ElCard>
     </div>
 
     <!-- 用户级配置 -->
@@ -107,56 +106,43 @@
         type="info"
         :closable="false"
         show-icon
-        class="mb-5"
+        class="mb-4"
       />
-      <ElRow :gutter="10" class="mb-4">
-        <ElCol :span="8">
-          <ElInput
-            v-model="userSearch"
-            placeholder="搜索用户名/昵称"
-            clearable
-            @keyup.enter="loadUsers"
-          />
-        </ElCol>
-        <ElCol :span="4">
-          <ElButton type="primary" @click="loadUsers">搜索</ElButton>
-        </ElCol>
-      </ElRow>
-      <ElTable
-        :data="userList"
-        border
-        stripe
-        v-loading="userLoading"
-        element-loading-text="加载中..."
-      >
-        <ElTableColumn type="index" label="序号" width="60" align="center" />
-        <ElTableColumn prop="username" label="用户名" width="120" />
-        <ElTableColumn prop="nickname" label="昵称" min-width="120" />
-        <ElTableColumn prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
-        <ElTableColumn label="操作" width="150" fixed="right" align="center">
-          <template #default="{ row }">
-            <ElButton size="small" type="primary" link @click="openUserConfig(row)"
-              >配置模块</ElButton
-            >
+      <ArtSearchBar
+        v-model="userSearchModel"
+        :items="userSearchItems"
+        :show-expand="false"
+        @search="loadUsers"
+        @reset="resetUserSearch"
+      />
+      <ElCard class="art-table-card mt-3">
+        <ArtTableHeader :loading="userLoading" @refresh="loadUsers">
+          <template #left>
+            <div class="table-title">
+              <span>用户列表</span>
+              <ElTag effect="plain" size="small">共 {{ userTotal }} 条</ElTag>
+            </div>
           </template>
-        </ElTableColumn>
-      </ElTable>
-      <div class="flex justify-center mt-5">
-        <ElPagination
-          v-model:current-page="userPage"
-          v-model:page-size="userPageSize"
-          :total="userTotal"
-          background
-          layout="prev, pager, next"
-          @current-change="loadUsers"
-        />
-      </div>
+        </ArtTableHeader>
+        <ArtTable
+          :loading="userLoading"
+          :data="userList"
+          :columns="userColumns"
+          :pagination="{ current: userPage, size: userPageSize, total: userTotal }"
+          @pagination:size-change="(v: number) => { userPageSize = v; loadUsers() }"
+          @pagination:current-change="(v: number) => { userPage = v; loadUsers() }"
+        >
+          <template #operation="{ row }">
+            <ElButton size="small" type="primary" link @click="openUserConfig(row)">配置模块</ElButton>
+          </template>
+        </ArtTable>
+      </ElCard>
     </div>
 
-    <!-- 角色配置弹窗 -->
+    <!-- 角色/用户配置弹窗 -->
     <ElDialog
       v-model="showRoleDialog"
-      :title="`角色配置 - ${currentRole?.name || ''}`"
+      :title="dialogTitle"
       width="650px"
       :close-on-click-modal="false"
     >
@@ -209,6 +195,7 @@
 <script setup lang="ts">
   import { ElMessage } from 'element-plus'
   import type { TabPaneName } from 'element-plus'
+  import type { ColumnOption } from '@/types/component'
   import {
     fetchGetMobileConfig,
     fetchUpdateMobileConfig,
@@ -340,6 +327,21 @@
   const rolePageSize = ref(20)
   const roleTotal = ref(0)
 
+  const roleColumns: ColumnOption[] = [
+    { type: 'index', label: '序号', width: 60, align: 'center' },
+    { prop: 'name', label: '角色名称', minWidth: 150 },
+    { prop: 'code', label: '角色编码', width: 150 },
+    { prop: 'description', label: '描述', minWidth: 200, showOverflowTooltip: true },
+    {
+      prop: 'operation',
+      label: '操作',
+      width: 150,
+      fixed: 'right',
+      align: 'center',
+      useSlot: true
+    }
+  ]
+
   const loadRoles = async () => {
     roleLoading.value = true
     try {
@@ -359,17 +361,41 @@
   // ─── 用户列表 ───
   const userList = ref<UserItem[]>([])
   const userLoading = ref(false)
-  const userSearch = ref('')
+  const userSearchModel = reactive({ keyword: '' })
   const userPage = ref(1)
   const userPageSize = ref(20)
   const userTotal = ref(0)
+
+  const userSearchItems = [
+    {
+      key: 'keyword',
+      label: '关键字',
+      type: 'input' as const,
+      props: { placeholder: '搜索用户名/昵称', clearable: true }
+    }
+  ]
+
+  const userColumns: ColumnOption[] = [
+    { type: 'index', label: '序号', width: 60, align: 'center' },
+    { prop: 'username', label: '用户名', width: 120 },
+    { prop: 'nickname', label: '昵称', minWidth: 120 },
+    { prop: 'email', label: '邮箱', minWidth: 180, showOverflowTooltip: true },
+    {
+      prop: 'operation',
+      label: '操作',
+      width: 150,
+      fixed: 'right',
+      align: 'center',
+      useSlot: true
+    }
+  ]
 
   const loadUsers = async () => {
     userLoading.value = true
     userPage.value = 1
     try {
       const params: UserListParams = { page: userPage.value, pageSize: userPageSize.value }
-      if (userSearch.value) params.keyword = userSearch.value
+      if (userSearchModel.keyword) params.keyword = userSearchModel.keyword
       const res = (await fetchGetUserList(params)) as unknown as UserListResponse
       userList.value = res?.items || []
       userTotal.value = res?.total || 0
@@ -378,6 +404,11 @@
     } finally {
       userLoading.value = false
     }
+  }
+
+  const resetUserSearch = () => {
+    userSearchModel.keyword = ''
+    loadUsers()
   }
 
   // ─── 角色/用户配置弹窗 ───
@@ -397,6 +428,12 @@
   const entityConfigLoading = ref(false)
   const entitySaving = ref(false)
   const entityResetLoading = ref(false)
+
+  const dialogTitle = computed(() => {
+    if (currentRole.value) return `角色配置 - ${currentRole.value.name || ''}`
+    if (currentUser.value) return `用户配置 - ${currentUser.value.nickname || currentUser.value.username || ''}`
+    return '配置模块'
+  })
 
   const openRoleConfig = async (row: RoleItem) => {
     currentRole.value = row
@@ -477,3 +514,68 @@
     loadTenantConfig()
   })
 </script>
+
+<style scoped>
+  .mobile-config-page {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .page-hero {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 18px 20px;
+    background: var(--el-bg-color);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 12px;
+    box-shadow: var(--el-box-shadow-lighter);
+  }
+
+  .page-hero__icon {
+    display: flex;
+    flex: 0 0 46px;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    font-size: 24px;
+    color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+    border-radius: 12px;
+  }
+
+  .page-hero__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .page-hero__eyebrow {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .page-hero__content h2 {
+    margin: 4px 0 2px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+
+  .page-hero__content p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .table-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--el-text-color-primary);
+  }
+</style>

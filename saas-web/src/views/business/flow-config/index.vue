@@ -1,6 +1,6 @@
 <template>
   <div class="flow-config-page art-full-height">
-    <ElCard class="flow-toolbar" shadow="never">
+    <ElCard class="art-card-xs flow-toolbar">
       <div class="flow-toolbar__main">
         <div>
           <h3>流程节点管理</h3>

@@ -1,9 +1,108 @@
-﻿export { CreateRepaymentDto, UpdateRepaymentDto, RepaymentQueryDto, IdParamDto } from '../../business-common.dto'
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
+import { IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator'
+import { RepaymentStatus } from '@prisma/client'
+import { PageQueryDto, ToDate, ToNumber } from '../../common/dto/common.dto'
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsNumber, IsOptional, IsString, Min } from 'class-validator'
+export class CreateRepaymentDto {
+  @ApiProperty({ description: '进件ID' })
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  applicationId: number
 
-/** 还款登记 DTO */
+  @ApiProperty({ description: '期数' })
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  period: number
+
+  @ApiProperty({ description: '应还日期' })
+  @ToDate()
+  dueDate: Date
+
+  @ApiProperty({ description: '应还本金' })
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  principal: number
+
+  @ApiProperty({ description: '应还利息' })
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  interest: number
+
+  @ApiProperty({ description: '应还总额' })
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  totalAmount: number
+
+  @ApiPropertyOptional({ description: '已还本金' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  paidPrincipal?: number
+
+  @ApiPropertyOptional({ description: '已还利息' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  paidInterest?: number
+
+  @ApiPropertyOptional({ description: '已还总额' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  paidTotal?: number
+
+  @ApiPropertyOptional({ description: '状态', enum: RepaymentStatus })
+  @IsOptional()
+  @IsEnum(RepaymentStatus)
+  status?: RepaymentStatus
+
+  @ApiPropertyOptional({ description: '逾期天数' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(0)
+  overdueDays?: number
+
+  @ApiPropertyOptional({ description: '违约金' })
+  @IsOptional()
+  @ToNumber()
+  @IsNumber()
+  @Min(0)
+  penaltyAmount?: number
+
+  @ApiPropertyOptional({ description: '还清时间' })
+  @IsOptional()
+  @ToDate()
+  paidAt?: Date
+}
+
+
+export class UpdateRepaymentDto extends PartialType(CreateRepaymentDto) {}
+
+
+export class RepaymentQueryDto extends PageQueryDto {
+  @ApiPropertyOptional({ description: '进件ID' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  @Min(1)
+  applicationId?: number
+
+  @ApiPropertyOptional({ description: '状态', enum: RepaymentStatus })
+  @IsOptional()
+  @IsEnum(RepaymentStatus)
+  status?: RepaymentStatus
+}
+
+
 export class RegisterRepaymentDto {
   @ApiProperty({ description: '还款金额' })
   @IsNumber()
@@ -53,7 +152,7 @@ export class RegisterRepaymentDto {
   createdBy?: number
 }
 
-/** 逾期列表查询 DTO */
+
 export class OverdueQueryDto {
   @ApiPropertyOptional({ description: '页码', default: 1 })
   @IsOptional()
@@ -68,7 +167,7 @@ export class OverdueQueryDto {
   pageSize?: number
 }
 
-/** 催收记录 DTO */
+
 export class AddCollectionRecordDto {
   @ApiPropertyOptional({ description: '催收人ID' })
   @IsOptional()
@@ -100,7 +199,7 @@ export class AddCollectionRecordDto {
   nextDate?: string
 }
 
-/** 提前还款申请 DTO */
+
 export class ApplyEarlyRepaymentDto {
   @ApiPropertyOptional({ description: '还款类型：FULL/PARTIAL' })
   @IsOptional()
@@ -137,7 +236,7 @@ export class ApplyEarlyRepaymentDto {
   reason?: string
 }
 
-/** 提前还款审批 DTO */
+
 export class ApproveEarlyRepaymentDto {
   @ApiProperty({ description: '审批人ID' })
   @IsNumber()
@@ -148,3 +247,4 @@ export class ApproveEarlyRepaymentDto {
   @IsString()
   remark?: string
 }
+

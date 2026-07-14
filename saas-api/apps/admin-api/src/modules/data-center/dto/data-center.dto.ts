@@ -1,6 +1,6 @@
 ﻿import { ApiPropertyOptional } from '@nestjs/swagger'
 import { IsDateString, IsInt, IsOptional, IsString, Min } from 'class-validator'
-import { ToNumber } from '../../business-common.dto'
+import { ToNumber } from '../../common/dto/common.dto'
 
 export class DateRangeQueryDto {
   @ApiPropertyOptional({ description: '开始时间' })

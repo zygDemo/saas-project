@@ -1,51 +1,23 @@
 <template>
   <div class="sys-param-page art-full-height">
     <ElCard class="art-table-card">
-      <template #header>
-        <div class="card-header">
-          <div>
-            <h3>系统参数</h3>
-            <p>管理系统配置项，支持按分组归类</p>
-          </div>
-          <ElButton v-auth="'add'" type="primary" @click="openDialog()">
-            <ElIcon class="mr-1"><Plus /></ElIcon>新增参数
-          </ElButton>
-        </div>
-      </template>
+      <ArtTableHeader :loading="loading" @refresh="loadData">
+        <template #left>
+          <ElSpace wrap>
+            <ElButton v-auth="'add'" type="primary" @click="openDialog()">
+              <ElIcon class="mr-1"><Plus /></ElIcon>新增参数
+            </ElButton>
+          </ElSpace>
+        </template>
+      </ArtTableHeader>
 
-      <!-- 搜索栏 -->
-      <ElForm :model="searchForm" class="search-form" inline>
-        <ElFormItem label="分组">
-          <ElInput
-            v-model="searchForm.group"
-            clearable
-            placeholder="参数分组"
-            style="width: 140px"
-          />
-        </ElFormItem>
-        <ElFormItem label="名称">
-          <ElInput
-            v-model="searchForm.name"
-            clearable
-            placeholder="参数名称"
-            style="width: 160px"
-          />
-        </ElFormItem>
-        <ElFormItem label="键">
-          <ElInput v-model="searchForm.key" clearable placeholder="参数键" style="width: 160px" />
-        </ElFormItem>
-        <ElFormItem label="状态">
-          <ElSelect v-model="searchForm.status" clearable placeholder="全部" style="width: 110px">
-            <ElOption label="启用" value="ACTIVE" />
-            <ElOption label="停用" value="INACTIVE" />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem>
-          <ElButton type="primary" @click="loadData">查询</ElButton>
-          <ElButton @click="resetSearch">重置</ElButton>
-        </ElFormItem>
-      </ElForm>
-
+      <ArtSearchBar
+        v-model="searchForm"
+        :items="searchItems"
+        :show-expand="false"
+        @search="handleSearch"
+        @reset="resetSearch"
+      />
       <!-- 表格 -->
       <ArtTable
         :loading="loading"
@@ -120,6 +92,18 @@
   const formRef = ref<FormInstance>()
 
   const searchForm = reactive({ group: '', name: '', key: '', status: '' })
+
+  const searchItems = [
+    { key: 'group', label: '分组', type: 'input' as const, props: { placeholder: '参数分组', clearable: true } },
+    { key: 'name', label: '名称', type: 'input' as const, props: { placeholder: '参数名称', clearable: true } },
+    { key: 'key', label: '键', type: 'input' as const, props: { placeholder: '参数键', clearable: true } },
+    {
+      key: 'status',
+      label: '状态',
+      type: 'select' as const,
+      props: { placeholder: '全部', clearable: true, options: [{ label: '启用', value: 'ACTIVE' }, { label: '停用', value: 'INACTIVE' }] }
+    }
+  ]
   const pagination = reactive({ current: 1, size: 20, total: 0 })
 
   const form = reactive({

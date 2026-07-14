@@ -1,69 +1,17 @@
 <template>
   <div class="file-page art-full-height">
-    <ElCard class="art-card-xs mb-4">
-      <ElForm :model="search" class="file-search" inline>
-        <ElFormItem label="文件名">
-          <ElInput v-model="search.fileName" clearable placeholder="文件名" />
-        </ElFormItem>
-        <ElFormItem label="业务类型">
-          <ElSelect v-model="search.businessType" clearable placeholder="全部" style="width: 150px">
-            <ElOption
-              v-for="item in businessTypeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem label="业务ID">
-          <ElInputNumber
-            v-model="search.businessId"
-            :min="1"
-            controls-position="right"
-            placeholder="订单/业务ID"
-          />
-        </ElFormItem>
-        <ElFormItem label="分类">
-          <ElSelect
-            v-model="search.categoryCode"
-            clearable
-            filterable
-            placeholder="全部"
-            style="width: 150px"
-          >
-            <ElOption
-              v-for="item in categoryOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem label="状态">
-          <ElSelect v-model="search.status" clearable placeholder="全部" style="width: 120px">
-            <ElOption
-              v-for="item in statusOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </ElSelect>
-        </ElFormItem>
-        <ElFormItem>
-          <ElButton type="primary" @click="loadData">查询</ElButton>
-          <ElButton @click="resetSearch">重置</ElButton>
-        </ElFormItem>
-      </ElForm>
-    </ElCard>
+    <ArtSearchBar
+      v-model="search"
+      :items="searchItems"
+      :show-expand="false"
+      @search="loadData"
+      @reset="resetSearch"
+    />
 
     <ElCard class="art-table-card">
-      <template #header>
-        <div class="file-header">
-          <div>
-            <h3>文件管理</h3>
-            <p>统一维护系统文件、业务附件和订单资料分类。</p>
-          </div>
-          <ElSpace>
+      <ArtTableHeader :loading="loading" @refresh="loadData">
+        <template #left>
+          <ElSpace wrap>
             <ElButton type="primary" @click="openDialog()">新增文件</ElButton>
             <ElButton
               type="danger"
@@ -74,10 +22,9 @@
               批量删除<span v-if="selectedRows.length">({{ selectedRows.length }})</span>
             </ElButton>
             <ElButton v-if="selectedRows.length" @click="clearSelection">取消选择</ElButton>
-            <ElButton :loading="loading" @click="loadData">刷新</ElButton>
           </ElSpace>
-        </div>
-      </template>
+        </template>
+      </ArtTableHeader>
 
       <ArtTable
         ref="tableRef"
@@ -221,7 +168,8 @@
   } from '@/api/system-manage'
   import { useUserStore } from '@/store/modules/user'
   import { API_BASE_URL } from '@/utils/http'
-  import { ElMessage, ElMessageBox, ElTag, ElButton, ElImage } from 'element-plus'
+  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import { ElMessage, ElMessageBox, ElTag, ElImage } from 'element-plus'
 
   defineOptions({ name: 'FileManage' })
 
@@ -309,6 +257,28 @@
     size: 20,
     status: ''
   })
+
+  const searchItems = computed(() => [
+    { key: 'fileName', label: '文件名', type: 'input' as const, props: { placeholder: '文件名', clearable: true } },
+    {
+      key: 'businessType',
+      label: '业务类型',
+      type: 'select' as const,
+      props: { placeholder: '全部', clearable: true, options: businessTypeOptions }
+    },
+    {
+      key: 'categoryCode',
+      label: '分类',
+      type: 'select' as const,
+      props: { placeholder: '全部', clearable: true, filterable: true, options: categoryOptions }
+    },
+    {
+      key: 'status',
+      label: '状态',
+      type: 'select' as const,
+      props: { placeholder: '全部', clearable: true, options: statusOptions }
+    }
+  ])
   const form = reactive<Partial<FileAssetItem>>({
     categoryCode: 'IMAGE',
     categoryName: '图片',
@@ -363,17 +333,22 @@
     {
       prop: 'operation',
       label: '操作',
-      width: 190,
+      width: 130,
       fixed: 'right',
       formatter: (row: FileAssetItem) =>
         h('div', [
-          h(ElButton, { link: true, type: 'primary', onClick: () => openFile(row) }, () => '打开'),
-          h(
-            ElButton,
-            { link: true, type: 'primary', onClick: () => openDialog(row) },
-            () => '编辑'
-          ),
-          h(ElButton, { link: true, type: 'danger', onClick: () => deleteFile(row) }, () => '删除')
+          h(ArtButtonTable, {
+            type: 'view' as const,
+            onClick: () => openFile(row)
+          }),
+          h(ArtButtonTable, {
+            type: 'edit' as const,
+            onClick: () => openDialog(row)
+          }),
+          h(ArtButtonTable, {
+            type: 'delete' as const,
+            onClick: () => deleteFile(row)
+          })
         ])
     }
   ])

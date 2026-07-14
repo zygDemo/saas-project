@@ -1,7 +1,7 @@
 <template>
-  <div class="work-order-container">
+  <div class="work-order-page art-full-height">
     <!-- 数据库运维 -->
-    <el-card class="mb-5" shadow="never">
+    <ElCard class="art-card-xs mb-4">
       <template #header>
         <div class="card-header">
           <div class="flex items-center">
@@ -90,10 +90,10 @@
           {{ opResult.output }}
         </div>
       </div>
-    </el-card>
+    </ElCard>
 
     <!-- 搜索栏 -->
-    <el-card class="search-card" shadow="never">
+    <ElCard class="art-card-xs mb-4">
       <el-form :model="searchForm" inline>
         <el-form-item label="工单类型">
           <el-select v-model="searchForm.type" placeholder="请选择工单类型" clearable>
@@ -124,72 +124,30 @@
           <el-button @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
-    </el-card>
+    </ElCard>
 
-    <!-- 操作栏 -->
-    <el-card class="table-card" shadow="never">
-      <template #header>
-        <div class="card-header">
-          <span>工单列表</span>
-          <el-button v-auth="'add'" type="primary" @click="handleAdd">
-            <el-icon><Plus /></el-icon>
-            新建工单
-          </el-button>
-        </div>
-      </template>
+    <!-- 表格区域 -->
+    <ElCard class="art-table-card">
+      <ArtTableHeader :loading="loading" @refresh="handleSearch">
+        <template #left>
+          <ElSpace wrap>
+            <ElButton v-auth="'add'" type="primary" @click="handleAdd">
+              <ElIcon><Plus /></ElIcon>
+              新建工单
+            </ElButton>
+          </ElSpace>
+        </template>
+      </ArtTableHeader>
 
-      <!-- 表格 -->
-      <el-table :data="tableData" border stripe v-loading="loading">
-        <el-table-column prop="id" label="工单编号" width="100" />
-        <el-table-column prop="title" label="工单标题" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="type" label="工单类型" width="120">
-          <template #default="{ row }">
-            <el-tag :type="getTypeTag(row.type)">{{ getTypeLabel(row.type) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getStatusTag(row.status)">{{ getStatusLabel(row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="priority" label="优先级" width="80">
-          <template #default="{ row }">
-            <el-tag :type="getPriorityTag(row.priority)" size="small">
-              {{ getPriorityLabel(row.priority) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="assignee" label="指派人" width="100" />
-        <el-table-column prop="creator" label="创建人" width="100" />
-        <el-table-column prop="createdAt" label="创建时间" width="170" />
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button v-auth="'assign'" type="primary" link @click="handleAssign(row)">
-              指派
-            </el-button>
-            <el-button v-auth="'process'" type="success" link @click="handleProcess(row)">
-              处理
-            </el-button>
-            <el-button type="info" link @click="handleView(row)"> 详情 </el-button>
-            <el-button v-auth="'delete'" type="danger" link @click="handleDelete(row)">
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 分页 -->
-      <el-pagination
-        class="pagination"
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.pageSize"
-        :page-sizes="[10, 20, 50, 100]"
-        :total="pagination.total"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
+      <ArtTable
+        :loading="loading"
+        :data="tableData"
+        :columns="tableColumns"
+        :pagination="pagination"
+        @pagination:size-change="handleSizeChange"
+        @pagination:current-change="handleCurrentChange"
       />
-    </el-card>
+    </ElCard>
 
     <!-- 新建/编辑工单弹窗 -->
     <el-dialog
@@ -267,9 +225,10 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, onMounted } from 'vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ref, reactive, onMounted, computed, h } from 'vue'
+  import { ElMessage, ElMessageBox, ElTag, ElButton, ElSpace } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
+  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import {
     getDbOpsStatus,
     runDbMigrate,
@@ -484,10 +443,10 @@
 
   const loading = ref(false)
 
-  // 分页
+  // 分页（ArtTable 标准格式）
   const pagination = reactive({
-    page: 1,
-    pageSize: 10,
+    current: 1,
+    size: 10,
     total: 3
   })
 
@@ -516,6 +475,59 @@
     { id: 1, name: '张三' },
     { id: 2, name: '李四' },
     { id: 3, name: '王五' }
+  ])
+
+  // 表格列配置
+  const tableColumns = computed(() => [
+    { prop: 'id', label: '工单编号', width: 130 },
+    { prop: 'title', label: '工单标题', minWidth: 200, showOverflowTooltip: true },
+    {
+      prop: 'type',
+      label: '工单类型',
+      width: 120,
+      formatter: (row: WorkOrder) =>
+        h(ElTag, { type: getTypeTag(row.type) }, () => getTypeLabel(row.type))
+    },
+    {
+      prop: 'status',
+      label: '状态',
+      width: 100,
+      formatter: (row: WorkOrder) =>
+        h(ElTag, { type: getStatusTag(row.status) }, () => getStatusLabel(row.status))
+    },
+    {
+      prop: 'priority',
+      label: '优先级',
+      width: 80,
+      formatter: (row: WorkOrder) =>
+        h(ElTag, { type: getPriorityTag(row.priority) }, () => getPriorityLabel(row.priority))
+    },
+    { prop: 'assignee', label: '指派人', width: 100 },
+    { prop: 'creator', label: '创建人', width: 100 },
+    { prop: 'createdAt', label: '创建时间', width: 170 },
+    {
+      prop: 'operation',
+      label: '操作',
+      width: 170,
+      fixed: 'right' as const,
+      formatter: (row: WorkOrder) =>
+        h('div', [
+          h(ArtButtonTable, {
+            type: 'more' as const,
+            label: '指派',
+            icon: 'ri:user-shared-line',
+            onClick: () => handleAssign(row)
+          }),
+          h(ArtButtonTable, {
+            type: 'edit' as const,
+            onClick: () => handleView(row)
+          }),
+          h(ArtButtonTable, {
+            type: 'delete' as const,
+            onClick: () => handleDelete(row)
+          })
+        ])
+    }
   ])
 
   // 表单验证规则
@@ -658,12 +670,13 @@
 
   // 分页
   const handleSizeChange = (val: number) => {
-    pagination.pageSize = val
+    pagination.size = val
+    pagination.current = 1
     handleSearch()
   }
 
   const handleCurrentChange = (val: number) => {
-    pagination.page = val
+    pagination.current = val
     handleSearch()
   }
 
@@ -674,7 +687,7 @@
 </script>
 
 <style scoped>
-  .work-order-container {
+  .work-order-page {
     padding: 20px;
   }
 
@@ -686,11 +699,5 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-  }
-
-  .pagination {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 20px;
   }
 </style>
