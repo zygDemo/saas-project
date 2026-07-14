@@ -514,7 +514,7 @@ export class FlowConfigService extends BaseBusinessCrudService<
 
   async initDefault(dto: InitDefaultFlowConfigDto) {
     const org = await this.ensureRelatedExists(this.prisma.organization, dto.orgId, '机构不存在')
-    const tenantId = getCurrentTenantId() || org?.tenantId
+    const tenantId = getCurrentTenantId() || (org as any)?.tenantId
     if (!tenantId) throw new BadRequestException('租户信息不存在')
 
     const businessType = dto.businessType || 'CAR_LOAN'

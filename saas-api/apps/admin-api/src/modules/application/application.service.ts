@@ -307,7 +307,7 @@ export class ApplicationService extends BaseBusinessCrudService<
         create: { tenantId, applicationId: id, status: DisbursementStatus.DISBURSED, disburseAmount: dto.disburseAmount, disburseAccount: dto.disburseAccount, disburseAt: dto.disburseAt || new Date(), transactionNo: dto.transactionNo, voucherUrl: dto.voucherUrl, remark: dto.remark }
       })
 
-      await this.repaymentService.createRepaymentPlansIfNeeded(tx, application, dto)
+      await this.repaymentService.createRepaymentPlansIfNeeded(tx, application as any, dto)
 
       if (application.sourceLeadId) {
         await tx.lead.update({ where: { id: application.sourceLeadId }, data: { status: LeadStatus.CONVERTED } })
@@ -378,7 +378,7 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   private async prepareUpdateRelations(id: number, dto: UpdateApplicationDto) {
-    const current = await this.ensureExists(id)
+    const current = await this.ensureExists(id) as Record<string, any>
     let orgId = dto.orgId ?? current.orgId
     if (dto.customerId) {
       const customer = await this.getScopedRelated(this.prisma.customer, dto.customerId, '客户不存在')
@@ -400,11 +400,11 @@ export class ApplicationService extends BaseBusinessCrudService<
     if (item.orgId !== orgId) throw new BadRequestException(mismatchMessage)
   }
 
-  private async getScopedRelated(model: PrismaModelDelegate, id: number | undefined, message: string) {
+  private async getScopedRelated(model: PrismaModelDelegate, id: number | undefined, message: string): Promise<Record<string, any>> {
     if (id === undefined || id === null) throw new BadRequestException(message)
     const tenantId = getCurrentTenantId()
     const where = tenantId ? { id, tenantId } : { id }
-    const item = await model.findFirst({ where })
+    const item = await model.findFirst({ where }) as Record<string, any> | null
     if (!item) throw new BadRequestException(message)
     return item
   }

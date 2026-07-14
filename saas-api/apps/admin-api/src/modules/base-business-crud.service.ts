@@ -12,12 +12,10 @@ export interface PrismaModelDelegate {
   update(args: unknown): Promise<unknown>
 }
 
-/** Prisma 事务上下文 — 支持 PrismaService(Proxy 模式) 和 Prisma.TransactionClient */
-type PrismaTransaction = { $transaction: (...args: any[]) => any }
-
 interface CrudOptions<TCreate, TUpdate, TQuery> {
   model: PrismaModelDelegate
-  prisma: PrismaTransaction
+  /** 兼容 PrismaService(Proxy 模式) 和 Prisma.TransactionClient，运行时均有 $transaction */
+  prisma: any
   searchableFields?: string[]
   exactFields?: string[]
   include?: unknown
