@@ -65,6 +65,31 @@
         ]
       }
     },
+    "/saas/api/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "用户注册",
+        "tags": [
+          "认证管理"
+        ]
+      }
+    },
     "/saas/api/user/info": {
       "get": {
         "description": "根据 JWT Token 获取当前登录用户的详细信息",
@@ -9720,6 +9745,35 @@
         ]
       }
     },
+    "/saas/api/reading/reviews/{id}/like": {
+      "post": {
+        "operationId": "ReadingController_likeReview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "点赞/取消点赞评论",
+        "tags": [
+          "读书模块"
+        ]
+      }
+    },
     "/saas/api/crawler/download": {
       "post": {
         "operationId": "CrawlerController_downloadNovel",
@@ -12319,6 +12373,31 @@
         "required": [
           "userName",
           "password"
+        ]
+      },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "userName": {
+            "type": "string",
+            "description": "用户名",
+            "minLength": 3,
+            "maxLength": 20
+          },
+          "password": {
+            "type": "string",
+            "description": "密码",
+            "minLength": 6
+          },
+          "nickName": {
+            "type": "string",
+            "description": "昵称"
+          }
+        },
+        "required": [
+          "userName",
+          "password",
+          "nickName"
         ]
       },
       "CreateUserDto": {
