@@ -150,6 +150,10 @@ model Tenant {
   earlyRepayments   EarlyRepayment[]
   workOrders        WorkOrder[]
 
+  // 文章模块
+  articles          Article[]
+  articleTypes      ArticleType[]
+
   // 移动端模块配置
   mobileModules       Json?    // ["carloan","food","credit"] 已启用的移动端模块
   defaultMobileModule String?  // 单模块模式下的默认模块 key
@@ -183,6 +187,11 @@ model User {
   leads        Lead[]
   applications Application[]    @relation("ApplicationCreator")
   approvals    ApprovalRecord[]
+
+  // 读书模块关联
+  chapterPurchases ChapterPurchase[]
+  reviewLikes      ReviewLike[]
+  articleLikes     ArticleLike[]
 
   @@unique([tenantId, userName])
   @@unique([tenantId, email])
@@ -1218,8 +1227,9 @@ model BookChapter {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  tenant           Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  book             Book             @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapterPurchases ChapterPurchase[]
 
   @@unique([bookId, sort])
   @@index([tenantId])
@@ -1279,8 +1289,9 @@ model BookReview {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  book        Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  reviewLikes ReviewLike[]
 
   @@unique([userId, bookId])
   @@index([tenantId])
@@ -1316,7 +1327,7 @@ model Article {
   id          Int      @id @default(autoincrement())
   tenantId    Int
   title       String
-  content     String?  @db.LongText
+  content     String?  @db.Text
   summary     String?  @db.VarChar(500)
   coverImg    String?
   typeId      Int?
@@ -1330,7 +1341,8 @@ model Article {
   updatedAt   DateTime @updatedAt
   deletedAt   DateTime?
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  articleLikes ArticleLike[]
 
   @@index([tenantId])
   @@index([status])
