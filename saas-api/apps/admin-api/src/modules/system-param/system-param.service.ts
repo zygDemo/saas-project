@@ -5,7 +5,7 @@ import { getRequiredTenantId, formatDate } from '../../common/utils/helpers'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
 import { CacheService } from '../redis/cache.service'
-import { CreateSystemParamDto, UpdateSystemParamDto } from './dto/system-param.dto'
+import { CreateSystemParamDto, UpdateSystemParamDto, SystemParamQueryDto } from './dto/system-param.dto'
 
 /** 系统参数缓存键前缀 */
 const CACHE_PREFIX = 'sysparam:'

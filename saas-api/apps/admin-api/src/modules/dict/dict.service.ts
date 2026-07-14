@@ -5,7 +5,7 @@ import { getRequiredTenantId, formatDate } from '../../common/utils/helpers'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
 import { PrismaService } from '../prisma/prisma.service'
 import { CacheService } from '../redis/cache.service'
-import { CreateDictDataDto, CreateDictTypeDto, UpdateDictDataDto, UpdateDictTypeDto } from './dto/dict.dto'
+import { CreateDictDataDto, CreateDictTypeDto, UpdateDictDataDto, UpdateDictTypeDto, DictTypeQueryDto, DictDataQueryDto } from './dto/dict.dto'
 
 /** 字典缓存键前缀 */
 const CACHE_PREFIX = 'dict:'

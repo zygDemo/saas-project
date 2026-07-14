@@ -2,7 +2,6 @@ import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { getPagination, toPaginatedResponse } from '../common/utils/pagination'
 import { getCurrentTenantId } from '../common/tenant/tenant-context'
 import { hasValue } from '../common/utils/helpers'
-import type { PrismaService } from './prisma/prisma.service'
 
 /** Prisma 模型委托接口 — 涵盖 BaseBusinessCrudService 需要的所有方法 */
 export interface PrismaModelDelegate {
@@ -13,8 +12,8 @@ export interface PrismaModelDelegate {
   update(args: unknown): Promise<unknown>
 }
 
-/** Prisma 事务上下文 — 支持普通服务和事务内调用 */
-type PrismaTransaction = Pick<PrismaService, '$transaction'>
+/** Prisma 事务上下文 — 支持 PrismaService(Proxy 模式) 和 Prisma.TransactionClient */
+type PrismaTransaction = { $transaction: (...args: any[]) => any }
 
 interface CrudOptions<TCreate, TUpdate, TQuery> {
   model: PrismaModelDelegate
