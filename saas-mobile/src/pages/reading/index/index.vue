@@ -91,13 +91,7 @@
             >
               <view
                 class="stat-icon-wrap"
-                style="
-                  background: linear-gradient(
-                    135deg,
-                    var(--u-type-primary-dark, #3b2f8a) 0%,
-                    var(--u-type-primary, #5240fe) 100%
-                  );
-                "
+                style="background: linear-gradient(135deg, var(--u-type-primary-dark, #3b2f8a) 0%, var(--u-type-primary, #5240fe) 100%)"
               >
                 <u-icon name="clock" color="#fff" size="28" />
               </view>
@@ -113,9 +107,7 @@
             >
               <view
                 class="stat-icon-wrap"
-                style="
-                  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-                "
+                style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
               >
                 <u-icon name="checkmark-circle" color="#fff" size="28" />
               </view>
@@ -131,9 +123,7 @@
             >
               <view
                 class="stat-icon-wrap"
-                style="
-                  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-                "
+                style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
               >
                 <u-icon name="heart" color="#fff" size="28" />
               </view>
@@ -149,9 +139,7 @@
             >
               <view
                 class="stat-icon-wrap"
-                style="
-                  background: linear-gradient(135deg, #a8e6cf 0%, #3dc1d3 100%);
-                "
+                style="background: linear-gradient(135deg, #a8e6cf 0%, #3dc1d3 100%)"
               >
                 <u-icon name="download" color="#fff" size="28" />
               </view>
@@ -334,7 +322,7 @@
               class="book-card"
               role="button"
               tabindex="0"
-              :style="{ animationDelay: index * 0.05 + 's' }"
+              :style="{ animationDelay: `${index * 0.05}s` }"
               @click="openBook(book)"
               @longpress="showBookMenu(book)"
             >
@@ -376,7 +364,7 @@
                   <view class="progress-bg" />
                   <view
                     class="progress-fill"
-                    :style="{ width: book.progress + '%' }"
+                    :style="{ width: `${book.progress}%` }"
                   />
                   <text class="progress-text">{{ book.progress }}%</text>
                 </view>
@@ -564,12 +552,6 @@ const filteredBooks = computed(() => {
   return books;
 });
 
-onLoad(() => {
-  localStore.setCurrentSystem(CurrentSystem.READING);
-  fetchStats();
-  fetchBookshelf();
-});
-
 // 加载真实阅读统计
 const fetchStats = async () => {
   try {
@@ -663,11 +645,15 @@ const fetchBookshelf = async () => {
   }
 };
 
-
+onLoad(() => {
+  localStore.setCurrentSystem(CurrentSystem.READING);
+  fetchStats();
+  fetchBookshelf();
+});
 
 const formatNumber = (num: number) => {
-  if (num >= 10000000) return (num / 10000000).toFixed(1) + "千万";
-  if (num >= 10000) return (num / 10000).toFixed(1) + "万";
+  if (num >= 10000000) return `${(num / 10000000).toFixed(1)}千万`;
+  if (num >= 10000) return `${(num / 10000).toFixed(1)}万`;
   return num.toString();
 };
 
@@ -714,6 +700,12 @@ const openBook = (book: BookItem) => {
   });
 };
 
+const goDetail = (book: BookItem) => {
+  uni.navigateTo({
+    url: `/pages/reading/store/detail?id=${book.id}`,
+  });
+};
+
 const showBookMenu = (book: BookItem) => {
   uni.showActionSheet({
     itemList: ["查看详情", "继续阅读", "移出书架", "下载全本", "置顶"],
@@ -752,12 +744,6 @@ const showBookMenu = (book: BookItem) => {
           break;
       }
     },
-  });
-};
-
-const goDetail = (book: BookItem) => {
-  uni.navigateTo({
-    url: `/pages/reading/store/detail?id=${book.id}`,
   });
 };
 
@@ -1816,6 +1802,7 @@ const refreshRecommend = () => {
   }
 }
 </style>
+
 <style>
 /* 覆盖全局竖线 */
 .section-title::before {

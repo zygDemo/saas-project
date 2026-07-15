@@ -301,7 +301,24 @@ export function countWuXing(siZhu: SiZhu): WuXingCount {
   return count;
 }
 
-export function getDaYun(siZhu: SiZhu, gender: "male" | "female"): DaYun[] {
+/**
+ * 十二节气近似日期（每月第一个节气）
+ * 立春=2月4, 惊蛰=3月6, 清明=4月5, 立夏=5月6, 芒种=6月6, 小暑=7月7
+ * 立秋=8月7, 白露=9月8, 寒露=10月8, 立冬=11月7, 大雪=12月7, 小寒=1月6
+ */
+const JIE_QI_DAY: number[] = [6, 4, 6, 5, 6, 6, 7, 7, 8, 8, 7, 7] // 1-12月的节气近似日
+
+function getJieQiDate(year: number, month: number): Date {
+  // 返回该月节气的近似日期
+  const day = JIE_QI_DAY[month - 1]
+  return new Date(year, month - 1, day)
+}
+
+function daysBetween(a: Date, b: Date): number {
+  return Math.abs(Math.floor((b.getTime() - a.getTime()) / (24 * 60 * 60 * 1000)))
+}
+
+export function getDaYun(siZhu: SiZhu, gender: "male" | "female", birthDate?: { year: number; month: number; day: number }): DaYun[] {
   const yearGan = siZhu.year.gan;
   const isYangYear = GAN_YINYANG[yearGan] === "阳";
   const isForward =
@@ -311,13 +328,42 @@ export function getDaYun(siZhu: SiZhu, gender: "male" | "female"): DaYun[] {
   const riGan = siZhu.day.gan;
   const result: DaYun[] = [];
 
-  for (let i = 1; i <= 8; i++) {
-    const ganIdx = isForward ? (monthGanIndex + i) % 10 : (monthGanIndex - i + 10) % 10;
-    const zhiIdx = isForward ? (monthZhiIndex + i) % 12 : (monthZhiIndex - i + 12) % 12;
+  // 计算起运年龄
+  let startQiAge = 1; // 默认1岁起运
+  if (birthDate) {
+    const birth = new Date(birthDate.year, birthDate.month - 1, birthDate.day);
+    if (isForward) {
+      // 顺行：到下一个节气的天数
+      let nextJie = getJieQiDate(birthDate.year, birthDate.month);
+      if (birth.getTime() >= nextJie.getTime()) {
+        // 已过本月节气，取下月
+        const nextMonth = birthDate.month === 12 ? 1 : birthDate.month + 1;
+        const nextYear = birthDate.month === 12 ? birthDate.year + 1 : birthDate.year;
+        nextJie = getJieQiDate(nextYear, nextMonth);
+      }
+      const days = daysBetween(birth, nextJie);
+      startQiAge = Math.max(1, Math.round(days / 3));
+    } else {
+      // 逆行：到上一个节气的天数
+      let prevJie = getJieQiDate(birthDate.year, birthDate.month);
+      if (birth.getTime() < prevJie.getTime()) {
+        // 未到本月节气，取上月
+        const prevMonth = birthDate.month === 1 ? 12 : birthDate.month - 1;
+        const prevYear = birthDate.month === 1 ? birthDate.year - 1 : birthDate.year;
+        prevJie = getJieQiDate(prevYear, prevMonth);
+      }
+      const days = daysBetween(birth, prevJie);
+      startQiAge = Math.max(1, Math.round(days / 3));
+    }
+  }
+
+  for (let i = 0; i < 8; i++) {
+    const ganIdx = isForward ? (monthGanIndex + i + 1) % 10 : (monthGanIndex - i - 1 + 10) % 10;
+    const zhiIdx = isForward ? (monthZhiIndex + i + 1) % 12 : (monthZhiIndex - i - 1 + 12) % 12;
     const gan = TIAN_GAN[ganIdx];
     const zhi = DI_ZHI[zhiIdx];
     result.push({
-      startAge: i * 10,
+      startAge: startQiAge + i * 10,
       gan,
       zhi,
       ganWuXing: GAN_WUXING[gan],
@@ -365,7 +411,7 @@ export function paiPan(
     riZhu: riGan,
     riZhuWuXing: GAN_WUXING[riGan],
     wuXingCount: countWuXing(siZhu),
-    daYun: getDaYun(siZhu, gender),
+    daYun: getDaYun(siZhu, gender, { year, month, day }),
     solarDate: `${year}年${month}月${day}日 ${hour}时`,
   };
 }

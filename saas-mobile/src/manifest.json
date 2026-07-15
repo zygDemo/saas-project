@@ -99,7 +99,8 @@
         },
         "usingComponents" : true,
         "darkmode" : true,
-        "themeLocation" : "theme.json"
+        "themeLocation" : "theme.json",
+        "libVersion" : "3.15.2"
     },
     "mp-alipay" : {
         "usingComponents" : true

@@ -13,7 +13,7 @@
           <image class="brand-logo" src="/static/logo.png" mode="aspectFit" />
         </view>
         <text class="brand-name">予艺助手</text>
-        <text class="brand-slogan">智能车贷 · 高效办公</text>
+        <text class="brand-slogan">智能助手 · 高效办公</text>
       </view>
 
       <!-- 表单卡片 -->

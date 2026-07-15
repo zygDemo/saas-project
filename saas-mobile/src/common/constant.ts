@@ -17,7 +17,18 @@ export const UVIEW_PRO_INFO = {
 }
 
 function getPlatform() {
-  let platform = uni.getSystemInfoSync().platform
+  let platform = ''
+  // 优先使用新 API，兼容 deprecated 警告
+  // #ifdef MP-WEIXIN
+  try {
+    platform = uni.getDeviceInfo().platform || uni.getSystemInfoSync().platform
+  } catch {
+    platform = uni.getSystemInfoSync().platform
+  }
+  // #endif
+  // #ifndef MP-WEIXIN
+  platform = uni.getSystemInfoSync().platform
+  // #endif
   if (platform) {
     return platform
   }

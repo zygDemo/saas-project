@@ -26,7 +26,7 @@
       :list="tabbarList"
       :active-color="themeColor"
       inactive-color="#999999"
-      :hide-tab-bar="shouldHideNativeTabbar"
+      :hide-tab-bar="false"
       :before-switch="beforeSwitch"
       @change="onTabChange"
     />
@@ -37,7 +37,6 @@
 import {
   getCurrentPageRoute,
   getLayoutTabbar,
-  isSystemTabbarRoute,
   navigateFromTabbar,
   TABBAR_SCOPES,
 } from "@/common/navigation";
@@ -85,10 +84,6 @@ const navBackground = computed(() => ({
   backgroundImage:
     "linear-gradient(90deg, var(--u-type-primary-dark), var(--u-type-primary-disabled))",
 }));
-
-const shouldHideNativeTabbar = computed(() => {
-  return isSystemTabbarRoute(getCurrentPageRoute());
-});
 
 const tabbarList = computed(() =>
   tabConfig.value.map(({ route: _route, navMode: _navMode, ...item }) => item),

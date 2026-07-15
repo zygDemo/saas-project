@@ -1,7 +1,7 @@
 <template>
-  <view class="progress-ring" :style="{ width: size + 'rpx', height: size + 'rpx' }">
+  <view class="progress-ring" :style="{ width: `${size}rpx`, height: `${size}rpx` }">
     <canvas
-      :style="{ width: size + 'rpx', height: size + 'rpx' }"
+      :style="{ width: `${size}rpx`, height: `${size}rpx` }"
       :canvas-id="canvasId"
       id="progressRing"
       @ready="draw"
@@ -32,7 +32,9 @@ const canvasId = ref("progressRing_" + Math.random().toString(36).slice(2, 8));
 
 function draw() {
   const ctx = uni.createCanvasContext(canvasId.value);
-  const dpr = uni.getSystemInfoSync().pixelRatio;
+  // 优先使用新 API 获取设备像素比，避免 deprecated 警告
+  const systemInfo = (uni.getWindowInfo?.() || uni.getSystemInfoSync()) as { pixelRatio: number };
+  const dpr = systemInfo.pixelRatio;
   const size = props.size * dpr;
   const stroke = props.strokeWidth * dpr;
   const cx = size / 2;

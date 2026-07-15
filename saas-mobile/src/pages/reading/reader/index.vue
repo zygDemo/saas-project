@@ -444,7 +444,7 @@ const chapterId = ref(0);
 const showNotePopup = ref(false);
 const selectedText = ref('');
 const noteContent = ref('');
-const noteColor = ref('#FFEB3B');
+const _noteColor = ref('#FFEB3B');
 const noteStartPos = ref(0);
 const noteEndPos = ref(0);
 
@@ -1164,8 +1164,9 @@ const isLandscape = ref(false);
 /** 检测当前屏幕方向 */
 function detectOrientation() {
   try {
-    const sysInfo = uni.getSystemInfoSync();
-    isLandscape.value = (sysInfo.windowWidth || 0) > (sysInfo.windowHeight || 0);
+    // 优先使用新 API getWindowInfo，避免 deprecated 警告
+    const winInfo = (uni.getWindowInfo?.() || uni.getSystemInfoSync()) as { windowWidth: number; windowHeight: number };
+    isLandscape.value = (winInfo.windowWidth || 0) > (winInfo.windowHeight || 0);
   } catch {
     // ignore
   }
