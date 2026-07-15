@@ -1,232 +1,115 @@
 <template>
-  <view class="shake-page">
-    <!-- 进度提示 -->
-    <view class="progress">
-      <text class="progress-text">{{ currentStep }}/6</text>
-      <text class="progress-desc">{{ stepDesc }}</text>
+  <view class="page">
+    <view class="sky-stage">
+      <mystic-sky />
+      <mystic-nav title="六爻问事" transparent />
+      <view class="stage-copy">
+        <text class="eyebrow">SIX LINES DIVINATION</text>
+        <text class="stage-title">一念一问 · 六掷成卦</text>
+        <text class="stage-desc">静心默念所问之事，再轻触铜钱</text>
+      </view>
+      <view class="moon-ring"><text>☯</text></view>
     </view>
 
-    <!-- 已摇爻展示 -->
-    <view class="yao-display">
-      <view class="yao-row" v-for="(yao, i) in yaoList" :key="i">
-        <view class="yao-line" :class="{ yang: yao === 7 || yao === 9, yin: yao === 6 || yao === 8, dong: yao === 6 || yao === 9 }">
-          <template v-if="yao === 7 || yao === 9">
-            <view class="line solid"></view>
-          </template>
-          <template v-else>
-            <view class="line broken"></view>
-          </template>
+    <view class="paper-body">
+      <view v-if="currentStep === 0" class="question-card">
+        <text class="question-label">所问之事</text>
+        <input v-model="question" :maxlength="36" class="question-input" placeholder="例如：这次合作后续发展如何？" placeholder-class="placeholder" />
+        <text class="question-count">{{ question.length }}/36</text>
+      </view>
+
+      <view class="progress-card">
+        <view class="progress-copy"><text>起卦进度</text><text>{{ currentStep }}/6</text></view>
+        <view class="progress-track"><view class="progress-fill" :style="{ width: `${currentStep / 6 * 100}%` }"><view class="progress-light" /></view></view>
+        <text class="step-desc">{{ stepDesc }}</text>
+      </view>
+
+      <view class="yao-card">
+        <view class="yao-labels"><text>上爻</text><text>初爻</text></view>
+        <view class="yao-list">
+          <view v-for="position in 6" :key="position" class="yao-slot" :class="{ formed: yaoAt(position), dong: isMoving(position) }">
+            <text class="yao-position">{{ yaoNames[6 - position] }}</text>
+            <view v-if="yaoAt(position)" class="yao-line" :class="{ broken: isYin(position) }" />
+            <view v-else class="yao-empty"><text>·</text></view>
+            <text class="yao-state">{{ yaoState(position) }}</text>
+          </view>
         </view>
       </view>
-    </view>
 
-    <!-- 铜钱区域 -->
-    <view class="coin-area" :class="{ shaking: isShaking }">
-      <view class="coin" v-for="i in 3" :key="i">
-        <view class="coin-face">{{ coinFaces[i-1] }}</view>
+      <view class="coin-stage" :class="{ shaking: isShaking }">
+        <view v-for="(face, index) in coinFaces" :key="index" class="coin" :class="`coin-${index + 1}`">
+          <view class="coin-inner"><view class="coin-hole" /><text>{{ face.label }}</text><view class="coin-pattern">乾元</view></view>
+        </view>
+        <view class="coin-shadow" />
       </view>
+
+      <button class="divine-btn" :disabled="isShaking" @click="handleMainAction">
+        <text class="btn-star">✦</text><text>{{ buttonText }}</text><text class="btn-star">✦</text>
+      </button>
+      <view class="action-row">
+        <text v-if="currentStep > 0" @click="restart">重新起卦</text>
+        <text v-if="currentStep === 0">铜钱正面为三，背面为二</text>
+      </view>
+      <view class="ritual-tip"><text>静</text><view><text class="tip-title">起卦仪式</text><text class="tip-copy">每次掷币前深呼吸一次，让问题保持清晰。卦象是观察当下的镜子，而非唯一答案。</text></view></view>
     </view>
-
-    <!-- 操作按钮 -->
-    <button class="shake-btn" @click="shake" :disabled="isShaking || currentStep >= 6">
-      {{ currentStep >= 6 ? '查看结果' : '摇卦' }}
-    </button>
-
-    <!-- 重新开始 -->
-    <view class="restart" v-if="currentStep >= 6" @click="restart">重新摇卦</view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { yaoGua, getYinYang, isDongYao } from '@/common/mingli/liuyao'
+import { computed, ref } from 'vue'
 import { APP_ROUTES } from '@/common/navigation'
+import { isDongYao } from '@/common/mingli/liuyao'
+import MysticNav from '@/components/mystic-nav/mystic-nav.vue'
+import MysticSky from '@/components/mystic-sky/mystic-sky.vue'
 
-const currentStep = ref(0)
+interface CoinFace { label: '字' | '花'; value: 2 | 3 }
+const yaoNames = ['上', '五', '四', '三', '二', '初']
+const question = ref('')
 const yaoList = ref<number[]>([])
 const isShaking = ref(false)
-const coinFaces = ref(['字', '花', '字'])
+const coinFaces = ref<CoinFace[]>([{ label: '字', value: 3 }, { label: '花', value: 2 }, { label: '字', value: 3 }])
+const currentStep = computed(() => yaoList.value.length)
+const stepDesc = computed(() => currentStep.value === 0 ? '请从初爻开始，依次由下而上' : currentStep.value < 6 ? `第 ${currentStep.value + 1} 掷 · 继续守住心念` : '六爻已成，卦门将启')
+const buttonText = computed(() => isShaking.value ? '天地流转中…' : currentStep.value >= 6 ? '观卦解意' : currentStep.value === 0 ? '开始第一掷' : `掷出第 ${currentStep.value + 1} 爻`)
 
-const stepDesc = computed(() => {
-  if (currentStep.value === 0) return '请心中默念所问之事'
-  if (currentStep.value < 6) return '请继续摇卦'
-  return '摇卦完成'
-})
-
-const shake = async () => {
+function yaoAt(position: number) { return yaoList.value[6 - position] }
+function isYin(position: number) { return [6, 8].includes(yaoAt(position)) }
+function isMoving(position: number) { const value = yaoAt(position); return value ? isDongYao(value) : false }
+function yaoState(position: number) {
+  const value = yaoAt(position)
+  return ({ 6: '老阴 · 动', 7: '少阳', 8: '少阴', 9: '老阳 · 动' } as Record<number, string>)[value] || '待成'
+}
+function randomFace(): CoinFace { return Math.random() > .5 ? { label: '字', value: 3 } : { label: '花', value: 2 } }
+async function shake() {
+  isShaking.value = true
+  for (let index = 0; index < 9; index++) {
+    coinFaces.value = [randomFace(), randomFace(), randomFace()]
+    await new Promise(resolve => setTimeout(resolve, 80 + index * 8))
+  }
+  const value = coinFaces.value.reduce((sum, coin) => sum + coin.value, 0)
+  yaoList.value.push(value)
+  isShaking.value = false
+  uni.vibrateShort({ type: 'light' })
+}
+function handleMainAction() {
   if (currentStep.value >= 6) {
-    // 跳转结果页
-    uni.navigateTo({
-      url: `${APP_ROUTES.mingli.liuyao.result}?values=${yaoList.value.join(',')}`
-    })
+    const query = `values=${yaoList.value.join(',')}&question=${encodeURIComponent(question.value.trim() || '心中所问')}`
+    uni.navigateTo({ url: `${APP_ROUTES.mingli.liuyao.result}?${query}` })
     return
   }
-
-  isShaking.value = true
-
-  // 模拟铜钱动画
-  for (let i = 0; i < 10; i++) {
-    coinFaces.value = [
-      Math.random() > 0.5 ? '字' : '花',
-      Math.random() > 0.5 ? '字' : '花',
-      Math.random() > 0.5 ? '字' : '花'
-    ]
-    await new Promise(r => setTimeout(r, 100))
-  }
-
-  // 生成爻值
-  const values = yaoGua()
-  const newValue = values[currentStep.value]
-  yaoList.value.push(newValue)
-  currentStep.value++
-
-  isShaking.value = false
+  shake()
 }
-
-const restart = () => {
-  currentStep.value = 0
+function restart() {
   yaoList.value = []
+  coinFaces.value = [{ label: '字', value: 3 }, { label: '花', value: 2 }, { label: '字', value: 3 }]
 }
 </script>
 
-<style scoped>
-.shake-page {
-  min-height: 100vh;
-  background: linear-gradient(180deg, #0a0a1a 0%, #1a1a2e 50%, #0f1923 100%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 80rpx 32rpx;
-}
-
-.progress {
-  text-align: center;
-  margin-bottom: 48rpx;
-}
-
-.progress-text {
-  display: block;
-  font-size: 48rpx;
-  color: #e6b422;
-  font-weight: bold;
-}
-
-.progress-desc {
-  display: block;
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.4);
-  margin-top: 8rpx;
-}
-
-.yao-display {
-  margin-bottom: 64rpx;
-  min-height: 300rpx;
-}
-
-.yao-row {
-  margin-bottom: 16rpx;
-  display: flex;
-  justify-content: center;
-}
-
-.yao-line {
-  width: 200rpx;
-  height: 20rpx;
-  position: relative;
-}
-
-.line {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100%;
-}
-
-.line.solid {
-  background: #e6b422;
-}
-
-.line.broken {
-  background: transparent;
-}
-
-.line.broken::before,
-.line.broken::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  height: 100%;
-  width: 45%;
-  background: #e6b422;
-}
-
-.line.broken::before { left: 0; }
-.line.broken::after { right: 0; }
-
-.yao-line.dong .line {
-  animation: dongYao 0.5s ease-in-out infinite alternate;
-}
-
-@keyframes dongYao {
-  from { opacity: 0.5; }
-  to { opacity: 1; }
-}
-
-.coin-area {
-  display: flex;
-  gap: 32rpx;
-  margin-bottom: 64rpx;
-}
-
-.coin-area.shaking {
-  animation: shakeAnim 0.1s ease-in-out infinite;
-}
-
-@keyframes shakeAnim {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10rpx) rotate(-5deg); }
-  75% { transform: translateX(10rpx) rotate(5deg); }
-}
-
-.coin {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #d4a017 0%, #e6b422 50%, #d4a017 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 4rpx solid #b8860b;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.5);
-}
-
-.coin-face {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #1a1a2e;
-}
-
-.shake-btn {
-  width: 400rpx;
-  height: 100rpx;
-  background: linear-gradient(135deg, #e6b422 0%, #d4a017 100%);
-  color: #1a1a2e;
-  font-size: 36rpx;
-  font-weight: bold;
-  border-radius: 50rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.shake-btn[disabled] {
-  opacity: 0.5;
-}
-
-.restart {
-  margin-top: 32rpx;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 28rpx;
-}
+<style scoped lang="scss">
+.page{min-height:100vh;background:#eee2c8;color:#172747}.sky-stage{position:relative;height:500rpx;overflow:hidden;background:radial-gradient(circle at 50% 80%,#2c476e,#102542 48%,#07142b 88%)}.stage-copy{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;padding-top:20rpx}.eyebrow{color:rgba(229,197,120,.58);font:18rpx Georgia,serif;letter-spacing:6rpx}.stage-title{margin-top:14rpx;color:#f1dc9f;font:700 43rpx STKaiti,serif;letter-spacing:6rpx}.stage-desc{margin-top:10rpx;color:rgba(238,220,170,.65);font-size:22rpx;letter-spacing:2rpx}.moon-ring{position:absolute;z-index:2;left:50%;bottom:-118rpx;width:330rpx;height:330rpx;margin-left:-165rpx;display:flex;align-items:flex-start;justify-content:center;padding-top:68rpx;box-sizing:border-box;border:1rpx solid rgba(229,192,99,.4);border-radius:50%;color:#e9c872;font-size:78rpx;box-shadow:0 0 60rpx rgba(218,172,70,.14);animation:breathe 4s ease-in-out infinite}.moon-ring::before,.moon-ring::after{content:'';position:absolute;border:1rpx dashed rgba(230,194,105,.24);border-radius:50%}.moon-ring::before{inset:-30rpx}.moon-ring::after{inset:38rpx}
+.paper-body{position:relative;margin-top:-18rpx;padding:38rpx 28rpx calc(45rpx + env(safe-area-inset-bottom));border-radius:34rpx 34rpx 0 0;background:linear-gradient(135deg,rgba(96,70,30,.035) 25%,transparent 25%) 0 0/18rpx 18rpx,#eee2c8}.question-card,.progress-card,.yao-card{border:1rpx solid rgba(163,120,43,.44);background:rgba(250,244,227,.76);box-shadow:0 10rpx 26rpx rgba(63,44,17,.08)}.question-card{position:relative;padding:22rpx 26rpx;border-radius:20rpx 7rpx}.question-label{display:block;color:#8d692b;font:700 24rpx STKaiti,serif}.question-input{height:70rpx;color:#203454;font-size:27rpx;border-bottom:1rpx solid rgba(157,114,43,.25)}.placeholder{color:#978a73}.question-count{position:absolute;right:24rpx;bottom:10rpx;color:#9a8b70;font-size:18rpx}.progress-card{margin-top:18rpx;padding:20rpx 25rpx;border-radius:18rpx}.progress-copy{display:flex;justify-content:space-between;color:#735f3d;font-size:22rpx}.progress-track{height:10rpx;margin-top:13rpx;overflow:hidden;border-radius:6rpx;background:rgba(40,55,75,.12)}.progress-fill{position:relative;height:100%;border-radius:6rpx;background:linear-gradient(90deg,#9f762e,#e0bc62);transition:width .45s}.progress-light{position:absolute;right:0;width:18rpx;height:100%;background:#fff;filter:blur(4rpx)}.step-desc{display:block;margin-top:10rpx;text-align:center;color:#8a7653;font:21rpx STKaiti,serif;letter-spacing:2rpx}
+.yao-card{position:relative;margin-top:18rpx;padding:26rpx 32rpx;border-radius:24rpx 8rpx}.yao-labels{position:absolute;top:30rpx;bottom:30rpx;left:18rpx;display:flex;flex-direction:column;justify-content:space-between;color:#a58b5b;font-size:17rpx}.yao-list{display:flex;flex-direction:column;gap:13rpx}.yao-slot{height:46rpx;display:flex;align-items:center;justify-content:center;gap:16rpx;opacity:.35;transition:.4s}.yao-slot.formed{opacity:1;animation:formYao .5s ease both}.yao-position,.yao-state{width:78rpx;color:#71644e;font-size:19rpx}.yao-position{text-align:right}.yao-state{color:#92703a}.yao-slot.dong .yao-state{color:#b14b3b}.yao-line{width:250rpx;height:15rpx;background:linear-gradient(90deg,#b18434,#e0c16f,#b18434);box-shadow:0 0 12rpx rgba(181,133,48,.28)}.yao-line.broken{background:linear-gradient(90deg,#b18434 0 43%,transparent 43% 57%,#b18434 57%)}.yao-empty{width:250rpx;height:15rpx;display:flex;align-items:center;justify-content:center;border-top:1rpx dashed rgba(104,86,57,.35);color:#967c50}
+.coin-stage{position:relative;height:230rpx;margin-top:24rpx}.coin{position:absolute;width:120rpx;height:120rpx;border-radius:50%;padding:6rpx;box-sizing:border-box;background:linear-gradient(135deg,#8b6422,#edca6e,#9b6d23);box-shadow:0 18rpx 22rpx rgba(72,49,17,.22),inset 0 0 0 3rpx rgba(255,239,183,.5);transition:.3s}.coin-1{left:74rpx;top:46rpx;transform:rotate(-12deg)}.coin-2{left:50%;top:18rpx;margin-left:-60rpx}.coin-3{right:74rpx;top:50rpx;transform:rotate(14deg)}.coin-inner{width:100%;height:100%;position:relative;display:flex;align-items:center;justify-content:center;border:2rpx solid rgba(104,67,14,.58);border-radius:50%;color:#5a3c13;font:700 34rpx STKaiti,serif;text-shadow:0 1rpx rgba(255,245,196,.55)}.coin-hole{position:absolute;width:32rpx;height:32rpx;border:2rpx solid rgba(93,57,11,.55);transform:rotate(45deg)}.coin-pattern{position:absolute;bottom:11rpx;font-size:14rpx;letter-spacing:5rpx}.coin-shadow{position:absolute;left:50%;bottom:22rpx;width:360rpx;height:30rpx;margin-left:-180rpx;border-radius:50%;background:rgba(55,38,17,.15);filter:blur(12rpx)}.coin-stage.shaking .coin-1{animation:coinToss .32s linear infinite}.coin-stage.shaking .coin-2{animation:coinToss .27s .05s linear infinite reverse}.coin-stage.shaking .coin-3{animation:coinToss .35s .1s linear infinite}
+.divine-btn{height:98rpx;border:0;border-radius:50rpx;color:#f4e3b4;background:linear-gradient(90deg,#152a4b,#2c4264,#152a4b);box-shadow:0 14rpx 28rpx rgba(19,41,70,.23),inset 0 0 0 2rpx rgba(225,190,102,.52);font:700 29rpx STKaiti,serif;letter-spacing:4rpx}.divine-btn::after{border:0}.divine-btn[disabled]{opacity:.66}.btn-star{margin:0 18rpx;color:#ddba61}.action-row{height:62rpx;display:flex;align-items:center;justify-content:center;color:#8d7751;font-size:21rpx}.ritual-tip{display:flex;gap:18rpx;padding:22rpx 24rpx;border-top:1rpx solid rgba(157,114,42,.3);border-bottom:1rpx solid rgba(157,114,42,.3)}.ritual-tip>text{width:56rpx;height:56rpx;line-height:56rpx;text-align:center;border:1rpx solid #a67b30;border-radius:50%;color:#9a712b;font:32rpx/56rpx STKaiti,serif}.ritual-tip view{flex:1}.tip-title,.tip-copy{display:block}.tip-title{font:700 25rpx STKaiti,serif}.tip-copy{margin-top:5rpx;color:#786d59;font-size:20rpx;line-height:1.55}
+@keyframes coinToss{0%{transform:translateY(0) rotateY(0) rotate(0)}50%{transform:translateY(-52rpx) rotateY(180deg) rotate(14deg)}100%{transform:translateY(0) rotateY(360deg) rotate(0)}}@keyframes formYao{from{opacity:0;transform:scaleX(.15)}to{opacity:1;transform:scaleX(1)}}@keyframes breathe{50%{box-shadow:0 0 90rpx rgba(218,172,70,.28);transform:scale(1.04)}}@media(prefers-reduced-motion:reduce){.moon-ring,.coin,.yao-slot{animation:none!important}}
 </style>

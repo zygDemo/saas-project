@@ -308,8 +308,10 @@ export function getGua64(upper: string, lower: string): Gua64 {
 /**
  * 完整六爻排盘
  */
-export function liuYaoPaiPan(question: string): LiuYaoResult {
-  const values = yaoGua()
+export function liuYaoPaiPan(question: string, yaoValues?: number[]): LiuYaoResult {
+  const values = Array.isArray(yaoValues) && yaoValues.length === 6
+    ? yaoValues.map(value => [6, 7, 8, 9].includes(value) ? value : 7)
+    : yaoGua()
   const gua = getGuaFromYao(values)
   const benGua = getGua64(gua.upper, gua.lower)
   const guaWuXing = GUA_WUXING[benGua.upper]
