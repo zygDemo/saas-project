@@ -16,6 +16,15 @@ import type {
   ReviewListResult,
 } from "@/types/api/contract";
 
+/** 阅读进度 */
+interface ReadingProgress {
+  bookId: number;
+  chapterId: number;
+  page: number;
+  progress: number;
+  updatedAt: string;
+}
+
 export type {
   BookItem,
   BookDetail,
@@ -50,6 +59,10 @@ export function useReadingApi() {
     getChapters: (params?: { bookId?: number; page?: number; pageSize?: number }) =>
       http.get<ApiResponse<ChapterListResult>>("/reading/chapters", params),
 
+    /** 获取章节列表(轻量) */
+    getChaptersLite: (bookId: number | string) =>
+      http.get<ApiResponse<ChapterLiteItem[]>>(`/reading/chapters/lite`, { bookId }),
+
     /** 获取章节详情 */
     getChapterDetail: (id: number | string) =>
       http.get<ApiResponse<ChapterContent>>(`/reading/chapters/${id}`),
@@ -67,11 +80,11 @@ export function useReadingApi() {
       http.delete<ApiResponse<void>>(`/reading/bookshelf/${bookId}`),
 
     /** 获取阅读进度 */
-    getReadingProgress: (bookId: number | string) =>
-      http.get<ApiResponse<any>>(`/reading/progress/${bookId}`),
+    getProgress: (bookId: number | string) =>
+      http.get<ApiResponse<ReadingProgress>>(`/reading/progress/${bookId}`),
 
-    /** 更新阅读进度 */
-    updateReadingProgress: (data: { bookId: number; chapterId: number; progress: number }) =>
+    /** 保存阅读进度 */
+    saveProgress: (data: { bookId: number; chapterId: number; progress: number }) =>
       http.post<ApiResponse<void>>("/reading/progress", data),
 
     /** 获取评论列表 */
@@ -79,7 +92,7 @@ export function useReadingApi() {
       http.get<ApiResponse<ReviewListResult>>("/reading/reviews", params),
 
     /** 发表评论 */
-    createReview: (data: { bookId: number; content: number; rating?: number }) =>
+    createReview: (data: { bookId: number; content: string; rating?: number }) =>
       http.post<ApiResponse<void>>("/reading/reviews", data),
 
     /** 删除评论 */
@@ -113,5 +126,13 @@ export function useReadingApi() {
     /** 点赞/取消点赞评论 */
     likeReview: (reviewId: number | string) =>
       http.post<ApiResponse<{ liked: boolean }>>(`/reading/reviews/${reviewId}/like`),
+
+    /** 获取章节笔记 */
+    getNotesByChapter: (bookId: number | string, chapterId: number | string) =>
+      http.get<ApiResponse<NoteItem[]>>(`/reading/notes/chapter/${bookId}/${chapterId}`),
+
+    /** 创建笔记 */
+    createNote: (data: { bookId: number; chapterId: number; content: string; startPos?: number; endPos?: number }) =>
+      http.post<ApiResponse<void>>("/reading/notes", data),
   };
 }

@@ -4,7 +4,7 @@ import type {
   RequestMeta,
   RequestOptions,
 } from "uview-pro";
-import { API_BASE_URL, TENANT_ID } from "./env";
+import { API_BASE_URL, TENANT_ID, UPLOAD_MAX_SIZE } from "./env";
 import { normalizeUploadResponse } from "./file-url";
 import { tokenUtil } from "./token";
 import { useLocalStore } from "@/stores/local";
@@ -127,8 +127,100 @@ function handleBusinessError(response: ApiResponseLike, meta: RequestMeta) {
   }
 }
 
-// 统一处理未授权：清数据 + 跳转登录
-function handleUnauthorized(meta: RequestMeta, msg?: string) {
+// --- Refresh Token 刷新机制 ---
+
+/** 是否正在刷新 Token */
+let isRefreshing = false;
+
+/** 等待 Token 刷新的请求队列 */
+let refreshQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (err: Error) => void;
+}> = [];
+
+/** 标记当前请求是否为 Token 刷新请求，防止递归 */
+const REFRESH_URL = "/auth/refresh";
+
+/** 尝试用 refreshToken 刷新 Token，支持并发请求排队 */
+async function tryRefreshToken(): Promise<string> {
+  const localStore = useLocalStore();
+  const refreshToken = localStore.refreshToken;
+
+  // 没有 refreshToken，直接失败
+  if (!refreshToken) {
+    throw new Error("No refresh token available");
+  }
+
+  // 如果已经在刷新，加入队列等待结果
+  if (isRefreshing) {
+    return new Promise<string>((resolve, reject) => {
+      refreshQueue.push({ resolve, reject });
+    });
+  }
+
+  isRefreshing = true;
+  try {
+    // 使用原始 uni.request 发送刷新请求，绕过拦截器以避免递归
+    const res = await new Promise<{
+      code: number;
+      data?: { token?: string; refreshToken?: string };
+    }>((resolve, reject) => {
+      uni.request({
+        url: `${baseUrl}${REFRESH_URL}`,
+        method: "POST",
+        data: { refreshToken },
+        header: {
+          "Content-Type": "application/json",
+          "X-Tenant-ID": TENANT_ID,
+        },
+        success: (res) => {
+          const body = res.data as {
+            code: number;
+            data?: { token?: string; refreshToken?: string };
+          };
+          resolve(body);
+        },
+        fail: reject,
+      });
+    });
+
+    const newToken = res?.data?.token;
+    const newRefreshToken = res?.data?.refreshToken;
+    if (res?.code === 200 && newToken) {
+      localStore.setToken(newToken);
+      if (newRefreshToken) localStore.setRefreshToken(newRefreshToken);
+
+      // 通知队列中所有等待的请求
+      refreshQueue.forEach(({ resolve }) => resolve(newToken));
+      refreshQueue = [];
+      return newToken;
+    }
+    throw new Error("Refresh token failed");
+  } catch (err) {
+    // 通知队列中所有等待的请求失败
+    const error = err instanceof Error ? err : new Error("Refresh token failed");
+    refreshQueue.forEach(({ reject }) => reject(error));
+    refreshQueue = [];
+    throw error;
+  } finally {
+    isRefreshing = false;
+  }
+}
+
+// 统一处理未授权：先尝试刷新 Token，失败再清数据 + 跳转登录
+async function handleUnauthorized(meta: RequestMeta, msg?: string) {
+  // 先尝试刷新 Token
+  try {
+    await tryRefreshToken();
+    if (meta.toast) {
+      uni.showToast({ title: "已刷新登录状态，请重试", icon: "none" });
+    }
+    return;
+  } catch {
+    // 刷新失败，继续执行下方登出逻辑
+  }
+
+  // 刷新失败，清数据 + 跳转登录
   const localStore = useLocalStore();
   localStore.logout();
   uni.reLaunch({ url: "/pages/auth/login" });
@@ -154,9 +246,60 @@ function getErrorMessage(statusCode: number): string {
 
 // --- 文件上传封装 ---
 
+/** 允许上传的文件扩展名白名单 */
+const ALLOWED_EXTENSIONS = [
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "bmp",
+  "webp",
+  "pdf",
+  "doc",
+  "docx",
+  "xls",
+  "xlsx",
+  "mp4",
+  "mov",
+  "avi",
+];
+
+/** 校验文件大小和类型 */
+function validateFileBeforeUpload(filePath: string): { valid: boolean; msg?: string } {
+  // 1. 文件类型校验（通过扩展名）
+  const ext = filePath.split(".").pop()?.toLowerCase() || "";
+  if (ext && !ALLOWED_EXTENSIONS.includes(ext)) {
+    return { valid: false, msg: `不支持的文件格式: .${ext}` };
+  }
+
+  // 2. 文件大小校验
+  try {
+    const stats = uni.getFileSystemManager().statSync(filePath) as unknown;
+    const statsObj = (Array.isArray(stats) ? stats[0] : stats) as { size?: number } | undefined;
+    const fileSize = statsObj?.size ?? 0;
+    if (fileSize > UPLOAD_MAX_SIZE * 1024 * 1024) {
+      return { valid: false, msg: `文件大小不能超过 ${UPLOAD_MAX_SIZE}MB` };
+    }
+  } catch {
+    // 获取文件信息失败时跳过大小校验（非阻塞）
+  }
+  return { valid: true };
+}
+
 /** 通用文件上传（使用 uni.uploadFile） */
-export function uploadFile(filePath: string, url: string): Promise<any> {
+export function uploadFile(
+  filePath: string,
+  url: string,
+): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
+    // 前端文件校验（大小 + 类型）
+    const check = validateFileBeforeUpload(filePath);
+    if (!check.valid) {
+      uni.showToast({ title: check.msg || "文件校验失败", icon: "none" });
+      reject(new Error(check.msg || "文件校验失败"));
+      return;
+    }
+
     const token = getRequestToken();
 
     uni.uploadFile({
@@ -187,8 +330,16 @@ export function uploadFileWithData(
   filePath: string,
   url: string,
   formData: Record<string, string>,
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
+    // 前端文件校验（大小 + 类型）
+    const check = validateFileBeforeUpload(filePath);
+    if (!check.valid) {
+      uni.showToast({ title: check.msg || "文件校验失败", icon: "none" });
+      reject(new Error(check.msg || "文件校验失败"));
+      return;
+    }
+
     const token = getRequestToken();
 
     uni.uploadFile({

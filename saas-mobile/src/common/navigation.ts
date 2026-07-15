@@ -71,6 +71,19 @@ export const APP_ROUTES = {
     reader: "/pages/reading/reader/index",
     download: "/pages/reading/download/list",
   },
+
+  mingli: {
+    index: '/pages/mingli/index',
+    bazi: {
+      input: '/pages/mingli/bazi/input',
+      result: '/pages/mingli/bazi/result'
+    },
+    liuyao: {
+      shake: '/pages/mingli/liuyao/shake',
+      result: '/pages/mingli/liuyao/result'
+    },
+    history: '/pages/mingli/history'
+  },
   credit: {
     home: "/pages/credit/index/index",
   },
@@ -91,7 +104,7 @@ export const TABBAR_SCOPES = {
 } as const;
 
 export type TabbarScope = (typeof TABBAR_SCOPES)[keyof typeof TABBAR_SCOPES];
-export type MobileModuleKey = "carloan" | "food" | "credit" | "reading";
+export type MobileModuleKey = "carloan" | "food" | "credit" | "reading" | "mingli";
 
 export interface MobileModuleConfigLike {
   enabled?: string[];
@@ -104,6 +117,7 @@ const MOBILE_MODULE_KEYS: MobileModuleKey[] = [
   "food",
   "credit",
   "reading",
+  "mingli",
 ];
 
 const MODULE_HOME_ROUTE_MAP: Record<MobileModuleKey, string> = {
@@ -111,6 +125,7 @@ const MODULE_HOME_ROUTE_MAP: Record<MobileModuleKey, string> = {
   food: APP_ROUTES.food.home,
   credit: APP_ROUTES.credit.home,
   reading: APP_ROUTES.reading.home,
+  mingli: APP_ROUTES.mingli.index,
 };
 
 const MODULE_SYSTEM_MAP: Record<MobileModuleKey, string> = {
@@ -118,6 +133,7 @@ const MODULE_SYSTEM_MAP: Record<MobileModuleKey, string> = {
   food: "food",
   credit: "credit",
   reading: "reading",
+  mingli: "mingli",
 };
 
 export function isMobileModuleKey(key?: string | null): key is MobileModuleKey {
@@ -201,6 +217,7 @@ const ROUTE_SYSTEM_MAP: Record<string, string> = {
   "/pages/food/": "food",
   "/pages/credit/": "credit",
   "/pages/reading/": "reading",
+  "/pages/mingli/": "mingli",
 };
 
 /** 根据路由路径推断所属模块系统 */
@@ -476,6 +493,10 @@ export function getFallbackRouteByPage(route = getCurrentPageRoute()): string {
 
   if (currentRoute.startsWith("/pages/my/")) {
     return APP_ROUTES.my.home;
+  }
+
+  if (currentRoute.startsWith("/pages/mingli/")) {
+    return APP_ROUTES.mingli.index;
   }
 
   return APP_ROUTES.portal.home;

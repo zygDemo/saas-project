@@ -228,6 +228,44 @@
       "style": {
         "navigationBarTitleText": "下载管理"
       }
+    },
+    {
+      "path": "pages/mingli/index",
+      "style": {
+        "navigationBarTitleText": "命理",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mingli/bazi/input",
+      "style": {
+        "navigationBarTitleText": "八字排盘"
+      }
+    },
+    {
+      "path": "pages/mingli/bazi/result",
+      "style": {
+        "navigationBarTitleText": "八字结果"
+      }
+    },
+    {
+      "path": "pages/mingli/liuyao/shake",
+      "style": {
+        "navigationBarTitleText": "六爻摇卦",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mingli/liuyao/result",
+      "style": {
+        "navigationBarTitleText": "六爻排盘"
+      }
+    },
+    {
+      "path": "pages/mingli/history",
+      "style": {
+        "navigationBarTitleText": "历史记录"
+      }
     }
   ],
   "globalStyle": {

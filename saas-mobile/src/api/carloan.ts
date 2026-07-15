@@ -377,12 +377,13 @@ export function useCarloanApi() {
       http.post<ApiResponse<IdCardInfo>>("/m/user/addOrUpdateUserBasic", data),
     /** 联系人信息保存（uuid 通过 URL 参数传递） */
     addOrUpdateContact: (data: ContactInfo) =>
-      http.post(`/m/contact/addOrUpdateContact`, data),
+      http.post<ApiResponse<ContactInfo>>(`/m/contact/addOrUpdateContact`, data),
     /** 获取联系人列表 */
     getContacts: (userUuid: string) =>
-      http.get("/m/contact/getContacts", { userUuid }),
+      http.get<ApiResponse<ContactInfo[]>>("/m/contact/getContacts", { userUuid }),
     /** 删除联系人 */
-    deleteContact: (id: number) => http.delete(`/m/contact/deleteContact/${id}`),
+    deleteContact: (id: number) =>
+      http.delete<ApiResponse<{ id: number }>>(`/m/contact/deleteContact/${id}`),
     /** 创建/更新身份证信息 */
     addOrUpdateIdCardInfo: (data: IdCardInfo) =>
       http.post<ApiResponse<IdCardInfo>>("/m/user/addOrUpdateIdCardInfo", data),
@@ -395,12 +396,12 @@ export function useCarloanApi() {
         data,
       ),
     /** 文件上传（支持文件路径） */
-    uploadFile: (filePath: string) => uploadByUni(filePath, "/m/file/upload") as Promise<ApiResponse<MobileUploadResult> & MobileUploadResult>,
+    uploadFile: (filePath: string) => uploadByUni(filePath, "/m/file/upload") as unknown as Promise<ApiResponse<MobileUploadResult> & MobileUploadResult>,
     /** 图片上传（支持文件路径）统一走 /m/file/upload */
-    uploadImage: (filePath: string) => uploadByUni(filePath, "/m/file/upload") as Promise<ApiResponse<MobileUploadResult> & MobileUploadResult>,
+    uploadImage: (filePath: string) => uploadByUni(filePath, "/m/file/upload") as unknown as Promise<ApiResponse<MobileUploadResult> & MobileUploadResult>,
     /** 带类型参数的文件上传 */
     uploadWithType: (filePath: string, formData: Record<string, string>) =>
-      uploadFileWithData(filePath, "/m/file/uploadWithType", formData) as Promise<ApiResponse<MobileUploadResult> & MobileUploadResult>,
+      uploadFileWithData(filePath, "/m/file/uploadWithType", formData) as unknown as Promise<ApiResponse<MobileUploadResult> & MobileUploadResult>,
     /** 兼容旧调用：文件记录已在 /m/file/uploadWithType 上传时保存 */
     saveFiles: (data: {
       uuid: string;
@@ -487,7 +488,8 @@ export function useCarloanApi() {
     updateSupplementStatus: (data: { creditOrderId: string; field: string; value: number }) =>
       http.post<ApiResponse<CreditListItem>>("/m/credit/updateSupplementStatus", data),
     /** 获取产品列表 */
-    getProductList: () => http.get("/product/list"),
+    getProductList: () =>
+      http.get<ApiResponse<Record<string, unknown>[]>>("/product/list"),
     /** 获取客户身份信息详情 */
     getUserBasic: (uuid: string) =>
       http.get<ApiResponse<IdCardInfo>>("/m/user/getUserBasic", { uuid }),
@@ -516,7 +518,7 @@ export function useCarloanApi() {
 
     /** 字典数据列表查询 */
     getDictDataList: (dictType: string) =>
-      http.get(`/dict/options/${dictType}`),
+      http.get<ApiResponse<Record<string, unknown>[]>>(`/dict/options/${dictType}`),
     /** 贷款业务节点枚举查询 */
     getLoanBusinessNodes: () =>
       http.get<ApiResponse<LoanBusinessNode[]>>("/m/enum/loanBusinessNodes"),
@@ -591,7 +593,9 @@ export function useCarloanApi() {
 
     /** 授权签署（一键签署） */
     authorizeSign: (signRecordId: number) =>
-      http.post<ApiResponse<any>>(`/signing/${signRecordId}/authorize-sign`),
+      http.post<ApiResponse<{ signRecordId: number; status: string }>>(
+        `/signing/${signRecordId}/authorize-sign`,
+      ),
 
     /** GPS安装完成 */
     completeGpsInstall: (applicationId: string | number, data?: { gpsDeviceNo?: string; gpsInstallImg?: string }) =>

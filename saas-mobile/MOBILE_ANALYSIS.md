@@ -14,7 +14,7 @@
 
 ### 定位
 
-这是一个**多租户 SaaS 移动端应用**，采用 uni-app 跨平台框架，支持 H5、微信小程序、App（Android/iOS）、支付宝小程序等多种平台。应用聚合了车抵贷、点餐、征信查询、读书等多个业务模块，通过租户配置实现模块动态启用。
+这是一个**多租户 SaaS 移动端应用**，采用 uni-app 跨平台框架，支持 H5、微信小程序、App（Android/iOS）、支付宝小程序等多种平台。应用聚合了车抵贷、点餐、征信查询、读书、命理等多个业务模块，通过租户配置实现模块动态启用。
 
 ---
 
@@ -70,7 +70,7 @@ saas-mobile/src/
 ├── App.ku.vue           # @uni-ku/root 插件入口
 ├── main.ts              # 主入口文件
 ├── manifest.json        # uni-app 应用配置
-├── pages.json           # 页面路由配置（~60+ 页面）
+├── pages.json           # 页面路由配置（68 页面）
 ├── theme.json           # 主题配置
 ├── uni.scss             # 全局样式变量
 │
@@ -86,15 +86,20 @@ saas-mobile/src/
 │
 ├── common/              # 公共工具
 │   ├── env.ts           # 环境变量工具
-│   ├── navigation.ts    # 路由导航（520行，核心）
+│   ├── navigation.ts    # 路由导航（541行，核心）
 │   ├── token.ts         # Token 工具
-│   ├── http.interceptor.ts # HTTP 拦截器
+│   ├── http.interceptor.ts # HTTP 拦截器（388行）
+│   ├── logger.ts        # 生产环境日志工具（75行，新增）
+│   ├── file-url.ts      # 文件 URL 处理
 │   ├── carloan-route-query.ts # 车贷路由参数构建
-│   └── ...
+│   └── mingli/          # 命理算法模块（新增）
+│       ├── bazi.ts      # 八字排盘算法（371行）
+│       └── liuyao.ts    # 六爻排盘算法（359行）
 │
 ├── components/          # 公共组件
 │   ├── app-page/        # 页面容器组件（含导航栏+TabBar）
 │   ├── app-tabbar/      # 自定义底部导航栏
+│   ├── virtual-list/    # 虚拟滚动列表组件（新增）
 │   ├── progress-ring/   # 进度环组件
 │   └── ...
 │
@@ -114,6 +119,7 @@ saas-mobile/src/
 │   ├── reading.ts       # 读书业务状态
 │   ├── session.ts       # 会话状态
 │   ├── tabbar.ts        # TabBar 状态
+│   ├── dict.ts          # 字典数据缓存（119行，新增）
 │   └── counter.ts       # 计数器（示例）
 ├── styles/              # 全局样式
 └── types/               # TypeScript 类型定义
@@ -134,6 +140,7 @@ saas-mobile/src/
 | `food` | 点餐 | `/pages/food/index/index` | 可用 | 中等 |
 | `credit` | 征信查询 | `/pages/credit/index/index` | 可用 | 较低 |
 | `reading` | 读书 | `/pages/reading/index/index` | 可用 | 中等 |
+| `mingli` | 命理 | `/pages/mingli/index` | 可用（新增） | 中等 |
 
 ### 4.2 模块配置机制
 
@@ -150,6 +157,13 @@ interface MobileModuleConfigLike {
 - **多模块模式**: 显示门户首页，用户自由选择
 - **角色映射**: 通过 `ROLE_MODULE_MAP` 实现角色到默认模块的映射
 
+模块注册和导航体系已完整集成命理模块：
+- `MobileModuleKey` 类型已包含 `"mingli"`
+- `MODULE_HOME_ROUTE_MAP` 映射命理首页路由
+- `MODULE_SYSTEM_MAP` 映射命理系统标识
+- `ROUTE_SYSTEM_MAP` 通过路由前缀 `/pages/mingli/` 推断模块归属
+- `getFallbackRouteByPage()` 支持命理模块的回退导航
+
 ### 4.3 车抵贷模块（核心业务）
 
 车抵贷是项目的核心业务模块，拥有完整的贷款全生命周期流程：
@@ -158,7 +172,7 @@ interface MobileModuleConfigLike {
 线索管理 -> 进件预审 -> 资料补充 -> 审批 -> 签约 -> 贷后管理
 ```
 
-#### 页面结构（30+ 页面）
+#### 页面结构（35+ 页面）
 
 ```
 carloan/
@@ -205,7 +219,7 @@ carloan/
 │   ├── signConfirmAmount.vue  # 额度确认
 │   ├── signBindCard.vue       # 绑卡
 │   ├── authSign.vue           # 授权签署
-│   ├── videoFaceSign.vue      # 视频面签
+│   ├── videoFaceSign.vue      # 视频面签（1169行，待拆分）
 │   ├── faceSignList.vue       # 面签列表
 │   ├── faceSignResult.vue     # 面签结果
 │   ├── signGpsAppointment.vue # GPS 预约
@@ -238,7 +252,81 @@ carloan/
 | 贷后 | `confirmAmount`, `getRepaymentPlans`, `applyEarlyRepayment` | 还款管理 |
 | 统计 | `getStatisticsOverview`, `getLifecycle` | 数据概览、流程追踪 |
 
-### 4.4 其他业务模块
+### 4.4 命理模块（新增，纯前端算法）
+
+命理模块是一个**完全离线的纯前端算法模块**，不依赖后端 API，所有排盘计算在客户端完成。
+
+#### 页面结构（6 页面）
+
+```
+mingli/
+├── index.vue              # 命理首页（功能入口）
+├── bazi/
+│   ├── input.vue          # 八字信息输入页
+│   └── result.vue         # 八字排盘结果页
+├── liuyao/
+│   ├── shake.vue          # 六爻摇卦页（含动画）
+│   └── result.vue         # 六爻排盘结果页
+└── history.vue            # 历史记录页
+```
+
+#### 核心算法文件
+
+**`src/common/mingli/bazi.ts`（371 行）** — 八字排盘引擎：
+
+| 功能 | 函数 | 说明 |
+|------|------|------|
+| 四柱排盘 | `paiPan(year, month, day, hour, gender)` | 生成完整八字排盘结果 |
+| 年柱推算 | `getYearZhu(year)` | 基于公元年份推算天干地支 |
+| 月柱推算 | `getMonthZhu(yearGan, month)` | 五虎遁年起月干 |
+| 日柱推算 | `getDayZhu(year, month, day)` | 基于 1900-01-01 基准日计算 |
+| 时柱推算 | `getHourZhu(dayGan, hour)` | 五鼠遁日起时干 |
+| 十神推算 | `getShiShen(riGan, otherGan)` | 基于日干推算十神关系 |
+| 纳音五行 | `getNaYin(gan, zhi)` | 60 甲子纳音查询表 |
+| 五行统计 | `countWuXing(siZhu)` | 统计四柱五行分布 |
+| 大运排盘 | `getDaYun(siZhu, gender)` | 阳男阴女顺排、阴男阳女逆排 |
+
+数据表：天干（10）、地支（12）、五行对照、阴阳对照、五行生克关系、纳音表（60 组）、五行颜色映射。
+
+**`src/common/mingli/liuyao.ts`（359 行）** — 六爻排盘引擎：
+
+| 功能 | 函数 | 说明 |
+|------|------|------|
+| 摇卦模拟 | `yaoGua()` | 模拟三枚铜钱，生成 6 个爻值（6/7/8/9） |
+| 阴阳判定 | `getYinYang(value)` | 7、9 为阳，6、8 为阴 |
+| 动爻判定 | `isDongYao(value)` | 6（老阴）和 9（老阳）为动爻 |
+| 变爻推算 | `getBianYinYang(value)` | 老阴变阳、老阳变阴 |
+| 卦象推算 | `getGuaFromYao(values)` | 从 6 爻推算上下卦 |
+| 64 卦查询 | `getGua64(upper, lower)` | 查询卦名、世应、卦辞 |
+| 六神排列 | `getLiuShenByDay(riGan)` | 甲乙起青龙…壬癸起玄武 |
+| 六亲推算 | `getLiuQin(guaWuXing, yaoWuXing)` | 基于卦宫五行与爻五行关系 |
+| 完整排盘 | `liuYaoPaiPan(question)` | 生成完整六爻排盘结果 |
+
+数据表：八卦（8）、八卦五行、八卦象征、64 卦数据（含卦名、全名、世应、卦辞、宫位）、纳甲表（8 卦 × 天干 + 6 地支）、地支五行。
+
+#### 数据传递机制
+
+- **八字**: 通过 `uni.setStorageSync('bazi_params', ...)` 存储参数 → 结果页 `onMounted` 读取
+- **六爻**: 通过 URL query 参数 `?values=6,7,8,9,...` 传递爻值
+- **历史记录**: 通过 `uni.getStorageSync('mingli_history')` 读取本地存储
+
+#### UI 设计特点
+
+- 深色主题（`#1a1a2e → #16213e → #0f3460` 渐变背景）
+- 金色（`#e6b422`）为主色调，呼应传统命理风格
+- 八字结果页使用五行颜色区分（金-黄、木-绿、水-蓝、火-红、土-棕）
+- 六爻摇卦页含摇卦动画交互
+- 历史记录页区分八字/六爻两种类型展示
+
+#### 已知限制
+
+1. **日柱时区偏差**: `getDayZhu()` 使用本地时区构造日期，非东八区用户跨午夜可能产生 1 天偏差（代码中已有注释提示）
+2. **六爻日干简化**: `liuYaoPaiPan()` 中日干硬编码为 `'甲'`，未根据实际日期推算
+3. **爻辞缺失**: `Gua64.yaoCi` 为空数组（标注 TODO）
+4. **大运起运年龄简化**: `getDaYun()` 使用 `i * 10` 简化计算，未精确到天数折算
+5. **历史记录无上限管理**: 本地存储 `mingli_history` 无数量限制，长期使用可能占用过多空间
+
+### 4.5 其他业务模块
 
 - **点餐模块 (`food/`)**: 门店列表、商品浏览、购物车、订单管理
 - **征信查询 (`credit/`)**: 在线查询、信用报告
@@ -271,6 +359,8 @@ const TABBAR_SCOPES = {
 
 导航方式支持 `switchTab` / `redirectTo` / `reLaunch` 三种模式，每个 Tab 项可独立配置。通过 `navigateFromTabbar()` 统一处理导航逻辑，并通过 `navigateBackOrFallback()` 提供兜底回退。
 
+> 注：命理模块未配置独立 TabBar 作用域，使用 `navigationStyle: "custom"` 自定义导航栏。
+
 ### 5.2 状态管理
 
 | Store | 文件 | 持久化 | 用途 |
@@ -281,6 +371,20 @@ const TABBAR_SCOPES = {
 | `reading` | `reading.ts` | - | 读书业务状态 |
 | `session` | `session.ts` | - | 会话状态 |
 | `tabbar` | `tabbar.ts` | - | TabBar 状态 |
+| `dict` | `dict.ts` | - | 字典数据缓存（新增） |
+
+**字典缓存 Store 详解** (`dict.ts`, 119 行):
+
+```typescript
+// 核心机制：缓存 + 并发去重 + TTL 过期
+const DEFAULT_TTL = 10 * 60 * 1000; // 10 分钟
+
+// fetchOptions(dictType, fetcher, ttl) 流程：
+// 1. 检查缓存是否有效 -> 命中则直接返回
+// 2. 检查是否有进行中的请求 -> 有则返回同一 Promise（并发去重）
+// 3. 同步创建 Promise 并写入 loading 状态 -> 防止竞态
+// 4. 异步发起新请求 -> 成功写入缓存，失败清除 loading
+```
 
 **持久化适配器**: 针对小程序环境，使用 `uni.getStorageSync` / `uni.setStorageSync` 实现 Storage 适配。
 
@@ -311,8 +415,55 @@ interface CarloanPageContext {
 - **`layout`**: 布局组件，支持动态 TabBar 作用域切换
 - **`app-tabbar`**: 自定义底部导航
 - **`progress-ring`**: 进度环
+- **`VirtualList`**: 虚拟滚动列表（新增），只渲染可视区域 + 缓冲区项目
 
 通过 `easycom` 自动导入机制，`app-*` 前缀组件无需手动注册。
+
+### 5.6 HTTP 拦截器架构
+
+`src/common/http.interceptor.ts`（388 行）实现了完整的请求/响应拦截链：
+
+```
+请求拦截:
+  ├── 注入 X-Tenant-ID（租户头）
+  ├── 注入 X-Org-Id（组织头）
+  ├── 注入 Authorization Token（区分客户/员工）
+  └── 显示 Loading
+
+响应拦截:
+  ├── 关闭 Loading
+  ├── HTTP 状态码错误处理 (非 200)
+  │   ├── 401 -> 尝试刷新 Token -> 失败则登出
+  │   └── 其他 -> toast 提示
+  ├── 业务状态码错误处理 (code !== 200)
+  │   ├── 401 -> 尝试刷新 Token -> 失败则登出
+  │   └── 其他 -> toast 提示
+  └── 成功 -> 返回 res.data
+
+文件上传:
+  ├── 前端校验（扩展名白名单 14 种 + 大小限制）
+  ├── 构建 Auth Header
+  └── 响应解析 normalizeUploadResponse
+```
+
+**Token 刷新机制**:
+- `isRefreshing` 锁 + `refreshQueue` 请求队列
+- 首个 401 触发 `tryRefreshToken()`，后续请求入队等待
+- 刷新成功后队列中的请求自动携带新 Token 重发
+- 刷新失败则清空队列并跳转登录页
+- 刷新请求使用原始 `uni.request`，绕过拦截器避免递归
+
+### 5.7 日志工具
+
+`src/common/logger.ts`（75 行）实现生产环境日志降级：
+
+| 方法 | 开发环境 | 生产环境 |
+|------|---------|---------|
+| `log/info/debug` | 正常输出 | 静默 |
+| `warn` | 正常输出 | 保留但截断长参数（500 字符） |
+| `error` | 正常输出 | 完整保留（用于错误监控） |
+
+内置循环引用检测 (`safeStringify`) 和参数截断 (`truncateArg`)。
 
 ---
 
@@ -336,7 +487,7 @@ interface CarloanPageContext {
 
 ## 七、页面路由总览
 
-项目共注册 **60+ 页面**，分布如下：
+项目共注册 **68 页面**，分布如下：
 
 | 模块 | 页面数 | 核心页面 |
 |------|--------|---------|
@@ -346,6 +497,7 @@ interface CarloanPageContext {
 | 点餐 | ~6 | 门店、商品、购物车、订单 |
 | 征信 | 2 | 查询首页、查询结果 |
 | 读书 | ~6 | 书架、书城、书籍详情、阅读器、下载管理 |
+| 命理 | 6 | 首页、八字输入/结果、六爻摇卦/结果、历史记录 |
 | 我的 | ~6 | 个人中心、关于、FAQ、设置、隐私、协议 |
 
 ---
@@ -379,8 +531,8 @@ interface UserInfo {
 `src/common/http.interceptor.ts` 统一处理：
 
 - 请求自动携带 `Authorization` Token 和 `tenant-id` 租户头
-- 401 自动跳转登录
-- Token 过期自动刷新
+- 401 自动刷新 Token，刷新失败再跳转登录
+- Token 过期自动刷新（并发请求排队）
 - 统一错误提示
 
 ---
@@ -406,30 +558,143 @@ interface UserInfo {
 
 完整的车抵贷业务闭环，覆盖从线索到贷后的全生命周期，集成 OCR 识别、人脸签约、合同电子签署等能力。
 
-### 9.4 开发体验
+### 9.4 命理模块纯前端实现
+
+八字/六爻排盘完全在客户端计算，无需后端支持，降低了服务器负载，同时保护了用户隐私数据。
+
+### 9.5 开发体验
 
 - TypeScript 全量类型覆盖
 - `useListPage` 等组合式函数减少重复代码
 - UnoCSS 原子化样式
 - 组件自动导入（easycom + vite-plugin-uni-components）
 - Playwright E2E 测试
+- 生产环境日志自动降级
 
 ---
 
-## 十、潜在改进建议
+## 十、代码质量改进记录
 
-| 领域 | 建议 | 优先级 |
-|------|------|--------|
-| 分包优化 | 车贷模块页面众多，建议使用 `subPackages` 进行分包加载 | 高 |
-| 组件文档 | 补充公共组件的 Props/Events 文档 | 中 |
-| API 类型 | `api/carloan.ts` 部分接口缺少请求/响应类型定义 | 中 |
-| 环境变量 | `.env.sit` 和 `.env.production` 的 API 地址需确认配置 | 高 |
-| 代码拆分 | `navigation.ts`（520行）可考虑按功能拆分 | 低 |
-| 单元测试 | 目前仅有 E2E 测试，建议补充关键逻辑的单元测试 | 中 |
-| 依赖更新 | `vue-i18n` 9.1 偏旧，建议升级到 9.14+ | 低 |
+本次对移动端项目进行了深度分析并实施了以下改进：
+
+### 10.1 Refresh Token 刷新机制 ✅
+
+**文件**: `src/common/http.interceptor.ts`
+
+**问题**: Token 过期后直接跳转登录页，用户体验中断。
+
+**改进**: 实现了 `isRefreshing` 锁 + 请求队列机制。当 401 发生时：
+- 首个请求触发 `refreshToken`，期间所有后续请求入队等待
+- 刷新成功后，队列中的请求自动携带新 Token 重发
+- 刷新失败时，清空队列并跳转登录页
+
+### 10.2 文件上传前端校验 ✅
+
+**文件**: `src/common/http.interceptor.ts`
+
+**问题**: `uploadFile` / `uploadFileWithData` 上传前无任何校验，大文件或错误类型直接上传浪费带宽。
+
+**改进**: 新增 `validateFileBeforeUpload()` 函数：
+- 文件大小限制（默认 10MB）
+- 文件类型白名单校验（jpg/png/pdf 等 14 种）
+- 校验失败时通过 `uni.showToast` 提示用户
+- 支持 `onValidationFail` 回调自定义处理
+
+### 10.3 字典数据缓存 ✅
+
+**文件**: `src/stores/dict.ts`
+
+**问题**: 每次使用字典数据都发起 HTTP 请求，重复请求多。
+
+**改进**: 实现了基于 Pinia 的字典缓存 Store：
+- `loadDict(dictType)` 自动缓存，重复调用直接返回缓存值
+- `getDictSync(dictType)` 同步获取已缓存数据
+- `clearCache(dictType?)` 支持清除单个/全部缓存
+- 缓存有效期 10 分钟，过期自动刷新
+- 并发请求去重（同一 dictType 同时只发一次请求）
+
+### 10.4 长列表虚拟滚动 ✅
+
+**文件**: `src/components/virtual-list/VirtualList.vue`（新增）
+
+**问题**: 订单列表、线索列表等场景数据量大时，DOM 节点过多导致卡顿。
+
+**改进**: 创建了通用虚拟滚动组件：
+- 只渲染可视区域 + 缓冲区的项目（默认前后各 5 项）
+- 通过 `translateY` 偏移实现平滑滚动
+- 支持受控 `scrollTop` 和 `@scroll` / `@reachBottom` 事件
+- 支持自定义 `keyField` 和 `itemHeight`
+- 兼容 uni-app `scroll-view` 组件
+
+### 10.5 API 返回类型补全 ✅
+
+**文件**: `src/api/carloan.ts`
+
+**问题**: 部分接口缺少泛型标注，返回 `unknown` 或隐式 `any`。
+
+**改进**: 为以下接口补充了完整泛型：
+- `addOrUpdateContact` -> `ApiResponse<ContactInfo>`
+- `getContacts` -> `ApiResponse<ContactInfo[]>`
+- `deleteContact` -> `ApiResponse<{ id: number }>`
+- `getProductList` -> `ApiResponse<Record<string, unknown>[]>`
+- `getDictDataList` -> `ApiResponse<Record<string, unknown>[]>`
+- `authorizeSign` -> `ApiResponse<{ signRecordId: number; status: string }>`（同时消除了 `any`）
+
+### 10.6 生产环境日志剥离 ✅
+
+**文件**: `src/common/logger.ts`（新增）
+
+**问题**: 全项目散布大量 `console.log/warn/error`，生产环境暴露调试信息且影响性能。
+
+**改进**: 创建了统一的日志工具：
+- `logger.log/info/debug`：生产环境静默
+- `logger.warn`：生产环境保留但截断长参数（500 字符）
+- `logger.error`：生产环境完整保留（用于错误监控）
+- `logIf(condition, level, ...)`：条件性日志输出
+- 内置循环引用检测和安全的 JSON 序列化
+
+**使用方式**:
+```typescript
+import { logger } from "@/common/logger";
+logger.info("调试信息"); // 生产环境自动跳过
+logger.error("错误信息"); // 生产环境保留
+```
+
+### 10.7 命理模块新增 ✅
+
+**文件**: `src/common/mingli/bazi.ts`、`src/common/mingli/liuyao.ts`、`src/pages/mingli/*`
+
+**功能**: 完整的八字排盘和六爻摇卦功能，纯前端算法实现，包含：
+- 八字四柱排盘（年月日时柱 + 十神 + 纳音 + 五行统计 + 大运）
+- 六爻排盘（摇卦 + 纳甲 + 六亲 + 六神 + 世应 + 变卦）
+- 64 卦完整数据（卦名、全名、卦辞、世应、宫位）
+- 历史记录本地存储
+
+### 10.8 待改进项
+
+| 改进项 | 现状 | 建议 | 优先级 |
+|--------|------|------|--------|
+| 拆分 `videoFaceSign.vue` | 1169 行，逻辑过于集中 | 拆为 `useVideoSign` composable + `FaceSignDialog` + `ContractSignDialog` 子组件 | 高 |
+| 六爻日干推算 | `liuYaoPaiPan()` 中硬编码为 `'甲'` | 根据实际日期推算日干支 | 高 |
+| 八字时区处理 | `getDayZhu()` 使用本地时区 | 输入前转换为东八区真太阳时 | 中 |
+| 大运起运年龄 | 简化为 `i * 10` | 精确到天数折算 | 中 |
+| 爻辞数据补全 | `Gua64.yaoCi` 为空数组 | 补充 64 卦 384 爻辞 | 中 |
+| 存储逻辑统一 | `local.ts` 中混用 localStorage 和 sessionStorage | 统一为 `useStorage()` 适配器，兼容小程序环境 | 低 |
+| 历史记录上限 | `mingli_history` 无数量限制 | 添加最大 100 条限制，超出自动删除最早记录 | 低 |
 
 ---
 
-## 总结
+## 十一、总结
 
-`saas-mobile` 是一个功能完善的**多租户 SaaS 移动端应用**，基于 uni-app + Vue 3 + TypeScript 构建，核心业务为车抵贷全流程管理，同时集成了点餐、征信查询、读书等多个模块。项目架构清晰，模块化程度高，状态管理和导航系统设计合理，具备良好的可维护性和可扩展性。车贷模块的业务流程完整，覆盖了从线索到贷后的全生命周期，是一个成熟的金融业务移动端解决方案。
+`saas-mobile` 是一个功能完善的跨平台 SaaS 移动端应用，核心业务为车抵贷全流程管理，同时集成了点餐、征信、读书、命理等多个业务模块。项目采用 uni-app + Vue 3 + TypeScript 的现代技术栈，通过模块化架构实现多租户配置驱动的业务隔离。
+
+**核心优势**:
+- 完整的车贷业务闭环（线索 → 预审 → 补件 → 审批 → 签约 → 贷后）
+- 跨平台一致性（H5 / 小程序 / App）
+- 纯前端命理算法模块（八字 + 六爻）
+- 完善的 HTTP 拦截与 Token 刷新机制
+- TypeScript 全量类型覆盖 + 组合式函数复用
+
+**技术债务**:
+- `videoFaceSign.vue`（1169 行）需拆分重构
+- 命理模块算法存在简化处理（日干硬编码、时区偏差、大运计算）

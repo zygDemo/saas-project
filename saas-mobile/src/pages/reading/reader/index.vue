@@ -439,8 +439,8 @@ import {
 import type { Bookmark, Chapter } from "./reader-helpers";
 
 const readingApi = useReadingApi();
-const bookId = ref("");
-const chapterId = ref("");
+const bookId = ref(0);
+const chapterId = ref(0);
 const showNotePopup = ref(false);
 const selectedText = ref('');
 const noteContent = ref('');
@@ -466,9 +466,7 @@ async function _saveNote() {
     await readingApi.createNote({
       bookId: bookId.value,
       chapterId: chapterId.value,
-      highlight: selectedText.value || undefined,
-      note: noteContent.value || undefined,
-      color: noteColor.value,
+      content: noteContent.value || '',
       startPos: noteStartPos.value,
       endPos: noteEndPos.value,
     });
@@ -571,13 +569,13 @@ async function preloadAdjacentChapters(targetBookId: string, targetChapterId: st
 
     const currentChapter = computed(() => {
   return (
-    chapterList.value.find((c) => c.id === chapterId.value) ||
+    chapterList.value.find((c) => String(c.id) === String(chapterId.value)) ||
     chapterList.value[0]
   );
 });
 
 const currentChapterIndex = computed(() => {
-  return chapterList.value.findIndex((c) => c.id === chapterId.value);
+  return chapterList.value.findIndex((c) => String(c.id) === String(chapterId.value));
 });
 
 const hasPrevChapter = computed(() => currentChapterIndex.value > 0);
@@ -675,7 +673,7 @@ const onTouchStart = (e: TouchEvent) => {
 
 const checkBookmarkStatus = () => {
   isBookmarked.value = bookmarks.value.some(
-    (b) => b.chapterId === chapterId.value && b.page === currentPage.value,
+    (b) => String(b.chapterId) === String(chapterId.value) && b.page === currentPage.value,
   );
 };
 
@@ -748,12 +746,12 @@ const debouncedSaveProgress = () => {
 const prevChapter = async () => {
   if (!hasPrevChapter.value) return;
   const prevIdx = currentChapterIndex.value - 1;
-  chapterId.value = chapterList.value[prevIdx].id;
+  chapterId.value = Number(chapterList.value[prevIdx].id);
   currentPage.value = 0;
   checkBookmarkStatus();
-  chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
+  chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
     // 预加载相邻章节
-    preloadAdjacentChapters(bookId.value, chapterId.value);
+    preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
     loadChapterNotes();
   debouncedSaveProgress();
 };
@@ -761,12 +759,12 @@ const prevChapter = async () => {
 const nextChapter = async () => {
   if (!hasNextChapter.value) return;
   const nextIdx = currentChapterIndex.value + 1;
-  chapterId.value = chapterList.value[nextIdx].id;
+  chapterId.value = Number(chapterList.value[nextIdx].id);
   currentPage.value = 0;
   checkBookmarkStatus();
-  chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
+  chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
     // 预加载相邻章节
-    preloadAdjacentChapters(bookId.value, chapterId.value);
+    preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
     loadChapterNotes();
   debouncedSaveProgress();
 };
@@ -802,17 +800,17 @@ const onTouchEnd = (ev: TouchEvent) => {
 
 onLoad(async (options) => {
   if (options?.bookId) {
-    bookId.value = String(options.bookId);
+    bookId.value = Number(options.bookId);
   }
   if (options?.chapterId) {
-    chapterId.value = String(options.chapterId);
+    chapterId.value = Number(options.chapterId);
   }
 
   if (bookId.value) {
     try {
       // 使用轻量接口一次性加载全部章节目录（仅 id/title/sort）
       const liteRes = await readingApi.getChaptersLite(bookId.value);
-      const allItems = liteRes.data?.items || [];
+      const allItems = (liteRes as any)?.data?.items || liteRes.data || [];
 
       chapterList.value = allItems.map((item: ChapterLiteItem) => ({
         id: String(item.id),
@@ -845,22 +843,22 @@ onLoad(async (options) => {
 
       // 确定要加载的章节
       if (!chapterId.value && savedChapterId) {
-        chapterId.value = savedChapterId;
+        chapterId.value = Number(savedChapterId);
       }
       if (!chapterId.value && allItems.length) {
     // 进入全屏阅读模式
     try {
       (uni as unknown as { hideStatusBar?: () => void }).hideStatusBar?.();
     } catch {}
-    chapterId.value = String(allItems[0].id);
+    chapterId.value = Number(allItems[0].id);
       }
 
       if (chapterId.value) {
         isContentLoading.value = true;
         try {
-          chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
+          chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
     // 预加载相邻章节
-    preloadAdjacentChapters(bookId.value, chapterId.value);
+    preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
     loadChapterNotes();
           // 恢复保存的页码
           if (savedPage > 0) {
@@ -931,10 +929,10 @@ const onScrollToLower = async () => {
     isAutoLoading.value = true;
     try {
       const nextIdx = currentChapterIndex.value + 1;
-      chapterId.value = chapterList.value[nextIdx].id;
-      chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
+      chapterId.value = Number(chapterList.value[nextIdx].id);
+      chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
     // 预加载相邻章节
-    preloadAdjacentChapters(bookId.value, chapterId.value);
+    preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
     loadChapterNotes();
       // 滚动到新章节顶部
       resetScrollToTop();
@@ -960,11 +958,11 @@ const onPageChange = async (changeEvent: { current: number; detail?: { current?:
     isAutoLoading.value = true;
     try {
       const nextIdx = currentChapterIndex.value + 1;
-      chapterId.value = chapterList.value[nextIdx].id;
+      chapterId.value = Number(chapterList.value[nextIdx].id);
       currentPage.value = 0;
-      chapterContent.value = await loadChapterContent(bookId.value, chapterId.value);
+      chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
     // 预加载相邻章节
-    preloadAdjacentChapters(bookId.value, chapterId.value);
+    preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
     loadChapterNotes();
       checkBookmarkStatus();
       debouncedSaveProgress();
@@ -997,11 +995,11 @@ const showNoteEditor = () => {
 
 const jumpToChapter = async (chapter: Chapter) => {
   if (await validateChapterAccess(chapter)) {
-    chapterId.value = chapter.id;
+    chapterId.value = Number(chapter.id);
     currentPage.value = 0;
     showChapterPopup.value = false;
     checkBookmarkStatus();
-    chapterContent.value = await loadChapterContent(bookId.value, chapter.id);
+    chapterContent.value = await loadChapterContent(String(bookId.value), String(chapter.id));
     debouncedSaveProgress();
   }
 };
@@ -1041,7 +1039,7 @@ async function handlePurchaseChapter(chapter: Chapter) {
     readingStore.markChapterPurchased(bookId.value, chapter.id, chapter.title);
     uni.hideLoading();
     uni.showToast({ title: '购买成功，已解锁章节', icon: 'success' });
-    chapterContent.value = await loadChapterContent(bookId.value, chapter.id);
+    chapterContent.value = await loadChapterContent(String(bookId.value), String(chapter.id));
     currentPage.value = 0;
     checkBookmarkStatus();
     debouncedSaveProgress();
@@ -1096,7 +1094,7 @@ const toggleBookmark = () => {
   if (isBookmarked.value) {
     // 删除当前页书签
     const idx = bookmarks.value.findIndex(
-      (b) => b.chapterId === chapterId.value && b.page === currentPage.value,
+      (b) => String(b.chapterId) === String(chapterId.value) && b.page === currentPage.value,
     );
     if (idx > -1) {
       bookmarks.value.splice(idx, 1);
@@ -1109,7 +1107,7 @@ const toggleBookmark = () => {
     const content = currentPages.value[currentPage.value]?.slice(0, 50) || "";
     bookmarks.value.unshift({
       id: Date.now().toString(),
-      chapterId: chapterId.value,
+      chapterId: String(chapterId.value),
       chapterTitle: currentChapter.value?.title || "",
       content: `${content}...`,
       page: currentPage.value,
@@ -1140,8 +1138,8 @@ const deleteBookmark = (bookmark: Bookmark) => {
 };
 
 const jumpToBookmark = (bookmark: Bookmark) => {
-  if (bookmark.chapterId !== chapterId.value) {
-    chapterId.value = bookmark.chapterId;
+  if (String(bookmark.chapterId) !== String(chapterId.value)) {
+    chapterId.value = Number(bookmark.chapterId);
   }
   currentPage.value = bookmark.page;
   showBookmarkPopup.value = false;

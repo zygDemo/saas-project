@@ -573,7 +573,7 @@ onLoad(() => {
 // 加载真实阅读统计
 const fetchStats = async () => {
   try {
-    const res = await readingApi.getStatistics("1");
+    const res = await readingApi.getStatistics();
     const data = res?.data;
     if (data?.personal) {
       realStats.value = {

@@ -68,9 +68,9 @@
               <text class="plan-label">罚息</text>
               <text class="plan-value danger">¥{{ formatMoney(item.penaltyAmount) }}</text>
             </view>
-            <view v-if="item.overdueDays > 0" class="plan-row">
+            <view v-if="(item.overdueDays ?? 0) > 0" class="plan-row">
               <text class="plan-label">逾期天数</text>
-              <text class="plan-value danger">{{ item.overdueDays }}天</text>
+              <text class="plan-value danger">{{ (item.overdueDays ?? 0) }}天</text>
             </view>
           </view>
         </view>

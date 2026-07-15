@@ -322,7 +322,7 @@ interface RecommendBook {
 const readingStore = useReadingStore();
 const readingApi = useReadingApi();
 const descExpanded = ref(false);
-const bookId = ref("");
+const bookId = ref(0);
 
 const book = ref<BookItem>({
   id: "1",
@@ -465,7 +465,7 @@ const fetchChapters = async (id: string, reset = false) => {
   const page = reset ? 1 : chapterPage.value;
   chapterLoading.value = true;
   try {
-    const res = await readingApi.getChapters(id, { page, pageSize: chapterPageSize.value });
+    const res = await readingApi.getChapters({ bookId: Number(id), page, pageSize: chapterPageSize.value });
     const data = res?.data;
     const items = data?.items || [];
     const total = data?.total || 0;
@@ -499,7 +499,7 @@ const fetchChapters = async (id: string, reset = false) => {
 
 const loadMoreChapters = () => {
   if (!chapterLoading.value && !chapterFinished.value) {
-    fetchChapters(bookId.value);
+    fetchChapters(String(bookId.value));
   }
 };
 
@@ -623,9 +623,9 @@ const likeReview = async (review: Review) => {
   try {
     const readingApi = useReadingApi();
     const res = await readingApi.likeReview(review.id);
-    const data = res.data || res;
-    review.liked = data.liked;
-    review.likes += data.liked ? 1 : -1;
+    const data = (res as any)?.data || res;
+    review.liked = data?.liked ?? false;
+    review.likes += data?.liked ? 1 : -1;
   } catch (e) {
     console.error('点赞失败', e);
   }
