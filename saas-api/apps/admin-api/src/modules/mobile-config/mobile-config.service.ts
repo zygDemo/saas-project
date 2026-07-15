@@ -9,6 +9,7 @@ export const MOBILE_MODULES = [
   { key: 'food', name: '点餐', icon: 'bag', desc: '门店点餐 · 外卖配送' },
   { key: 'credit', name: '征信查询', icon: 'file-text', desc: '在线查询 · 信用报告' },
   { key: 'reading', name: '读书', icon: 'book', desc: '小说阅读 · 离线下载' },
+  { key: 'mingli', name: '命理', icon: 'star', desc: '八字排盘 · 六爻摇卦' },
 ] as const;
 
 export type MobileModuleKey = (typeof MOBILE_MODULES)[number]['key'];

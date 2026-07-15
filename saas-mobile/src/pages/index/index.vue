@@ -228,6 +228,17 @@ const serviceCards = ref([
       uni.reLaunch({ url: APP_ROUTES.reading.home });
     },
   },
+  {
+    key: "mingli",
+    title: "命理",
+    desc: "八字排盘 · 六爻摇卦",
+    icon: "star",
+    iconClass: "icon-mingli",
+    handler: () => {
+      localStore.setCurrentSystem(CurrentSystem.MINGLI);
+      uni.navigateTo({ url: APP_ROUTES.mingli.index });
+    },
+  },
 ]);
 
 const moduleCount = computed(() => serviceCards.value.length);

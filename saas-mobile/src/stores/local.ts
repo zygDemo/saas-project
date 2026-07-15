@@ -130,6 +130,7 @@ export const CurrentSystem = {
   CARLOAN: "carloan",
   FOOD: "food",
   CREDIT: "credit",
+  MINGLI: "mingli",
 } as const;
 
 export type CurrentSystemValue = (typeof CurrentSystem)[keyof typeof CurrentSystem];
