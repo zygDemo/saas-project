@@ -41,8 +41,10 @@ export class UserQueryDto {
   deptId?: string
 
   @ApiPropertyOptional({ description: '当前页码' })
+  @IsOptional()
   current?: number
 
   @ApiPropertyOptional({ description: '每页条数' })
+  @IsOptional()
   size?: number
 }
