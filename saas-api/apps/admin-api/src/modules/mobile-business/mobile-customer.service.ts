@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../prisma/prisma.service'
 import { RequestUser } from '../../common/types/request-user'
 import { MobileIdCardInfoDto, MobileCustomerExtraDto, MobileUserListQueryDto } from './dto/mobile-business.dto'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { mapGender, parseBirthDate, formatDateTime, mapCustomer, guardMobileEntryStorageAsync } from './mobile-business.utils'
 import { getDefaultOrg, findCustomerByUuid, getCustomerByUuid, ensureCustomerDraftApplication } from './mobile-business.db-helpers'
 import { MobileFileService } from './mobile-file.service'

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsInt, IsOptional, IsString, Min } from 'class-validator'
+import { IsInt, IsOptional, IsString } from 'class-validator'
 import { PageQueryDto, ToNumber } from '../../common/dto/common.dto'
 
 export class CreateArticleDto {

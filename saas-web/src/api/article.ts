@@ -44,7 +44,7 @@ export interface CreateArticleData {
   isTop?: boolean
 }
 
-export interface UpdateArticleData extends Partial<CreateArticleData> {}
+export type UpdateArticleData = Partial<CreateArticleData>
 
 /**
  * 获取文章列表
