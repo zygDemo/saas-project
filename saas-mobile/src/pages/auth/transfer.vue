@@ -42,7 +42,7 @@ const TRANSFER_FIELD_KEYS = [
   "businessType",
 ] as const;
 
-const HOME_PAGE = "/pages/carloan/portal/workbench";
+const HOME_PAGE = "/pages/carloan/workbench/workbench";
 const LOGIN_PAGE = "/pages/auth/login";
 
 const localStore = useLocalStore();
@@ -157,7 +157,7 @@ function normalizeTargetPath(path?: QueryValue) {
     layout: HOME_PAGE,
     workbench: HOME_PAGE,
     leadAdd: "/pages/carloan/precheck/leadAdd",
-    orderList: "/pages/carloan/precheck/orderList",
+    orderList: "/pages/carloan/order-list/orderList",
     my: "/pages/my/my",
     idInfo: "/pages/carloan/precheck/idInfo",
     carInfo: "/pages/carloan/precheck/carInfo",

@@ -123,15 +123,15 @@ import {
   buildSignRouteQuery,
   buildDetailRouteQuery,
 } from "@/common/carloan-route-query";
-import { businessNodeText } from "./applyDetail-flow";
-import OrderCard from "./components/OrderCard.vue";
-import FlowRecordPopup from "./components/FlowRecordPopup.vue";
+import { businessNodeText } from "../precheck/applyDetail-flow";
+import OrderCard from "../precheck/components/OrderCard.vue";
+import FlowRecordPopup from "../precheck/components/FlowRecordPopup.vue";
 import type {
   FilterOption,
   BusinessNodeFilterValue,
   NodeStatusFilterValue,
   OrderListViewItem,
-} from "./types";
+} from "../precheck/types";
 
 const businessApi = useCarloanApi();
 const ORDER_FILTER_STORAGE_KEY = "WORKBENCH_ORDER_FILTER";

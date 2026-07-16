@@ -3,8 +3,16 @@
     <view class="hero">
       <mystic-sky />
       <view class="topbar">
-        <view class="back-btn" @click="goBack">‹</view>
-        <view class="history-btn" @click="goHistory"><text>星卷</text><text class="history-count">{{ historyCount }}</text></view>
+        <view class="capsule">
+          <view class="capsule-left" @click="goBack"><text>‹</text></view>
+          <view class="capsule-divider" />
+          <view class="capsule-mid" @click="goHome"><text class="home-icon">⌂</text></view>
+          <view class="capsule-divider" />
+          <view class="capsule-right" @click="goHistory">
+            <text>星卷</text>
+            <text class="history-count">{{ historyCount }}</text>
+          </view>
+        </view>
       </view>
 
       <view class="hero-copy enter enter-1">
@@ -88,10 +96,13 @@ const elements = [{ name: '木' }, { name: '火' }, { name: '土' }, { name: '�
 const demoYao = [true, false, true, true, false, false]
 const historyCount = ref(0)
 
-onShow(() => { historyCount.value = getMingliHistory().length })
+onShow(() => {
+  historyCount.value = getMingliHistory().length
+})
 const goBazi = () => uni.navigateTo({ url: APP_ROUTES.mingli.bazi.input })
 const goLiuyao = () => uni.navigateTo({ url: APP_ROUTES.mingli.liuyao.shake })
 const goHistory = () => uni.navigateTo({ url: APP_ROUTES.mingli.history })
+const goHome = () => uni.reLaunch({ url: APP_ROUTES.portal.home })
 function goBack() {
   if (getCurrentPages().length > 1) uni.navigateBack()
   else uni.reLaunch({ url: APP_ROUTES.portal.home })
@@ -101,9 +112,13 @@ function goBack() {
 <style scoped lang="scss">
 .mingli-page { min-height: 100vh; background: #efe4cd; color: #142447; overflow: hidden; }
 .hero { position: relative; height: 720rpx; overflow: hidden; background: radial-gradient(circle at 50% 52%, #253f68 0, #122544 42%, #07152d 78%); }
-.topbar { position: relative; z-index: 20; padding: calc(var(--status-bar-height) + 16rpx) 30rpx 0; display: flex; justify-content: space-between; align-items: center; color: #f5e6b8; }
-.back-btn { width: 66rpx; height: 66rpx; border-radius: 50%; border: 1rpx solid rgba(232, 197, 112, .4); background: rgba(4, 16, 36, .45); font-size: 58rpx; line-height: 58rpx; text-align: center; }
-.history-btn { height: 58rpx; padding: 0 22rpx; display: flex; align-items: center; border: 1rpx solid rgba(232, 197, 112, .35); border-radius: 32rpx; background: rgba(5, 18, 39, .5); font-size: 24rpx; }.history-btn text { margin-left: 12rpx; }.history-btn text:first-child { margin-left: 0; }
+.topbar { position: relative; z-index: 20; padding: calc(var(--status-bar-height) + 32rpx) 30rpx 18rpx; display: flex; justify-content: space-between; align-items: flex-start; color: #f5e6b8; }
+.capsule { height: 66rpx; display: flex; align-items: center; border: 1rpx solid rgba(232, 197, 112, .4); border-radius: 33rpx; background: rgba(4, 16, 36, .45); overflow: hidden; }
+.capsule-left { width: 70rpx; height: 66rpx; display: flex; align-items: center; justify-content: center; color: #f5e6b8; font-size: 58rpx; line-height: 1; }
+.capsule-mid { width: 70rpx; height: 66rpx; display: flex; align-items: center; justify-content: center; color: #f5e6b8; }
+.capsule-mid .home-icon { font-size: 38rpx; line-height: 1; }
+.capsule-divider { width: 1rpx; height: 40rpx; background: rgba(232, 197, 112, .35); }
+.capsule-right { min-width: 70rpx; height: 66rpx; padding: 0 18rpx; display: flex; align-items: center; justify-content: center; color: #f5e6b8; font-size: 24rpx; }.capsule-right text { margin-left: 12rpx; }.capsule-right text:first-child { margin-left: 0; }
 .history-count { min-width: 30rpx; height: 30rpx; line-height: 30rpx; border-radius: 50%; text-align: center; color: #10213d; background: #e1bd65; font-size: 20rpx; }
 .hero-copy { position: relative; z-index: 4; display: flex; flex-direction: column; align-items: center; padding-top: 28rpx; }
 .eyebrow { color: rgba(230, 199, 126, .62); font: 18rpx Georgia, serif; letter-spacing: 8rpx; }

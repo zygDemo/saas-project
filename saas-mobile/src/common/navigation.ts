@@ -6,11 +6,11 @@ export const APP_ROUTES = {
     home: "/pages/index/index",
   },
   carloan: {
-    home: "/pages/carloan/portal/workbench",
-    orders: "/pages/carloan/precheck/orderList",
-    legacyWorkbench: "/pages/carloan/workbench",
+    home: "/pages/carloan/workbench/workbench",
+    orders: "/pages/carloan/order-list/orderList",
+    legacyWorkbench: "/pages/carloan/workbench/workbench",
     portal: {
-      workbench: "/pages/carloan/portal/workbench",
+      workbench: "/pages/carloan/workbench/workbench",
       messageCenter: "/pages/carloan/portal/messageCenter",
       todoCenter: "/pages/carloan/portal/todoCenter",
     },
@@ -26,7 +26,7 @@ export const APP_ROUTES = {
       applyListPage: "/pages/carloan/precheck/applyListPage",
       applyDetail: "/pages/carloan/precheck/applyDetail",
       applyProgress: "/pages/carloan/precheck/applyProgress",
-      orderList: "/pages/carloan/precheck/orderList",
+      orderList: "/pages/carloan/order-list/orderList",
     },
     supplement: {
       supplementList: "/pages/carloan/supplement/supplementList",

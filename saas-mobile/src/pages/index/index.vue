@@ -172,6 +172,8 @@ onLoad(async () => {
       }
     }
   }
+  // 未登录：仅展示命理模块，快捷入口隐藏订单/进件
+  applyLoginAwareFilter();
 });
 
 onShow(() => {
@@ -181,6 +183,8 @@ onShow(() => {
   if (localStore.mobileConfig) {
     filterServiceCards(localStore.mobileConfig as MobileConfigData);
   }
+  // 未登录：仅展示命理模块，快捷入口隐藏订单/进件
+  applyLoginAwareFilter();
 });
 
 const serviceCards = ref([
@@ -282,6 +286,22 @@ const shortcutItems = ref([
   },
 
 ]);
+
+/** 登录状态感知过滤：未登录时首页仅保留命理模块，快捷入口隐藏订单/进件 */
+function applyLoginAwareFilter() {
+  if (!hasLogin.value) {
+    serviceCards.value = allServiceCards.filter((card) => card.key === 'mingli');
+    shortcutItems.value = allShortcutItems.filter(
+      (item) => item.key !== 'apply' && item.key !== 'order',
+    );
+    return;
+  }
+  // 已登录且没有模块配置时，恢复完整列表
+  if (!localStore.mobileConfig) {
+    serviceCards.value = allServiceCards;
+    shortcutItems.value = allShortcutItems;
+  }
+}
 
 /** 模块 key 到首页路由 */
 /** 原始完整服务卡片列表 */

@@ -234,7 +234,7 @@ const businessCards = [
     title: "工作台",
     desc: "全部业务功能入口",
     icon: "grid",
-    url: "/pages/carloan/portal/workbench",
+    url: "/pages/carloan/workbench/workbench",
     color: "error" as ColorType,
   },
 ];

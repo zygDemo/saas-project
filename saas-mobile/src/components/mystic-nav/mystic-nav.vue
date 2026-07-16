@@ -34,7 +34,7 @@ function goBack() {
 .mystic-nav { position: relative; z-index: 30; color: #f7e9bf; background: #0b1730; }
 .mystic-nav.transparent { background: transparent; }
 .nav-safe { height: var(--status-bar-height); }
-.nav-row { height: 88rpx; display: flex; align-items: center; justify-content: space-between; padding: 0 24rpx; }
+.nav-row { height: 88rpx; display: flex; align-items: center; justify-content: space-between; padding: 8rpx 24rpx; }
 .nav-side { width: 140rpx; height: 72rpx; display: flex; align-items: center; }
 .nav-back { justify-content: flex-start; }
 .back-arrow { width: 62rpx; height: 62rpx; line-height: 56rpx; text-align: center; border: 1rpx solid rgba(231, 195, 112, .36); border-radius: 50%; font-size: 54rpx; background: rgba(8, 20, 43, .45); }
