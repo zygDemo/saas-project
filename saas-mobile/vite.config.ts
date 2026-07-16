@@ -64,6 +64,12 @@ export default defineConfig({
   ],
   server: {
     host: true,
+    proxy: {
+      '/saas/api': {
+        target: 'https://www.yugui.store',
+        changeOrigin: true,
+      },
+    },
   },
   css: {
     preprocessorOptions: {

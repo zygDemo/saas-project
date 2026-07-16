@@ -1,5 +1,5 @@
 <template>
-  <layout nav-title="书城" :show-tabbar="true" tabbar-scope="reading" :active-tab="1" back back-url="/pages/reading/index/index">
+  <layout nav-title="书城" :show-tabbar="true" tabbar-scope="reading" :active-tab="0" back back-url="/pages/reading/index/index">
     <scroll-view
       class="store-scroll"
       scroll-y

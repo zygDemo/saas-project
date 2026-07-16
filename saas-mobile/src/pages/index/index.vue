@@ -155,12 +155,15 @@ onLoad(async () => {
       if (!data) return;
       localStore.setMobileConfig(data);
 
-      // 单模块模式：直接进入该模块（不用 data.enabled.length，用 isMultiModule 语义更准确）
-      const entry = getInitialMobileEntry(data);
-      if (entry.moduleKey) {
-        localStore.setCurrentSystem(entry.system as CurrentSystemValue);
-        uni.reLaunch({ url: entry.route });
-        return;
+      // 单模块模式：首次进入首页时自动跳转到该模块，避免手动回首页时闪回
+      if (!localStore.hasAutoRedirected) {
+        const entry = getInitialMobileEntry(data);
+        if (entry.moduleKey) {
+          localStore.setAutoRedirected(true);
+          localStore.setCurrentSystem(entry.system as CurrentSystemValue);
+          uni.reLaunch({ url: entry.route });
+          return;
+        }
       }
 
       // 多模块模式：始终显示门户页，用户可自由选择
@@ -268,7 +271,7 @@ const shortcutItems = ref([
     label: "我的订单",
     icon: "order",
     bgColor: "rgba(var(--u-type-success-rgb, 25, 190, 107), 0.85)",
-    handler: () => uni.switchTab({ url: APP_ROUTES.food.orders }),
+    handler: () => uni.navigateTo({ url: APP_ROUTES.food.orders }),
   },
   {
     key: "notice",

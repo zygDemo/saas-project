@@ -1,5 +1,5 @@
 <template>
-  <layout :active-tab="1" nav-title="订单" show-tabbar tabbar-scope="carloan">
+  <layout :active-tab="0" nav-title="订单" show-tabbar tabbar-scope="carloan">
     <view class="order-list-page">
       <!-- 搜索栏 -->
       <view class="search-bar">
@@ -123,15 +123,15 @@ import {
   buildSignRouteQuery,
   buildDetailRouteQuery,
 } from "@/common/carloan-route-query";
-import { businessNodeText } from "../precheck/applyDetail-flow";
-import OrderCard from "../precheck/components/OrderCard.vue";
-import FlowRecordPopup from "../precheck/components/FlowRecordPopup.vue";
+import { businessNodeText } from "@/common/carloan/applyDetail-flow";
+import OrderCard from "@/common/carloan/components/OrderCard.vue";
+import FlowRecordPopup from "@/common/carloan/components/FlowRecordPopup.vue";
 import type {
   FilterOption,
   BusinessNodeFilterValue,
   NodeStatusFilterValue,
   OrderListViewItem,
-} from "../precheck/types";
+} from "@/common/carloan/types";
 
 const businessApi = useCarloanApi();
 const ORDER_FILTER_STORAGE_KEY = "WORKBENCH_ORDER_FILTER";

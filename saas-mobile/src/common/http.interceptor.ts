@@ -10,8 +10,9 @@ import { tokenUtil } from "./token";
 import { useLocalStore } from "@/stores/local";
 import { useSessionStore } from "@/stores/session";
 
-// 基础配置
-const baseUrl = API_BASE_URL;
+// H5 开发环境通过 Vite 代理转发，避免 CORS
+const isH5Dev = process.env.UNI_PLATFORM === 'h5' && process.env.NODE_ENV === 'development'
+const baseUrl = isH5Dev ? '/saas/api' : API_BASE_URL;
 
 export const httpRequestConfig: RequestConfig = {
   baseUrl,

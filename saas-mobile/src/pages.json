@@ -66,14 +66,6 @@
         "text": "首页"
       },
       {
-        "pagePath": "pages/carloan/workbench/workbench",
-        "text": "车贷首页"
-      },
-      {
-        "pagePath": "pages/carloan/order-list/orderList",
-        "text": "订单"
-      },
-      {
         "pagePath": "pages/my/my",
         "text": "我的"
       }

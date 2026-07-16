@@ -4,7 +4,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import { NestExpressApplication } from '@nestjs/platform-express'
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+// import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { join, dirname } from 'path'
 import * as fs from 'fs'
 import { AppModule } from './app.module'
@@ -59,32 +59,32 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter())
   app.useGlobalGuards(new JwtAuthGuard(app.get(Reflector)))
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('SaaS API')
-    .setDescription('NestJS API for saas-web')
-    .setVersion('0.1.0')
-    .addBearerAuth()
-    .build()
-  const document = SwaggerModule.createDocument(app, swaggerConfig)
+//   const swaggerConfig = new DocumentBuilder()
+//     .setTitle('SaaS API')
+//     .setDescription('NestJS API for saas-web')
+//     .setVersion('0.1.0')
+//     .addBearerAuth()
+//     .build()
+//   const document = SwaggerModule.createDocument(app, swaggerConfig)
   
-  // Support OpenAPI export without starting HTTP server
-  const openApiExport = config.get<string>('OPENAPI_EXPORT')
-  if (openApiExport) {
-    const outputPath = join(process.cwd(), openApiExport)
-    fs.mkdirSync(dirname(outputPath), { recursive: true })
-    fs.writeFileSync(outputPath, JSON.stringify(document, null, 2), 'utf8')
-    Logger.log(`OpenAPI exported to ${outputPath}`, 'Bootstrap')
-    await app.close()
-    process.exit(0)
-  }
+//   // Support OpenAPI export without starting HTTP server
+//   const openApiExport = config.get<string>('OPENAPI_EXPORT')
+//   if (openApiExport) {
+//     const outputPath = join(process.cwd(), openApiExport)
+//     fs.mkdirSync(dirname(outputPath), { recursive: true })
+//     fs.writeFileSync(outputPath, JSON.stringify(document, null, 2), 'utf8')
+//     Logger.log(`OpenAPI exported to ${outputPath}`, 'Bootstrap')
+//     await app.close()
+//     process.exit(0)
+//   }
   
-  SwaggerModule.setup(`${normalizedApiPrefix}/docs`, app, document, {
-    swaggerOptions: {
-      docExpansion: 'list',
-      defaultModelExpandDepth: 5,
-      defaultModelsExpandDepth: 2
-    }
-  })
+//   SwaggerModule.setup(`${normalizedApiPrefix}/docs`, app, document, {
+//     swaggerOptions: {
+//       docExpansion: 'list',
+//       defaultModelExpandDepth: 5,
+//       defaultModelsExpandDepth: 2
+//     }
+//   })
 
   await app.listen(config.get<number>('PORT', 3001), '0.0.0.0')
 }

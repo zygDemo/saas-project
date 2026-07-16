@@ -277,7 +277,6 @@ export function buildHashRoute(
 const SYSTEM_TABBAR_ROUTES: Set<string> = new Set([
   APP_ROUTES.portal.home,
   APP_ROUTES.carloan.home,
-  APP_ROUTES.carloan.orders,
   APP_ROUTES.my.home,
 ]);
 
@@ -313,10 +312,23 @@ const CARLOAN_TABBAR_ITEMS: LayoutTabbarItem[] = [
     count: 0,
   },
   {
-    text: "订单",
-    iconPath: "order",
-    selectedIconPath: "order",
-    route: APP_ROUTES.carloan.orders,
+    text: "我的",
+    iconPath: "account",
+    selectedIconPath: "account-fill",
+    route: APP_ROUTES.my.home,
+    navMode: "switchTab",
+    customIcon: false,
+    count: 0,
+  },
+];
+
+
+const FOOD_TABBAR_ITEMS: LayoutTabbarItem[] = [
+  {
+    text: "首页",
+    iconPath: "shopping-cart",
+    selectedIconPath: "shopping-cart-fill",
+    route: APP_ROUTES.food.home,
     navMode: "reLaunch",
     customIcon: false,
     count: 0,
@@ -332,35 +344,6 @@ const CARLOAN_TABBAR_ITEMS: LayoutTabbarItem[] = [
   },
 ];
 
-const FOOD_TABBAR_ITEMS: LayoutTabbarItem[] = [
-  {
-    text: "首页",
-    iconPath: "shopping-cart",
-    selectedIconPath: "shopping-cart-fill",
-    route: APP_ROUTES.food.home,
-    navMode: "reLaunch",
-    customIcon: false,
-    count: 0,
-  },
-  {
-    text: "订单",
-    iconPath: "list",
-    selectedIconPath: "list",
-    route: APP_ROUTES.food.orders,
-    navMode: "redirectTo",
-    customIcon: false,
-    count: 0,
-  },
-  {
-    text: "我的",
-    iconPath: "account",
-    selectedIconPath: "account-fill",
-    route: APP_ROUTES.my.home,
-    navMode: "switchTab",
-    customIcon: false,
-    count: 0,
-  },
-];
 
 const CREDIT_TABBAR_ITEMS: LayoutTabbarItem[] = [
   {
@@ -385,19 +368,10 @@ const CREDIT_TABBAR_ITEMS: LayoutTabbarItem[] = [
 
 const READING_TABBAR_ITEMS: LayoutTabbarItem[] = [
   {
-    text: "书架",
+    text: "首页",
     iconPath: "file-text",
     selectedIconPath: "file-text-fill",
     route: APP_ROUTES.reading.home,
-    navMode: "redirectTo",
-    customIcon: false,
-    count: 0,
-  },
-  {
-    text: "书城",
-    iconPath: "shopping-cart",
-    selectedIconPath: "shopping-cart-fill",
-    route: APP_ROUTES.reading.store,
     navMode: "redirectTo",
     customIcon: false,
     count: 0,
@@ -412,6 +386,7 @@ const READING_TABBAR_ITEMS: LayoutTabbarItem[] = [
     count: 0,
   },
 ];
+
 
 export function getLayoutTabbar(
   scope: TabbarScope = TABBAR_SCOPES.portal,

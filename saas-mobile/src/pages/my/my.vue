@@ -238,9 +238,8 @@ const currentTabbarScope = computed(() => {
 });
 
 const activeTabIndex = computed(() => {
-  if (currentTabbarScope.value === TABBAR_SCOPES.portal) return 1;
-  if (currentTabbarScope.value === TABBAR_SCOPES.credit) return 1;
-  return 2;
+  // 所有模块 tabbar 统一为「首页 / 我的」两项，「我的」固定为第 2 项
+  return 1;
 });
 
 // 判断是否是车贷模块

@@ -103,8 +103,7 @@
               <text
                 class="flow-record__reason-text"
                 :class="{ 'is-clamped': needsClamp(item) && !isExpanded(idx) }"
-                >{{ item.approvalReason }}</text
-              >
+                >{{ item.approvalReason }}</text>
               <view
                 v-if="needsClamp(item)"
                 class="flow-record__reason-toggle"

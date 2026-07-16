@@ -149,6 +149,8 @@ export const useLocalStore = defineStore("local", {
     mobileConfig: null as MobileConfigData | null,
     loginTime: 0,
     expireTime: 0,
+    /** 当前会话是否已完成首页单模块自动跳转 */
+    hasAutoRedirected: false,
   }),
   getters: {
     isExpired: (state) => {
@@ -201,12 +203,16 @@ export const useLocalStore = defineStore("local", {
         this.expireTime = expires > 10_000_000_000 ? expires : Date.now() + expires * 1000;
       }
       this.loginTime = Date.now();
+      this.hasAutoRedirected = false;
     },
     setMobileConfig(config: MobileConfigData | null) {
       this.mobileConfig = config;
     },
     setCurrentSystem(system: CurrentSystemValue) {
       this.currentSystem = system;
+    },
+    setAutoRedirected(value: boolean) {
+      this.hasAutoRedirected = value;
     },
     hasRole(roleKey: string) {
       return this.roleKeys.includes(roleKey) || this.roles.some((role) => role.roleKey === roleKey);
@@ -227,6 +233,7 @@ export const useLocalStore = defineStore("local", {
       this.currentSystem = CurrentSystem.PORTAL;
       this.loginTime = 0;
       this.expireTime = 0;
+      this.hasAutoRedirected = false;
     },
   },
   persist: {
