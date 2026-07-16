@@ -67,8 +67,7 @@ const content = ref(`
 
 <h3>8. 联系我们</h3>
 <p>如果您对本隐私政策有任何疑问，请通过以下方式联系我们：</p>
-<p>邮箱：privacy@haicheuyou.com</p>
-<p>电话：13818821494</p>
+<p>邮箱：1519881356@qq.com</p>
 `);
 </script>
 

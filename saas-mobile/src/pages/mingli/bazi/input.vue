@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view :class="['page', themeClass]">
     <view class="night-head">
       <mystic-sky />
       <mystic-nav title="八字排盘" transparent />
@@ -39,10 +39,10 @@
           <view class="field">
             <view class="field-label"><text class="field-index">叁</text><text>命主性别</text></view>
             <view class="gender-tabs">
-              <view class="gender-item" :class="{ active: form.gender === 'male' }" @click="form.gender = 'male'">
+              <view class="gender-item" :class="{ active: form.gender === 'male' }" @tap="form.gender = 'male'">
                 <text class="gender-symbol">乾</text><view><text class="gender-name">男命</text><text class="gender-note">阳刚之序</text></view>
               </view>
-              <view class="gender-item" :class="{ active: form.gender === 'female' }" @click="form.gender = 'female'">
+              <view class="gender-item" :class="{ active: form.gender === 'female' }" @tap="form.gender = 'female'">
                 <text class="gender-symbol">坤</text><view><text class="gender-name">女命</text><text class="gender-note">阴柔之序</text></view>
               </view>
             </view>
@@ -54,7 +54,7 @@
           </view>
         </view>
 
-        <button class="submit-btn" :disabled="!canSubmit" @click="submit">
+        <button class="submit-btn" :disabled="!canSubmit" hover-class="tap-active" @tap="submit">
           <view class="btn-orbit" /><text class="btn-star">✦</text><text>开启命盘</text><text class="btn-arrow">→</text>
         </button>
         <view class="tips">
@@ -73,6 +73,7 @@ import { APP_ROUTES } from '@/common/navigation'
 import { lunarToSolar, getLunarDateString } from '@/common/mingli/lunar'
 import MysticNav from '@/components/mystic-nav/mystic-nav.vue'
 import MysticSky from '@/components/mystic-sky/mystic-sky.vue'
+import { useMingliTheme } from '../theme'
 
 const shiChenList = [
   { label: '不确定', value: 12, range: '暂以午时近似推演' },
@@ -90,6 +91,7 @@ const displayDate = computed(() => form.value.birthDate || '请选择出生日�
 const displayTime = computed(() => selectedShiChen.value?.label || '请选择出生时辰')
 const dateRange = computed(() => ({ start: '1920-01-01', end: new Date().toISOString().slice(0, 10) }))
 const canSubmit = computed(() => Boolean(form.value.birthDate))
+const { themeClass } = useMingliTheme()
 
 function onDateChange(event: { detail: { value: string } }) { form.value.birthDate = event.detail.value }
 function onShiChenChange(event: { detail: { value: string | number } }) {
@@ -136,4 +138,6 @@ function submit() {
 .gender-tabs{display:flex;gap:18rpx}.gender-item{flex:1;padding:22rpx;display:flex;align-items:center;gap:14rpx;border:1rpx solid rgba(160,123,55,.25);border-radius:16rpx;background:rgba(255,252,242,.55);transition:.25s}.gender-item.active{border-color:#a87b2d;background:var(--ming-gradient-btn-soft);color:var(--ming-text-purple);box-shadow:0 10rpx 24rpx var(--ming-purple-faint),inset 0 0 0 2rpx var(--ming-border-purple)}.gender-symbol{width:58rpx;height:58rpx;line-height:58rpx;text-align:center;border:1rpx solid currentColor;border-radius:50%;font:32rpx/58rpx STKaiti,serif}.gender-name{font:700 29rpx STKaiti,serif}.gender-note{margin-top:3rpx;color:#988665;font-size:19rpx}.active .gender-note{color:rgba(241,220,166,.62)}
 .calendar-toggle{display:flex;justify-content:space-between;align-items:center;padding:28rpx 4rpx 10rpx;margin-top:8rpx;border-top:1rpx solid rgba(139,106,48,.12)}.toggle-title{font:700 28rpx STKaiti,serif;color:#2a3a55}.toggle-note{max-width:470rpx;margin-top:5rpx;color:#887b65;font-size:19rpx;line-height:1.5}.submit-btn{position:relative;display:flex;align-items:center;justify-content:center;height:112rpx;margin:42rpx 4rpx 0;padding:0;border:none;border-radius:56rpx;color:#fff8e7;background:var(--ming-gradient-btn);box-shadow:0 18rpx 36rpx var(--ming-purple-faint),0 0 0 1rpx var(--ming-border-purple),inset 0 0 0 2rpx rgba(255,248,231,.2),inset 0 2rpx 0 rgba(255,255,255,.12);font:700 33rpx STKaiti,KaiTi,serif;letter-spacing:6rpx;overflow:hidden;transition:transform .2s,box-shadow .2s;animation:subtlePulse 4s ease-in-out infinite}.submit-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.22) 50%,transparent 100%);transform:translateX(-100%);animation:shine 3.5s ease-in-out infinite}.submit-btn::after{border:none;content:'';position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,var(--ming-purple-soft) 50%,transparent 70%);transform:translateX(-100%);animation:shinePurple 4.8s ease-in-out 1s infinite;pointer-events:none}.submit-btn:active:not([disabled]){transform:translateY(3rpx) scale(.985);box-shadow:0 10rpx 22rpx var(--ming-purple-faint),0 0 0 1rpx var(--ming-border-purple),inset 0 0 0 2rpx rgba(255,248,231,.16)}.submit-btn[disabled]{opacity:.5;background:linear-gradient(90deg,#5a5a5a,#3a3a3a 50%,#5a5a5a);box-shadow:none;animation:none}.submit-btn[disabled]::before{display:none}.btn-star{margin-right:16rpx;color:#fff8e7;font-size:28rpx;text-shadow:0 0 10rpx rgba(255,248,231,.55);animation:twinkle 2.4s ease-in-out infinite}.btn-arrow{margin-left:16rpx;color:#fff8e7;text-shadow:0 0 10rpx rgba(255,248,231,.55)}.btn-orbit{position:absolute;width:260rpx;height:260rpx;border:1rpx solid var(--ming-purple-faint);border-radius:50%;left:50%;top:-72rpx;margin-left:-130rpx;animation:spin 12s linear infinite}.btn-orbit::after{content:'';position:absolute;inset:28rpx;border:1rpx dashed var(--ming-purple-faint);border-radius:50%;animation:spinReverse 8s linear infinite}.tips{margin:32rpx 14rpx 0;padding:24rpx 28rpx;border-left:4rpx solid #af8436;background:rgba(245,235,214,.5);border-radius:0 12rpx 12rpx 0;display:flex;flex-direction:column;gap:10rpx;color:#6e6353;font-size:22rpx;line-height:1.6}.tips-title{color:#273856;font:700 27rpx STKaiti,serif;letter-spacing:2rpx}
 @keyframes pulse{50%{opacity:.55;transform:scale(1.07)}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes spinReverse{to{transform:rotate(-360deg)}}@keyframes shine{0%{transform:translateX(-100%)}40%{transform:translateX(100%)}100%{transform:translateX(100%)}}@keyframes shinePurple{0%{transform:translateX(-100%)}40%{transform:translateX(100%)}100%{transform:translateX(100%)}}@keyframes subtlePulse{0%,100%{box-shadow:0 18rpx 36rpx var(--ming-purple-faint),0 0 0 1rpx var(--ming-border-purple),inset 0 0 0 2rpx rgba(255,248,231,.2)}50%{box-shadow:0 20rpx 42rpx var(--ming-purple-soft),0 0 0 1rpx var(--ming-border-purple),inset 0 0 0 2rpx rgba(255,248,231,.24)}}@keyframes twinkle{0%,100%{opacity:.6;transform:scale(.9)}50%{opacity:1;transform:scale(1.15)}}@keyframes sealFloat{0%,100%{transform:rotate(-5deg) translateY(0)}50%{transform:rotate(-3deg) translateY(-6rpx)}}@keyframes titleGlow{0%,100%{text-shadow:0 0 20rpx var(--ming-purple-soft)}50%{text-shadow:0 0 36rpx var(--ming-purple),0 0 60rpx var(--ming-purple-faint)}}
+
+.tap-active { transform: scale(0.98); opacity: 0.92; }
 </style>

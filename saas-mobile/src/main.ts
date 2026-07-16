@@ -11,7 +11,11 @@ import { httpInterceptor, httpRequestConfig } from "./common/http.interceptor";
 // 使用实际引用防止 Vite tree-shaking 移除无副作用的模块导入
 import { useFoodApi } from "@/api/food";
 import { useReadingApi } from "@/api/reading";
-globalThis.__registeredApis = { useFoodApi, useReadingApi };
+
+(globalThis as Record<string, unknown>).__registeredApis = {
+  useFoodApi,
+  useReadingApi,
+};
 
 // 根据 URL 参数决定是否启用 vConsole
 // #ifdef H5

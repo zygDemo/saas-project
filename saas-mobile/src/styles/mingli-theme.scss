@@ -19,37 +19,37 @@
 
 /* ========== 默认主题：galaxy 星河紫蓝 ========== */
 // 深空背景
-$galaxy-bg-deep: #05081a;
-$galaxy-bg-mid: #0a1228;
-$galaxy-bg-soft: #152448;
-$galaxy-bg-radial: #1e3a6a;
+$galaxy-bg-deep: #070913;
+$galaxy-bg-mid: #101726;
+$galaxy-bg-soft: #1a2233;
+$galaxy-bg-radial: #26344c;
 
 // 紫色主调
-$galaxy-purple: #d8b4fe;
-$galaxy-purple-light: #f3e8ff;
-$galaxy-purple-glow: #c4b5fd;
-$galaxy-purple-strong: #9b51e0;
-$galaxy-purple-soft: rgba(216, 180, 254, .3);
-$galaxy-purple-faint: rgba(216, 180, 254, .12);
+$galaxy-purple: #cbc3dc;
+$galaxy-purple-light: #efeaf6;
+$galaxy-purple-glow: #e3dceb;
+$galaxy-purple-strong: #6f5d86;
+$galaxy-purple-soft: rgba(203, 195, 220, .18);
+$galaxy-purple-faint: rgba(203, 195, 220, .08);
 
 // 紫光文字
-$galaxy-text-purple: #f0e6ff;
-$galaxy-text-purple-soft: rgba(230, 220, 255, .65);
+$galaxy-text-purple: #f3efe9;
+$galaxy-text-purple-soft: rgba(243, 239, 233, .66);
 
 // 金色
-$galaxy-gold: #c9a34d;
-$galaxy-gold-light: #f0d486;
+$galaxy-gold: #b99a5a;
+$galaxy-gold-light: #ead8ad;
 
 // 纸张
-$galaxy-paper: #f5f0e8;
-$galaxy-paper-dark: #e8e0d4;
-$galaxy-paper-soft: rgba(250, 244, 227, .76);
+$galaxy-paper: #f6f1e8;
+$galaxy-paper-dark: #e7ddcf;
+$galaxy-paper-soft: rgba(246, 241, 232, .78);
 
 // 边框/阴影
-$galaxy-border-purple: rgba(216, 180, 254, .45);
-$galaxy-border-gold: rgba(197, 154, 63, .5);
-$galaxy-shadow-purple: rgba(196, 168, 248, .26);
-$galaxy-shadow-glow: rgba(216, 180, 254, .42);
+$galaxy-border-purple: rgba(203, 195, 220, .26);
+$galaxy-border-gold: rgba(185, 154, 90, .34);
+$galaxy-shadow-purple: rgba(112, 93, 134, .16);
+$galaxy-shadow-glow: rgba(203, 195, 220, .18);
 
 page,
 .mingli-page,
@@ -82,8 +82,8 @@ page,
   --ming-shadow-glow: #{$galaxy-shadow-glow};
 
   --ming-gradient-hero: radial-gradient(circle at 50% 52%, #{$galaxy-bg-radial} 0, #{$galaxy-bg-mid} 42%, #{$galaxy-bg-deep} 78%);
-  --ming-gradient-btn: linear-gradient(90deg, #{$galaxy-gold} 0%, #a67b2d 16%, #{$galaxy-purple-strong} 55%, #2a1850 100%);
-  --ming-gradient-btn-soft: linear-gradient(135deg, #3a2870, #{$galaxy-purple-strong});
+  --ming-gradient-btn: linear-gradient(90deg, #{$galaxy-gold} 0%, #9b8250 18%, #{$galaxy-purple-strong} 58%, #232231 100%);
+  --ming-gradient-btn-soft: linear-gradient(135deg, #2c3550, #{$galaxy-purple-strong});
   --ming-gradient-line: linear-gradient(90deg, #{$galaxy-purple-strong}, #{$galaxy-purple-glow}, #{$galaxy-purple-strong});
 
   --ming-font-serif: STKaiti, KaiTi, serif;
@@ -232,4 +232,106 @@ $nebula-shadow-glow: rgba(240, 171, 252, .42);
   --ming-gradient-btn: linear-gradient(90deg, #{$nebula-gold} 0%, #d97706 16%, #{$nebula-purple-strong} 55%, #4a044e 100%);
   --ming-gradient-btn-soft: linear-gradient(135deg, #4a044e, #{$nebula-purple-strong});
   --ming-gradient-line: linear-gradient(90deg, #{$nebula-purple-strong}, #{$nebula-purple-glow}, #{$nebula-purple-strong});
+}
+
+
+/* ========== 主题：ritual 国风仪式 ========== */
+$ritual-bg-deep: #15110e;
+$ritual-bg-mid: #241913;
+$ritual-bg-soft: #37261c;
+$ritual-bg-radial: #4b3527;
+$ritual-purple: #edd9bd;
+$ritual-purple-light: #fbf3e6;
+$ritual-purple-glow: #f4e2bf;
+$ritual-purple-strong: #c89a53;
+$ritual-purple-soft: rgba(237, 217, 189, .24);
+$ritual-purple-faint: rgba(237, 217, 189, .10);
+$ritual-text-purple: #f7ead6;
+$ritual-text-purple-soft: rgba(247, 234, 214, .70);
+$ritual-gold: #d7b36b;
+$ritual-gold-light: #f0d79a;
+$ritual-paper: #f3eadb;
+$ritual-paper-dark: #e8d7bd;
+$ritual-paper-soft: rgba(243, 234, 219, .86);
+$ritual-border-purple: rgba(215, 179, 107, .30);
+$ritual-border-gold: rgba(191, 147, 69, .36);
+$ritual-shadow-purple: rgba(88, 60, 29, .18);
+$ritual-shadow-glow: rgba(215, 179, 107, .20);
+
+.mingli-theme-ritual {
+  --ming-bg-deep: #{$ritual-bg-deep};
+  --ming-bg-mid: #{$ritual-bg-mid};
+  --ming-bg-soft: #{$ritual-bg-soft};
+  --ming-bg-radial: #{$ritual-bg-radial};
+
+  --ming-purple: #{$ritual-purple};
+  --ming-purple-light: #{$ritual-purple-light};
+  --ming-purple-glow: #{$ritual-purple-glow};
+  --ming-purple-strong: #{$ritual-purple-strong};
+  --ming-purple-soft: #{$ritual-purple-soft};
+  --ming-purple-faint: #{$ritual-purple-faint};
+
+  --ming-text-purple: #{$ritual-text-purple};
+  --ming-text-purple-soft: #{$ritual-text-purple-soft};
+
+  --ming-gold: #{$ritual-gold};
+  --ming-gold-light: #{$ritual-gold-light};
+
+  --ming-paper: #{$ritual-paper};
+  --ming-paper-dark: #{$ritual-paper-dark};
+  --ming-paper-soft: #{$ritual-paper-soft};
+
+  --ming-border-purple: #{$ritual-border-purple};
+  --ming-border-gold: #{$ritual-border-gold};
+  --ming-shadow-purple: #{$ritual-shadow-purple};
+  --ming-shadow-glow: #{$ritual-shadow-glow};
+
+  --ming-gradient-hero: radial-gradient(circle at 50% 52%, #{$ritual-bg-radial} 0, #{$ritual-bg-mid} 42%, #{$ritual-bg-deep} 78%);
+  --ming-gradient-btn: linear-gradient(90deg, #8f5f27 0%, #b98b43 18%, #{$ritual-purple-strong} 58%, #3b2417 100%);
+  --ming-gradient-btn-soft: linear-gradient(135deg, #4d2d1c, #{$ritual-purple-strong});
+  --ming-gradient-line: linear-gradient(90deg, #{$ritual-purple-strong}, #{$ritual-purple-glow}, #{$ritual-purple-strong});
+}
+
+
+/* ========== 主题：glow 紫光感 ========== */
+$glow-bg-deep: #06081a;
+$glow-bg-mid: #0c1436;
+$glow-bg-soft: #17224b;
+$glow-bg-radial: #2b3a82;
+$glow-purple: #f0e8ff;
+$glow-purple-light: #ffffff;
+$glow-purple-glow: #eadcff;
+$glow-purple-strong: #6f53f7;
+$glow-purple-soft: rgba(111, 83, 247, .20);
+$glow-purple-faint: rgba(111, 83, 247, .08);
+$glow-text-purple: #f7f4ff;
+$glow-text-purple-soft: rgba(247, 244, 255, .68);
+$glow-gold: #d4b06a;
+$glow-gold-light: #f0debc;
+$glow-border-purple: rgba(143, 99, 255, .28);
+$glow-shadow-purple: rgba(111, 83, 247, .18);
+$glow-shadow-glow: rgba(240, 232, 255, .20);
+
+.mingli-theme-glow {
+  --ming-bg-deep: #{$glow-bg-deep};
+  --ming-bg-mid: #{$glow-bg-mid};
+  --ming-bg-soft: #{$glow-bg-soft};
+  --ming-bg-radial: #{$glow-bg-radial};
+  --ming-purple: #{$glow-purple};
+  --ming-purple-light: #{$glow-purple-light};
+  --ming-purple-glow: #{$glow-purple-glow};
+  --ming-purple-strong: #{$glow-purple-strong};
+  --ming-purple-soft: #{$glow-purple-soft};
+  --ming-purple-faint: #{$glow-purple-faint};
+  --ming-text-purple: #{$glow-text-purple};
+  --ming-text-purple-soft: #{$glow-text-purple-soft};
+  --ming-gold: #{$glow-gold};
+  --ming-gold-light: #{$glow-gold-light};
+  --ming-border-purple: #{$glow-border-purple};
+  --ming-shadow-purple: #{$glow-shadow-purple};
+  --ming-shadow-glow: #{$glow-shadow-glow};
+  --ming-gradient-hero: radial-gradient(circle at 50% 52%, #{$glow-bg-radial} 0, #{$glow-bg-mid} 42%, #{$glow-bg-deep} 78%);
+  --ming-gradient-btn: linear-gradient(90deg, #{$glow-gold} 0%, #a894ff 18%, #{$glow-purple-strong} 58%, #0b1027 100%);
+  --ming-gradient-btn-soft: linear-gradient(135deg, #1d2364, #{$glow-purple-strong});
+  --ming-gradient-line: linear-gradient(90deg, #{$glow-purple-strong}, #{$glow-purple-glow}, #{$glow-purple-strong});
 }
