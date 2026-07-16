@@ -54,6 +54,53 @@
         </view>
       </view>
 
+      <!-- 卦象图形 -->
+      <view v-if="result.guaXiang" class="gua-xiang-card">
+        <view class="card-heading"><view><text class="card-title">卦象图示</text><text class="card-subtitle">本卦{{ result.benGua.fullName }}</text></view><text class="card-mark">卦</text></view>
+        <view class="gua-xiang-content">
+          <view class="gua-xiang-part">
+            <text class="gua-xiang-label">{{ result.guaXiang.upperName }}</text>
+            <view class="gua-xiang-lines">
+              <view v-for="(isYang, i) in result.guaXiang.upper" :key="'u'+i" class="gua-xiang-line" :class="{ yang: isYang, dong: isDongLine(i + 3) }">
+                <view v-if="isYang" class="line-solid" />
+                <view v-else class="line-broken"><view /><view /></view>
+                <text v-if="isDongLine(i + 3)" class="dong-icon">○</text>
+              </view>
+            </view>
+          </view>
+          <view class="gua-xiang-divider" />
+          <view class="gua-xiang-part">
+            <text class="gua-xiang-label">{{ result.guaXiang.lowerName }}</text>
+            <view class="gua-xiang-lines">
+              <view v-for="(isYang, i) in result.guaXiang.lower" :key="'l'+i" class="gua-xiang-line" :class="{ yang: isYang, dong: isDongLine(i) }">
+                <view v-if="isYang" class="line-solid" />
+                <view v-else class="line-broken"><view /><view /></view>
+                <text v-if="isDongLine(i)" class="dong-icon">○</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 动爻详解 -->
+      <view v-if="result.dongYaoDetail?.length" class="dongyao-card">
+        <view class="card-heading"><view><text class="card-title">动爻详解</text><text class="card-subtitle">变化中的玄机</text></view><text class="card-mark">变</text></view>
+        <view class="dongyao-list">
+          <view v-for="(item, index) in result.dongYaoDetail" :key="index" class="dongyao-item">
+            <view class="dongyao-header">
+              <text class="dongyao-pos">{{ item.name }}</text>
+              <text class="dongyao-liuqin">{{ item.liuQin }}</text>
+              <view class="dongyao-change">
+                <view class="yao-line-sm" :class="{ yang: item.yinYang === '阳' }" />
+                <text class="change-arrow">→</text>
+                <view class="yao-line-sm" :class="{ yang: item.bianYinYang === '阳' }" />
+              </view>
+            </view>
+            <text class="dongyao-meaning">{{ item.meaning }}</text>
+          </view>
+        </view>
+      </view>
+
       <view class="gua-meaning">
         <text class="meaning-title">卦辞</text>
         <text class="meaning-text">{{ result.benGua.guaCi }}</text>
@@ -109,6 +156,10 @@ const goHistory = () => uni.navigateTo({ url: APP_ROUTES.mingli.history })
 function getGuaName(index: number): string {
   if (!result.value) return ''
   return index < 3 ? result.value.benGua.lower : result.value.benGua.upper
+}
+
+function isDongLine(index: number): boolean {
+  return result.value?.dongYao?.includes(index + 1) || false
 }
 
 function getInsight(): string {
@@ -241,4 +292,12 @@ function again() {
 .disclaimer{display:block;margin-top:26rpx;text-align:center;color:#8a7b63;font-size:19rpx}
 .empty{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:30rpx;color:#786b54}.empty button{font-size:24rpx}
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes charGlow{0%,100%{text-shadow:0 0 32rpx var(--ming-purple-soft)}50%{text-shadow:0 0 50rpx var(--ming-purple),0 0 90rpx var(--ming-purple-faint)}}@keyframes masterPulse{0%,100%{box-shadow:0 0 45rpx var(--ming-shadow-purple),inset 0 0 40rpx var(--ming-purple-faint)}50%{box-shadow:0 0 75rpx var(--ming-shadow-glow),inset 0 0 50rpx var(--ming-purple-soft)}}
+
+.gua-xiang-card,.dongyao-card{margin-top:28rpx;padding:32rpx;border:1rpx solid rgba(158,117,42,.4);border-radius:24rpx 8rpx;background:linear-gradient(180deg,rgba(250,243,224,.82),rgba(242,231,202,.72));box-shadow:0 14rpx 32rpx rgba(61,44,20,.09),inset 0 0 0 4rpx rgba(255,255,255,.18)}
+
+/* 卦象图形 */
+.gua-xiang-content{display:flex;flex-direction:column;align-items:center;gap:28rpx;margin-top:28rpx;padding:24rpx;border-radius:20rpx;background:rgba(255,250,235,.4)}.gua-xiang-part{display:flex;align-items:center;gap:28rpx}.gua-xiang-label{width:90rpx;font:700 30rpx STKaiti,serif;color:#1b2d4d;text-align:right;letter-spacing:2rpx}.gua-xiang-lines{display:flex;flex-direction:column;gap:18rpx}.gua-xiang-line{display:flex;align-items:center;gap:14rpx;padding:6rpx 0}.gua-xiang-line.dong{position:relative}.dong-icon{color:#b48837;font-size:26rpx;font-weight:700}.line-solid{width:140rpx;height:14rpx;border-radius:7rpx;background:linear-gradient(90deg,var(--ming-purple-strong),var(--ming-purple-soft));box-shadow:0 2rpx 6rpx rgba(111,83,247,.2)}.line-broken{display:flex;gap:24rpx}.line-broken view{width:58rpx;height:14rpx;border-radius:7rpx;background:linear-gradient(90deg,var(--ming-purple-strong),var(--ming-purple-soft));box-shadow:0 2rpx 6rpx rgba(111,83,247,.2)}.gua-xiang-divider{width:180rpx;height:2rpx;background:linear-gradient(90deg,transparent,rgba(158,117,42,.3),transparent)}
+
+/* 动爻详解 */
+.dongyao-list{display:flex;flex-direction:column;gap:20rpx;margin-top:24rpx}.dongyao-item{padding:24rpx;border-radius:18rpx;background:linear-gradient(135deg,rgba(255,250,235,.8),rgba(248,241,221,.6));border:1rpx solid rgba(158,117,42,.18);transition:all .3s}.dongyao-header{display:flex;align-items:center;gap:18rpx;padding-bottom:16rpx;border-bottom:1rpx solid rgba(158,117,42,.1)}.dongyao-pos{font:700 30rpx STKaiti,serif;color:#1b2d4d;letter-spacing:2rpx}.dongyao-liuqin{padding:6rpx 16rpx;border-radius:20rpx;font-size:22rpx;color:#9b7535;background:rgba(158,117,42,.08)}.dongyao-change{display:flex;align-items:center;gap:10rpx;margin-left:auto}.yao-line-sm{width:44rpx;height:8rpx;border-radius:4rpx;background:linear-gradient(90deg,var(--ming-purple-strong),var(--ming-purple-soft))}.yao-line-sm.broken{background:linear-gradient(90deg,var(--ming-purple-strong) 0 40%,transparent 40% 60%,var(--ming-purple-strong) 60%)}.change-arrow{color:#7a6d56;font-size:22rpx}.dongyao-meaning{display:block;margin-top:16rpx;color:#4b3f2e;font-size:25rpx;line-height:1.75}
 </style>

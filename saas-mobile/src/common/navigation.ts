@@ -83,6 +83,7 @@ export const APP_ROUTES = {
       result: "/pages/mingli/liuyao/result",
     },
     history: "/pages/mingli/history",
+    marriage: "/pages/mingli/marriage",
   },
   credit: {
     home: "/pages/credit/index/index",

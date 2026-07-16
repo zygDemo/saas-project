@@ -75,6 +75,58 @@
         </scroll-view>
       </view>
 
+      <!-- 藏干信息 -->
+      <view v-if="result.cangGan?.length" class="canggan-card">
+        <view class="card-heading"><view><text class="card-title">地支藏干</text><text class="card-subtitle">地支中暗藏的天干</text></view><text class="card-mark">藏</text></view>
+        <view class="canggan-grid">
+          <view v-for="(item, index) in result.cangGan" :key="index" class="canggan-item">
+            <text class="canggan-zhi">{{ item.zhi }}</text>
+            <view class="canggan-gans">
+              <text v-for="(gan, i) in item.gan" :key="i" class="canggan-gan" :style="{ color: wuxingColor[item.wuXing[i]] }">{{ gan }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 神煞 -->
+      <view v-if="result.shenSha?.length" class="shensha-card">
+        <view class="card-heading"><view><text class="card-title">神煞</text><text class="card-subtitle">命中的吉神凶煞</text></view><text class="card-mark">煞</text></view>
+        <view class="shensha-list">
+          <view v-for="(item, index) in result.shenSha" :key="index" class="shensha-item">
+            <text class="shensha-name">{{ item.name }}</text>
+            <text class="shensha-desc">{{ item.description }}</text>
+            <text class="shensha-pos">{{ item.position }}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 十神详解 -->
+      <view v-if="result.shiShenDetail" class="shishen-card">
+        <view class="card-heading"><view><text class="card-title">十神详解</text><text class="card-subtitle">日主{{ result.riZhu }}的{{ result.shiShenDetail.shiShen }}</text></view><text class="card-mark">神</text></view>
+        <view class="shishen-grid">
+          <view class="shishen-item"><text class="shishen-label">性格</text><text class="shishen-text">{{ result.shiShenDetail.personality }}</text></view>
+          <view class="shishen-item"><text class="shishen-label">事业</text><text class="shishen-text">{{ result.shiShenDetail.career }}</text></view>
+          <view class="shishen-item"><text class="shishen-label">财运</text><text class="shishen-text">{{ result.shiShenDetail.wealth }}</text></view>
+          <view class="shishen-item"><text class="shishen-label">感情</text><text class="shishen-text">{{ result.shiShenDetail.love }}</text></view>
+          <view class="shishen-item"><text class="shishen-label">健康</text><text class="shishen-text">{{ result.shiShenDetail.health }}</text></view>
+        </view>
+      </view>
+
+      <!-- 流年运势 -->
+      <view v-if="result.liuNian" class="liunian-card">
+        <view class="card-heading"><view><text class="card-title">{{ result.liuNian.year }}年运势</text><text class="card-subtitle">{{ result.liuNian.ganZhi }}年</text></view><text class="card-mark">年</text></view>
+        <view class="liunian-content">
+          <view class="liunian-ganzhi">
+            <text class="liunian-gan" :style="{ color: wuxingColor[result.liuNian.ganWuXing] }">{{ result.liuNian.ganZhi[0] }}</text>
+            <text class="liunian-zhi" :style="{ color: wuxingColor[result.liuNian.zhiWuXing] }">{{ result.liuNian.ganZhi[1] }}</text>
+          </view>
+          <view class="liunian-info">
+            <text class="liunian-yunshi">{{ result.liuNian.yunshi }}</text>
+            <text class="liunian-jianyi">{{ result.liuNian.jianyi }}</text>
+          </view>
+        </view>
+      </view>
+
       <view class="insight-card">
         <text class="insight-star">✧</text><view><text class="insight-title">命盘寄语</text><text class="insight-text">五行不是好坏的评分，而是理解自身节奏的一张光谱。看见强弱，方能更从容地调整方向。</text></view>
       </view>
@@ -189,4 +241,18 @@ function goHistory() { uni.navigateTo({ url: APP_ROUTES.mingli.history }) }
 .spectrum-card,.fortune-card{margin-top:28rpx;padding:32rpx;border:1rpx solid rgba(158,117,42,.4);border-radius:24rpx 8rpx;background:linear-gradient(180deg,rgba(250,243,224,.82),rgba(242,231,202,.72));box-shadow:0 14rpx 32rpx rgba(61,44,20,.09),inset 0 0 0 4rpx rgba(255,255,255,.18)}.card-heading{display:flex;justify-content:space-between;align-items:center}.card-title{color:#1d3050;font:700 33rpx STKaiti,serif;letter-spacing:3rpx}.card-mark{width:58rpx;height:58rpx;line-height:58rpx;text-align:center;border:1rpx solid rgba(160,116,39,.45);border-radius:50%;color:#9f762d;font:22rpx/58rpx STKaiti,serif;background:rgba(255,250,235,.5)}.element-chart{margin-top:28rpx}.element-row{display:flex;align-items:center;margin:18rpx 0}.element-name{width:90rpx;display:flex;align-items:center;gap:10rpx;font:700 27rpx STKaiti,serif}.element-dot{width:14rpx;height:14rpx;border-radius:50%;box-shadow:0 0 14rpx currentColor}.bar-track{flex:1;height:22rpx;overflow:hidden;border-radius:11rpx;background:rgba(42,52,64,.12);box-shadow:inset 0 2rpx 4rpx rgba(42,52,64,.1)}.bar-fill{position:relative;height:100%;border-radius:11rpx;animation:grow 1s ease both;box-shadow:0 0 12rpx rgba(255,255,255,.2);overflow:hidden}.bar-fill::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.4) 50%,transparent 100%);animation:barShine 3.5s ease-in-out infinite}.bar-glow{position:absolute;right:0;top:0;width:24rpx;height:100%;background:#fff;opacity:.4;box-shadow:0 0 12rpx 6rpx rgba(255,255,255,.4)}.element-count{width:42rpx;text-align:right;color:#5e5644;font-size:24rpx;font-weight:700}.spectrum-note{margin-top:26rpx;padding-top:20rpx;border-top:1rpx solid rgba(145,105,39,.18);display:flex;justify-content:space-between;color:#6e6353;font-size:22rpx}
 .fortune-scroll{margin-top:26rpx;white-space:nowrap;position:relative}.fortune-scroll::after{content:'滑动查看更多 →';position:absolute;right:0;bottom:-32rpx;color:#a89060;font-size:18rpx;opacity:.6}.fortune-list{display:inline-flex;gap:18rpx;padding:8rpx 4rpx}.fortune-item{width:112rpx;padding:20rpx 8rpx;display:flex;flex-direction:column;align-items:center;border:1rpx solid rgba(151,111,44,.25);border-radius:14rpx;background:rgba(255,251,238,.55);transition:.2s}.fortune-item.current{border-color:var(--ming-purple-strong);box-shadow:0 0 0 4rpx var(--ming-purple-faint),0 6rpx 16rpx var(--ming-purple-faint);background:var(--ming-purple-faint);animation:fortuneGlow 2s ease-in-out infinite}.fortune-age{color:#7e705a;font-size:20rpx;font-weight:600}.fortune-gz{margin:13rpx 0;font:700 36rpx STKaiti,serif;letter-spacing:4rpx}.fortune-god{color:#9b7535;font-size:21rpx}.insight-card{margin-top:30rpx;padding:30rpx;display:flex;gap:18rpx;border-top:1rpx solid rgba(154,112,40,.32);border-bottom:1rpx solid rgba(154,112,40,.32)}.insight-star{color:#a77a2d;font-size:42rpx}.insight-title,.insight-text{display:block}.insight-title{font:700 30rpx STKaiti,serif;color:#2a3a55}.insight-text{margin-top:8rpx;color:#6e6353;font-size:22rpx;line-height:1.65}.again-btn{margin-top:32rpx;height:92rpx;border:0;border-radius:46rpx;color:var(--ming-text-purple);background:var(--ming-gradient-btn-soft);box-shadow:0 12rpx 26rpx var(--ming-purple-faint),inset 0 0 0 2rpx var(--ming-border-purple);font:700 29rpx STKaiti,serif;letter-spacing:4rpx}.again-btn::after{border:0}.again-btn:active{transform:translateY(2rpx)}.disclaimer{display:block;margin-top:26rpx;text-align:center;color:#8a7b63;font-size:19rpx}.empty{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:30rpx;color:#786b54}.empty button{font-size:24rpx}
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes grow{from{width:0}}@keyframes charGlow{0%,100%{text-shadow:0 0 32rpx var(--ming-purple-soft)}50%{text-shadow:0 0 50rpx var(--ming-purple),0 0 90rpx var(--ming-purple-faint)}}@keyframes masterPulse{0%,100%{box-shadow:0 0 45rpx var(--ming-shadow-purple),inset 0 0 40rpx var(--ming-purple-faint)}50%{box-shadow:0 0 75rpx var(--ming-shadow-glow),inset 0 0 50rpx var(--ming-purple-soft)}}@keyframes barShine{0%{transform:translateX(-100%)}50%{transform:translateX(100%)}100%{transform:translateX(100%)}}@keyframes fortuneGlow{0%,100%{box-shadow:0 0 0 4rpx var(--ming-purple-faint),0 6rpx 16rpx var(--ming-purple-faint)}50%{box-shadow:0 0 0 4rpx var(--ming-purple-soft),0 6rpx 24rpx var(--ming-shadow-glow)}}
+
+.canggan-card,.shensha-card,.shishen-card,.liunian-card{margin-top:28rpx;padding:32rpx;border:1rpx solid rgba(158,117,42,.4);border-radius:24rpx 8rpx;background:linear-gradient(180deg,rgba(250,243,224,.82),rgba(242,231,202,.72));box-shadow:0 14rpx 32rpx rgba(61,44,20,.09),inset 0 0 0 4rpx rgba(255,255,255,.18)}
+
+/* 地支藏干 */
+.canggan-grid{display:flex;justify-content:space-around;margin-top:24rpx;padding:8rpx 0}.canggan-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:14rpx;border-right:1rpx solid rgba(158,117,42,.12)}.canggan-item:last-child{border-right:0}.canggan-zhi{font:700 40rpx STKaiti,serif;color:#1b2d4d;text-shadow:0 2rpx 4rpx rgba(0,0,0,.06)}.canggan-gans{display:flex;gap:10rpx}.canggan-gan{font:600 24rpx STKaiti,serif;padding:4rpx 12rpx;border-radius:8rpx;background:rgba(158,117,42,.06)}
+
+/* 神煞 */
+.shensha-list{display:flex;flex-direction:column;gap:18rpx;margin-top:24rpx}.shensha-item{display:flex;align-items:center;padding:20rpx 24rpx;border-radius:18rpx;background:linear-gradient(135deg,rgba(255,250,235,.8),rgba(248,241,221,.6));border:1rpx solid rgba(158,117,42,.18);transition:all .3s}.shensha-name{min-width:150rpx;padding:8rpx 20rpx;border-radius:24rpx;font:700 24rpx STKaiti,serif;color:#fff;text-align:center;background:linear-gradient(135deg,#b48837,#9b7535)}.shensha-desc{flex:1;margin:0 20rpx;color:#5e5644;font-size:24rpx;line-height:1.6}.shensha-pos{padding:6rpx 16rpx;border-radius:12rpx;color:#9b7535;font-size:20rpx;background:rgba(158,117,42,.08)}
+
+/* 十神详解 */
+.shishen-grid{display:flex;flex-direction:column;gap:24rpx;margin-top:24rpx}.shishen-item{display:flex;gap:20rpx;padding:20rpx;border-radius:16rpx;background:rgba(255,250,235,.4);border-left:4rpx solid rgba(158,117,42,.3)}.shishen-label{width:70rpx;color:#9b7535;font:700 26rpx STKaiti,serif;flex-shrink:0;padding-top:2rpx}.shishen-text{flex:1;color:#4b3f2e;font-size:25rpx;line-height:1.75}
+
+/* 流年运势 */
+.liunian-content{display:flex;align-items:center;gap:32rpx;margin-top:28rpx;padding:24rpx;border-radius:20rpx;background:rgba(255,250,235,.5)}.liunian-ganzhi{display:flex;gap:16rpx;padding:16rpx 24rpx;border-radius:16rpx;background:rgba(158,117,42,.06)}.liunian-gan,.liunian-zhi{font:700 60rpx STKaiti,serif;color:#1b2d4d}.liunian-info{flex:1}.liunian-yunshi{display:block;font:700 28rpx STKaiti,serif;color:#1b2d4d;letter-spacing:2rpx}.liunian-jianyi{display:block;margin-top:14rpx;padding:16rpx 20rpx;border-radius:12rpx;color:#5e5644;font-size:24rpx;line-height:1.7;background:rgba(158,117,42,.04)}
 </style>

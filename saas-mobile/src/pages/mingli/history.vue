@@ -8,8 +8,14 @@
           <view class="capsule-divider" />
           <view class="capsule-mid" hover-class="tap-active" @tap="goHome"><text class="home-icon">⌂</text></view>
           <view class="capsule-divider" />
-          <view class="capsule-right" hover-class="tap-active" @tap="clearAll" v-if="records.length">
-            <text>清空</text>
+          <view v-if="records.length" class="capsule-actions">
+            <view class="capsule-action" hover-class="tap-active" @tap="exportHistory">
+              <text>导出</text>
+            </view>
+            <view class="capsule-divider" />
+            <view class="capsule-action" hover-class="tap-active" @tap="clearAll">
+              <text>清空</text>
+            </view>
           </view>
         </view>
       </view>
@@ -82,7 +88,7 @@
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { APP_ROUTES } from '@/common/navigation'
-import { clearMingliHistory, getMingliHistory, removeMingliRecord, type MingliHistoryRecord, type MingliRecordType } from '@/common/mingli/history'
+import { clearMingliHistory, getMingliHistory, removeMingliRecord, exportMingliHistoryAsText, type MingliHistoryRecord, type MingliRecordType } from '@/common/mingli/history'
 import MysticSky from '@/components/mystic-sky/mystic-sky.vue'
 import { useMingliTheme, type MingliThemeMode } from './theme'
 
@@ -127,6 +133,16 @@ function clearAll() {
     clearMingliHistory(); records.value = []
   } })
 }
+
+function exportHistory() {
+  const text = exportMingliHistoryAsText()
+  uni.setClipboardData({
+    data: text,
+    success: () => {
+      uni.showToast({ title: '已复制到剪贴板', icon: 'success' })
+    }
+  })
+}
 </script>
 
 <style scoped lang="scss">
@@ -141,6 +157,8 @@ function clearAll() {
 .capsule-right { min-width: 70rpx; height: 64rpx; padding: 0 18rpx; display: flex; align-items: center; justify-content: center; color: var(--ming-text-purple); font-size: 24rpx; }
 .capsule-right text { margin-left: 12rpx; }
 .capsule-right text:first-child { margin-left: 0; }
+.capsule-actions { display: flex; align-items: center; }
+.capsule-action { min-width: 70rpx; height: 64rpx; padding: 0 18rpx; display: flex; align-items: center; justify-content: center; color: var(--ming-text-purple); font-size: 24rpx; }
 .hero{position:relative;height:580rpx;overflow:hidden;background:var(--ming-gradient-hero)}.hero-copy{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;padding-top:40rpx}.eyebrow{color:var(--ming-text-purple-soft);font:17rpx Georgia,serif;letter-spacing:6rpx}.hero-title{margin-top:22rpx;color:var(--ming-text-purple);font:700 64rpx STKaiti,KaiTi,serif;letter-spacing:12rpx;text-shadow:0 0 30rpx var(--ming-purple-soft);animation:titleGlow 4s ease-in-out infinite}.hero-subtitle{margin-top:14rpx;color:var(--ming-text-purple);font:28rpx STKaiti,KaiTi,serif;letter-spacing:3rpx}
 .stats-row{display:flex;gap:48rpx;margin-top:28rpx}.stat-item{display:flex;flex-direction:column;align-items:center}.stat-num{color:var(--ming-text-purple);font:700 42rpx STKaiti,serif;text-shadow:0 0 20rpx var(--ming-purple-soft)}.stat-label{color:var(--ming-text-purple-soft);font-size:20rpx;letter-spacing:2rpx}
 .archive-orbit{position:absolute;z-index:3;left:50%;bottom:-78rpx;width:250rpx;height:250rpx;margin-left:-125rpx;padding-top:52rpx;box-sizing:border-box;border:2rpx solid var(--ming-border-purple);border-radius:50%;text-align:center;color:var(--ming-text-purple);box-shadow:0 0 60rpx var(--ming-shadow-purple),inset 0 0 30rpx var(--ming-purple-faint);animation:archiveBreathe 4s ease-in-out infinite, archiveSpin 30s linear infinite}.archive-orbit::before,.archive-orbit::after{content:'';position:absolute;border:1rpx dashed var(--ming-border-purple);border-radius:50%}.archive-orbit::before{inset:-26rpx;animation:archiveSpinReverse 24s linear infinite}.archive-orbit::after{inset:32rpx;animation:archiveSpin 18s linear infinite}.archive-orbit text{position:relative;z-index:2;font:700 78rpx STKaiti,serif;text-shadow:0 0 24rpx var(--ming-purple-soft)}.archive-orbit small{position:relative;z-index:2;margin-left:6rpx;font:24rpx STKaiti,serif}

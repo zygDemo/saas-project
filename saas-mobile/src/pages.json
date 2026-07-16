@@ -343,6 +343,13 @@
           "style": {
             "navigationBarTitleText": "历史记录"
           }
+        },
+        {
+          "path": "marriage",
+          "style": {
+            "navigationBarTitleText": "合婚",
+            "navigationStyle": "custom"
+          }
         }
       ]
     }

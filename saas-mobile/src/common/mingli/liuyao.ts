@@ -70,6 +70,26 @@ export interface LiuYaoResult {
   riWuXing: string      // 日五行
   question: string      // 占问事项
   time: string          // 占卜时间
+  dongYaoDetail?: DongYaoDetail[]  // 动爻详解
+  guaXiang?: GuaXiang   // 卦象图形
+}
+
+/** 动爻详解 */
+export interface DongYaoDetail {
+  position: number      // 爻位
+  name: string          // 爻名
+  yinYang: '阳' | '阴'  // 原爻
+  bianYinYang: '阳' | '阴'  // 变爻
+  liuQin: LiuQin        // 六亲
+  meaning: string       // 含义解读
+}
+
+/** 卦象图形数据 */
+export interface GuaXiang {
+  upper: boolean[]      // 上卦三爻 (true=阳, false=阴)
+  lower: boolean[]      // 下卦三爻
+  upperName: string     // 上卦名
+  lowerName: string     // 下卦名
 }
 
 // ==================== 八卦纳甲 ====================
@@ -435,6 +455,12 @@ export function liuYaoPaiPan(question: string, yaoValues?: number[]): LiuYaoResu
     bianGua = getGua64(bianGuaNames.upper, bianGuaNames.lower)
   }
 
+  // 获取卦象图形
+  const guaXiang = getGuaXiang(values, gua.upper, gua.lower)
+
+  // 获取动爻详解
+  const dongYaoDetail = getDongYaoDetail(yaoList, dongYao)
+
   return {
     benGua,
     bianGua,
@@ -443,6 +469,58 @@ export function liuYaoPaiPan(question: string, yaoValues?: number[]): LiuYaoResu
     riGanZhi,
     riWuXing,
     question,
-    time: now.toLocaleString('zh-CN')
+    time: now.toLocaleString('zh-CN'),
+    dongYaoDetail,
+    guaXiang,
   }
+}
+
+/** 获取卦象图形 */
+function getGuaXiang(values: number[], upperName: string, lowerName: string): GuaXiang {
+  const lower = values.slice(0, 3).map(v => v === 7 || v === 9)
+  const upper = values.slice(3, 6).map(v => v === 7 || v === 9)
+  return { upper, lower, upperName, lowerName }
+}
+
+/** 获取动爻详解 */
+function getDongYaoDetail(yaoList: Yao[], dongYao: number[]): DongYaoDetail[] {
+  const meanings: Record<string, Record<string, string>> = {
+    '父母': {
+      '阳变阴': '长辈关系有变，文书契约需谨慎',
+      '阴变阳': '家庭事务好转，学业有成',
+    },
+    '兄弟': {
+      '阳变阴': '朋友关系变化，竞争加剧',
+      '阴变阳': '人脉拓展，合作共赢',
+    },
+    '子孙': {
+      '阳变阴': '子女事务需关注，投资需谨慎',
+      '阴变阳': '后代有喜，创意灵感涌现',
+    },
+    '妻财': {
+      '阳变阴': '财运波动，感情有变',
+      '阴变阳': '财源广进，感情升温',
+    },
+    '官鬼': {
+      '阳变阴': '工作压力减轻，疾病好转',
+      '阴变阳': '事业有突破，但需防小人',
+    },
+  }
+
+  return dongYao.map(pos => {
+    const yao = yaoList[pos - 1]
+    const yinYang = yao.yinYang
+    const bianYinYang = yao.bianYinYang || (yinYang === '阳' ? '阴' : '阳')
+    const key = `${yinYang}变${bianYinYang}`
+    const meaning = meanings[yao.liuQin]?.[key] || '此爻变化，需结合卦辞综合判断'
+
+    return {
+      position: pos,
+      name: yao.name,
+      yinYang,
+      bianYinYang,
+      liuQin: yao.liuQin,
+      meaning,
+    }
+  })
 }

@@ -53,6 +53,28 @@ export function clearMingliHistory() {
   uni.removeStorageSync(STORAGE_KEY)
 }
 
+/** 导出历史记录为JSON */
+export function exportMingliHistory(): string {
+  const records = getMingliHistory()
+  return JSON.stringify(records, null, 2)
+}
+
+/** 导出历史记录为文本 */
+export function exportMingliHistoryAsText(): string {
+  const records = getMingliHistory()
+  if (records.length === 0) return '暂无历史记录'
+
+  let text = '=== 命理历史记录 ===\n\n'
+  records.forEach((record, index) => {
+    text += `${index + 1}. ${record.title}\n`
+    text += `   类型：${record.type === 'bazi' ? '八字排盘' : '六爻问事'}\n`
+    text += `   时间：${record.time}\n`
+    text += `   描述：${record.subtitle}\n\n`
+  })
+  text += `共 ${records.length} 条记录`
+  return text
+}
+
 function formatRecordTime(date: Date) {
   const pad = (value: number) => String(value).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
