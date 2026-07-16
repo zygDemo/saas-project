@@ -266,7 +266,7 @@
 </template>
 
 <script setup lang="ts">
-import layout from "@/pages/layout/layout.vue";
+import layout from "@/components/layout/layout.vue";
 import { useReadingStore } from "@/stores/reading";
 import { computed, ref } from "vue";
 import { useReadingApi, type ReviewItem, type ChapterItem } from "@/api/reading";

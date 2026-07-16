@@ -82,7 +82,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import type { OrderListViewItem } from "../types";
+import type { OrderListViewItem } from "@/common/carloan/types";
 
 const props = defineProps<{
   order: OrderListViewItem;

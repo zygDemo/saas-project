@@ -133,7 +133,7 @@ import {
   buildSignRouteQuery,
 } from "@/common/carloan-route-query";
 import { useCarloanStore } from "@/stores/carloan";
-import FlowRecordPopup from "@/common/carloan/components/FlowRecordPopup.vue";
+import FlowRecordPopup from "@/components/carloan/FlowRecordPopup.vue";
 import {
   approvalEntryItems,
   businessNodeText,

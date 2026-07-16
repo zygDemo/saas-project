@@ -117,7 +117,7 @@
 import type { StatisticsOverview } from "@/api/business";
 import type { UserInfo } from "@/stores/local";
 import { useBusinessApi } from "@/api/business";
-import layout from "@/pages/layout/layout.vue";
+import layout from "@/components/layout/layout.vue";
 import { useLocalStore, useSessionStore } from "@/stores";
 import {
   APP_ROUTES,

@@ -31,13 +31,13 @@ function goBack() {
 </script>
 
 <style scoped>
-.mystic-nav { position: relative; z-index: 30; color: #f7e9bf; background: #0b1730; }
+.mystic-nav { position: relative; z-index: 30; color: #f7e9bf; background: #160f38; }
 .mystic-nav.transparent { background: transparent; }
 .nav-safe { height: var(--status-bar-height); }
 .nav-row { height: 88rpx; display: flex; align-items: center; justify-content: space-between; padding: 8rpx 24rpx; }
 .nav-side { width: 140rpx; height: 72rpx; display: flex; align-items: center; }
 .nav-back { justify-content: flex-start; }
-.back-arrow { width: 62rpx; height: 62rpx; line-height: 56rpx; text-align: center; border: 1rpx solid rgba(231, 195, 112, .36); border-radius: 50%; font-size: 54rpx; background: rgba(8, 20, 43, .45); }
+.back-arrow { width: 62rpx; height: 62rpx; line-height: 56rpx; text-align: center; border: 1rpx solid rgba(196, 168, 248, .4); border-radius: 50%; font-size: 54rpx; background: rgba(22, 12, 56, .55); }
 .nav-title { font-family: STKaiti, KaiTi, serif; font-size: 32rpx; letter-spacing: 5rpx; font-weight: 600; }
-.nav-action { justify-content: flex-end; color: #d9b85f; font-size: 25rpx; }
+.nav-action { justify-content: flex-end; color: #c9a8ff; font-size: 25rpx; }
 </style>

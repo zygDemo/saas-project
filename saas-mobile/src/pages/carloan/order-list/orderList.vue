@@ -109,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import layout from "@/pages/layout/layout.vue";
+import layout from "@/components/layout/layout.vue";
 import { computed, ref } from "vue";
 import { onLoad, onReachBottom, onShow } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
@@ -124,8 +124,8 @@ import {
   buildDetailRouteQuery,
 } from "@/common/carloan-route-query";
 import { businessNodeText } from "@/common/carloan/applyDetail-flow";
-import OrderCard from "@/common/carloan/components/OrderCard.vue";
-import FlowRecordPopup from "@/common/carloan/components/FlowRecordPopup.vue";
+import OrderCard from "@/components/carloan/OrderCard.vue";
+import FlowRecordPopup from "@/components/carloan/FlowRecordPopup.vue";
 import type {
   FilterOption,
   BusinessNodeFilterValue,

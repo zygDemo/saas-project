@@ -154,7 +154,7 @@
 </template>
 
 <script setup>
-import layout from "@/pages/layout/layout.vue";
+import layout from "@/components/layout/layout.vue";
 import { $u, useTheme } from "uview-pro";
 import { useCarloanApi } from "@/api/carloan";
 import { useLocalStore } from "@/stores";

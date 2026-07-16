@@ -6,7 +6,12 @@ import i18n from "@/locale";
 import store from "@/stores";
 import App from "./App.vue";
 import { httpInterceptor, httpRequestConfig } from "./common/http.interceptor";
-import "uno.css";
+
+// 微信小程序子包页面 require 主包非页面文件时，需要该文件已在主包模块系统中注册
+// 使用实际引用防止 Vite tree-shaking 移除无副作用的模块导入
+import { useFoodApi } from "@/api/food";
+import { useReadingApi } from "@/api/reading";
+globalThis.__registeredApis = { useFoodApi, useReadingApi };
 
 // 根据 URL 参数决定是否启用 vConsole
 // #ifdef H5

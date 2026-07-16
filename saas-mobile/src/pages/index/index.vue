@@ -106,7 +106,7 @@ import type { MobileConfigData, MobileModuleItem } from "@/api/mobile-config";
 import type { CurrentSystemValue } from "@/stores/local";
 import { computed, ref } from "vue";
 import { onLoad, onShow } from "@dcloudio/uni-app";
-import layout from "@/pages/layout/layout.vue";
+import layout from "@/components/layout/layout.vue";
 import { CurrentSystem, useLocalStore } from "@/stores/local";
 
 const localStore = useLocalStore();

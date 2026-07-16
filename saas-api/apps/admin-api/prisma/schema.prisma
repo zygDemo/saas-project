@@ -154,6 +154,12 @@ model Tenant {
   articles          Article[]
   articleTypes      ArticleType[]
 
+  // 点餐模块
+  foodCategories  FoodCategory[]
+  foodDishes      FoodDish[]
+  foodOrders      FoodOrder[]
+  foodCarts       FoodCart[]
+
   // 移动端模块配置
   mobileModules       Json?    // ["carloan","food","credit"] 已启用的移动端模块
   defaultMobileModule String?  // 单模块模式下的默认模块 key
@@ -175,6 +181,8 @@ model User {
   updatedBy    String      @default("system")
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+  foodOrders   FoodOrder[]
+  foodCarts    FoodCart[]
   tenant       Tenant      @relation(fields: [tenantId], references: [id])
   dept         Department? @relation(fields: [deptId], references: [id])
   roles        UserRole[]
@@ -1406,4 +1414,93 @@ model ArticleLike {
   @@unique([articleId, userId])
   @@index([articleId])
   @@index([userId])
+}
+
+// ==================== 点餐模块 ====================
+
+model FoodCategory {
+  id        Int         @id @default(autoincrement())
+  name      String      @db.VarChar(50)
+  icon      String?     @db.VarChar(100)
+  sortOrder Int         @default(0)
+  isActive  Boolean     @default(true)
+  tenantId  Int
+  tenant    Tenant      @relation(fields: [tenantId], references: [id])
+  dishes    FoodDish[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([tenantId])
+}
+
+model FoodDish {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(100)
+  description   String?         @db.VarChar(500)
+  price         Decimal         @db.Decimal(10, 2)
+  originalPrice Decimal?        @db.Decimal(10, 2)
+  imageUrl      String?         @db.VarChar(500)
+  categoryId    Int
+  category      FoodCategory    @relation(fields: [categoryId], references: [id])
+  isActive      Boolean         @default(true)
+  sortOrder     Int             @default(0)
+  salesCount    Int             @default(0)
+  tenantId      Int
+  tenant        Tenant          @relation(fields: [tenantId], references: [id])
+  orderItems    FoodOrderItem[]
+  cartItems     FoodCart[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([tenantId])
+  @@index([categoryId])
+}
+
+model FoodOrder {
+  id         Int             @id @default(autoincrement())
+  orderNo    String          @unique @db.VarChar(32)
+  status     Int             @default(1) // 1=待接单 2=制作中 3=已完成 4=已取消
+  totalPrice Decimal         @db.Decimal(10, 2)
+  remark     String?         @db.VarChar(500)
+  userId     Int
+  user       User            @relation(fields: [userId], references: [id])
+  tenantId   Int
+  tenant     Tenant          @relation(fields: [tenantId], references: [id])
+  items      FoodOrderItem[]
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([orderNo])
+}
+
+model FoodOrderItem {
+  id        Int        @id @default(autoincrement())
+  orderId   Int
+  order     FoodOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  dishId    Int
+  dish      FoodDish   @relation(fields: [dishId], references: [id])
+  quantity  Int        @default(1)
+  price     Decimal    @db.Decimal(10, 2)
+  createdAt DateTime   @default(now())
+
+  @@index([orderId])
+  @@index([dishId])
+}
+
+model FoodCart {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  dishId    Int
+  dish      FoodDish  @relation(fields: [dishId], references: [id])
+  quantity  Int       @default(1)
+  tenantId  Int
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userId, dishId])
+  @@index([tenantId])
 }

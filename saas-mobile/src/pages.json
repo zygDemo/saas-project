@@ -51,15 +51,11 @@
     "autoscan": false,
     "custom": {
       "^app-(.*)$": "@/components/app-$1/app-$1.vue",
-      "^progress-ring$": "@/components/progress-ring/progress-ring.vue"
+      "^progress-ring$": "@/components/progress-ring/progress-ring.vue",
+      "^layout$": "@/components/layout/layout.vue"
     }
   },
   "tabBar": {
-    "custom": true,
-    "color": "#7A7E83",
-    "selectedColor": "#3cc51f",
-    "borderStyle": "black",
-    "backgroundColor": "#ffffff",
     "list": [
       {
         "pagePath": "pages/index/index",
@@ -75,61 +71,131 @@
     {
       "root": "pages/carloan/precheck",
       "pages": [
-        { "path": "idInfo" },
-        { "path": "carInfo" },
-        { "path": "applyInfo" },
-        { "path": "applyResult" },
-        { "path": "leadAdd" },
-        { "path": "leadList" },
-        { "path": "entryList" },
-        { "path": "entryDetail" },
-        { "path": "applySubmit" },
-        { "path": "applyListPage" },
-        { "path": "applyDetail" },
-        { "path": "applyProgress" }
+        {
+          "path": "idInfo"
+        },
+        {
+          "path": "carInfo"
+        },
+        {
+          "path": "applyInfo"
+        },
+        {
+          "path": "applyResult"
+        },
+        {
+          "path": "leadAdd"
+        },
+        {
+          "path": "leadList"
+        },
+        {
+          "path": "entryList"
+        },
+        {
+          "path": "entryDetail"
+        },
+        {
+          "path": "applySubmit"
+        },
+        {
+          "path": "applyListPage"
+        },
+        {
+          "path": "applyDetail"
+        },
+        {
+          "path": "applyProgress"
+        }
       ]
     },
     {
       "root": "pages/carloan/supplement",
       "pages": [
-        { "path": "idInfoSupplement" },
-        { "path": "carInfoSupplement" },
-        { "path": "orderInfoSupplement" },
-        { "path": "fileInfoSupplement" },
-        { "path": "fileManage" },
-        { "path": "supplementList" },
-        { "path": "supplementDetail" }
+        {
+          "path": "idInfoSupplement"
+        },
+        {
+          "path": "carInfoSupplement"
+        },
+        {
+          "path": "orderInfoSupplement"
+        },
+        {
+          "path": "fileInfoSupplement"
+        },
+        {
+          "path": "fileManage"
+        },
+        {
+          "path": "supplementList"
+        },
+        {
+          "path": "supplementDetail"
+        }
       ]
     },
     {
       "root": "pages/carloan/approval",
       "pages": [
-        { "path": "approvalList" },
-        { "path": "pawnMaterials" },
-        { "path": "pawnLoanInfo" },
-        { "path": "pawnApprovalList" },
-        { "path": "pawnApprovalDetail" }
+        {
+          "path": "approvalList"
+        },
+        {
+          "path": "pawnMaterials"
+        },
+        {
+          "path": "pawnLoanInfo"
+        },
+        {
+          "path": "pawnApprovalList"
+        },
+        {
+          "path": "pawnApprovalDetail"
+        }
       ]
     },
     {
       "root": "pages/carloan/signing",
       "pages": [
-        { "path": "faceSignList" },
-        { "path": "videoFaceSign" },
-        { "path": "faceSignResult" },
-        { "path": "authSign" },
-        { "path": "signCenter" },
-        { "path": "signConfirmAmount" },
-        { "path": "signBindCard" },
-        { "path": "signGpsAppointment" },
-        { "path": "signMortgage" }
+        {
+          "path": "faceSignList"
+        },
+        {
+          "path": "videoFaceSign"
+        },
+        {
+          "path": "faceSignResult"
+        },
+        {
+          "path": "authSign"
+        },
+        {
+          "path": "signCenter"
+        },
+        {
+          "path": "signConfirmAmount"
+        },
+        {
+          "path": "signBindCard"
+        },
+        {
+          "path": "signGpsAppointment"
+        },
+        {
+          "path": "signMortgage"
+        }
       ]
     },
     {
       "root": "pages/carloan/portal",
       "pages": [
-        { "path": "todoCenter" },
-        { "path": "messageCenter" }
+        {
+          "path": "todoCenter"
+        },
+        {
+          "path": "messageCenter"
+        }
       ]
     },
     {
@@ -137,15 +203,21 @@
       "pages": [
         {
           "path": "repaymentPlan",
-          "style": { "navigationBarTitleText": "还款计划" }
+          "style": {
+            "navigationBarTitleText": "还款计划"
+          }
         },
         {
           "path": "earlyRepayment",
-          "style": { "navigationBarTitleText": "提前还款" }
+          "style": {
+            "navigationBarTitleText": "提前还款"
+          }
         },
         {
           "path": "loanConfirm",
-          "style": { "navigationBarTitleText": "请款确认" }
+          "style": {
+            "navigationBarTitleText": "请款确认"
+          }
         }
       ]
     },

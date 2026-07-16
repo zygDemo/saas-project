@@ -1,32 +1,36 @@
 import { http } from "uview-pro";
+import type { ApiResponse, FoodCategory, FoodCartItem, FoodOrder } from "@/types/api/contract";
 
-export interface FoodStoreQuery {
-  keyword?: string;
-  categoryId?: number | string;
-}
-
-export interface FoodGoodsQuery {
-  storeId?: number | string;
-  categoryId?: number | string;
-  keyword?: string;
-}
-
-export interface FoodOrderSubmitData {
-  storeId: number | string;
-  items: Array<{
-    goodsId: number | string;
-    count: number;
-  }>;
-  remark?: string;
-}
+export type { FoodCategory, FoodCartItem, FoodOrder };
 
 export function useFoodApi() {
   return {
-    getStoreList: (params?: FoodStoreQuery) => http.get("/m/food/stores", params),
-    getStoreDetail: (storeId: number | string) => http.get("/m/food/stores/" + storeId),
-    getGoodsList: (params?: FoodGoodsQuery) => http.get("/m/food/goods", params),
-    submitOrder: (data: FoodOrderSubmitData) => http.post("/m/food/orders", data),
-    getOrderList: (params?: Record<string, unknown>) => http.get("/m/food/orders", params),
-    getOrderDetail: (orderId: number | string) => http.get("/m/food/orders/" + orderId),
+    /** 获取菜单列表（分组） */
+    getMenuList: () =>
+      http.get<ApiResponse<FoodCategory[]>>("/food/m/menu"),
+
+    /** 获取购物车 */
+    getCart: () =>
+      http.get<ApiResponse<FoodCartItem[]>>("/food/m/cart"),
+
+    /** 添加到购物车 */
+    addToCart: (data: { dishId: number; quantity?: number }) =>
+      http.post<ApiResponse<FoodCartItem>>("/food/m/cart", data),
+
+    /** 更新购物车数量 */
+    updateCartQuantity: (dishId: number, quantity: number) =>
+      http.put<ApiResponse<null>>(`/food/m/cart/${dishId}`, { quantity }),
+
+    /** 清空购物车 */
+    clearCart: () =>
+      http.delete<ApiResponse<null>>("/food/m/cart"),
+
+    /** 创建订单 */
+    createOrder: (data?: { remark?: string }) =>
+      http.post<ApiResponse<FoodOrder>>("/food/m/order", data),
+
+    /** 我的订单列表 */
+    getMyOrders: (params?: { status?: number }) =>
+      http.get<ApiResponse<FoodOrder[]>>("/food/m/orders", params),
   };
 }

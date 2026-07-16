@@ -9,4 +9,5 @@ onLaunch(() => {});
 @import "uview-pro/index.scss";
 @import "common/style.scss";
 @import "styles/skeuomorphic.css";
+@import "styles/mingli-theme.scss";
 </style>

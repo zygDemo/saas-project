@@ -152,7 +152,7 @@
 import type { ColorType } from "uview-pro/types/global";
 import type { StatisticsOverview } from "@/api/business";
 import { $u } from "uview-pro";
-import layout from "@/pages/layout/layout.vue";
+import layout from "@/components/layout/layout.vue";
 import { useBusinessApi } from "@/api/business";
 import { useLocalStore } from "@/stores";
 import { storeToRefs } from "pinia";

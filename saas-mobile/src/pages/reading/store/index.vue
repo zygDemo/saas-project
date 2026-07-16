@@ -342,7 +342,7 @@
 </template>
 
 <script setup lang="ts">
-import layout from "@/pages/layout/layout.vue";
+import layout from "@/components/layout/layout.vue";
 import { computed, ref, onMounted, onUnmounted, watch } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useReadingApi } from "@/api/reading";

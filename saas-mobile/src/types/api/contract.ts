@@ -182,3 +182,62 @@ export interface NoteItem {
   book?: { id: number; title: string; cover?: string }
   chapter?: { id: number; title: string }
 }
+
+// ==================== 点餐模块 ====================
+
+/** 菜品分类 */
+export interface FoodCategory {
+  id: number
+  name: string
+  icon?: string
+  sortOrder: number
+  isActive: boolean
+  dishes: FoodDish[]
+}
+
+/** 菜品 */
+export interface FoodDish {
+  id: number
+  name: string
+  description?: string
+  price: string
+  originalPrice?: string
+  imageUrl?: string
+  categoryId: number
+  salesCount: number
+  isActive: boolean
+  sortOrder: number
+  category?: { id: number; name: string }
+}
+
+/** 购物车项 */
+export interface FoodCartItem {
+  id: number
+  userId: number
+  dishId: number
+  quantity: number
+  dish: FoodDish
+}
+
+/** 订单 */
+export interface FoodOrder {
+  id: number
+  orderNo: string
+  status: number
+  totalPrice: string
+  remark?: string
+  userId: number
+  createdAt: string
+  updatedAt: string
+  items: FoodOrderItem[]
+}
+
+/** 订单明细 */
+export interface FoodOrderItem {
+  id: number
+  orderId: number
+  dishId: number
+  quantity: number
+  price: string
+  dish?: { id: number; name: string; imageUrl?: string }
+}

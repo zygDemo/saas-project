@@ -1,0 +1,235 @@
+/**
+ * 命理模块主题系统
+ * ================
+ * 微信小程序兼容性说明：
+ *   1. 不使用 :root 选择器，改用 page + 业务 class
+ *   2. CSS 变量值中不再嵌套 var()，避免部分基础库无法解析
+ *   3. 渐变/阴影直接展开为具体色值
+ *
+ * 使用方式：
+ *   1. 默认主题已通过 page / .mingli-page / .page 应用
+ *   2. 切换主题：在命理页面根节点加 class，例如 <view class="mingli-page mingli-theme-aurora">
+ *
+ * 内置主题：
+ *   - (默认) galaxy   星河紫蓝  银河系深空 + 淡紫星光
+ *   - mingli-theme-aurora  极光青
+ *   - mingli-theme-sunset  暮霞金
+ *   - mingli-theme-nebula  星云粉
+ */
+
+/* ========== 默认主题：galaxy 星河紫蓝 ========== */
+// 深空背景
+$galaxy-bg-deep: #05081a;
+$galaxy-bg-mid: #0a1228;
+$galaxy-bg-soft: #152448;
+$galaxy-bg-radial: #1e3a6a;
+
+// 紫色主调
+$galaxy-purple: #d8b4fe;
+$galaxy-purple-light: #f3e8ff;
+$galaxy-purple-glow: #c4b5fd;
+$galaxy-purple-strong: #9b51e0;
+$galaxy-purple-soft: rgba(216, 180, 254, .3);
+$galaxy-purple-faint: rgba(216, 180, 254, .12);
+
+// 紫光文字
+$galaxy-text-purple: #f0e6ff;
+$galaxy-text-purple-soft: rgba(230, 220, 255, .65);
+
+// 金色
+$galaxy-gold: #c9a34d;
+$galaxy-gold-light: #f0d486;
+
+// 纸张
+$galaxy-paper: #f5f0e8;
+$galaxy-paper-dark: #e8e0d4;
+$galaxy-paper-soft: rgba(250, 244, 227, .76);
+
+// 边框/阴影
+$galaxy-border-purple: rgba(216, 180, 254, .45);
+$galaxy-border-gold: rgba(197, 154, 63, .5);
+$galaxy-shadow-purple: rgba(196, 168, 248, .26);
+$galaxy-shadow-glow: rgba(216, 180, 254, .42);
+
+page,
+.mingli-page,
+.page {
+  --ming-bg-deep: #{$galaxy-bg-deep};
+  --ming-bg-mid: #{$galaxy-bg-mid};
+  --ming-bg-soft: #{$galaxy-bg-soft};
+  --ming-bg-radial: #{$galaxy-bg-radial};
+
+  --ming-purple: #{$galaxy-purple};
+  --ming-purple-light: #{$galaxy-purple-light};
+  --ming-purple-glow: #{$galaxy-purple-glow};
+  --ming-purple-strong: #{$galaxy-purple-strong};
+  --ming-purple-soft: #{$galaxy-purple-soft};
+  --ming-purple-faint: #{$galaxy-purple-faint};
+
+  --ming-text-purple: #{$galaxy-text-purple};
+  --ming-text-purple-soft: #{$galaxy-text-purple-soft};
+
+  --ming-gold: #{$galaxy-gold};
+  --ming-gold-light: #{$galaxy-gold-light};
+
+  --ming-paper: #{$galaxy-paper};
+  --ming-paper-dark: #{$galaxy-paper-dark};
+  --ming-paper-soft: #{$galaxy-paper-soft};
+
+  --ming-border-purple: #{$galaxy-border-purple};
+  --ming-border-gold: #{$galaxy-border-gold};
+  --ming-shadow-purple: #{$galaxy-shadow-purple};
+  --ming-shadow-glow: #{$galaxy-shadow-glow};
+
+  --ming-gradient-hero: radial-gradient(circle at 50% 52%, #{$galaxy-bg-radial} 0, #{$galaxy-bg-mid} 42%, #{$galaxy-bg-deep} 78%);
+  --ming-gradient-btn: linear-gradient(90deg, #{$galaxy-gold} 0%, #a67b2d 16%, #{$galaxy-purple-strong} 55%, #2a1850 100%);
+  --ming-gradient-btn-soft: linear-gradient(135deg, #3a2870, #{$galaxy-purple-strong});
+  --ming-gradient-line: linear-gradient(90deg, #{$galaxy-purple-strong}, #{$galaxy-purple-glow}, #{$galaxy-purple-strong});
+
+  --ming-font-serif: STKaiti, KaiTi, serif;
+  --ming-font-display: Georgia, serif;
+}
+
+/* ========== 主题：aurora 极光青 ========== */
+$aurora-bg-deep: #051818;
+$aurora-bg-mid: #0a2a2a;
+$aurora-bg-soft: #134040;
+$aurora-bg-radial: #1a5252;
+$aurora-purple: #5eead4;
+$aurora-purple-light: #ccfbf1;
+$aurora-purple-glow: #99f6e4;
+$aurora-purple-strong: #14b8a6;
+$aurora-purple-soft: rgba(94, 234, 212, .3);
+$aurora-purple-faint: rgba(94, 234, 212, .12);
+$aurora-text-purple: #ccfbf1;
+$aurora-text-purple-soft: rgba(204, 251, 241, .65);
+$aurora-gold: #fbbf24;
+$aurora-gold-light: #fde68a;
+$aurora-border-purple: rgba(94, 234, 212, .45);
+$aurora-shadow-purple: rgba(20, 184, 166, .26);
+$aurora-shadow-glow: rgba(94, 234, 212, .42);
+
+.mingli-theme-aurora {
+  --ming-bg-deep: #{$aurora-bg-deep};
+  --ming-bg-mid: #{$aurora-bg-mid};
+  --ming-bg-soft: #{$aurora-bg-soft};
+  --ming-bg-radial: #{$aurora-bg-radial};
+
+  --ming-purple: #{$aurora-purple};
+  --ming-purple-light: #{$aurora-purple-light};
+  --ming-purple-glow: #{$aurora-purple-glow};
+  --ming-purple-strong: #{$aurora-purple-strong};
+  --ming-purple-soft: #{$aurora-purple-soft};
+  --ming-purple-faint: #{$aurora-purple-faint};
+
+  --ming-text-purple: #{$aurora-text-purple};
+  --ming-text-purple-soft: #{$aurora-text-purple-soft};
+
+  --ming-gold: #{$aurora-gold};
+  --ming-gold-light: #{$aurora-gold-light};
+
+  --ming-border-purple: #{$aurora-border-purple};
+  --ming-shadow-purple: #{$aurora-shadow-purple};
+  --ming-shadow-glow: #{$aurora-shadow-glow};
+
+  --ming-gradient-hero: radial-gradient(circle at 50% 52%, #{$aurora-bg-radial} 0, #{$aurora-bg-mid} 42%, #{$aurora-bg-deep} 78%);
+  --ming-gradient-btn: linear-gradient(90deg, #{$aurora-gold} 0%, #d97706 16%, #{$aurora-purple-strong} 55%, #134e4a 100%);
+  --ming-gradient-btn-soft: linear-gradient(135deg, #134e4a, #{$aurora-purple-strong});
+  --ming-gradient-line: linear-gradient(90deg, #{$aurora-purple-strong}, #{$aurora-purple-glow}, #{$aurora-purple-strong});
+}
+
+/* ========== 主题：sunset 暮霞金 ========== */
+$sunset-bg-deep: #1f0a0a;
+$sunset-bg-mid: #401a1a;
+$sunset-bg-soft: #5c2a2a;
+$sunset-bg-radial: #722a2a;
+$sunset-purple: #fda4af;
+$sunset-purple-light: #ffe4e6;
+$sunset-purple-glow: #fecdd3;
+$sunset-purple-strong: #f43f5e;
+$sunset-purple-soft: rgba(253, 164, 175, .3);
+$sunset-purple-faint: rgba(253, 164, 175, .12);
+$sunset-text-purple: #ffe4e6;
+$sunset-text-purple-soft: rgba(255, 228, 230, .65);
+$sunset-gold: #fbbf24;
+$sunset-gold-light: #fde68a;
+$sunset-border-purple: rgba(253, 164, 175, .45);
+$sunset-shadow-purple: rgba(244, 63, 94, .26);
+$sunset-shadow-glow: rgba(253, 164, 175, .42);
+
+.mingli-theme-sunset {
+  --ming-bg-deep: #{$sunset-bg-deep};
+  --ming-bg-mid: #{$sunset-bg-mid};
+  --ming-bg-soft: #{$sunset-bg-soft};
+  --ming-bg-radial: #{$sunset-bg-radial};
+
+  --ming-purple: #{$sunset-purple};
+  --ming-purple-light: #{$sunset-purple-light};
+  --ming-purple-glow: #{$sunset-purple-glow};
+  --ming-purple-strong: #{$sunset-purple-strong};
+  --ming-purple-soft: #{$sunset-purple-soft};
+  --ming-purple-faint: #{$sunset-purple-faint};
+
+  --ming-text-purple: #{$sunset-text-purple};
+  --ming-text-purple-soft: #{$sunset-text-purple-soft};
+
+  --ming-gold: #{$sunset-gold};
+  --ming-gold-light: #{$sunset-gold-light};
+
+  --ming-border-purple: #{$sunset-border-purple};
+  --ming-shadow-purple: #{$sunset-shadow-purple};
+  --ming-shadow-glow: #{$sunset-shadow-glow};
+
+  --ming-gradient-hero: radial-gradient(circle at 50% 52%, #{$sunset-bg-radial} 0, #{$sunset-bg-mid} 42%, #{$sunset-bg-deep} 78%);
+  --ming-gradient-btn: linear-gradient(90deg, #{$sunset-gold} 0%, #d97706 16%, #{$sunset-purple-strong} 55%, #4c0519 100%);
+  --ming-gradient-btn-soft: linear-gradient(135deg, #4c0519, #{$sunset-purple-strong});
+  --ming-gradient-line: linear-gradient(90deg, #{$sunset-purple-strong}, #{$sunset-purple-glow}, #{$sunset-purple-strong});
+}
+
+/* ========== 主题：nebula 星云粉 ========== */
+$nebula-bg-deep: #1a0a1f;
+$nebula-bg-mid: #2a1240;
+$nebula-bg-soft: #3a1f5c;
+$nebula-bg-radial: #4a2a72;
+$nebula-purple: #f0abfc;
+$nebula-purple-light: #fae8ff;
+$nebula-purple-glow: #f5d0fe;
+$nebula-purple-strong: #d946ef;
+$nebula-purple-soft: rgba(240, 171, 252, .3);
+$nebula-purple-faint: rgba(240, 171, 252, .12);
+$nebula-text-purple: #fae8ff;
+$nebula-text-purple-soft: rgba(250, 232, 255, .65);
+$nebula-gold: #fbbf24;
+$nebula-gold-light: #fde68a;
+$nebula-border-purple: rgba(240, 171, 252, .45);
+$nebula-shadow-purple: rgba(217, 70, 239, .26);
+$nebula-shadow-glow: rgba(240, 171, 252, .42);
+
+.mingli-theme-nebula {
+  --ming-bg-deep: #{$nebula-bg-deep};
+  --ming-bg-mid: #{$nebula-bg-mid};
+  --ming-bg-soft: #{$nebula-bg-soft};
+  --ming-bg-radial: #{$nebula-bg-radial};
+
+  --ming-purple: #{$nebula-purple};
+  --ming-purple-light: #{$nebula-purple-light};
+  --ming-purple-glow: #{$nebula-purple-glow};
+  --ming-purple-strong: #{$nebula-purple-strong};
+  --ming-purple-soft: #{$nebula-purple-soft};
+  --ming-purple-faint: #{$nebula-purple-faint};
+
+  --ming-text-purple: #{$nebula-text-purple};
+  --ming-text-purple-soft: #{$nebula-text-purple-soft};
+
+  --ming-gold: #{$nebula-gold};
+  --ming-gold-light: #{$nebula-gold-light};
+
+  --ming-border-purple: #{$nebula-border-purple};
+  --ming-shadow-purple: #{$nebula-shadow-purple};
+  --ming-shadow-glow: #{$nebula-shadow-glow};
+
+  --ming-gradient-hero: radial-gradient(circle at 50% 52%, #{$nebula-bg-radial} 0, #{$nebula-bg-mid} 42%, #{$nebula-bg-deep} 78%);
+  --ming-gradient-btn: linear-gradient(90deg, #{$nebula-gold} 0%, #d97706 16%, #{$nebula-purple-strong} 55%, #4a044e 100%);
+  --ming-gradient-btn-soft: linear-gradient(135deg, #4a044e, #{$nebula-purple-strong});
+  --ming-gradient-line: linear-gradient(90deg, #{$nebula-purple-strong}, #{$nebula-purple-glow}, #{$nebula-purple-strong});
+}

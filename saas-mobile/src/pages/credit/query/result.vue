@@ -1,43 +1,74 @@
 <template>
-  <view class="result-page">
-    <view class="result-card">
-      <view class="result-header">
-        <view class="avatar">
-          <u-icon name="checked-circle" color="#fff" size="60"></u-icon>
+  <layout nav-title="查询结果">
+    <view class="result-page">
+      <!-- 结果卡片 -->
+      <view class="result-card">
+        <view class="result-header">
+          <view class="result-icon">
+            <u-icon name="checkmark-circle-fill" color="var(--u-type-success)" size="80" />
+          </view>
+          <text class="result-title">查询完成</text>
+          <text class="result-subtitle">征信报告已生成</text>
         </view>
-        <text class="title">查询完成</text>
-        <text class="subtitle">征信报告已生成</text>
+
+        <!-- 用户信息 -->
+        <view class="info-section">
+          <view class="info-row">
+            <text class="info-label">姓名</text>
+            <text class="info-value">{{ form.name }}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">身份证号</text>
+            <text class="info-value">{{ maskIdcard }}</text>
+          </view>
+        </view>
+
+        <!-- 信用评分 -->
+        <view class="score-section">
+          <text class="score-title">信用评分</text>
+          <view class="score-ring">
+            <view class="score-ring__inner">
+              <text class="score-num">{{ creditScore }}</text>
+              <text class="score-label">信用分</text>
+            </view>
+          </view>
+          <view class="score-tag" :class="scoreClass">
+            <text>{{ scoreDesc }}</text>
+          </view>
+        </view>
+
+        <!-- 评分说明 -->
+        <view class="score-range">
+          <view class="range-item">
+            <view class="range-dot range-dot--good" />
+            <text>750-950 优秀</text>
+          </view>
+          <view class="range-item">
+            <view class="range-dot range-dot--ok" />
+            <text>650-749 良好</text>
+          </view>
+          <view class="range-item">
+            <view class="range-dot range-dot--fair" />
+            <text>550-649 一般</text>
+          </view>
+          <view class="range-item">
+            <view class="range-dot range-dot--poor" />
+            <text>350-549 偏弱</text>
+          </view>
+        </view>
       </view>
 
-      <view class="info-section">
-        <view class="info-row">
-          <text class="label">姓名</text>
-          <text class="value">{{ form.name }}</text>
-        </view>
-        <view class="info-row">
-          <text class="label">身份证号</text>
-          <text class="value">{{ maskIdcard }}</text>
-        </view>
-      </view>
-
-      <view class="score-section">
-        <text class="section-title">信用评分</text>
-        <view class="score-circle">
-          <text class="score-num">{{ creditScore }}</text>
-          <text class="score-text">信用分</text>
-        </view>
-        <text class="score-desc">{{ scoreDesc }}</text>
-      </view>
-
-      <view class="action-section">
-        <u-button text="查看完整报告" type="primary" @click="viewReport"></u-button>
-        <u-button text="返回首页" plain @click="goHome"></u-button>
+      <!-- 操作按钮 -->
+      <view class="action-bar">
+        <u-button text="查看完整报告" type="primary" @click="viewReport" />
+        <u-button text="返回首页" plain @click="goHome" />
       </view>
     </view>
-  </view>
+  </layout>
 </template>
 
 <script setup lang="ts">
+import layout from "@/components/layout/layout.vue";
 import { APP_ROUTES } from "@/common/navigation";
 import { computed, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
@@ -55,10 +86,17 @@ const maskIdcard = computed(() => {
   return `${idcard.slice(0, 6)}********${idcard.slice(-4)}`;
 });
 
+const scoreClass = computed(() => {
+  if (creditScore.value >= 750) return "score-tag--good";
+  if (creditScore.value >= 650) return "score-tag--ok";
+  if (creditScore.value >= 550) return "score-tag--fair";
+  return "score-tag--poor";
+});
+
 const scoreDesc = computed(() => {
-  if (creditScore.value >= 800) return "信用极好";
-  if (creditScore.value >= 700) return "信用良好";
-  if (creditScore.value >= 600) return "信用一般";
+  if (creditScore.value >= 750) return "信用优秀";
+  if (creditScore.value >= 650) return "信用良好";
+  if (creditScore.value >= 550) return "信用一般";
   return "信用偏弱，建议关注";
 });
 
@@ -78,15 +116,18 @@ const goHome = () => {
 
 <style scoped lang="scss">
 .result-page {
-  min-height: 100vh;
-  background-color: #f5f5f5;
+  min-height: 100%;
+  background-color: #f5f7fa;
   padding: 30rpx;
+  padding-bottom: 50rpx;
 }
 
+// 结果卡片
 .result-card {
   background: #fff;
-  border-radius: 16rpx;
-  padding: 50rpx 30rpx;
+  border-radius: 20rpx;
+  padding: 40rpx 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
 }
 
 .result-header {
@@ -96,96 +137,162 @@ const goHome = () => {
   margin-bottom: 40rpx;
 }
 
-.avatar {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.result-icon {
   margin-bottom: 20rpx;
 }
 
-.title {
+.result-title {
   font-size: 36rpx;
   font-weight: 600;
   color: #303133;
   margin-bottom: 8rpx;
 }
 
-.subtitle {
+.result-subtitle {
   font-size: 26rpx;
   color: #909399;
 }
 
+// 用户信息
 .info-section {
-  margin-bottom: 50rpx;
+  margin-bottom: 40rpx;
+  padding: 24rpx;
+  background: #f8f9fb;
+  border-radius: 12rpx;
 }
 
 .info-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
+  padding: 16rpx 0;
+
+  &:first-child {
+    border-bottom: 1rpx solid #e8e8e8;
+  }
 }
 
-.label {
+.info-label {
   font-size: 28rpx;
-  color: #606266;
+  color: #909399;
 }
 
-.value {
+.info-value {
   font-size: 28rpx;
   color: #303133;
   font-weight: 500;
 }
 
+// 信用评分
 .score-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 50rpx;
+  margin-bottom: 40rpx;
 }
 
-.section-title {
-  font-size: 32rpx;
+.score-title {
+  font-size: 30rpx;
   font-weight: 600;
   color: #303133;
   margin-bottom: 30rpx;
 }
 
-.score-circle {
+.score-ring {
   width: 240rpx;
   height: 240rpx;
   border-radius: 50%;
-  border: 12rpx solid #4facfe;
+  border: 16rpx solid var(--u-type-primary);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   margin-bottom: 24rpx;
+  background: #fff;
+
+  &__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 }
 
 .score-num {
-  font-size: 64rpx;
+  font-size: 72rpx;
   font-weight: bold;
   color: #303133;
   line-height: 1;
 }
 
-.score-text {
+.score-label {
   font-size: 24rpx;
   color: #909399;
+  margin-top: 8rpx;
 }
 
-.score-desc {
-  font-size: 28rpx;
-  color: #606266;
+.score-tag {
+  padding: 12rpx 32rpx;
+  border-radius: 30rpx;
+
+  text {
+    font-size: 28rpx;
+    font-weight: 500;
+  }
+
+  &--good {
+    background: #e8f8ef;
+    text { color: #2ecc71; }
+  }
+
+  &--ok {
+    background: #e8f4fd;
+    text { color: #3498db; }
+  }
+
+  &--fair {
+    background: #fef9e8;
+    text { color: #f39c12; }
+  }
+
+  &--poor {
+    background: #fdedec;
+    text { color: #e74c3c; }
+  }
 }
 
-.action-section {
+// 评分范围
+.score-range {
+  display: flex;
+  justify-content: space-around;
+  padding: 24rpx;
+  background: #f8f9fb;
+  border-radius: 12rpx;
+}
+
+.range-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+
+  text {
+    font-size: 22rpx;
+    color: #909399;
+  }
+}
+
+.range-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+
+  &--good { background: #2ecc71; }
+  &--ok { background: #3498db; }
+  &--fair { background: #f39c12; }
+  &--poor { background: #e74c3c; }
+}
+
+// 操作按钮
+.action-bar {
+  margin-top: 30rpx;
   display: flex;
   flex-direction: column;
   gap: 20rpx;

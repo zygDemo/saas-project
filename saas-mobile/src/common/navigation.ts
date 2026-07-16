@@ -73,16 +73,16 @@ export const APP_ROUTES = {
   },
 
   mingli: {
-    index: '/pages/mingli/index',
+    index: "/pages/mingli/index",
     bazi: {
-      input: '/pages/mingli/bazi/input',
-      result: '/pages/mingli/bazi/result'
+      input: "/pages/mingli/bazi/input",
+      result: "/pages/mingli/bazi/result",
     },
     liuyao: {
-      shake: '/pages/mingli/liuyao/shake',
-      result: '/pages/mingli/liuyao/result'
+      shake: "/pages/mingli/liuyao/shake",
+      result: "/pages/mingli/liuyao/result",
     },
-    history: '/pages/mingli/history'
+    history: "/pages/mingli/history",
   },
   credit: {
     home: "/pages/credit/index/index",
@@ -104,7 +104,8 @@ export const TABBAR_SCOPES = {
 } as const;
 
 export type TabbarScope = (typeof TABBAR_SCOPES)[keyof typeof TABBAR_SCOPES];
-export type MobileModuleKey = "carloan" | "food" | "credit" | "reading" | "mingli";
+export type MobileModuleKey =
+  "carloan" | "food" | "credit" | "reading" | "mingli";
 
 export interface MobileModuleConfigLike {
   enabled?: string[];
@@ -164,12 +165,16 @@ export function getActiveModuleKeyBySystem(
 export function canSwitchMobileModule(
   config?: MobileModuleConfigLike | null,
 ): boolean {
-  return Boolean(config?.isMultiModule && getEnabledMobileModules(config).length > 1);
+  return Boolean(
+    config?.isMultiModule && getEnabledMobileModules(config).length > 1,
+  );
 }
 
-export function getInitialMobileEntry(
-  config?: MobileModuleConfigLike | null,
-): { route: string; system: string; moduleKey: MobileModuleKey | null } {
+export function getInitialMobileEntry(config?: MobileModuleConfigLike | null): {
+  route: string;
+  system: string;
+  moduleKey: MobileModuleKey | null;
+} {
   const enabledModules = getEnabledMobileModules(config);
 
   if (canSwitchMobileModule(config)) {
@@ -180,10 +185,11 @@ export function getInitialMobileEntry(
     };
   }
 
-  const preferredModule = isMobileModuleKey(config?.defaultModule)
-    && enabledModules.includes(config.defaultModule)
-    ? config.defaultModule
-    : enabledModules[0];
+  const preferredModule =
+    isMobileModuleKey(config?.defaultModule) &&
+    enabledModules.includes(config.defaultModule)
+      ? config.defaultModule
+      : enabledModules[0];
 
   if (preferredModule) {
     return {
@@ -274,12 +280,18 @@ export function buildHashRoute(
   return `#${buildRoute(route, query)}`;
 }
 
+/** 系统级 tabbar 路由集合，这些页面由微信原生 tabbar 或 custom-tab-bar 接管 */
 const SYSTEM_TABBAR_ROUTES: Set<string> = new Set([
   APP_ROUTES.portal.home,
   APP_ROUTES.carloan.home,
   APP_ROUTES.my.home,
 ]);
 
+/**
+ * 门户模块 tabbar
+ * - 首页 (/pages/index/index) → switchTab
+ * - 我的 (/pages/my/my) → switchTab
+ */
 const PORTAL_TABBAR_ITEMS: LayoutTabbarItem[] = [
   {
     text: "首页",
@@ -301,9 +313,14 @@ const PORTAL_TABBAR_ITEMS: LayoutTabbarItem[] = [
   },
 ];
 
+/**
+ * 车贷模块 tabbar
+ * - 首页 (/pages/carloan/workbench/workbench) → reLaunch（非 tab 页，需 reLaunch 跳转）
+ * - 我的 (/pages/my/my) → switchTab
+ */
 const CARLOAN_TABBAR_ITEMS: LayoutTabbarItem[] = [
   {
-    text: "首页",
+    text: "工作台",
     iconPath: "home",
     selectedIconPath: "home-fill",
     route: APP_ROUTES.carloan.home,
@@ -312,23 +329,10 @@ const CARLOAN_TABBAR_ITEMS: LayoutTabbarItem[] = [
     count: 0,
   },
   {
-    text: "我的",
-    iconPath: "account",
-    selectedIconPath: "account-fill",
-    route: APP_ROUTES.my.home,
-    navMode: "switchTab",
-    customIcon: false,
-    count: 0,
-  },
-];
-
-
-const FOOD_TABBAR_ITEMS: LayoutTabbarItem[] = [
-  {
-    text: "首页",
-    iconPath: "shopping-cart",
-    selectedIconPath: "shopping-cart-fill",
-    route: APP_ROUTES.food.home,
+    text: "订单",
+    iconPath: "list",
+    selectedIconPath: "list",
+    route: APP_ROUTES.carloan.orders,
     navMode: "reLaunch",
     customIcon: false,
     count: 0,
@@ -344,7 +348,55 @@ const FOOD_TABBAR_ITEMS: LayoutTabbarItem[] = [
   },
 ];
 
+/**
+ * 餐饮模块 tabbar
+ * - 首页 (/pages/food/index/index) → reLaunch（非 tab 页）
+ * - 我的 (/pages/my/my) → switchTab
+ */
+const FOOD_TABBAR_ITEMS: LayoutTabbarItem[] = [
+  {
+    text: "点餐",
+    iconPath: "shopping-cart",
+    selectedIconPath: "shopping-cart-fill",
+    route: APP_ROUTES.food.home,
+    navMode: "reLaunch",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    text: "购物车",
+    iconPath: "bag",
+    selectedIconPath: "bag-fill",
+    route: APP_ROUTES.food.cart,
+    navMode: "reLaunch",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    text: "订单",
+    iconPath: "list",
+    selectedIconPath: "list",
+    route: APP_ROUTES.food.orders,
+    navMode: "reLaunch",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    text: "我的",
+    iconPath: "account",
+    selectedIconPath: "account-fill",
+    route: APP_ROUTES.my.home,
+    navMode: "switchTab",
+    customIcon: false,
+    count: 0,
+  },
+];
 
+/**
+ * 征信模块 tabbar
+ * - 首页 (/pages/credit/index/index) → reLaunch（非 tab 页）
+ * - 我的 (/pages/my/my) → switchTab
+ */
 const CREDIT_TABBAR_ITEMS: LayoutTabbarItem[] = [
   {
     text: "首页",
@@ -366,12 +418,26 @@ const CREDIT_TABBAR_ITEMS: LayoutTabbarItem[] = [
   },
 ];
 
+/**
+ * 阅读模块 tabbar
+ * - 首页 (/pages/reading/index/index) → redirectTo（非 tab 页，保留返回栈）
+ * - 我的 (/pages/my/my) → switchTab
+ */
 const READING_TABBAR_ITEMS: LayoutTabbarItem[] = [
   {
     text: "首页",
     iconPath: "file-text",
     selectedIconPath: "file-text-fill",
     route: APP_ROUTES.reading.home,
+    navMode: "redirectTo",
+    customIcon: false,
+    count: 0,
+  },
+  {
+    text: "书城",
+    iconPath: "bookmark",
+    selectedIconPath: "bookmark-fill",
+    route: APP_ROUTES.reading.store,
     navMode: "redirectTo",
     customIcon: false,
     count: 0,
@@ -386,7 +452,6 @@ const READING_TABBAR_ITEMS: LayoutTabbarItem[] = [
     count: 0,
   },
 ];
-
 
 export function getLayoutTabbar(
   scope: TabbarScope = TABBAR_SCOPES.portal,

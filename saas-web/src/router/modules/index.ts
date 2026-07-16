@@ -5,7 +5,9 @@ import { orgConfigRoutes } from './org-config'
 import { dataCenterRoutes } from './data-center'
 import { systemRoutes } from './system'
 import { operationCenterRoutes } from './operation-center'
-import { readingRoutes } from './reading'
+import { readingRoutes,
+  foodRoutes } from './reading'
+import { foodRoutes } from './food'
 import { businessRoutes } from './business'
 
 /**
@@ -21,5 +23,6 @@ export const routeModules: AppRouteRecord[] = [
   systemRoutes,
   operationCenterRoutes,
   readingRoutes,
+  foodRoutes,
   businessRoutes
 ]
