@@ -2,7 +2,18 @@
   <view :class="['page', themeClass]">
     <view class="night-head">
       <mystic-sky />
-      <mystic-nav title="八字排盘" transparent />
+      <view class="topbar">
+        <view class="capsule">
+          <view class="capsule-left" hover-class="tap-active" @tap="goBack"><text>‹</text></view>
+          <view class="capsule-divider" />
+          <view class="capsule-mid" hover-class="tap-active" @tap="goHome"><text class="home-icon">⌂</text></view>
+          <view class="capsule-divider" />
+          <view class="capsule-right" hover-class="tap-active" @tap="goHistory">
+            <text>星卷</text>
+            <text class="history-count">{{ historyCount }}</text>
+          </view>
+        </view>
+      </view>
       <view class="head-copy">
         <text class="seal">命</text>
         <text class="head-title">录入出生时空</text>
@@ -69,9 +80,10 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { APP_ROUTES } from '@/common/navigation'
 import { lunarToSolar, getLunarDateString } from '@/common/mingli/lunar'
-import MysticNav from '@/components/mystic-nav/mystic-nav.vue'
+import { getMingliHistory } from '@/common/mingli/history'
 import MysticSky from '@/components/mystic-sky/mystic-sky.vue'
 import { useMingliTheme } from '../theme'
 
@@ -92,6 +104,17 @@ const displayTime = computed(() => selectedShiChen.value?.label || '请选择出
 const dateRange = computed(() => ({ start: '1920-01-01', end: new Date().toISOString().slice(0, 10) }))
 const canSubmit = computed(() => Boolean(form.value.birthDate))
 const { themeClass } = useMingliTheme()
+const historyCount = ref(0)
+
+onShow(() => {
+  historyCount.value = getMingliHistory().length
+})
+const goHistory = () => uni.navigateTo({ url: APP_ROUTES.mingli.history })
+const goHome = () => uni.reLaunch({ url: APP_ROUTES.portal.home })
+function goBack() {
+  if (getCurrentPages().length > 1) uni.navigateBack()
+  else uni.reLaunch({ url: APP_ROUTES.portal.home })
+}
 
 function onDateChange(event: { detail: { value: string } }) { form.value.birthDate = event.detail.value }
 function onShiChenChange(event: { detail: { value: string | number } }) {
@@ -130,6 +153,17 @@ function submit() {
 
 <style scoped lang="scss">
 .page { min-height:100vh; background:var(--ming-paper); color:#172747; }
+.topbar { position: fixed; top: 30rpx; left: 0; right: 0; z-index: 40; padding: calc(var(--status-bar-height) + 14rpx) 24rpx 12rpx; display: flex; justify-content: flex-start; align-items: center; pointer-events: none; }
+.capsule { pointer-events: auto; height: 64rpx; display: flex; align-items: center; border: 1rpx solid var(--ming-border-purple); border-radius: 32rpx; background: rgba(255,255,255,.08); backdrop-filter: blur(18rpx); overflow: hidden; box-shadow: inset 0 1rpx 0 rgba(255,255,255,.05); }
+.capsule-left { width: 70rpx; height: 64rpx; display: flex; align-items: center; justify-content: center; color: var(--ming-text-purple); font-size: 58rpx; line-height: 1; }
+.capsule-left text { transform: translateY(-2rpx); }
+.capsule-mid { width: 70rpx; height: 64rpx; display: flex; align-items: center; justify-content: center; color: var(--ming-text-purple); }
+.capsule-mid .home-icon { font-size: 38rpx; line-height: 1; }
+.capsule-divider { width: 1rpx; height: 36rpx; background: rgba(255,255,255,.16); }
+.capsule-right { min-width: 70rpx; height: 64rpx; padding: 0 18rpx; display: flex; align-items: center; justify-content: center; color: var(--ming-text-purple); font-size: 24rpx; }
+.capsule-right text { margin-left: 12rpx; }
+.capsule-right text:first-child { margin-left: 0; }
+.history-count { min-width: 30rpx; height: 30rpx; line-height: 30rpx; border-radius: 50%; text-align: center; color: var(--ming-bg-deep); background: var(--ming-purple-glow); font-size: 20rpx; }
 .night-head { position:relative; height:520rpx; overflow:hidden; background:var(--ming-gradient-hero); }
 .head-copy { position:relative; z-index:3; display:flex; flex-direction:column; align-items:center; padding-top:30rpx; }.seal { width:72rpx;height:72rpx;line-height:72rpx;text-align:center;border:2rpx solid var(--ming-purple);color:var(--ming-text-purple);font:46rpx/72rpx STKaiti,serif;transform:rotate(-5deg);box-shadow:0 0 24rpx var(--ming-purple-soft);animation:sealFloat 3.5s ease-in-out infinite; }.head-title{margin-top:18rpx;color:var(--ming-text-purple);font:700 48rpx STKaiti,serif;letter-spacing:7rpx;animation:titleGlow 4s ease-in-out infinite}.head-subtitle{margin-top:8rpx;color:var(--ming-text-purple-soft);font-size:22rpx;letter-spacing:3rpx}
 .time-ripple{position:absolute;z-index:2;left:50%;bottom:-160rpx;width:430rpx;height:430rpx;margin-left:-215rpx;border:1rpx solid var(--ming-border-purple);border-radius:50%;animation:pulse 4s ease-out infinite}.time-ripple::before,.time-ripple::after{content:'';position:absolute;border:1rpx solid var(--ming-purple-faint);border-radius:50%}.time-ripple::before{inset:58rpx}.time-ripple::after{inset:118rpx}.ripple-dot{position:absolute;left:50%;top:24rpx;width:12rpx;height:12rpx;border-radius:50%;background:var(--ming-purple-glow);box-shadow:0 0 26rpx var(--ming-purple)}

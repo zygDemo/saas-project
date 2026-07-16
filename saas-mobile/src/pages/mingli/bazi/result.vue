@@ -2,7 +2,18 @@
   <view :class="['page', themeClass]">
     <view class="hero">
       <mystic-sky />
-      <mystic-nav title="八字命盘" action-text="星卷" transparent @action="goHistory" />
+      <view class="topbar">
+        <view class="capsule">
+          <view class="capsule-left" hover-class="tap-active" @tap="goBack"><text>‹</text></view>
+          <view class="capsule-divider" />
+          <view class="capsule-mid" hover-class="tap-active" @tap="goHome"><text class="home-icon">⌂</text></view>
+          <view class="capsule-divider" />
+          <view class="capsule-right" hover-class="tap-active" @tap="goHistory">
+            <text>星卷</text>
+            <text class="history-count">{{ historyCount }}</text>
+          </view>
+        </view>
+      </view>
       <view v-if="result" class="hero-content">
         <text class="eyebrow">DESTINY SPECTRUM</text>
         <text class="date">{{ result.solarDate }}</text>
@@ -77,11 +88,10 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { APP_ROUTES } from '@/common/navigation'
 import { paiPan, WUXING_COLOR, type BaZiResult, type WuXing, type Zhu } from '@/common/mingli/bazi'
-import { getMingliRecord, saveMingliRecord } from '@/common/mingli/history'
-import MysticNav from '@/components/mystic-nav/mystic-nav.vue'
+import { getMingliHistory, getMingliRecord, saveMingliRecord } from '@/common/mingli/history'
 import MysticSky from '@/components/mystic-sky/mystic-sky.vue'
 import { useMingliTheme, type MingliThemeMode } from '../theme'
 
@@ -108,6 +118,16 @@ const strongestElement = computed(() => [...elementItems.value].sort((a, b) => b
 const weakestElement = computed(() => [...elementItems.value].sort((a, b) => a.count - b.count)[0]?.name || '—')
 const summaryText = computed(() => `${strongestElement.value}气较显 · ${weakestElement.value}气待养 · 顺势而行`)
 const { themeClass, themeMode, themeLabel, themeOptions, setTheme } = useMingliTheme()
+const historyCount = ref(0)
+
+onShow(() => {
+  historyCount.value = getMingliHistory().length
+})
+const goHome = () => uni.reLaunch({ url: APP_ROUTES.portal.home })
+function goBack() {
+  if (getCurrentPages().length > 1) uni.navigateBack()
+  else uni.reLaunch({ url: APP_ROUTES.portal.home })
+}
 
 onLoad((options) => {
   const historyId = String(options?.historyId || '')
@@ -146,7 +166,19 @@ function goHistory() { uni.navigateTo({ url: APP_ROUTES.mingli.history }) }
 </script>
 
 <style scoped lang="scss">
-.page{min-height:100vh;background:var(--ming-paper);color:#172747}.hero{position:relative;min-height:650rpx;overflow:hidden;background:var(--ming-gradient-hero)}.hero-content{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;padding-top:22rpx}.eyebrow{color:var(--ming-text-purple-soft);font:18rpx Georgia,serif;letter-spacing:7rpx}.date{margin-top:10rpx;color:var(--ming-text-purple-soft);font-size:24rpx;letter-spacing:2rpx}.lunar-info{margin-top:6rpx;color:var(--ming-purple-soft);font:20rpx STKaiti,serif;letter-spacing:2rpx}.day-master{position:relative;width:260rpx;height:260rpx;margin-top:28rpx;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1rpx solid var(--ming-border-purple);border-radius:50%;box-shadow:0 0 45rpx var(--ming-shadow-purple),inset 0 0 40rpx var(--ming-purple-faint);animation:masterPulse 4s ease-in-out infinite}.halo{position:absolute;border:1rpx solid var(--ming-purple-faint);border-radius:50%;animation:spin 20s linear infinite}.halo-a{inset:-28rpx;border-style:dashed}.halo-b{inset:22rpx;animation-direction:reverse;animation-duration:14s}.master-label,.master-element{color:var(--ming-text-purple-soft);font-size:21rpx;letter-spacing:3rpx}.master-char{color:var(--ming-text-purple);font:700 98rpx STKaiti,serif;line-height:1;text-shadow:0 0 32rpx var(--ming-purple-soft);animation:charGlow 3s ease-in-out infinite}.hero-summary{margin-top:32rpx;color:var(--ming-text-purple);font:26rpx STKaiti,serif;letter-spacing:3rpx}.theme-panel { margin: -18rpx 6rpx 24rpx; padding: 24rpx 24rpx 22rpx; border-radius: 28rpx; background: linear-gradient(180deg, rgba(18, 19, 48, .92), rgba(30, 24, 63, .88)); border: 1rpx solid rgba(143, 99, 247, .16); box-shadow: 0 16rpx 34rpx rgba(25, 19, 65, .12), inset 0 0 0 1rpx rgba(255,255,255,.03); }
+.page{min-height:100vh;background:var(--ming-paper);color:#172747}
+.topbar { position: fixed; top: 30rpx; left: 0; right: 0; z-index: 40; padding: calc(var(--status-bar-height) + 14rpx) 24rpx 12rpx; display: flex; justify-content: flex-start; align-items: center; pointer-events: none; }
+.capsule { pointer-events: auto; height: 64rpx; display: flex; align-items: center; border: 1rpx solid var(--ming-border-purple); border-radius: 32rpx; background: rgba(255,255,255,.08); overflow: hidden; box-shadow: inset 0 1rpx 0 rgba(255,255,255,.05); }
+.capsule-left { width: 70rpx; height: 64rpx; display: flex; align-items: center; justify-content: center; color: var(--ming-text-purple); font-size: 58rpx; line-height: 1; }
+.capsule-left text { transform: translateY(-2rpx); }
+.capsule-mid { width: 70rpx; height: 64rpx; display: flex; align-items: center; justify-content: center; color: var(--ming-text-purple); }
+.capsule-mid .home-icon { font-size: 38rpx; line-height: 1; }
+.capsule-divider { width: 1rpx; height: 36rpx; background: rgba(255,255,255,.16); }
+.capsule-right { min-width: 70rpx; height: 64rpx; padding: 0 18rpx; display: flex; align-items: center; justify-content: center; color: var(--ming-text-purple); font-size: 24rpx; }
+.capsule-right text { margin-left: 12rpx; }
+.capsule-right text:first-child { margin-left: 0; }
+.history-count { min-width: 30rpx; height: 30rpx; line-height: 30rpx; border-radius: 50%; text-align: center; color: var(--ming-bg-deep); background: var(--ming-purple-glow); font-size: 20rpx; }
+.hero{position:relative;min-height:650rpx;overflow:hidden;background:var(--ming-gradient-hero)}.hero-content{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;padding-top:22rpx}.eyebrow{color:var(--ming-text-purple-soft);font:18rpx Georgia,serif;letter-spacing:7rpx}.date{margin-top:10rpx;color:var(--ming-text-purple-soft);font-size:24rpx;letter-spacing:2rpx}.lunar-info{margin-top:6rpx;color:var(--ming-purple-soft);font:20rpx STKaiti,serif;letter-spacing:2rpx}.day-master{position:relative;width:260rpx;height:260rpx;margin-top:28rpx;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1rpx solid var(--ming-border-purple);border-radius:50%;box-shadow:0 0 45rpx var(--ming-shadow-purple),inset 0 0 40rpx var(--ming-purple-faint);animation:masterPulse 4s ease-in-out infinite}.halo{position:absolute;border:1rpx solid var(--ming-purple-faint);border-radius:50%;animation:spin 20s linear infinite}.halo-a{inset:-28rpx;border-style:dashed}.halo-b{inset:22rpx;animation-direction:reverse;animation-duration:14s}.master-label,.master-element{color:var(--ming-text-purple-soft);font-size:21rpx;letter-spacing:3rpx}.master-char{color:var(--ming-text-purple);font:700 98rpx STKaiti,serif;line-height:1;text-shadow:0 0 32rpx var(--ming-purple-soft);animation:charGlow 3s ease-in-out infinite}.hero-summary{margin-top:32rpx;color:var(--ming-text-purple);font:26rpx STKaiti,serif;letter-spacing:3rpx}.theme-panel { margin: -18rpx 6rpx 24rpx; padding: 24rpx 24rpx 22rpx; border-radius: 28rpx; background: linear-gradient(180deg, rgba(18, 19, 48, .92), rgba(30, 24, 63, .88)); border: 1rpx solid rgba(143, 99, 247, .16); box-shadow: 0 16rpx 34rpx rgba(25, 19, 65, .12), inset 0 0 0 1rpx rgba(255,255,255,.03); }
 .theme-panel__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16rpx; }
 .theme-panel__title { font: 700 28rpx STKaiti, serif; letter-spacing: 4rpx; color: var(--ming-text-purple); }
 .theme-panel__current { color: rgba(247,244,255,.68); font-size: 22rpx; }
@@ -157,7 +189,4 @@ function goHistory() { uni.navigateTo({ url: APP_ROUTES.mingli.history }) }
 .spectrum-card,.fortune-card{margin-top:28rpx;padding:32rpx;border:1rpx solid rgba(158,117,42,.4);border-radius:24rpx 8rpx;background:linear-gradient(180deg,rgba(250,243,224,.82),rgba(242,231,202,.72));box-shadow:0 14rpx 32rpx rgba(61,44,20,.09),inset 0 0 0 4rpx rgba(255,255,255,.18)}.card-heading{display:flex;justify-content:space-between;align-items:center}.card-title{color:#1d3050;font:700 33rpx STKaiti,serif;letter-spacing:3rpx}.card-mark{width:58rpx;height:58rpx;line-height:58rpx;text-align:center;border:1rpx solid rgba(160,116,39,.45);border-radius:50%;color:#9f762d;font:22rpx/58rpx STKaiti,serif;background:rgba(255,250,235,.5)}.element-chart{margin-top:28rpx}.element-row{display:flex;align-items:center;margin:18rpx 0}.element-name{width:90rpx;display:flex;align-items:center;gap:10rpx;font:700 27rpx STKaiti,serif}.element-dot{width:14rpx;height:14rpx;border-radius:50%;box-shadow:0 0 14rpx currentColor}.bar-track{flex:1;height:22rpx;overflow:hidden;border-radius:11rpx;background:rgba(42,52,64,.12);box-shadow:inset 0 2rpx 4rpx rgba(42,52,64,.1)}.bar-fill{position:relative;height:100%;border-radius:11rpx;animation:grow 1s ease both;box-shadow:0 0 12rpx rgba(255,255,255,.2);overflow:hidden}.bar-fill::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.4) 50%,transparent 100%);animation:barShine 3.5s ease-in-out infinite}.bar-glow{position:absolute;right:0;top:0;width:24rpx;height:100%;background:#fff;opacity:.4;box-shadow:0 0 12rpx 6rpx rgba(255,255,255,.4)}.element-count{width:42rpx;text-align:right;color:#5e5644;font-size:24rpx;font-weight:700}.spectrum-note{margin-top:26rpx;padding-top:20rpx;border-top:1rpx solid rgba(145,105,39,.18);display:flex;justify-content:space-between;color:#6e6353;font-size:22rpx}
 .fortune-scroll{margin-top:26rpx;white-space:nowrap;position:relative}.fortune-scroll::after{content:'滑动查看更多 →';position:absolute;right:0;bottom:-32rpx;color:#a89060;font-size:18rpx;opacity:.6}.fortune-list{display:inline-flex;gap:18rpx;padding:8rpx 4rpx}.fortune-item{width:112rpx;padding:20rpx 8rpx;display:flex;flex-direction:column;align-items:center;border:1rpx solid rgba(151,111,44,.25);border-radius:14rpx;background:rgba(255,251,238,.55);transition:.2s}.fortune-item.current{border-color:var(--ming-purple-strong);box-shadow:0 0 0 4rpx var(--ming-purple-faint),0 6rpx 16rpx var(--ming-purple-faint);background:var(--ming-purple-faint);animation:fortuneGlow 2s ease-in-out infinite}.fortune-age{color:#7e705a;font-size:20rpx;font-weight:600}.fortune-gz{margin:13rpx 0;font:700 36rpx STKaiti,serif;letter-spacing:4rpx}.fortune-god{color:#9b7535;font-size:21rpx}.insight-card{margin-top:30rpx;padding:30rpx;display:flex;gap:18rpx;border-top:1rpx solid rgba(154,112,40,.32);border-bottom:1rpx solid rgba(154,112,40,.32)}.insight-star{color:#a77a2d;font-size:42rpx}.insight-title,.insight-text{display:block}.insight-title{font:700 30rpx STKaiti,serif;color:#2a3a55}.insight-text{margin-top:8rpx;color:#6e6353;font-size:22rpx;line-height:1.65}.again-btn{margin-top:32rpx;height:92rpx;border:0;border-radius:46rpx;color:var(--ming-text-purple);background:var(--ming-gradient-btn-soft);box-shadow:0 12rpx 26rpx var(--ming-purple-faint),inset 0 0 0 2rpx var(--ming-border-purple);font:700 29rpx STKaiti,serif;letter-spacing:4rpx}.again-btn::after{border:0}.again-btn:active{transform:translateY(2rpx)}.disclaimer{display:block;margin-top:26rpx;text-align:center;color:#8a7b63;font-size:19rpx}.empty{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:30rpx;color:#786b54}.empty button{font-size:24rpx}
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes grow{from{width:0}}@keyframes charGlow{0%,100%{text-shadow:0 0 32rpx var(--ming-purple-soft)}50%{text-shadow:0 0 50rpx var(--ming-purple),0 0 90rpx var(--ming-purple-faint)}}@keyframes masterPulse{0%,100%{box-shadow:0 0 45rpx var(--ming-shadow-purple),inset 0 0 40rpx var(--ming-purple-faint)}50%{box-shadow:0 0 75rpx var(--ming-shadow-glow),inset 0 0 50rpx var(--ming-purple-soft)}}@keyframes barShine{0%{transform:translateX(-100%)}50%{transform:translateX(100%)}100%{transform:translateX(100%)}}@keyframes fortuneGlow{0%,100%{box-shadow:0 0 0 4rpx var(--ming-purple-faint),0 6rpx 16rpx var(--ming-purple-faint)}50%{box-shadow:0 0 0 4rpx var(--ming-purple-soft),0 6rpx 24rpx var(--ming-shadow-glow)}}
-
-.tap-active { transform: scale(0.98); opacity: 0.92; }
-@media (prefers-reduced-motion: reduce){.halo,.day-master,.bar-fill,.fortune-item.current,.theme-seg__item.active{animation:none!important}}
 </style>

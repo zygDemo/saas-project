@@ -121,7 +121,7 @@ function goBack() {
 <style scoped lang="scss">
 .mingli-page { min-height: 100vh; background: linear-gradient(180deg, #f7efe1 0%, #efe1c8 100%); color: #4b2f21; overflow: hidden; }
 .hero { position: relative; height: 720rpx; overflow: hidden; background: var(--ming-gradient-hero); padding-top: calc(var(--status-bar-height) + 86rpx); }
-.topbar { position: fixed; top: 30rpx; left: 0; right: 0; z-index: 40; padding: calc(var(--status-bar-height) + 14rpx) 24rpx 12rpx; display: flex; justify-content: flex-start; align-items: center; pointer-events: none; }
+.topbar { position: fixed; top: 36rpx; left: 0; right: 0; z-index: 40; padding: calc(var(--status-bar-height) + 14rpx) 24rpx 12rpx; display: flex; justify-content: flex-start; align-items: center; pointer-events: none; }
 .capsule { pointer-events: auto; }
 .capsule { height: 64rpx; display: flex; align-items: center; border: 1rpx solid var(--ming-border-purple); border-radius: 32rpx; background: rgba(255,255,255,.08); backdrop-filter: blur(18rpx); overflow: hidden; box-shadow: inset 0 1rpx 0 rgba(255,255,255,.05); }
 .capsule-left { width: 70rpx; height: 64rpx; display: flex; align-items: center; justify-content: center; color: var(--ming-text-purple); font-size: 58rpx; line-height: 1; }
@@ -131,7 +131,7 @@ function goBack() {
 .capsule-divider { width: 1rpx; height: 36rpx; background: rgba(255,255,255,.16); }
 .capsule-right { min-width: 70rpx; height: 64rpx; padding: 0 18rpx; display: flex; align-items: center; justify-content: center; color: var(--ming-text-purple); font-size: 24rpx; }.capsule-right text { margin-left: 12rpx; }.capsule-right text:first-child { margin-left: 0; }
 .history-count { min-width: 30rpx; height: 30rpx; line-height: 30rpx; border-radius: 50%; text-align: center; color: var(--ming-bg-deep); background: var(--ming-purple-glow); font-size: 20rpx; }
-.hero-copy { position: relative; z-index: 4; display: flex; flex-direction: column; align-items: center; padding-top: 28rpx; }
+.hero-copy { position: relative; z-index: 4; display: flex; flex-direction: column; align-items: center; padding-top: 60rpx; }
 .eyebrow { color: var(--ming-text-purple-soft); font: 18rpx Georgia, serif; letter-spacing: 8rpx; }
 .title { margin-top: 12rpx; color: var(--ming-text-purple); font: 700 62rpx STKaiti, KaiTi, serif; letter-spacing: 14rpx; text-shadow: 0 0 30rpx var(--ming-purple-soft); animation: titleGlow 4s ease-in-out infinite; }
 .subtitle { margin-top: 8rpx; color: var(--ming-text-purple-soft); font-size: 24rpx; letter-spacing: 3rpx; }
