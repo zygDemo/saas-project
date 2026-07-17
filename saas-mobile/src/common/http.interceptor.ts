@@ -4,6 +4,7 @@ import type {
   RequestMeta,
   RequestOptions,
 } from "uview-pro";
+import process from "node:process";
 import { API_BASE_URL, TENANT_ID, UPLOAD_MAX_SIZE } from "./env";
 import { normalizeUploadResponse } from "./file-url";
 import { tokenUtil } from "./token";
@@ -11,8 +12,9 @@ import { useLocalStore } from "@/stores/local";
 import { useSessionStore } from "@/stores/session";
 
 // H5 开发环境通过 Vite 代理转发，避免 CORS
-const isH5Dev = process.env.UNI_PLATFORM === 'h5' && process.env.NODE_ENV === 'development'
-const baseUrl = isH5Dev ? '/saas/api' : API_BASE_URL;
+const isH5Dev =
+  process.env.UNI_PLATFORM === "h5" && process.env.NODE_ENV === "development";
+const baseUrl = isH5Dev ? "/saas/api" : API_BASE_URL;
 
 export const httpRequestConfig: RequestConfig = {
   baseUrl,
@@ -199,7 +201,8 @@ async function tryRefreshToken(): Promise<string> {
     throw new Error("Refresh token failed");
   } catch (err) {
     // 通知队列中所有等待的请求失败
-    const error = err instanceof Error ? err : new Error("Refresh token failed");
+    const error =
+      err instanceof Error ? err : new Error("Refresh token failed");
     refreshQueue.forEach(({ reject }) => reject(error));
     refreshQueue = [];
     throw error;
@@ -266,7 +269,10 @@ const ALLOWED_EXTENSIONS = [
 ];
 
 /** 校验文件大小和类型 */
-function validateFileBeforeUpload(filePath: string): { valid: boolean; msg?: string } {
+function validateFileBeforeUpload(filePath: string): {
+  valid: boolean;
+  msg?: string;
+} {
   // 1. 文件类型校验（通过扩展名）
   const ext = filePath.split(".").pop()?.toLowerCase() || "";
   if (ext && !ALLOWED_EXTENSIONS.includes(ext)) {
@@ -276,7 +282,8 @@ function validateFileBeforeUpload(filePath: string): { valid: boolean; msg?: str
   // 2. 文件大小校验
   try {
     const stats = uni.getFileSystemManager().statSync(filePath) as unknown;
-    const statsObj = (Array.isArray(stats) ? stats[0] : stats) as { size?: number } | undefined;
+    const statsObj = (Array.isArray(stats) ? stats[0] : stats) as
+      { size?: number } | undefined;
     const fileSize = statsObj?.size ?? 0;
     if (fileSize > UPLOAD_MAX_SIZE * 1024 * 1024) {
       return { valid: false, msg: `文件大小不能超过 ${UPLOAD_MAX_SIZE}MB` };
