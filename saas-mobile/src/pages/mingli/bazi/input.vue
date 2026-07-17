@@ -22,6 +22,18 @@
       <view class="time-ripple"><view class="ripple-dot" /></view>
     </view>
 
+    
+    <view class="theme-panel">
+      <view class="theme-panel__head">
+        <text class="theme-panel__title">主题切换</text>
+        <text class="theme-panel__current">{{ themeLabel }}</text>
+      </view>
+      <view class="theme-seg">
+        <view v-for="item in themeOptions" :key="item.value" class="theme-seg__item" :class="{ active: themeMode === item.value }" hover-class="tap-active" @tap="setTheme(item.value as MingliThemeMode)">
+          <text>{{ item.label }}</text>
+        </view>
+      </view>
+    </view>
     <view class="paper-body">
       <view class="intro-line"><text>✦</text><text>每一刻时空，都有独特的五行印记</text><text>✦</text></view>
       <view class="form-scroll">
@@ -85,7 +97,7 @@ import { APP_ROUTES } from '@/common/navigation'
 import { lunarToSolar, getLunarDateString } from '@/common/mingli/lunar'
 import { getMingliHistory } from '@/common/mingli/history'
 import MysticSky from '@/components/mystic-sky/mystic-sky.vue'
-import { useMingliTheme } from '../theme'
+import { useMingliTheme, type MingliThemeMode } from '../theme'
 
 const shiChenList = [
   { label: '不确定', value: 12, range: '暂以午时近似推演' },
@@ -103,7 +115,7 @@ const displayDate = computed(() => form.value.birthDate || '请选择出生日�
 const displayTime = computed(() => selectedShiChen.value?.label || '请选择出生时辰')
 const dateRange = computed(() => ({ start: '1920-01-01', end: new Date().toISOString().slice(0, 10) }))
 const canSubmit = computed(() => Boolean(form.value.birthDate))
-const { themeClass } = useMingliTheme()
+const { themeClass, themeMode, themeLabel, themeOptions, setTheme } = useMingliTheme()
 const historyCount = ref(0)
 
 onShow(() => {
@@ -174,4 +186,12 @@ function submit() {
 @keyframes pulse{50%{opacity:.55;transform:scale(1.07)}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes spinReverse{to{transform:rotate(-360deg)}}@keyframes shine{0%{transform:translateX(-100%)}40%{transform:translateX(100%)}100%{transform:translateX(100%)}}@keyframes shinePurple{0%{transform:translateX(-100%)}40%{transform:translateX(100%)}100%{transform:translateX(100%)}}@keyframes subtlePulse{0%,100%{box-shadow:0 18rpx 36rpx var(--ming-purple-faint),0 0 0 1rpx var(--ming-border-purple),inset 0 0 0 2rpx rgba(255,248,231,.2)}50%{box-shadow:0 20rpx 42rpx var(--ming-purple-soft),0 0 0 1rpx var(--ming-border-purple),inset 0 0 0 2rpx rgba(255,248,231,.24)}}@keyframes twinkle{0%,100%{opacity:.6;transform:scale(.9)}50%{opacity:1;transform:scale(1.15)}}@keyframes sealFloat{0%,100%{transform:rotate(-5deg) translateY(0)}50%{transform:rotate(-3deg) translateY(-6rpx)}}@keyframes titleGlow{0%,100%{text-shadow:0 0 20rpx var(--ming-purple-soft)}50%{text-shadow:0 0 36rpx var(--ming-purple),0 0 60rpx var(--ming-purple-faint)}}
 
 .tap-active { transform: scale(0.98); opacity: 0.92; }
+
+.theme-panel{margin:18rpx 24rpx 18rpx;padding:22rpx 22rpx 20rpx;border-radius:28rpx;border:1rpx solid rgba(143,99,247,.16);background:linear-gradient(180deg,rgba(18,19,48,.92),rgba(30,24,63,.88));box-shadow:0 14rpx 30rpx rgba(25,19,65,.14),inset 0 0 0 1rpx rgba(255,255,255,.03)}
+.theme-panel__head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14rpx}
+.theme-panel__title{font:700 28rpx STKaiti,serif;letter-spacing:4rpx;color:var(--ming-text-purple)}
+.theme-panel__current{color:rgba(247,244,255,.68);font-size:21rpx}
+.theme-seg{display:flex;gap:10rpx}
+.theme-seg__item{flex:1;height:70rpx;display:flex;align-items:center;justify-content:center;border-radius:18rpx;color:rgba(247,244,255,.74);background:rgba(255,255,255,.04);border:1rpx solid rgba(227,220,255,.08);font-size:22rpx}
+.theme-seg__item.active{color:#fff;background:linear-gradient(135deg,rgba(168,148,255,.18),rgba(111,83,247,.84));border-color:rgba(178,159,255,.20);box-shadow:0 8rpx 20rpx rgba(111,83,247,.14)}
 </style>

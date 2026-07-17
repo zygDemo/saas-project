@@ -27,6 +27,18 @@
       </view>
     </view>
 
+
+    <view class="theme-panel">
+      <view class="theme-panel__head">
+        <text class="theme-panel__title">主题切换</text>
+        <text class="theme-panel__current">{{ themeLabel }}</text>
+      </view>
+      <view class="theme-seg">
+        <view v-for="item in themeOptions" :key="item.value" class="theme-seg__item" :class="{ active: themeMode === item.value }" hover-class="tap-active" @tap="setTheme(item.value as MingliThemeMode)">
+          <text>{{ item.label }}</text>
+        </view>
+      </view>
+    </view>
     <view v-if="result" class="paper-body">
       <view class="section-title"><text>✦</text><view><text class="title-main">卦象详情</text><text class="title-sub">{{ result.benGua.fullName }}</text></view><text>✦</text></view>
 
@@ -136,11 +148,11 @@ import { APP_ROUTES } from '@/common/navigation'
 import { liuYaoPaiPan, type LiuYaoResult } from '@/common/mingli/liuyao'
 import { getMingliHistory, getMingliRecord, saveMingliRecord } from '@/common/mingli/history'
 import MysticSky from '@/components/mystic-sky/mystic-sky.vue'
-import { useMingliTheme } from '../theme'
+import { useMingliTheme, type MingliThemeMode } from '../theme'
 
 const result = ref<LiuYaoResult | null>(null)
 const historyCount = ref(0)
-const { themeClass } = useMingliTheme()
+const { themeClass, themeMode, themeLabel, themeOptions, setTheme } = useMingliTheme()
 
 onShow(() => {
   historyCount.value = getMingliHistory().length
@@ -288,9 +300,9 @@ function again() {
 .gua-meaning{margin-top:28rpx;padding:28rpx;border:1rpx solid rgba(158,117,42,.4);border-radius:24rpx 8rpx;background:linear-gradient(180deg,rgba(250,243,224,.82),rgba(242,231,202,.72));box-shadow:0 14rpx 32rpx rgba(61,44,20,.09)}.meaning-title{display:block;color:#9f7730;font:700 28rpx STKaiti,serif;letter-spacing:3rpx}.meaning-text{display:block;margin-top:12rpx;color:#4b3f2e;font-size:26rpx;line-height:1.8}
 .bian-section{margin-top:24rpx;padding:20rpx 28rpx;border:1rpx solid rgba(158,117,42,.4);border-radius:20rpx 8rpx;background:rgba(250,243,224,.5)}.bian-title{font:700 28rpx STKaiti,serif;color:#5e5644}
 .insight-card{margin-top:30rpx;padding:30rpx;display:flex;gap:18rpx;border-top:1rpx solid rgba(154,112,40,.32);border-bottom:1rpx solid rgba(154,112,40,.32)}.insight-star{color:#a77a2d;font-size:42rpx}.insight-title,.insight-text{display:block}.insight-title{font:700 30rpx STKaiti,serif;color:#2a3a55}.insight-text{margin-top:8rpx;color:#6e6353;font-size:22rpx;line-height:1.65}
-.again-btn{margin-top:32rpx;height:92rpx;border:0;border-radius:46rpx;color:var(--ming-text-purple);background:var(--ming-gradient-btn-soft);box-shadow:0 12rpx 26rpx var(--ming-purple-faint),inset 0 0 0 2rpx var(--ming-border-purple);font:700 29rpx STKaiti,serif;letter-spacing:4rpx}.again-btn::after{border:0}.again-btn:active{transform:translateY(2rpx)}
+.again-btn{margin-top:32rpx;height:92rpx;border:0;border-radius:46rpx;color:var(--ming-text-purple);background:var(--ming-gradient-btn-soft);box-shadow:0 12rpx 26rpx var(--ming-purple-faint),inset 0 0 0 2rpx var(--ming-border-purple);font:700 29rpx STKaiti,serif;letter-spacing:4rpx;display:flex;align-items:center;justify-content:center;line-height:1}.again-btn::after{display:none;border:0}.again-btn:active{transform:translateY(2rpx)}
 .disclaimer{display:block;margin-top:26rpx;text-align:center;color:#8a7b63;font-size:19rpx}
-.empty{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:30rpx;color:#786b54}.empty button{font-size:24rpx}
+.empty{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:30rpx;color:#786b54}.empty button{font-size:24rpx;display:flex;align-items:center;justify-content:center;line-height:1}
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes charGlow{0%,100%{text-shadow:0 0 32rpx var(--ming-purple-soft)}50%{text-shadow:0 0 50rpx var(--ming-purple),0 0 90rpx var(--ming-purple-faint)}}@keyframes masterPulse{0%,100%{box-shadow:0 0 45rpx var(--ming-shadow-purple),inset 0 0 40rpx var(--ming-purple-faint)}50%{box-shadow:0 0 75rpx var(--ming-shadow-glow),inset 0 0 50rpx var(--ming-purple-soft)}}
 
 .gua-xiang-card,.dongyao-card{margin-top:28rpx;padding:32rpx;border:1rpx solid rgba(158,117,42,.4);border-radius:24rpx 8rpx;background:linear-gradient(180deg,rgba(250,243,224,.82),rgba(242,231,202,.72));box-shadow:0 14rpx 32rpx rgba(61,44,20,.09),inset 0 0 0 4rpx rgba(255,255,255,.18)}
@@ -300,4 +312,12 @@ function again() {
 
 /* 动爻详解 */
 .dongyao-list{display:flex;flex-direction:column;gap:20rpx;margin-top:24rpx}.dongyao-item{padding:24rpx;border-radius:18rpx;background:linear-gradient(135deg,rgba(255,250,235,.8),rgba(248,241,221,.6));border:1rpx solid rgba(158,117,42,.18);transition:all .3s}.dongyao-header{display:flex;align-items:center;gap:18rpx;padding-bottom:16rpx;border-bottom:1rpx solid rgba(158,117,42,.1)}.dongyao-pos{font:700 30rpx STKaiti,serif;color:#1b2d4d;letter-spacing:2rpx}.dongyao-liuqin{padding:6rpx 16rpx;border-radius:20rpx;font-size:22rpx;color:#9b7535;background:rgba(158,117,42,.08)}.dongyao-change{display:flex;align-items:center;gap:10rpx;margin-left:auto}.yao-line-sm{width:44rpx;height:8rpx;border-radius:4rpx;background:linear-gradient(90deg,var(--ming-purple-strong),var(--ming-purple-soft))}.yao-line-sm.broken{background:linear-gradient(90deg,var(--ming-purple-strong) 0 40%,transparent 40% 60%,var(--ming-purple-strong) 60%)}.change-arrow{color:#7a6d56;font-size:22rpx}.dongyao-meaning{display:block;margin-top:16rpx;color:#4b3f2e;font-size:25rpx;line-height:1.75}
+
+.theme-panel{margin:18rpx 24rpx 18rpx;padding:22rpx 22rpx 20rpx;border-radius:28rpx;border:1rpx solid rgba(143,99,247,.16);background:linear-gradient(180deg,rgba(18,19,48,.92),rgba(30,24,63,.88));box-shadow:0 14rpx 30rpx rgba(25,19,65,.14),inset 0 0 0 1rpx rgba(255,255,255,.03)}
+.theme-panel__head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14rpx}
+.theme-panel__title{font:700 28rpx STKaiti,serif;letter-spacing:4rpx;color:var(--ming-text-purple)}
+.theme-panel__current{color:rgba(247,244,255,.68);font-size:21rpx}
+.theme-seg{display:flex;gap:10rpx}
+.theme-seg__item{flex:1;height:70rpx;display:flex;align-items:center;justify-content:center;border-radius:18rpx;color:rgba(247,244,255,.74);background:rgba(255,255,255,.04);border:1rpx solid rgba(227,220,255,.08);font-size:22rpx}
+.theme-seg__item.active{color:#fff;background:linear-gradient(135deg,rgba(168,148,255,.18),rgba(111,83,247,.84));border-color:rgba(178,159,255,.20);box-shadow:0 8rpx 20rpx rgba(111,83,247,.14)}
 </style>

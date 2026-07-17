@@ -335,3 +335,24 @@ $glow-shadow-glow: rgba(240, 232, 255, .20);
   --ming-gradient-btn-soft: linear-gradient(135deg, #1d2364, #{$glow-purple-strong});
   --ming-gradient-line: linear-gradient(90deg, #{$glow-purple-strong}, #{$glow-purple-glow}, #{$glow-purple-strong});
 }
+
+/* 命理模块按钮全局重置 — 覆盖微信小程序button默认样式 */
+.mingli-page button,
+.mingli-theme-ritual button,
+.mingli-theme-glow button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  padding: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+.mingli-page button::after,
+.mingli-theme-ritual button::after,
+.mingli-theme-glow button::after {
+  display: none !important;
+  border: none !important;
+}

@@ -4,7 +4,6 @@ import type {
   RequestMeta,
   RequestOptions,
 } from "uview-pro";
-import process from "node:process";
 import { API_BASE_URL, TENANT_ID, UPLOAD_MAX_SIZE } from "./env";
 import { normalizeUploadResponse } from "./file-url";
 import { tokenUtil } from "./token";
@@ -12,8 +11,9 @@ import { useLocalStore } from "@/stores/local";
 import { useSessionStore } from "@/stores/session";
 
 // H5 开发环境通过 Vite 代理转发，避免 CORS
-const isH5Dev =
-  process.env.UNI_PLATFORM === "h5" && process.env.NODE_ENV === "development";
+// UNI_PLATFORM 由 uni-app 编译时静态注入，不会在运行时访问 process 对象
+// eslint-disable-next-line node/prefer-global/process
+const isH5Dev = process.env.UNI_PLATFORM === "h5" && import.meta.env.DEV;
 const baseUrl = isH5Dev ? "/saas/api" : API_BASE_URL;
 
 export const httpRequestConfig: RequestConfig = {
