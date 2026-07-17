@@ -11,6 +11,7 @@ export class SigningService extends BaseBusinessCrudService<CreateSigningDto, Up
       prisma,
       exactFields: ['applicationId', 'status'],
       include: { application: true },
+        detailInclude: { application: { include: { customer: true, product: true } } },
       validateCreate: async (dto) => {
         await this.ensureRelatedExists(this.prisma.application, dto.applicationId, '进件不存在')
       },

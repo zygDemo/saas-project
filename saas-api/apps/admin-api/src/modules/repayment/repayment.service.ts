@@ -244,8 +244,9 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
             status: { in: [RepaymentStatus.NOT_DUE, RepaymentStatus.OVERDUE, RepaymentStatus.PARTIAL] }
           }
         })
-        for (const plan of unpaidPlans) {
-          await tx.repaymentPlan.update({
+        // 批量并发更新（每个plan数据不同，用Promise.all并发）
+        await Promise.all(unpaidPlans.map((plan) =>
+          tx.repaymentPlan.update({
             where: { id: plan.id },
             data: {
               status: RepaymentStatus.PAID,
@@ -255,7 +256,7 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
               paidAt: new Date()
             }
           })
-        }
+        ))
       } else {
         // 部分提前：调整第一个未还清计划
         const plan = await tx.repaymentPlan.findFirst({

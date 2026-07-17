@@ -70,17 +70,32 @@ export class DataScopeService {
     return { ...where, [field]: { in: visibleIds } }
   }
 
-  /** 递归获取部门及所有下级部门 ID */
+  /** 获取部门及所有下级部门 ID（单次查询+内存遍历） */
   private async getDeptAndChildren(deptId: number, tenantId: number): Promise<number[]> {
-    const ids = [deptId]
-    const children = await this.prisma.department.findMany({
-      where: { parentId: deptId, tenantId },
-      select: { id: true }
+    // 一次查询拿全部部门，内存中构建树
+    const allDepts = await this.prisma.department.findMany({
+      where: { tenantId },
+      select: { id: true, parentId: true }
     })
-    for (const child of children) {
-      ids.push(...await this.getDeptAndChildren(child.id, tenantId))
+    const childrenMap = new Map<number, number[]>()
+    for (const d of allDepts) {
+      if (d.parentId != null) {
+        const arr = childrenMap.get(d.parentId) ?? []
+        arr.push(d.id)
+        childrenMap.set(d.parentId, arr)
+      }
     }
-    return ids
+    const result: number[] = [deptId]
+    const queue = [deptId]
+    while (queue.length) {
+      const pid = queue.shift()!
+      const kids = childrenMap.get(pid)
+      if (kids) {
+        result.push(...kids)
+        queue.push(...kids)
+      }
+    }
+    return result
   }
 
   /** 根据部门 ID 列表获取用户 ID 列表 */

@@ -1,12 +1,25 @@
 <script setup lang="ts">
 import { useLocale, useTheme } from 'uview-pro'
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import AppUpdateNotice from '@/components/app-update-notice/app-update-notice.vue'
+import { startUpdateNotice } from '@/common/update-notice'
+import type { VersionInfo } from '@/common/update-notice';
 
 const { darkMode, themes, currentTheme } = useTheme()
 const { currentLocale } = useLocale()
 
 const currentThemeName = computed(() => currentTheme.value?.name)
 const currentLocaleName = computed(() => currentLocale.value?.name)
+
+const updateNoticeRef = ref<InstanceType<typeof AppUpdateNotice>>()
+
+function handleUpdate(versionInfo: VersionInfo) {
+  updateNoticeRef.value?.show(versionInfo)
+}
+
+onMounted(() => {
+  startUpdateNotice({ onUpdate: handleUpdate })
+})
 </script>
 
 <template>
@@ -16,6 +29,7 @@ const currentLocaleName = computed(() => currentLocale.value?.name)
   >
     <KuRootView />
     <u-toast global />
+    <AppUpdateNotice ref="updateNoticeRef" />
   </u-config-provider>
 </template>
 

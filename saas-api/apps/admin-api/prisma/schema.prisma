@@ -1087,7 +1087,8 @@ model MessageTemplate {
   scene     String   @default("GENERAL") @db.VarChar(50) // 业务场景
   title     String?  @db.VarChar(200)  // 标题/主题
   content   String   @db.Text          // 模板内容
-  variables Json?                       // 变量说明 [{key,label,example}]
+  variables Json?                       // 变量说明 [{key,label,example}
+
   status    String   @default("ACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE, DRAFT
   remark    String?  @db.VarChar(500)
   createdAt DateTime @default(now())

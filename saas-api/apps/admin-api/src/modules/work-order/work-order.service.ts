@@ -19,6 +19,22 @@ export class WorkOrderService extends BaseBusinessCrudService<
       model: prisma.workOrder,
       prisma,
       skipTenantFilter: true,
+        validateCreate: async (dto) => {
+          if (dto.creatorId) {
+            await this.ensureRelatedExists(this.prisma.user, dto.creatorId, '创建人不存在')
+          }
+          if (dto.assigneeId) {
+            await this.ensureRelatedExists(this.prisma.user, dto.assigneeId, '处理人不存在')
+          }
+        },
+        validateUpdate: async (_id, dto) => {
+          if (dto.creatorId) {
+            await this.ensureRelatedExists(this.prisma.user, dto.creatorId, '创建人不存在')
+          }
+          if (dto.assigneeId) {
+            await this.ensureRelatedExists(this.prisma.user, dto.assigneeId, '处理人不存在')
+          }
+        },
       buildWhere: (query) => {
         const where: Record<string, unknown> = {}
         const contains = (value: string) => ({ contains: value, mode: 'insensitive' })

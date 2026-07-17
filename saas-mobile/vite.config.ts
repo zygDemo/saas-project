@@ -6,6 +6,7 @@ import Components from '@uni-helper/vite-plugin-uni-components'
 import { uViewProResolver, ZPagingResolver } from '@uni-helper/vite-plugin-uni-components/resolvers'
 import UniRoot from '@uni-ku/root'
 import UnoCSS from 'unocss/vite'
+import type { PluginOption } from 'vite'
 import { defineConfig } from 'vite'
 
 const require = createRequire(import.meta.url)
@@ -24,7 +25,7 @@ function patchUniEasycomWindowsImport() {
 
   const originalAddImportDeclaration = shared.addImportDeclaration
   shared.addImportDeclaration = (importDeclarations: string[], local: string, source: string, imported: string) => {
-    if (typeof source === 'string' && /^[A-Za-z]:\//.test(source)) {
+    if (typeof source === 'string' && /^[a-z]:\//i.test(source)) {
       source = `/${source}`
     }
     return originalAddImportDeclaration(importDeclarations, local, source, imported)
@@ -36,6 +37,34 @@ function patchUniEasycomWindowsImport() {
 patchUniEasycomWindowsImport()
 
 const Uni = require('@dcloudio/vite-plugin-uni').default
+
+/**
+ * 构建时生成 version.json，用于运行时版本检测
+ * 与 saas-web 端保持一致的版本检测机制
+ */
+function createVersionFilePlugin(): PluginOption {
+  return {
+    name: 'saas-mobile-version-file',
+    apply: 'build',
+    generateBundle() {
+      const buildTime = new Date().toISOString()
+      const buildVersion = String(Date.now())
+      this.emitFile({
+        type: 'asset',
+        fileName: 'version.json',
+        source: JSON.stringify(
+          {
+            version: buildVersion,
+            hash: `${buildVersion}-${Date.now()}`,
+            buildTime,
+          },
+          null,
+          2,
+        ),
+      })
+    },
+  }
+}
 
 export default defineConfig({
   base: '/saas/mobile/',
@@ -61,6 +90,8 @@ export default defineConfig({
     // https://uni-helper.js.org/plugin-uni
     Uni(),
     UnoCSS(),
+    // 构建时生成 version.json，用于运行时更新检测
+    createVersionFilePlugin(),
   ],
   server: {
     host: true,
