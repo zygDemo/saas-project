@@ -1,5 +1,10 @@
+<template>
+  <GlobalLoading />
+</template>
+
 <script setup lang="ts">
 import { onLaunch } from "@dcloudio/uni-app";
+import GlobalLoading from "@/components/GlobalLoading.vue";
 
 onLaunch(() => {});
 </script>

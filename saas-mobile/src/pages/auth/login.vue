@@ -25,10 +25,10 @@
 
         <!-- 登录模式切换 -->
         <view class="mode-tabs">
-          <view :class="['mode-tab', loginMode === 'password' && 'mode-tab--active']" @click="loginMode = 'password'">
+          <view class="mode-tab" :class="{ 'mode-tab--active': loginMode === 'password' }" @click="loginMode = 'password'">
             <text>密码登录</text>
           </view>
-          <view :class="['mode-tab', loginMode === 'email' && 'mode-tab--active']" @click="loginMode = 'email'">
+          <view class="mode-tab" :class="{ 'mode-tab--active': loginMode === 'email' }" @click="loginMode = 'email'">
             <text>邮箱登录</text>
           </view>
         </view>
@@ -66,7 +66,7 @@
           <u-button
             type="primary"
             :loading="loading"
-            custom-style="loginBtnStyle"
+            :custom-style="loginBtnStyle"
             @click="handleLogin"
           >
             登 录
@@ -107,7 +107,7 @@
           <u-button
             type="primary"
             :loading="loading"
-            custom-style="loginBtnStyle"
+            :custom-style="loginBtnStyle"
             @click="handleEmailLogin"
           >
             登录 / 注册
@@ -184,7 +184,7 @@ const handleSendCode = async () => {
         countdownTimer = null;
       }
     }, 1000);
-  } catch (e) {
+  } catch {
     // error handled by interceptor
   }
 };
@@ -219,11 +219,22 @@ const handleEmailLogin = async () => {
       const userInfo = await loadCurrentUserInfo(fallbackUserInfo);
       const roles = normalizeRoles(payload.roles || userInfo?.roles || []);
       const roleKeys = payload.roleKeys || payload.roleCodes || userInfo?.roleKeys || roles.map((role) => role.roleKey || '').filter(Boolean);
-      localStore.setUserRoles(roleKeys);
+      const permissions = payload.permissions || payload.perms || userInfo?.permissions || userInfo?.buttons || [];
+
       localStore.setUserInfo(userInfo || {});
-      $u.toast('登录成功');
-      const entry = await getInitialMobileEntry();
-      uni.reLaunch({ url: entry });
+      localStore.setAuthContext({
+        orgId: payload.orgId || userInfo?.orgId || userInfo?.dept?.orgId,
+        deptId: payload.deptId || userInfo?.deptId,
+        roles,
+        roleKeys,
+        permissions,
+        expires: payload.expires || payload.expiresIn || res.expires,
+      });
+      $u.toast('登录成功！', 'success');
+      const entry = getInitialMobileEntry();
+      setTimeout(() => {
+        uni.reLaunch({ url: entry.route });
+      }, 500);
     }
   } finally {
     loading.value = false;
@@ -382,16 +393,17 @@ function normalizeRoles(roles) {
 .login-page {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(190, 200, 255, 0.55) 0%, rgba(190, 200, 255, 0) 70%),
-    linear-gradient(180deg, #eef0ff 0%, #f3f4ff 35%, #fafaff 70%, #ffffff 100%);
-  padding: 0 48rpx 60rpx;
+    radial-gradient(ellipse 100% 60% at 50% -10%, rgba(79, 124, 255, 0.15) 0%, rgba(79, 124, 255, 0) 60%),
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 50%),
+    linear-gradient(180deg, #f0f3ff 0%, #f5f7ff 30%, #fafbff 60%, #ffffff 100%);
+  padding: 0 48rpx 40rpx;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
 }
 
-/* 顶部柔和光斑 */
+/* 顶部柔和光斑 - 增强版 */
 .bg-decor {
   position: absolute;
   inset: 0;
@@ -402,22 +414,22 @@ function normalizeRoles(roles) {
 .bg-circle {
   position: absolute;
   border-radius: 50%;
-  filter: blur(40rpx);
-  opacity: 0.55;
+  filter: blur(60rpx);
+  opacity: 0.4;
 }
 .bg-circle--1 {
-  width: 360rpx;
-  height: 360rpx;
-  top: -120rpx;
-  left: -100rpx;
-  background: radial-gradient(circle, #c5cdff 0%, rgba(197, 205, 255, 0) 70%);
+  width: 500rpx;
+  height: 500rpx;
+  top: -200rpx;
+  left: -150rpx;
+  background: radial-gradient(circle, rgba(79, 124, 255, 0.35) 0%, rgba(79, 124, 255, 0) 70%);
 }
 .bg-circle--2 {
-  width: 420rpx;
-  height: 420rpx;
-  top: 80rpx;
-  right: -160rpx;
-  background: radial-gradient(circle, #d8d0ff 0%, rgba(216, 208, 255, 0) 70%);
+  width: 600rpx;
+  height: 600rpx;
+  top: 100rpx;
+  right: -250rpx;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, rgba(99, 102, 241, 0) 70%);
 }
 
 .brand-section,
@@ -432,19 +444,20 @@ function normalizeRoles(roles) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 160rpx;
-  margin-bottom: 60rpx;
+  padding-top: 140rpx;
+  margin-bottom: 56rpx;
 }
 .brand-logo-wrap {
-  width: 144rpx;
-  height: 144rpx;
-  border-radius: 36rpx;
+  width: 152rpx;
+  height: 152rpx;
+  border-radius: 40rpx;
   overflow: hidden;
-  margin-bottom: 28rpx;
+  margin-bottom: 32rpx;
   box-shadow:
-    0 12rpx 32rpx rgba(79, 92, 180, 0.18),
-    0 0 0 6rpx rgba(255, 255, 255, 0.6);
-  background: #fff;
+    0 20rpx 40rpx rgba(79, 124, 255, 0.15),
+    0 0 0 8rpx rgba(255, 255, 255, 0.8),
+    inset 0 2rpx 8rpx rgba(79, 124, 255, 0.06);
+  background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -454,84 +467,100 @@ function normalizeRoles(roles) {
   height: 100%;
 }
 .brand-name {
-  font-size: 46rpx;
+  font-size: 48rpx;
   font-weight: 700;
-  color: #1a1d33;
-  margin-bottom: 10rpx;
-  letter-spacing: 2rpx;
+  color: #0d1526;
+  margin-bottom: 12rpx;
+  letter-spacing: 1rpx;
+  background: linear-gradient(135deg, #0d1526 0%, #1a2332 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .brand-slogan {
   font-size: 26rpx;
-  color: #8b93a7;
-  letter-spacing: 1rpx;
+  color: #6b7280;
+  letter-spacing: 2rpx;
+  font-weight: 400;
 }
 
 /* ================== 表单卡片 ================== */
 .form-card {
-  background: #fff;
-  border-radius: 28rpx;
-  padding: 32rpx 32rpx 28rpx;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20rpx);
+  border-radius: 32rpx;
+  padding: 40rpx 36rpx 36rpx;
   box-shadow:
-    0 16rpx 48rpx rgba(60, 72, 140, 0.08),
-    0 2rpx 8rpx rgba(60, 72, 140, 0.04);
+    0 24rpx 64rpx rgba(79, 124, 255, 0.08),
+    0 4rpx 16rpx rgba(79, 124, 255, 0.04),
+    0 0 0 1rpx rgba(255, 255, 255, 0.6);
+  border: 1rpx solid rgba(255, 255, 255, 0.8);
 }
 .form-header {
-  margin-bottom: 22rpx;
+  margin-bottom: 28rpx;
 }
 .form-title {
-  font-size: 36rpx;
+  font-size: 38rpx;
   font-weight: 700;
-  color: #1a1d33;
+  color: #0d1526;
   display: block;
-  margin-bottom: 6rpx;
-  letter-spacing: 1rpx;
+  margin-bottom: 8rpx;
+  letter-spacing: 0.5rpx;
 }
 .form-subtitle {
-  font-size: 24rpx;
-  color: #9ba1b3;
+  font-size: 26rpx;
+  color: #6b7280;
   display: block;
+  font-weight: 400;
 }
 
 /* ================== 模式切换 ================== */
 .mode-tabs {
   display: flex;
-  margin-bottom: 22rpx;
-  background: #f3f4f9;
-  border-radius: 14rpx;
-  padding: 5rpx;
+  margin-bottom: 28rpx;
+  background: rgba(243, 244, 249, 0.8);
+  border-radius: 16rpx;
+  padding: 6rpx;
+  box-shadow: inset 0 2rpx 4rpx rgba(0, 0, 0, 0.04);
 }
 .mode-tab {
   flex: 1;
   text-align: center;
-  padding: 14rpx 0;
-  border-radius: 10rpx;
-  font-size: 26rpx;
-  color: #8b93a7;
-  transition: all 0.3s;
+  padding: 16rpx 0;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #6b7280;
+  transition: all 0.3s ease;
+  font-weight: 500;
 }
 .mode-tab--active {
   background: #fff;
   color: #4f7cff;
   font-weight: 600;
-  box-shadow: 0 2rpx 10rpx rgba(79, 124, 255, 0.12);
+  box-shadow:
+    0 4rpx 16rpx rgba(79, 124, 255, 0.12),
+    0 0 0 1rpx rgba(79, 124, 255, 0.08);
 }
 
 /* ================== 输入框 ================== */
 .form-item {
   display: flex;
   align-items: center;
-  background: #f5f7fb;
-  border-radius: 16rpx;
-  padding: 0 24rpx;
-  height: 88rpx;
-  margin-bottom: 18rpx;
+  background: rgba(245, 247, 251, 0.8);
+  border-radius: 18rpx;
+  padding: 0 28rpx;
+  height: 96rpx;
+  margin-bottom: 20rpx;
   border: 2rpx solid transparent;
-  transition: all 0.25s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.02);
 }
 .form-item:focus-within {
   background: #fff;
-  border-color: #c8d2ff;
-  box-shadow: 0 4rpx 16rpx rgba(79, 124, 255, 0.08);
+  border-color: rgba(79, 124, 255, 0.3);
+  box-shadow:
+    0 8rpx 24rpx rgba(79, 124, 255, 0.1),
+    0 0 0 4rpx rgba(79, 124, 255, 0.08);
 }
 .form-item--code {
   display: flex;
@@ -547,38 +576,54 @@ function normalizeRoles(roles) {
 /* ================== 验证码按钮 ================== */
 .code-btn {
   flex-shrink: 0;
-  padding: 0 28rpx;
-  height: 60rpx;
+  padding: 0 32rpx;
+  height: 64rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #4f7cff, #6b9bff);
-  border-radius: 12rpx;
+  background: linear-gradient(135deg, #4f7cff 0%, #6366f1 100%);
+  border-radius: 14rpx;
   font-size: 26rpx;
   color: #fff;
-  margin-left: 16rpx;
+  margin-left: 20rpx;
   font-weight: 500;
+  box-shadow:
+    0 8rpx 20rpx rgba(79, 124, 255, 0.3),
+    0 0 0 1rpx rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+.code-btn:active {
+  transform: scale(0.98);
   box-shadow: 0 4rpx 12rpx rgba(79, 124, 255, 0.25);
 }
 .code-btn--disabled {
-  background: #c5cad6;
+  background: #d1d5db;
   box-shadow: none;
-  color: #fff;
+  color: #9ca3af;
 }
 
 /* ================== 登录按钮 ================== */
 .login-btn {
-  margin-top: 8rpx;
-  height: 90rpx;
-  border-radius: 18rpx;
-  font-size: 30rpx;
+  margin-top: 12rpx;
+  height: 96rpx;
+  border-radius: 20rpx;
+  font-size: 32rpx;
   font-weight: 600;
-  letter-spacing: 8rpx;
-  background: linear-gradient(135deg, #4f7cff 0%, #5b8aff 50%, #6b9bff 100%);
+  letter-spacing: 6rpx;
+  background: linear-gradient(135deg, #4f7cff 0%, #5b8aff 50%, #6366f1 100%);
   box-shadow:
-    0 10rpx 24rpx rgba(79, 124, 255, 0.35),
-    inset 0 -2rpx 0 rgba(0, 0, 0, 0.05);
+    0 16rpx 32rpx rgba(79, 124, 255, 0.35),
+    0 4rpx 12rpx rgba(79, 124, 255, 0.2),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.2);
   color: #fff;
+  transition: all 0.3s ease;
+}
+.login-btn:active {
+  transform: translateY(2rpx);
+  box-shadow:
+    0 8rpx 20rpx rgba(79, 124, 255, 0.3),
+    0 2rpx 8rpx rgba(79, 124, 255, 0.15),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.2);
 }
 
 /* ================== 演示提示 ================== */
@@ -586,23 +631,28 @@ function normalizeRoles(roles) {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 18rpx;
+  margin-top: 24rpx;
   gap: 8rpx;
+  padding: 16rpx 24rpx;
+  background: rgba(79, 124, 255, 0.06);
+  border-radius: 12rpx;
 }
 .demo-tip__text {
   font-size: 24rpx;
-  color: #8b93a7;
+  color: #4f7cff;
+  font-weight: 500;
 }
 
 /* ================== 底部协议 ================== */
 .footer {
   margin-top: auto;
-  padding: 48rpx 0 16rpx;
+  padding: 40rpx 0 24rpx;
   text-align: center;
 }
 .footer__text {
   font-size: 24rpx;
-  color: #b0b6c6;
+  color: #9ca3af;
   line-height: 1.6;
+  font-weight: 400;
 }
 </style>

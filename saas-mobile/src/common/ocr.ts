@@ -3,6 +3,7 @@
  */
 import { uploadFileWithData } from "@/common/http.interceptor";
 import { compressImageForOcr } from "@/common/image-compress";
+import { useGlobalLoading } from "@/composables/useGlobalLoading";
 
 /** 身份证人像面 OCR 结果 */
 export interface IdCardFrontResult {
@@ -91,15 +92,17 @@ function unwrapOcrData<TFields, TParsed>(response: OcrApiResponse<TFields, TPars
   return response.data;
 }
 
+let ocrLoadingId: number | undefined
+
 function showOcrLoading() {
-  uni.showLoading({
-    title: "OCR识别中...",
-    mask: true,
-  });
+  const { show } = useGlobalLoading()
+  ocrLoadingId = show()
 }
 
 function hideOcrLoading() {
-  uni.hideLoading();
+  const { hide } = useGlobalLoading()
+  hide(ocrLoadingId)
+  ocrLoadingId = undefined
 }
 
 function logOcrTiming(label: string, stage: string, startedAt: number) {

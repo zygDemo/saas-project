@@ -7,6 +7,7 @@ import type {
 import { API_BASE_URL, TENANT_ID, UPLOAD_MAX_SIZE } from "./env";
 import { normalizeUploadResponse } from "./file-url";
 import { tokenUtil } from "./token";
+import { useGlobalLoading } from "@/composables/useGlobalLoading";
 import { useLocalStore } from "@/stores/local";
 import { useSessionStore } from "@/stores/session";
 
@@ -37,10 +38,8 @@ export const httpInterceptor: RequestInterceptor = {
 
     // 1. 显示 Loading
     if (meta.loading) {
-      uni.showLoading({
-        title: "加载中...",
-        mask: true,
-      });
+      const { show } = useGlobalLoading();
+      (meta as Record<string, unknown>)._loadingId = show();
     }
 
     // 2. 注入 Token
@@ -64,7 +63,9 @@ export const httpInterceptor: RequestInterceptor = {
 
     // 1. 统一关闭 Loading
     if (meta.loading) {
-      uni.hideLoading();
+      const { hide } = useGlobalLoading();
+      const id = (meta as Record<string, unknown>)._loadingId as number | undefined;
+      hide(id);
     }
 
     // 2. HTTP 状态码错误 (非 200)

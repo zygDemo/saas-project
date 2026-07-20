@@ -40,6 +40,7 @@ import { SystemParamModule } from './modules/system-param/system-param.module'
 import { MobileConfigModule } from './modules/mobile-config/mobile-config.module'
 import { AnnouncementModule } from './modules/announcement/announcement.module'
 import { MsgTemplateModule } from './modules/msg-template/msg-template.module'
+import { FoodModule } from './modules/food/food.module'
 
 // 平台管理模块
 import { PackagePlanModule } from './modules/package-plan/package-plan.module'
@@ -120,7 +121,8 @@ const envFilePaths = [
     ProductTemplateModule,
     ThirdPartyServiceModule,
     WorkOrderModule,
-    PlatformSupervisionModule
+    PlatformSupervisionModule,
+    FoodModule
   ]
 })
 export class AppModule implements NestModule {
