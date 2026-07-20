@@ -1,3 +1,156 @@
+<script setup lang="ts">
+import { onUnmounted } from "vue";
+import { onLoad, onShow } from "@dcloudio/uni-app";
+import { useCarloanApi } from "@/api/carloan";
+import { useConfirm } from "@/composables/useConfirm";
+import { useSessionStore } from "@/stores";
+import { closeBrowser } from "@/composables/useCloseBrowser";
+import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { getBaseUrl, getHashQuery, safeDecode } from "./signing-url";
+import { useSignSteps } from "@/composables/carloan/useSignSteps";
+
+const { confirmRef, confirm } = useConfirm();
+const sessionStore = useSessionStore();
+const businessApi = useCarloanApi();
+
+const {
+  customerInfo, isCreditMode, currentStep, loading, signingLoading,
+  authorizeSignLoading, signRecordId, backUrl, authSignDone, contractSignDone,
+  contractSignUrl, faceResult, contractFiles, stepList,
+  saveSignProgress, saveEntryProgress, setCreditSteps, setFaceSignSteps,
+  loadCustomerInfo, fetchCreditDetail, fetchCreditDetailByOrderId,
+  refreshSignStatus, updateStepStatus, getStepClass, formatAmount,
+} = useSignSteps();
+
+const pageTitle = isCreditMode ? "授信认证" : "合同签署";
+
+// ---- 人脸认证 ----
+async function handleStartFaceSign() {
+  if (!customerInfo.creditOrderId) { uni.showToast({ title: "缺少订单编号", icon: "none" }); return; }
+  const { confirm: ok } = await confirm({ title: "开始人脸认证", content: "请确认是本人操作" });
+  if (!ok) return;
+  signingLoading.value = true;
+  try {
+    const res = await businessApi.startFaceSign(customerInfo.creditOrderId);
+    if (res?.code === 200 && res.data?.faceUrl) {
+      // #ifdef H5
+      window.location.href = res.data.faceUrl;
+      // #endif
+      // #ifdef APP-PLUS
+      uni.navigateTo({ url: `/pages/common/webview?url=${encodeURIComponent(res.data.faceUrl)}` });
+      // #endif
+    } else {
+      uni.showToast({ title: "发起人脸失败", icon: "none" });
+    }
+  } catch (err) {
+    console.error("startFaceSign error:", err);
+    uni.showToast({ title: "发起人脸失败", icon: "none" });
+  } finally {
+    signingLoading.value = false;
+  }
+}
+
+function handleCancel() {
+  uni.showModal({
+    title: "取消认证", content: "确定取消本次认证？",
+    success: (res) => { if (res.confirm) uni.navigateBack(); },
+  });
+}
+
+async function handleFaceResult() {
+  updateStepStatus("face", "finish");
+  saveSignProgress("AUTH_SIGNING");
+  authSignDone.value = true;
+  setFaceSignSteps("CONFIRMING_AMOUNT");
+}
+
+// ---- 签约授权 ----
+async function handleAuthorizeSign() {
+  if (!customerInfo.creditOrderId) { uni.showToast({ title: "缺少订单编号", icon: "none" }); return; }
+  authorizeSignLoading.value = true;
+  try {
+    const res = await businessApi.authorizeSign(customerInfo.creditOrderId);
+    if (res?.code === 200) {
+      updateStepStatus("auth", "finish");
+      authSignDone.value = true;
+      saveSignProgress("SIGNING_PROGRESS");
+      saveEntryProgress("AUTH_SIGN");
+      setFaceSignSteps("BINDING_CARD");
+      uni.showToast({ title: "授权成功", icon: "success" });
+    } else {
+      uni.showToast({ title: res?.msg || "授权失败", icon: "none" });
+    }
+  } catch (err) {
+    console.error("authorizeSign error:", err);
+    uni.showToast({ title: "授权失败", icon: "none" });
+  } finally {
+    authorizeSignLoading.value = false;
+  }
+}
+
+// ---- 合同签署 ----
+async function handleSignContract() {
+  if (!customerInfo.creditOrderId) { uni.showToast({ title: "缺少订单编号", icon: "none" }); return; }
+  signingLoading.value = true;
+  try {
+    const res = await businessApi.signContract(customerInfo.creditOrderId);
+    if (res?.code === 200 && res.data?.signUrl) {
+      contractSignUrl.value = res.data.signUrl;
+      updateStepStatus("contract", "doing");
+      // #ifdef H5
+      window.location.href = res.data.signUrl;
+      // #endif
+      // #ifdef APP-PLUS
+      uni.navigateTo({ url: `/pages/common/webview?url=${encodeURIComponent(res.data.signUrl)}` });
+      // #endif
+    } else {
+      uni.showToast({ title: "签署发起失败", icon: "none" });
+    }
+  } catch (err) {
+    console.error("signContract error:", err);
+    uni.showToast({ title: "签署失败", icon: "none" });
+  } finally {
+    signingLoading.value = false;
+  }
+}
+
+async function handleStartContract() { await handleSignContract(); }
+
+// ---- 导航 ----
+function goBack() { closeBrowser(); uni.navigateBack(); }
+function goToApplyList() { uni.reLaunch({ url: buildRoute(APP_ROUTES.carloan.precheck.orderList) }); }
+function goToWorkbench() { uni.reLaunch({ url: buildRoute(APP_ROUTES.carloan.workbench) }); }
+
+// ---- 生命周期 ----
+onLoad((options: any = {}) => {
+  const q = getHashQuery() || {};
+  const merged = { ...options, ...q };
+  if (merged.creditOrderId) customerInfo.creditOrderId = safeDecode(String(merged.creditOrderId));
+  if (merged.uuid) customerInfo.uuid = safeDecode(String(merged.uuid));
+  if (merged.customerName) customerInfo.name = safeDecode(String(merged.customerName));
+  if (merged.customerPhone) customerInfo.phone = safeDecode(String(merged.customerPhone));
+  if (merged.amount) customerInfo.amount = safeDecode(String(merged.amount));
+  if (merged.backUrl) backUrl.value = safeDecode(String(merged.backUrl));
+  isCreditMode.value = Boolean(merged.creditMode);
+  if (customerInfo.creditOrderId) {
+    loadCustomerInfo(customerInfo.creditOrderId);
+    refreshSignStatus();
+  } else if (customerInfo.uuid) {
+    fetchCreditDetail(customerInfo.uuid).then((data: any) => {
+      if (data) {
+        customerInfo.name = data.customerName || data.name || "";
+        customerInfo.creditOrderId = data.creditOrderId || "";
+        loadCustomerInfo(customerInfo.creditOrderId);
+        refreshSignStatus();
+      }
+    });
+  }
+});
+
+onShow(() => { if (customerInfo.creditOrderId) refreshSignStatus(); });
+onUnmounted(() => { closeBrowser(); });
+</script>
+
 <template>
   <app-page :nav-title="pageTitle" :show-nav-back="!isCustomerRole" :back-url="backUrl">
     <view class="video-face-sign-page">
@@ -301,630 +454,6 @@
     <app-confirm ref="confirmRef" />
   </app-page>
 </template>
-
-<script setup>
-import { computed, ref, reactive, onUnmounted } from "vue";
-import { onLoad, onShow } from "@dcloudio/uni-app";
-import { useCarloanApi } from "@/api/carloan";
-import { useConfirm } from "@/composables/useConfirm";
-import { useSessionStore } from "@/stores";
-import { closeBrowser } from "@/composables/useCloseBrowser";
-import { APP_ROUTES, buildHashRoute, buildRoute } from "@/common/navigation";
-import { buildNavTitleQuery } from "@/common/carloan-route-query";
-import { getBaseUrl, getHashQuery, safeDecode } from "./signing-url";
-
-const { confirmRef, confirm } = useConfirm();
-const sessionStore = useSessionStore();
-
-// ========== 响应式数据 ==========
-
-const businessApi = useCarloanApi();
-const SIGN_PROGRESS_STORAGE_KEY = "SIGN_PROGRESS_MAP";
-const ENTRY_PROGRESS_STORAGE_KEY = "ENTRY_PROGRESS_MAP";
-
-const customerInfo = reactive({
-  name: "",
-  idCard: "",
-  phone: "",
-  amount: "",
-  rawAmount: "",
-  uuid: "",
-  creditOrderId: "",
-});
-
-function saveSignProgress(status) {
-  if (!customerInfo.creditOrderId || !status) return;
-  const progressMap = uni.getStorageSync(SIGN_PROGRESS_STORAGE_KEY) || {};
-  progressMap[customerInfo.creditOrderId] = {
-    ...(progressMap[customerInfo.creditOrderId] || {}),
-    status,
-    uuid: customerInfo.uuid,
-    customerName: customerInfo.name,
-    customerPhone: customerInfo.phone,
-    updatedAt: Date.now(),
-  };
-  uni.setStorageSync(SIGN_PROGRESS_STORAGE_KEY, progressMap);
-
-  if (status === "SIGNED") {
-    const entryProgressMap =
-      uni.getStorageSync(ENTRY_PROGRESS_STORAGE_KEY) || {};
-    entryProgressMap[customerInfo.creditOrderId] = {
-      ...(entryProgressMap[customerInfo.creditOrderId] || {}),
-      AUTH_SIGN: 1,
-    };
-    if (customerInfo.uuid) {
-      entryProgressMap[customerInfo.uuid] = {
-        ...(entryProgressMap[customerInfo.uuid] || {}),
-        AUTH_SIGN: 1,
-      };
-    }
-    uni.setStorageSync(ENTRY_PROGRESS_STORAGE_KEY, entryProgressMap);
-  }
-}
-
-const isCustomerRole = computed(() => {
-  const roleTags = String(sessionStore.transferInfo?.roleTags || "");
-  return roleTags === "客户" || roleTags.includes("客户");
-});
-
-// 页面标题：区分面签和授信
-const pageTitle = ref("授信认证");
-
-// 模式判断：有 creditOrderId 表示授信模式，否则为面签模式
-const isCreditMode = ref(false);
-
-const currentStep = ref(0);
-const loading = ref(false);
-const signingLoading = ref(false);
-const authorizeSignLoading = ref(false);
-const signRecordId = ref(null);
-const backUrl = ref("");
-
-// 签署状态追踪
-const authSignDone = ref(false); // 授权签署是否完成
-const contractSignDone = ref(false); // 授权书签署是否完成
-const contractSignUrl = ref(""); // 三方签署URL（用于重试）
-
-const stepList = reactive([]);
-
-/** 授信模式步骤 */
-function setCreditSteps() {
-  stepList.length = 0;
-  stepList.push(
-    { title: "准备授信", desc: "确认客户信息", status: "doing" },
-    { title: "人脸识别", desc: "进行人脸核验", status: "wait" },
-    { title: "授信完成", desc: "授信结果确认", status: "wait" },
-    { title: "签署授权书", desc: "在线签署授权文件", status: "wait" },
-  );
-}
-
-/** 面签模式步骤 */
-function setFaceSignSteps() {
-  stepList.length = 0;
-  stepList.push(
-    { title: "准备签署", desc: "确认客户信息", status: "doing" },
-    { title: "人脸识别", desc: "先完成人脸核验", status: "wait" },
-    { title: "合同签署", desc: "在线签署合同", status: "wait" },
-    { title: "签署结果", desc: "签署结果确认", status: "wait" },
-  );
-}
-
-const faceResult = reactive({
-  show: false,
-  status: "checking",
-  statusText: "识别中...",
-  score: "",
-  msg: "",
-});
-
-const contractFiles = reactive([]);
-
-// ========== 生命周期 ==========
-
-onLoad(async (options = {}) => {
-  // H5 下直接从 hash 解析参数，避免 uni-app onLoad options 解析不全
-  const query = { ...getHashQuery(), ...options };
-
-  const uuid = query.uuid || "";
-  const name = query.name || "";
-  const phone = query.phone || "";
-  const amount = query.amount || "";
-  const idCard = query.idCard || "";
-  const optCreditOrderId = query.creditOrderId || "";
-  const orderId = query.orderId || "";
-  const type = query.type || "";
-  backUrl.value = query.backUrl || "";
-
-  console.warn("[videoFaceSign] query:", {
-    uuid,
-    type,
-    creditOrderId: optCreditOrderId,
-    orderId,
-    name,
-  });
-
-  if (!uuid && !orderId && !optCreditOrderId) {
-    uni.showToast({ title: "参数错误，缺少 uuid", icon: "none" });
-    setTimeout(() => goBack(), 1500);
-    return;
-  }
-
-  let detailInfo = {};
-  if (orderId || optCreditOrderId) {
-    try {
-      const detail = orderId
-        ? await fetchCreditDetail(orderId)
-        : await fetchCreditDetailByOrderId(optCreditOrderId);
-      detailInfo = detail || {};
-      if (detailInfo.signRecordId) {
-        signRecordId.value = detailInfo.signRecordId;
-      }
-      if (detailInfo.authSignStatus === 1 || detailInfo.isAuthSigned) {
-        authSignDone.value = true;
-      }
-      if (detailInfo.contractSignStatus === 1 || detailInfo.isContractSigned) {
-        contractSignDone.value = true;
-      }
-    } catch (e) {
-      console.error("获取授信详情失败:", e);
-    }
-  }
-
-  const resolvedUuid = uuid || detailInfo.uuid || "";
-  if (!resolvedUuid) {
-    uni.showToast({ title: "参数错误，缺少 uuid", icon: "none" });
-    setTimeout(() => goBack(), 1500);
-    return;
-  }
-
-  loadCustomerInfo({
-    uuid: resolvedUuid,
-    name: detailInfo.customerName || detailInfo.name || name,
-    phone: detailInfo.phone || detailInfo.telephone || phone,
-    amount: detailInfo.amount || detailInfo.loanAmount || amount,
-    idCard,
-    creditOrderId: optCreditOrderId || detailInfo.creditOrderId || "",
-    type,
-  });
-
-  if (authSignDone.value && contractSignDone.value) {
-    currentStep.value = 4;
-    updateStepStatus(4);
-  } else if (authSignDone.value || contractSignDone.value) {
-    if (isCreditMode.value) {
-      currentStep.value = 4;
-      updateStepStatus(3);
-    }
-  }
-});
-
-onShow(() => {
-  // 处理从人脸识别/合同签署回调返回的结果
-  const hashQuery = getHashQuery();
-  const hasFaceResult = hashQuery.faceResult || hashQuery.passed || hashQuery.score;
-
-  if (hasFaceResult && currentStep.value <= 1) {
-    const passed =
-      hashQuery.faceResult === "success" ||
-      hashQuery.passed === "true" ||
-      hashQuery.passed === "1";
-    handleFaceResult({
-      passed,
-      score: hashQuery.score || "",
-      msg: safeDecode(hashQuery.msg || hashQuery.message || "") || "",
-    });
-    return;
-  }
-
-  // 处理从授权书签署回调返回的结果
-  const hasContractResult =
-    hashQuery.contractResult || hashQuery.signStatus || hashQuery.contractSignStatus;
-  if (hasContractResult && isCreditMode.value) {
-    const signStatus =
-      hashQuery.contractResult === "success" ||
-      hashQuery.signStatus === "1" ||
-      hashQuery.signStatus === "success";
-    if (signStatus) {
-      contractSignDone.value = true;
-      saveSignProgress("SIGNED");
-      currentStep.value = 4;
-      updateStepStatus(4);
-      refreshSignStatus();
-    }
-    return;
-  }
-
-  // 已在完成步骤时，刷新签署状态
-  if (currentStep.value === 4 && isCreditMode.value && customerInfo.creditOrderId) {
-    refreshSignStatus();
-  }
-});
-
-onUnmounted(() => {});
-
-function loadCustomerInfo(params) {
-  customerInfo.uuid = params.uuid;
-  customerInfo.name = safeDecode(params.name) || "未知客户";
-  customerInfo.idCard = params.idCard || "";
-  customerInfo.phone = safeDecode(params.phone) || "-";
-  customerInfo.rawAmount = safeDecode(params.amount) || "0";
-  customerInfo.amount = formatAmount(customerInfo.rawAmount);
-  customerInfo.creditOrderId = params.creditOrderId || "";
-
-  if (params.type === "contract") {
-    saveSignProgress("SIGNING_CONTRACT");
-    pageTitle.value = "合同签署";
-    isCreditMode.value = false;
-    setFaceSignSteps();
-    currentStep.value = 0;
-    faceResult.show = false;
-    return;
-  }
-
-  saveSignProgress("FACE_SIGNING");
-  pageTitle.value = "授信认证";
-  isCreditMode.value = true;
-  setCreditSteps();
-  currentStep.value = 0;
-  faceResult.show = false;
-}
-
-async function fetchCreditDetail(orderId) {
-  try {
-    const res = await businessApi.getCreditDetail(orderId);
-    return (res?.data || res) || {};
-  } catch (e) {
-    console.error("fetchCreditDetail error:", e);
-    return {};
-  }
-}
-
-async function fetchCreditDetailByOrderId(creditOrderId) {
-  try {
-    const res = await businessApi.getCreditDetailByOrderId(creditOrderId);
-    return (res?.data || res) || {};
-  } catch (e) {
-    console.error("fetchCreditDetailByOrderId error:", e);
-    return {};
-  }
-}
-
-async function refreshSignStatus() {
-  if (!customerInfo.creditOrderId) return;
-  try {
-    const res = await businessApi.getAuthContractDetail(customerInfo.creditOrderId);
-    const data = (res?.data || res) || {};
-    const status = Number(data.status || 1);
-    if (status === 1) {
-      contractSignDone.value = true;
-      saveSignProgress("SIGNED");
-      const fileList = data.fileList || data.files || [];
-      if (fileList.length > 0) {
-        contractFiles.length = 0;
-        contractFiles.push(
-          ...fileList.map((f) => ({
-            name: f.fileName || f.name || "授权书.pdf",
-            status: "已签署",
-            signed: true,
-          })),
-        );
-      }
-    }
-  } catch (e) {
-    console.error("刷新签署状态失败:", e);
-  }
-}
-
-async function handleStartFaceSign() {
-  if (loading.value) return;
-  loading.value = true;
-
-  try {
-    const redirectUrl = [
-      `${getBaseUrl()}${buildHashRoute(
-        APP_ROUTES.carloan.signing.faceSignResult,
-        buildNavTitleQuery("人脸识别"),
-      )}`,
-      `uuid=${encodeURIComponent(customerInfo.uuid)}`,
-      `creditOrderId=${encodeURIComponent(customerInfo.creditOrderId)}`,
-      `mode=${isCreditMode.value ? "credit" : "faceSign"}`,
-      `name=${encodeURIComponent(customerInfo.name)}`,
-      `phone=${encodeURIComponent(customerInfo.phone)}`,
-      `amount=${encodeURIComponent(customerInfo.rawAmount)}`,
-      `backUrl=${encodeURIComponent(backUrl.value)}`,
-    ].join("&");
-
-    const res = await businessApi.startFaceSign({
-      uuid: customerInfo.uuid,
-      redirectUrl,
-    });
-
-    const raw = res || {};
-    const data = raw.data || raw || {};
-    const faceUrl = data.signUrl || data.faceUrl || data.url || "";
-
-    if (faceUrl) {
-      currentStep.value = 1;
-      faceResult.show = true;
-      faceResult.status = "checking";
-      faceResult.statusText = "识别中...";
-
-      confirm("即将跳转到人脸识别页面，是否继续？", () => {
-        // #ifdef H5
-        window.location.href = faceUrl;
-        // #endif
-        // #ifndef H5
-        uni.navigateTo({
-          url: buildRoute(
-            APP_ROUTES.carloan.signing.authSign,
-            { authUrl: encodeURIComponent(faceUrl), mode: "sign" },
-          ),
-        });
-        // #endif
-      });
-    } else {
-      uni.showToast({ title: "获取人脸识别链接失败", icon: "none" });
-    }
-  } catch (err) {
-    console.error("人脸识别发起失败:", err);
-    uni.showToast({ title: "发起人脸识别失败", icon: "none" });
-  } finally {
-    loading.value = false;
-  }
-}
-
-function handleCancel() {
-  confirm(
-    isCreditMode.value ? "确定取消授信吗？" : "确定取消面签吗？",
-    () => {
-      currentStep.value = 0;
-      faceResult.show = false;
-      faceResult.status = "checking";
-      faceResult.statusText = "";
-      faceResult.score = "";
-      faceResult.msg = "";
-    },
-  );
-}
-
-function handleFaceResult(result) {
-  faceResult.show = true;
-  faceResult.status = result.passed ? "success" : "fail";
-  faceResult.statusText = result.passed ? "核验通过" : "核验未通过";
-  faceResult.score = result.score || "";
-  faceResult.msg = result.msg || "";
-
-  if (result.passed) {
-    if (isCreditMode.value) {
-      currentStep.value = 4;
-      updateStepStatus(2);
-      saveSignProgress("FACE_SIGNED");
-    } else {
-      currentStep.value = 2;
-      updateStepStatus(1);
-    }
-  } else {
-    updateStepStatus(0);
-  }
-}
-
-async function handleAuthorizeSign() {
-  if (authorizeSignLoading.value) return;
-  if (!signRecordId.value) {
-    uni.showToast({ title: "缺少签署记录ID", icon: "none" });
-    return;
-  }
-
-  authorizeSignLoading.value = true;
-  try {
-    const res = await businessApi.authorizeSign(signRecordId.value);
-    const data = res?.data || res || {};
-
-    if (data.signUrl || data.url) {
-      const signUrl = data.signUrl || data.url;
-      confirm("即将进行授权签署，是否继续？", () => {
-        // #ifdef H5
-        window.location.href = signUrl;
-        // #endif
-        // #ifndef H5
-        uni.navigateTo({
-          url: buildRoute(APP_ROUTES.carloan.signing.authSign, {
-            authUrl: encodeURIComponent(signUrl),
-            creditOrderId: customerInfo.creditOrderId,
-            uuid: customerInfo.uuid,
-            type: "face",
-            mode: "sign",
-          }),
-        });
-        // #endif
-      });
-    } else {
-      authSignDone.value = true;
-      saveSignProgress("SIGNED");
-      uni.showToast({ title: "授权签署成功", icon: "success" });
-
-      if (contractSignDone.value) {
-        currentStep.value = 4;
-        updateStepStatus(4);
-      }
-    }
-  } catch (err) {
-    console.error("授权签署失败:", err);
-    uni.showToast({ title: "授权签署失败", icon: "none" });
-  } finally {
-    authorizeSignLoading.value = false;
-  }
-}
-
-async function handleSignContract() {
-  if (signingLoading.value) return;
-  signingLoading.value = true;
-
-  try {
-    const redirectUrl = [
-      `${getBaseUrl()}${buildHashRoute(
-        APP_ROUTES.carloan.signing.faceSignResult,
-        buildNavTitleQuery("授权书签署结果"),
-      )}`,
-      `uuid=${encodeURIComponent(customerInfo.uuid)}`,
-      `creditOrderId=${encodeURIComponent(customerInfo.creditOrderId)}`,
-      `mode=credit`,
-      `name=${encodeURIComponent(customerInfo.name)}`,
-      `phone=${encodeURIComponent(customerInfo.phone)}`,
-      `amount=${encodeURIComponent(customerInfo.rawAmount)}`,
-      `backUrl=${encodeURIComponent(backUrl.value)}`,
-    ].join("&");
-
-    const res = await businessApi.startAuthContractSign({
-      uuid: customerInfo.uuid,
-      creditOrderId: customerInfo.creditOrderId,
-      redirectUrl,
-    });
-
-    const raw = res || {};
-    const data = raw.data || raw || {};
-    const signUrl = data.signUrl || data.authUrl || data.url || "";
-    const orderId = data.creditOrderId || customerInfo.creditOrderId;
-
-    if (orderId) {
-      customerInfo.creditOrderId = String(orderId);
-    }
-
-    if (signUrl) {
-      contractSignUrl.value = signUrl;
-      saveSignProgress("CONTRACT_SIGNING");
-
-      confirm("即将跳转到授权书签署页面，是否继续？", () => {
-        // #ifdef H5
-        window.location.href = signUrl;
-        // #endif
-        // #ifndef H5
-        uni.navigateTo({
-          url: buildRoute(APP_ROUTES.carloan.signing.authSign, {
-            authUrl: encodeURIComponent(signUrl),
-            creditOrderId: customerInfo.creditOrderId,
-            uuid: customerInfo.uuid,
-            type: "contract",
-            mode: "sign",
-          }),
-        });
-        // #endif
-      });
-    } else {
-      uni.showToast({ title: "获取签署链接失败，请稍后重试", icon: "none" });
-    }
-  } catch (err) {
-    console.error("签署授权书发起失败:", err);
-    uni.showToast({ title: "发起签署失败", icon: "none" });
-  } finally {
-    signingLoading.value = false;
-  }
-}
-
-async function handleStartContract() {
-  if (loading.value) return;
-  loading.value = true;
-
-  try {
-    const redirectUrl = [
-      `${getBaseUrl()}${buildHashRoute(
-        APP_ROUTES.carloan.signing.faceSignResult,
-        buildNavTitleQuery("合同签署结果"),
-      )}`,
-      `uuid=${encodeURIComponent(customerInfo.uuid)}`,
-      `creditOrderId=${encodeURIComponent(customerInfo.creditOrderId)}`,
-      `mode=faceSign`,
-      `name=${encodeURIComponent(customerInfo.name)}`,
-      `phone=${encodeURIComponent(customerInfo.phone)}`,
-      `amount=${encodeURIComponent(customerInfo.rawAmount)}`,
-      `backUrl=${encodeURIComponent(backUrl.value)}`,
-    ].join("&");
-
-    const res = await businessApi.startContractSign({
-      uuid: customerInfo.uuid,
-      creditOrderId: customerInfo.creditOrderId,
-      redirectUrl,
-    });
-
-    const raw = res || {};
-    const data = raw.data || raw || {};
-    const signUrl = data.signUrl || data.authUrl || data.url || "";
-
-    if (signUrl) {
-      currentStep.value = 3;
-      updateStepStatus(2);
-
-      confirm("即将跳转到合同签署页面，是否继续？", () => {
-        // #ifdef H5
-        window.location.href = signUrl;
-        // #endif
-        // #ifndef H5
-        uni.navigateTo({
-          url: buildRoute(APP_ROUTES.carloan.signing.authSign, {
-            authUrl: encodeURIComponent(signUrl),
-            creditOrderId: customerInfo.creditOrderId,
-            uuid: customerInfo.uuid,
-            type: "contract",
-            mode: "sign",
-          }),
-        });
-        // #endif
-      });
-    } else {
-      uni.showToast({ title: "获取合同签署链接失败", icon: "none" });
-    }
-  } catch (err) {
-    console.error("合同签约发起失败:", err);
-    uni.showToast({ title: "发起合同签约失败", icon: "none" });
-  } finally {
-    loading.value = false;
-  }
-}
-
-function updateStepStatus(finishedStepIndex) {
-  for (let i = 0; i < stepList.length; i++) {
-    if (i < finishedStepIndex) {
-      stepList[i].status = "finish";
-    } else if (i === finishedStepIndex) {
-      stepList[i].status = "doing";
-    } else {
-      stepList[i].status = "wait";
-    }
-  }
-  if (finishedStepIndex >= stepList.length - 1) {
-    stepList.forEach((s) => {
-      s.status = "finish";
-    });
-  }
-}
-
-function getStepClass(status) {
-  return `step-${status}`;
-}
-
-function formatAmount(val) {
-  const num = Number(val);
-  if (Number.isNaN(num)) return val;
-  if (num >= 10000) return `${(num / 10000).toFixed(1).replace(/\.0$/, "")}万`;
-  return num % 1 === 0 ? num.toLocaleString("zh-CN") : num.toFixed(2);
-}
-
-function goBack() {
-  if (backUrl.value) {
-    uni.redirectTo({ url: backUrl.value });
-    return;
-  }
-  uni.navigateBack({ delta: 1 });
-}
-
-function goToApplyList() {
-  uni.redirectTo({ url: APP_ROUTES.carloan.precheck.orderList });
-}
-
-function goToWorkbench() {
-  uni.reLaunch({ url: APP_ROUTES.carloan.portal.workbench });
-}
-</script>
 
 <style lang="scss" scoped>
 .video-face-sign-page {

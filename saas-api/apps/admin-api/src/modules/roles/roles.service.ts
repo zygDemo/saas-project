@@ -45,7 +45,7 @@ export class RolesService {
     await this.assertRoleCodeAvailable(dto.roleCode)
 
     // 用事务保证 role 创建 + department 关联的原子性
-    const role = await this.prisma.$transaction(async (tx: any) => {
+    const role = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const created = await tx.role.create({
         data: {
           name: dto.roleName,
@@ -86,7 +86,7 @@ export class RolesService {
     if (dto.dataScope !== undefined) updateData.dataScope = dto.dataScope
 
     // 用事务保证 role 更新 + department 关联的原子性
-    await this.prisma.$transaction(async (tx: any) => {
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.role.update({ where: { id }, data: updateData })
 
       // 如果更新了 dataScope 或 departmentIds，同步部门关联
@@ -141,7 +141,7 @@ export class RolesService {
     if (!role) throw new NotFoundException('角色不存在')
 
     // 用事务保证原子性
-    await this.prisma.$transaction(async (tx: any) => {
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.role.update({ where: { id }, data: { dataScope: dto.dataScope } })
       await tx.roleDepartment.deleteMany({ where: { roleId: id } })
       if (dto.dataScope === 'CUSTOM' && dto.departmentIds?.length) {

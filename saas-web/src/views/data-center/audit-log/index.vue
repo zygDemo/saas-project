@@ -185,6 +185,12 @@
                 currentRow.action
               }}</ElTag>
             </ElDescriptionsItem>
+            <ElDescriptionsItem label="租户ID">{{
+              currentRow.tenantId ?? '-'
+            }}</ElDescriptionsItem>
+            <ElDescriptionsItem label="机构ID">{{
+              currentRow.orgId ?? '-'
+            }}</ElDescriptionsItem>
             <ElDescriptionsItem label="状态码">
               <ElTag :type="statusTagType(currentRow.statusCode)" effect="dark" size="small">
                 {{ currentRow.statusCode || '-' }}
@@ -260,12 +266,20 @@
   const showAttackMonitor = ref(false)
 
   // 搜索表单
-  const searchForm = ref({
+  const searchForm = ref<{
+    keyword: string
+    module: string
+    action: string
+    userName: string
+    status: string
+    orgId?: number
+  }>({
     keyword: '',
     module: '',
     action: '',
     userName: '',
-    status: ''
+    status: '',
+    orgId: undefined
   })
 
   // 图表显示控制
@@ -380,7 +394,7 @@
   // 获取统计数据
   const loadStats = async () => {
     try {
-      const result = await fetchAuditLogStats()
+      const result = await fetchAuditLogStats({ orgId: searchForm.value.orgId })
       Object.assign(stats, result)
       updateHourlyChart()
     } catch (error) {

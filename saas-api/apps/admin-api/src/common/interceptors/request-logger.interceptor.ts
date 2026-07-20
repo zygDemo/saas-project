@@ -11,6 +11,7 @@ import { Request, Response } from 'express'
 import { Observable, catchError, tap, throwError } from 'rxjs'
 import { Prisma } from '@prisma/client'
 import { PrismaService } from '../../modules/prisma/prisma.service'
+import { getCurrentTenantId } from '../tenant/tenant-context'
 
 const MAX_PAYLOAD_LENGTH = 2000
 const AUDIT_LOG_RETENTION_DAYS = 3
@@ -63,18 +64,19 @@ export class RequestLoggerInterceptor implements NestInterceptor {
 
     if (statusCode >= 500) {
       this.logger.error(message)
-      this.writeAuditLog(request, statusCode, duration, responseBody)
-      return
-    }
-
-    if (statusCode >= 400) {
+    } else if (statusCode >= 400) {
       this.logger.warn(message)
-      this.writeAuditLog(request, statusCode, duration, responseBody)
-      return
+    } else {
+      this.logger.log(message)
     }
 
-    this.logger.log(message)
-    this.writeAuditLog(request, statusCode, duration, responseBody)
+    // 性能优化：成功的只读请求（GET/HEAD/OPTIONS 且 2xx）跳过审计写入，
+    // 避免高并发下每个读请求都产生一次 DB 写；仅审计写操作与异常请求。
+    const isReadonly = method === 'GET' || method === 'HEAD' || method === 'OPTIONS'
+    const skipAudit = isReadonly && statusCode < 400
+    if (!skipAudit) {
+      this.writeAuditLog(request, statusCode, duration, responseBody)
+    }
   }
 
   private writeAuditLog(
@@ -90,7 +92,7 @@ export class RequestLoggerInterceptor implements NestInterceptor {
     const url = request.originalUrl || request.url
     if (SKIP_AUDIT_PATHS.some((path) => url.includes(path))) return
 
-    const user = (request as unknown as { user?: { sub?: number; userName?: string } }).user
+    const user = (request as unknown as { user?: { sub?: number; userName?: string; orgId?: number } }).user
     const moduleName = this.resolveModuleName(url)
     const action = request.method
     const requestData = this.maskSensitiveData({
@@ -103,7 +105,8 @@ export class RequestLoggerInterceptor implements NestInterceptor {
     void this.prisma.operationLog
       .create({
         data: {
-          orgId: undefined,
+          tenantId: getCurrentTenantId(),
+          orgId: user?.orgId ?? null,
           userId: user?.sub,
           userName: user?.userName,
           module: moduleName,
@@ -116,7 +119,7 @@ export class RequestLoggerInterceptor implements NestInterceptor {
           userAgent: request.headers['user-agent']
         } as Prisma.OperationLogCreateInput
       })
-      .catch((error: any) => this.logger.warn(`Audit log write failed: ${error?.message || error}`))
+      .catch((error: unknown) => this.logger.warn(`Audit log write failed: ${error instanceof Error ? error.message : String(error)}`))
   }
 
 
@@ -141,7 +144,7 @@ export class RequestLoggerInterceptor implements NestInterceptor {
           )
         }
       })
-      .catch((error: any) => this.logger.warn(`Audit log cleanup failed: ${error?.message || error}`))
+      .catch((error: unknown) => this.logger.warn(`Audit log cleanup failed: ${error instanceof Error ? error.message : String(error)}`))
   }
 
   private resolveModuleName(url: string) {

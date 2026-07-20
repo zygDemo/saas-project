@@ -298,7 +298,7 @@ export class ReadingService {
     const totalWordCount = chapters.reduce((sum, ch) => sum + ch.wordCount, 0);
 
     // 创建图书和章节（事务）
-    const book = await this.prisma.$transaction(async (tx: any) => {
+    const book = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const created = await tx.book.create({
         data: {
           tenantId,

@@ -26,9 +26,9 @@
       <!-- 公告横幅 -->
       <view class="notice-bar" @click="goNotice">
         <u-icon name="bell-fill" color="var(--u-type-warning)" size="28" />
-        <text class="notice-text"
-          >欢迎使用予艺助手，聚合多种服务一站式体验</text
-        >
+        <text class="notice-text">
+          欢迎使用予艺助手，聚合多种服务一站式体验
+        </text>
         <u-icon name="arrow-right" color="var(--u-tips-color)" size="24" />
       </view>
 

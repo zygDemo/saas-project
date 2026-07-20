@@ -18,11 +18,30 @@
             label-position="top"
             :key="formKey"
           >
-            <ElFormItem prop="username">
+            <ElFormItem prop="email">
+              <div class="flex gap-3 w-full">
+                <ElInput
+                  class="custom-height flex-1"
+                  v-model.trim="formData.email"
+                  placeholder="请输入邮箱"
+                />
+                <ElButton
+                  type="primary"
+                  :disabled="countdown > 0"
+                  @click="handleSendCode"
+                  style="flex-shrink: 0; min-width: 120px"
+                >
+                  {{ countdown > 0 ? countdown + 's' : '获取验证码' }}
+                </ElButton>
+              </div>
+            </ElFormItem>
+
+            <ElFormItem prop="emailCode">
               <ElInput
                 class="custom-height"
-                v-model.trim="formData.username"
-                :placeholder="$t('register.placeholder.username')"
+                v-model.trim="formData.emailCode"
+                placeholder="请输入6位验证码"
+                maxlength="6"
               />
             </ElFormItem>
 
@@ -88,18 +107,19 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
   import type { FormInstance, FormRules } from 'element-plus'
+  import { fetchRegister, sendEmailCode } from '@/api/auth'
+  import { ElMessage } from 'element-plus'
 
   defineOptions({ name: 'Register' })
 
   interface RegisterForm {
-    username: string
     password: string
     confirmPassword: string
+    email: string
+    emailCode: string
     agreement: boolean
   }
 
-  const USERNAME_MIN_LENGTH = 3
-  const USERNAME_MAX_LENGTH = 20
   const PASSWORD_MIN_LENGTH = 6
   const REDIRECT_DELAY = 1000
 
@@ -116,11 +136,37 @@
   })
 
   const formData = reactive<RegisterForm>({
-    username: '',
     password: '',
     confirmPassword: '',
+    email: '',
+    emailCode: '',
     agreement: false
   })
+
+  const countdown = ref(0)
+  let countdownTimer: ReturnType<typeof setInterval> | null = null
+
+  const handleSendCode = async () => {
+    if (!formData.email || !formData.email.includes('@')) {
+      ElMessage.warning('请输入正确的邮箱地址')
+      return
+    }
+    if (countdown.value > 0) return
+    try {
+      await sendEmailCode({ email: formData.email, type: 'register' })
+      ElMessage.success('验证码已发送')
+      countdown.value = 60
+      countdownTimer = setInterval(() => {
+        countdown.value--
+        if (countdown.value <= 0 && countdownTimer) {
+          clearInterval(countdownTimer)
+          countdownTimer = null
+        }
+      }, 1000)
+    } catch (e) {
+      // handled by interceptor
+    }
+  }
 
   /**
    * 验证密码
@@ -178,14 +224,13 @@
   }
 
   const rules = computed<FormRules<RegisterForm>>(() => ({
-    username: [
-      { required: true, message: t('register.placeholder.username'), trigger: 'blur' },
-      {
-        min: USERNAME_MIN_LENGTH,
-        max: USERNAME_MAX_LENGTH,
-        message: t('register.rule.usernameLength'),
-        trigger: 'blur'
-      }
+    email: [
+      { required: true, message: '请输入邮箱', trigger: 'blur' },
+      { type: 'email' as const, message: '请输入正确的邮箱地址', trigger: 'blur' }
+    ],
+    emailCode: [
+      { required: true, message: '请输入验证码', trigger: 'blur' },
+      { len: 6, message: '验证码为6位', trigger: 'blur' }
     ],
     password: [
       { required: true, validator: validatePassword, trigger: 'blur' },
@@ -201,30 +246,27 @@
    */
   const register = async () => {
     if (!formRef.value) return
+    const valid = await formRef.value.validate().catch(() => false)
+    if (!valid) return
 
+    loading.value = true
     try {
-      await formRef.value.validate()
-      loading.value = true
-
-      // TODO: 替换为真实 API 调用
-      // const params = {
-      //   username: formData.username,
-      //   password: formData.password
-      // }
-      // const res = await AuthService.register(params)
-      // if (res.code === ApiStatus.success) {
-      //   ElMessage.success('注册成功')
-      //   toLogin()
-      // }
-
-      // 模拟注册请求
-      setTimeout(() => {
-        loading.value = false
-        ElMessage.success('注册成功')
-        toLogin()
-      }, REDIRECT_DELAY)
-    } catch (error) {
-      console.error('表单验证失败:', error)
+      const res = await fetchRegister({
+        userName: formData.email,
+        password: formData.password,
+        nickName: formData.email.split('@')[0],
+        email: formData.email,
+        emailCode: formData.emailCode
+      })
+      if (res.code === 200) {
+        ElMessage.success('注册成功，即将跳转登录')
+        setTimeout(() => router.push({ name: 'Login' }), 1500)
+      } else {
+        ElMessage.error(res.msg || '注册失败')
+      }
+    } catch (error: any) {
+      ElMessage.error(error?.message || '注册失败，请稍后重试')
+    } finally {
       loading.value = false
     }
   }
@@ -233,9 +275,7 @@
    * 跳转到登录页面
    */
   const toLogin = () => {
-    setTimeout(() => {
-      router.push({ name: 'Login' })
-    }, REDIRECT_DELAY)
+    router.push({ name: 'Login' })
   }
 </script>
 

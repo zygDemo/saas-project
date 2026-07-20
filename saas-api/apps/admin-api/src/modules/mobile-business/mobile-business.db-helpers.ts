@@ -102,7 +102,7 @@ export async function findDraftApplicationByNo(
 }
 export async function ensureCustomerDraftApplication(
   prisma: PrismaService,
-  customer: any,
+  customer: Record<string, unknown>,
   user: RequestUser,
   options: { businessType?: string } = {}
 ) {

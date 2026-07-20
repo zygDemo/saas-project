@@ -227,7 +227,7 @@ export function mapFileAsset(file: Record<string, unknown>, apiPrefix: string) {
     name: file.fileName
   }
 }
-export function mapCustomer(customer: any, apiPrefix: string) {
+export function mapCustomer(customer: Record<string, unknown>, apiPrefix: string) {
   const liveAddress = [customer.liveProvince, customer.liveCity, customer.liveDistrict]
     .filter(Boolean)
     .join('/')
@@ -266,7 +266,7 @@ export function mapCustomer(customer: any, apiPrefix: string) {
     workingTelephone: customer.workingTelephone
   }
 }
-export function mapVehicle(vehicle: any, uuid: string, apiPrefix: string) {
+export function mapVehicle(vehicle: Record<string, unknown>, uuid: string, apiPrefix: string) {
   return {
     id: vehicle.id,
     uuid,
@@ -297,11 +297,11 @@ export function mapVehicle(vehicle: any, uuid: string, apiPrefix: string) {
     insuranceExpirationDate: formatDateOnly(vehicle.insuranceExpirationDate)
   }
 }
-export function mapApplication(application: any, apiPrefix: string, includeDetail = false) {
+export function mapApplication(application: Record<string, unknown>, apiPrefix: string, includeDetail = false) {
   const customer = application.customer
   const vehicle = customer?.vehicles?.[0] || customer?.vehicles?.at?.(0)
   const approvals = Array.isArray(application.approvals) ? application.approvals : []
-  const latestApproval = approvals.find((item: any) => item?.opinion)
+  const latestApproval = approvals.find((item: Record<string, unknown>) => item?.opinion)
   return {
     id: application.id,
     uuid: customer ? String(customer.id) : String(application.customerId),
@@ -333,7 +333,7 @@ export function mapApplication(application: any, apiPrefix: string, includeDetai
     isSupplementFile: application.isSupplementFile || 0,
     approvalRemark: latestApproval?.opinion,
     approvals: includeDetail
-      ? approvals.map((item: any) => ({
+      ? approvals.map((item: Record<string, unknown>) => ({
           id: item.id,
           stage: item.stage,
           action: item.action,

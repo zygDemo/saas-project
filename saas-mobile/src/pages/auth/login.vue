@@ -19,46 +19,100 @@
       <!-- 表单卡片 -->
       <view class="form-card">
         <view class="form-header">
-          <text class="form-title">账号登录</text>
-          <text class="form-subtitle">欢迎回来，请输入账号信息</text>
+          <text class="form-title">{{ loginMode === 'password' ? '账号登录' : '邮箱登录' }}</text>
+          <text class="form-subtitle">{{ loginMode === 'password' ? '欢迎回来，请输入账号信息' : '使用邮箱验证码登录/注册' }}</text>
         </view>
 
-        <view class="form-item">
-          <view class="form-icon">
-            <u-icon name="account" size="36rpx" color="#8b93a7" />
+        <!-- 登录模式切换 -->
+        <view class="mode-tabs">
+          <view :class="['mode-tab', loginMode === 'password' && 'mode-tab--active']" @click="loginMode = 'password'">
+            <text>密码登录</text>
           </view>
-          <u-input
-            v-model="username"
-            type="text"
-            placeholder="请输入用户名"
-            clearable
-            autocomplete="username"
-            :custom-style="{ paddingLeft: '8rpx' }"
-          />
-        </view>
-
-        <view class="form-item">
-          <view class="form-icon">
-            <u-icon name="lock" size="36rpx" color="#8b93a7" />
+          <view :class="['mode-tab', loginMode === 'email' && 'mode-tab--active']" @click="loginMode = 'email'">
+            <text>邮箱登录</text>
           </view>
-          <u-input
-            v-model="password"
-            type="password"
-            placeholder="请输入密码"
-            clearable
-            autocomplete="current-password"
-            :custom-style="{ paddingLeft: '8rpx' }"
-          />
         </view>
 
-        <u-button
-          type="primary"
-          :loading="loading"
-          :custom-style="loginBtnStyle"
-          @click="handleLogin"
-        >
-          登 录
-        </u-button>
+        <!-- 密码登录表单 -->
+        <view v-if="loginMode === 'password'">
+          <view class="form-item">
+            <view class="form-icon">
+              <u-icon name="account" size="36rpx" color="#8b93a7" />
+            </view>
+            <u-input
+              v-model="username"
+              type="text"
+              placeholder="请输入用户名"
+              clearable
+              autocomplete="username"
+              :custom-style="{ paddingLeft: '8rpx' }"
+            />
+          </view>
+
+          <view class="form-item">
+            <view class="form-icon">
+              <u-icon name="lock" size="36rpx" color="#8b93a7" />
+            </view>
+            <u-input
+              v-model="password"
+              type="password"
+              placeholder="请输入密码"
+              clearable
+              autocomplete="current-password"
+              :custom-style="{ paddingLeft: '8rpx' }"
+            />
+          </view>
+
+          <u-button
+            type="primary"
+            :loading="loading"
+            custom-style="loginBtnStyle"
+            @click="handleLogin"
+          >
+            登 录
+          </u-button>
+        </view>
+
+        <!-- 邮箱登录表单 -->
+        <view v-else>
+          <view class="form-item">
+            <view class="form-icon">
+              <u-icon name="email" size="36rpx" color="#8b93a7" />
+            </view>
+            <u-input
+              v-model="email"
+              type="text"
+              placeholder="请输入邮箱地址"
+              clearable
+              :custom-style="{ paddingLeft: '8rpx' }"
+            />
+          </view>
+
+          <view class="form-item form-item--code">
+            <view class="form-icon">
+              <u-icon name="lock" size="36rpx" color="#8b93a7" />
+            </view>
+            <u-input
+              v-model="emailCode"
+              type="number"
+              placeholder="请输入6位验证码"
+              maxlength="6"
+              :custom-style="{ paddingLeft: '8rpx' }"
+            />
+            <view class="code-btn" :class="{ 'code-btn--disabled': countdown > 0 }" @click="handleSendCode">
+              <text>{{ countdown > 0 ? `${countdown}s` : '获取验证码' }}</text>
+            </view>
+          </view>
+
+          <u-button
+            type="primary"
+            :loading="loading"
+            custom-style="loginBtnStyle"
+            @click="handleEmailLogin"
+          >
+            登录 / 注册
+          </u-button>
+        </view>
 
         <view v-if="showDemoTip" class="demo-tip">
           <u-icon name="info-circle" size="24rpx" color="#8b93a7" />
@@ -92,17 +146,88 @@ const sessionStore = useSessionStore();
 const username = ref("Super");
 const password = ref("123456");
 const loading = ref(false);
+const loginMode = ref("password");
+const email = ref("");
+const emailCode = ref("");
+const countdown = ref(0);
+let countdownTimer = null;
 const showDemoTip = computed(() => isDev);
 
 const loginBtnStyle = {
-  marginTop: "16rpx",
-  height: "88rpx",
-  borderRadius: "16rpx",
-  fontSize: "32rpx",
+  marginTop: "8rpx",
+  height: "90rpx",
+  borderRadius: "18rpx",
+  fontSize: "30rpx",
   fontWeight: "600",
   letterSpacing: "8rpx",
-  backgroundImage: "linear-gradient(135deg, #4f7cff, #6366f1)",
-  boxShadow: "0 8rpx 24rpx rgba(79, 124, 255, 0.3)",
+  backgroundImage: "linear-gradient(135deg, #4f7cff 0%, #5b8aff 50%, #6b9bff 100%)",
+  boxShadow: "0 10rpx 24rpx rgba(79, 124, 255, 0.35)",
+};
+
+/**
+ * 发送邮箱验证码
+ */
+const handleSendCode = async () => {
+  if (!email.value || !email.value.includes('@')) {
+    $u.toast('请输入正确的邮箱地址', 'error');
+    return;
+  }
+  if (countdown.value > 0) return;
+  try {
+    await authApi.sendEmailCode(email.value, 'login');
+    $u.toast('验证码已发送');
+    countdown.value = 60;
+    countdownTimer = setInterval(() => {
+      countdown.value--;
+      if (countdown.value <= 0) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+      }
+    }, 1000);
+  } catch (e) {
+    // error handled by interceptor
+  }
+};
+
+/**
+ * 邮箱验证码登录
+ */
+const handleEmailLogin = async () => {
+  if (!email.value || !email.value.includes('@')) {
+    $u.toast('请输入正确的邮箱地址', 'error');
+    return;
+  }
+  if (!emailCode.value || emailCode.value.length !== 6) {
+    $u.toast('请输入6位验证码', 'error');
+    return;
+  }
+  loading.value = true;
+  try {
+    const res = await authApi.emailLogin(email.value, emailCode.value);
+    if (res.code === 200) {
+      const payload = res.data || res;
+      const token = payload.token || payload.accessToken || res.token;
+      const refreshToken = payload.refreshToken || res.refreshToken || '';
+      if (!token) {
+        $u.toast('登录接口未返回Token', 'error');
+        return;
+      }
+      sessionStore.clearSession();
+      localStore.setToken(token);
+      localStore.setRefreshToken(refreshToken);
+      const fallbackUserInfo = payload.userInfo || payload.user || payload.salesman || res.salesman || null;
+      const userInfo = await loadCurrentUserInfo(fallbackUserInfo);
+      const roles = normalizeRoles(payload.roles || userInfo?.roles || []);
+      const roleKeys = payload.roleKeys || payload.roleCodes || userInfo?.roleKeys || roles.map((role) => role.roleKey || '').filter(Boolean);
+      localStore.setUserRoles(roleKeys);
+      localStore.setUserInfo(userInfo || {});
+      $u.toast('登录成功');
+      const entry = await getInitialMobileEntry();
+      uni.reLaunch({ url: entry });
+    }
+  } finally {
+    loading.value = false;
+  }
 };
 
 /**
@@ -252,221 +377,232 @@ function normalizeRoles(roles) {
 }
 </script>
 
-<style lang="scss" scoped>
-$primary: #4f7cff;
-$text-main: #1a1d29;
-$text-body: #4e5566;
-$text-hint: #8b93a7;
-$text-light: #b0b8cc;
-$ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-
+<style scoped lang="scss">
+/* ================== 登录页主容器 ================== */
 .login-page {
-  position: relative;
   min-height: 100vh;
-  padding: 0 48rpx;
-  background: linear-gradient(180deg, #f0f3ff 0%, #f5f7fa 40%, #f5f7fa 100%);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(190, 200, 255, 0.55) 0%, rgba(190, 200, 255, 0) 70%),
+    linear-gradient(180deg, #eef0ff 0%, #f3f4ff 35%, #fafaff 70%, #ffffff 100%);
+  padding: 0 48rpx 60rpx;
+  display: flex;
+  flex-direction: column;
+  position: relative;
   overflow: hidden;
 }
 
-/* ===== 装饰背景 ===== */
+/* 顶部柔和光斑 */
 .bg-decor {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 600rpx;
+  inset: 0;
   pointer-events: none;
   overflow: hidden;
+  z-index: 0;
 }
-
 .bg-circle {
   position: absolute;
   border-radius: 50%;
-  filter: blur(2rpx);
-
-  &--1 {
-    top: -120rpx;
-    right: -80rpx;
-    width: 360rpx;
-    height: 360rpx;
-    background: radial-gradient(circle, rgba(79, 124, 255, 0.18), transparent 70%);
-  }
-
-  &--2 {
-    top: 80rpx;
-    left: -100rpx;
-    width: 300rpx;
-    height: 300rpx;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.12), transparent 70%);
-  }
+  filter: blur(40rpx);
+  opacity: 0.55;
+}
+.bg-circle--1 {
+  width: 360rpx;
+  height: 360rpx;
+  top: -120rpx;
+  left: -100rpx;
+  background: radial-gradient(circle, #c5cdff 0%, rgba(197, 205, 255, 0) 70%);
+}
+.bg-circle--2 {
+  width: 420rpx;
+  height: 420rpx;
+  top: 80rpx;
+  right: -160rpx;
+  background: radial-gradient(circle, #d8d0ff 0%, rgba(216, 208, 255, 0) 70%);
 }
 
-/* ===== 品牌区 ===== */
-.brand-section {
+.brand-section,
+.form-card,
+.footer {
   position: relative;
   z-index: 1;
+}
+
+/* ================== 品牌区 ================== */
+.brand-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 140rpx;
-  padding-bottom: 60rpx;
+  padding-top: 160rpx;
+  margin-bottom: 60rpx;
 }
-
 .brand-logo-wrap {
-  width: 128rpx;
-  height: 128rpx;
+  width: 144rpx;
+  height: 144rpx;
+  border-radius: 36rpx;
+  overflow: hidden;
+  margin-bottom: 28rpx;
+  box-shadow:
+    0 12rpx 32rpx rgba(79, 92, 180, 0.18),
+    0 0 0 6rpx rgba(255, 255, 255, 0.6);
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
-  border-radius: 32rpx;
-  box-shadow: 0 8rpx 32rpx rgba(79, 124, 255, 0.18);
-  margin-bottom: 24rpx;
 }
-
 .brand-logo {
-  width: 80rpx;
-  height: 80rpx;
+  width: 100%;
+  height: 100%;
 }
-
 .brand-name {
-  font-size: 40rpx;
+  font-size: 46rpx;
   font-weight: 700;
-  color: $text-main;
+  color: #1a1d33;
+  margin-bottom: 10rpx;
   letter-spacing: 2rpx;
-  margin-bottom: 8rpx;
 }
-
 .brand-slogan {
-  font-size: 24rpx;
-  color: $text-hint;
+  font-size: 26rpx;
+  color: #8b93a7;
   letter-spacing: 1rpx;
 }
 
-/* ===== 表单卡片 ===== */
+/* ================== 表单卡片 ================== */
 .form-card {
-  position: relative;
-  z-index: 1;
   background: #fff;
-  border-radius: 24rpx;
-  padding: 48rpx 40rpx 40rpx;
-  box-shadow: 6rpx 6rpx 16rpx rgba(26, 29, 41, 0.08), -3rpx -3rpx 10rpx rgba(255,255,255,0.9);
+  border-radius: 28rpx;
+  padding: 32rpx 32rpx 28rpx;
+  box-shadow:
+    0 16rpx 48rpx rgba(60, 72, 140, 0.08),
+    0 2rpx 8rpx rgba(60, 72, 140, 0.04);
 }
-
 .form-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-  margin-bottom: 40rpx;
+  margin-bottom: 22rpx;
 }
-
 .form-title {
   font-size: 36rpx;
   font-weight: 700;
-  color: $text-main;
+  color: #1a1d33;
+  display: block;
+  margin-bottom: 6rpx;
+  letter-spacing: 1rpx;
 }
-
 .form-subtitle {
   font-size: 24rpx;
-  color: $text-hint;
+  color: #9ba1b3;
+  display: block;
 }
 
+/* ================== 模式切换 ================== */
+.mode-tabs {
+  display: flex;
+  margin-bottom: 22rpx;
+  background: #f3f4f9;
+  border-radius: 14rpx;
+  padding: 5rpx;
+}
+.mode-tab {
+  flex: 1;
+  text-align: center;
+  padding: 14rpx 0;
+  border-radius: 10rpx;
+  font-size: 26rpx;
+  color: #8b93a7;
+  transition: all 0.3s;
+}
+.mode-tab--active {
+  background: #fff;
+  color: #4f7cff;
+  font-weight: 600;
+  box-shadow: 0 2rpx 10rpx rgba(79, 124, 255, 0.12);
+}
+
+/* ================== 输入框 ================== */
 .form-item {
   display: flex;
   align-items: center;
-  height: 96rpx;
-  padding: 0 24rpx;
-  margin-bottom: 24rpx;
-  background: #f5f7fa;
+  background: #f5f7fb;
   border-radius: 16rpx;
-  border: 1rpx solid transparent;
-  transition: all 0.2s $ease-out;
-
-  &:focus-within {
-    background: #fff;
-    border-color: $primary;
-    box-shadow: 0 0 0 4rpx rgba(79, 124, 255, 0.1);
-  }
+  padding: 0 24rpx;
+  height: 88rpx;
+  margin-bottom: 18rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.25s ease;
 }
-
-.form-icon {
-  width: 48rpx;
+.form-item:focus-within {
+  background: #fff;
+  border-color: #c8d2ff;
+  box-shadow: 0 4rpx 16rpx rgba(79, 124, 255, 0.08);
+}
+.form-item--code {
   display: flex;
   align-items: center;
-  justify-content: center;
+}
+.form-icon {
+  margin-right: 20rpx;
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
 }
 
-/* ===== 演示提示 ===== */
+/* ================== 验证码按钮 ================== */
+.code-btn {
+  flex-shrink: 0;
+  padding: 0 28rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #4f7cff, #6b9bff);
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: #fff;
+  margin-left: 16rpx;
+  font-weight: 500;
+  box-shadow: 0 4rpx 12rpx rgba(79, 124, 255, 0.25);
+}
+.code-btn--disabled {
+  background: #c5cad6;
+  box-shadow: none;
+  color: #fff;
+}
+
+/* ================== 登录按钮 ================== */
+.login-btn {
+  margin-top: 8rpx;
+  height: 90rpx;
+  border-radius: 18rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  letter-spacing: 8rpx;
+  background: linear-gradient(135deg, #4f7cff 0%, #5b8aff 50%, #6b9bff 100%);
+  box-shadow:
+    0 10rpx 24rpx rgba(79, 124, 255, 0.35),
+    inset 0 -2rpx 0 rgba(0, 0, 0, 0.05);
+  color: #fff;
+}
+
+/* ================== 演示提示 ================== */
 .demo-tip {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: 18rpx;
   gap: 8rpx;
-  margin-top: 24rpx;
 }
-
 .demo-tip__text {
-  font-size: 22rpx;
-  color: $text-hint;
+  font-size: 24rpx;
+  color: #8b93a7;
 }
 
-/* ===== 底部 ===== */
+/* ================== 底部协议 ================== */
 .footer {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48rpx 0 calc(48rpx + env(safe-area-inset-bottom));
+  margin-top: auto;
+  padding: 48rpx 0 16rpx;
+  text-align: center;
 }
-
 .footer__text {
-  font-size: 22rpx;
-  color: $text-light;
-}
-
-/* ===== 深色模式 ===== */
-@media (prefers-color-scheme: dark) {
-  .login-page {
-    background: linear-gradient(180deg, #1a1d29 0%, #14161f 40%, #14161f 100%);
-  }
-
-  .bg-circle--1 {
-    background: radial-gradient(circle, rgba(79, 124, 255, 0.25), transparent 70%);
-  }
-  .bg-circle--2 {
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.18), transparent 70%);
-  }
-
-  .brand-logo-wrap {
-    background: #252836;
-  }
-
-  .brand-name {
-    color: #f3f4f6;
-  }
-
-  .form-card {
-    background: #1f2231;
-    box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.3);
-  }
-
-  .form-title {
-    color: #f3f4f6;
-  }
-
-  .form-item {
-    background: #252836;
-
-    &:focus-within {
-      background: #2a2d3e;
-      border-color: $primary;
-    }
-  }
-
-  .footer__text {
-    color: #5a6178;
-  }
+  font-size: 24rpx;
+  color: #b0b6c6;
+  line-height: 1.6;
 }
 </style>

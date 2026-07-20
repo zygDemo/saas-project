@@ -38,3 +38,13 @@ export function fetchRegister(params: { userName: string; password: string; nick
     data: params
   })
 }
+
+/** 发送邮箱验证码 */
+export function sendEmailCode(params: { email: string; type?: string }) {
+  return request.post({ url: '/auth/email/send-code', data: params })
+}
+
+/** 邮箱验证码登录 */
+export function emailLogin(params: { email: string; code: string }) {
+  return request.post({ url: '/auth/email/login', data: params })
+}

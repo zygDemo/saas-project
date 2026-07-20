@@ -282,6 +282,19 @@ onShow(() => {
   }
 });
 
+// 后端 ApplicationStatus → 签约步骤映射
+const STATUS_TO_SIGN_STEP = {
+  PENDING_SIGN: "CONFIRMING_AMOUNT",
+  SIGNING_PROGRESS: "CONFIRMING_AMOUNT",
+  SIGNED: "SIGNED",
+  PENDING_LOAN_REQUEST: "SIGNED",
+  LOAN_REQUEST_REVIEWING: "SIGNED",
+  LOAN_REQUEST_APPROVED: "SIGNED",
+  PENDING_DISBURSEMENT: "SIGNED",
+  DISBURSED: "SIGNED",
+  SETTLED: "SIGNED",
+};
+
 async function loadSignStatus() {
   loading.value = true;
   try {
@@ -295,31 +308,37 @@ async function loadSignStatus() {
       const businessNode = d.businessNode || "";
       const creditStatus = d.status; // 1=成功 2=失败 3=补件 4=处理中
       const passQuota = Number(d.passQuota || d.validAmt || 0);
+      const appStatus = d.currentNode || d.applicationStatus || "";
 
-      // 根据订单数据判断当前应处于哪个签约阶段
+      // 优先级：本地进度 > 后端状态推断 > 默认
       let inferredStatus = localStatus || "";
 
-      // 已放款/已签约 → 全部完成
-      if (businessNode === "LOAN_DISBURSEMENT" && creditStatus === 1) {
-        inferredStatus = "SIGNED";
-      }
-      // 签约阶段 → 根据子步骤判断
-      else if (businessNode === "SIGN_CONTRACT") {
-        if (localStatus) {
-          inferredStatus = localStatus; // 保留本地进度
-        } else if (passQuota > 0) {
-          inferredStatus = "BINDING_CARD"; // 有核定金额，从绑卡开始
-        } else {
+      if (!inferredStatus) {
+        // 已放款/已签约 → 全部完成
+        if (businessNode === "LOAN_DISBURSEMENT" && creditStatus === 1) {
+          inferredStatus = "SIGNED";
+        }
+        // 签约阶段
+        else if (businessNode === "SIGN_CONTRACT") {
+          if (passQuota > 0) {
+            inferredStatus = "BINDING_CARD"; // 有核定金额，从绑卡开始
+          } else {
+            inferredStatus = "CONFIRMING_AMOUNT";
+          }
+        }
+        // 有核定金额 → 额度已确认
+        else if (passQuota > 0) {
+          inferredStatus = "BINDING_CARD";
+        }
+        // 默认
+        else {
           inferredStatus = "CONFIRMING_AMOUNT";
         }
       }
-      // 有核定金额 → 额度已确认
-      else if (passQuota > 0) {
-        inferredStatus = inferredStatus || "BINDING_CARD";
-      }
-      // 默认
-      else {
-        inferredStatus = inferredStatus || "CONFIRMING_AMOUNT";
+
+      // 如果本地无进度，且后端状态明确，用后端状态覆盖
+      if (!localStatus && appStatus && STATUS_TO_SIGN_STEP[appStatus]) {
+        inferredStatus = STATUS_TO_SIGN_STEP[appStatus];
       }
 
       signStatus.value = normalizeSignStatus(inferredStatus);

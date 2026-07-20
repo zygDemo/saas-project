@@ -272,8 +272,10 @@ export class DataCenterService {
 
   private buildAuditWhere(query: AuditLogQueryDto) {
     const where: Record<string, unknown> = {
-      ...this.buildDateWhere(query, 'createdAt')
+      ...this.buildDateWhere(query, 'createdAt'),
+      ...this.tenantWhere(), // 租户隔离（必须）
     }
+    if (query.orgId != null) where.orgId = query.orgId
     if (query.module) where.module = { contains: query.module, mode: 'insensitive' }
     if (query.action) where.action = query.action
     if (query.userName) where.userName = { contains: query.userName, mode: 'insensitive' }
@@ -345,7 +347,8 @@ export class DataCenterService {
   async getAuditLogStats(query: AuditLogStatsDto) {
     const dateWhere = this.buildDateWhere(query, 'createdAt')
     const tenantWhere = this.tenantWhere()
-    const baseWhere = { ...tenantWhere, ...dateWhere }
+    const orgWhere = query.orgId != null ? { orgId: query.orgId } : {}
+    const baseWhere = { ...tenantWhere, ...dateWhere, ...orgWhere }
     
     const moduleWhere = query.module 
       ? { ...baseWhere, module: { contains: query.module, mode: 'insensitive' as const } }
@@ -375,6 +378,7 @@ export class DataCenterService {
         WHERE (${this.currentTenantId()}::int IS NULL OR "tenantId" = ${this.currentTenantId()}::int)
           AND (${query.startAt || null}::timestamp IS NULL OR "createdAt" >= ${query.startAt || null}::timestamp)
           AND (${query.endAt || null}::timestamp IS NULL OR "createdAt" <= ${query.endAt || null}::timestamp)
+          AND (${query.orgId ?? null}::int IS NULL OR "orgId" = ${query.orgId ?? null}::int)
         GROUP BY 1
         ORDER BY 1
       `,
@@ -387,6 +391,7 @@ export class DataCenterService {
         WHERE (${this.currentTenantId()}::int IS NULL OR "tenantId" = ${this.currentTenantId()}::int)
           AND (${query.startAt || null}::timestamp IS NULL OR "createdAt" >= ${query.startAt || null}::timestamp)
           AND (${query.endAt || null}::timestamp IS NULL OR "createdAt" <= ${query.endAt || null}::timestamp)
+          AND (${query.orgId ?? null}::int IS NULL OR "orgId" = ${query.orgId ?? null}::int)
           AND "statusCode" >= 400
         GROUP BY 1
         ORDER BY 1
@@ -401,6 +406,7 @@ export class DataCenterService {
         WHERE (${this.currentTenantId()}::int IS NULL OR "tenantId" = ${this.currentTenantId()}::int)
           AND (${query.startAt || null}::timestamp IS NULL OR "createdAt" >= ${query.startAt || null}::timestamp)
           AND (${query.endAt || null}::timestamp IS NULL OR "createdAt" <= ${query.endAt || null}::timestamp)
+          AND (${query.orgId ?? null}::int IS NULL OR "orgId" = ${query.orgId ?? null}::int)
           AND "ip" IS NOT NULL
           AND "ip" != ''
           AND "statusCode" >= 400
@@ -424,6 +430,7 @@ export class DataCenterService {
           WHERE (${this.currentTenantId()}::int IS NULL OR "tenantId" = ${this.currentTenantId()}::int)
             AND (${query.startAt || null}::timestamp IS NULL OR "createdAt" >= ${query.startAt || null}::timestamp)
             AND (${query.endAt || null}::timestamp IS NULL OR "createdAt" <= ${query.endAt || null}::timestamp)
+            AND (${query.orgId ?? null}::int IS NULL OR "orgId" = ${query.orgId ?? null}::int)
             AND "ip" IS NOT NULL
             AND "ip" != ''
             AND "statusCode" >= 400
@@ -450,6 +457,7 @@ export class DataCenterService {
         WHERE (${this.currentTenantId()}::int IS NULL OR "tenantId" = ${this.currentTenantId()}::int)
           AND (${query.startAt || null}::timestamp IS NULL OR "createdAt" >= ${query.startAt || null}::timestamp)
           AND (${query.endAt || null}::timestamp IS NULL OR "createdAt" <= ${query.endAt || null}::timestamp)
+          AND (${query.orgId ?? null}::int IS NULL OR "orgId" = ${query.orgId ?? null}::int)
           AND "ip" IS NOT NULL
           AND "ip" != ''
           AND (
@@ -480,6 +488,7 @@ export class DataCenterService {
           WHERE (${this.currentTenantId()}::int IS NULL OR "tenantId" = ${this.currentTenantId()}::int)
             AND (${query.startAt || null}::timestamp IS NULL OR "createdAt" >= ${query.startAt || null}::timestamp)
             AND (${query.endAt || null}::timestamp IS NULL OR "createdAt" <= ${query.endAt || null}::timestamp)
+            AND (${query.orgId ?? null}::int IS NULL OR "orgId" = ${query.orgId ?? null}::int)
             AND "ip" IS NOT NULL
             AND "ip" != ''
         ),

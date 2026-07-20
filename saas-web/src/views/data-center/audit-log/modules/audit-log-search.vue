@@ -11,12 +11,21 @@
 </template>
 
 <script setup lang="ts">
+  import { ref, computed, onMounted } from 'vue'
+  import request from '@/utils/http'
+
   interface SearchForm {
     keyword: string
     module: string
     action: string
     userName: string
     status: string
+    orgId?: number
+  }
+
+  interface OrgItem {
+    id: number
+    name: string
   }
 
   interface Props {
@@ -57,6 +66,21 @@
     { label: '成功 (2xx)', value: 'success' },
     { label: '失败 (4xx/5xx)', value: 'fail' }
   ]
+
+  // 机构列表（动态获取）
+  const orgOptions = ref<Array<{ label: string; value: number }>>([])
+
+  onMounted(async () => {
+    try {
+      const res = await request.get<{ records: OrgItem[] }>({ url: '/org/list', params: { size: 1000 } })
+      orgOptions.value = (res.records || []).map((item) => ({
+        label: item.name,
+        value: item.id
+      }))
+    } catch {
+      // 无权限或接口异常时保持空列表
+    }
+  })
 
   // 模块选项（常用模块）
   const moduleOptions = [
@@ -113,6 +137,17 @@
         placeholder: '请选择方法',
         clearable: true,
         options: methodOptions
+      }
+    },
+    {
+      label: '机构',
+      key: 'orgId',
+      type: 'select',
+      props: {
+        placeholder: '请选择机构',
+        clearable: true,
+        filterable: true,
+        options: orgOptions
       }
     },
     {

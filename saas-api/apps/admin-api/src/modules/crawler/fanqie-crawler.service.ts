@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import { Injectable, Logger, BadRequestException, OnModuleDestroy } from '@nestjs/common'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
@@ -175,7 +176,7 @@ export class FanqieCrawlerService implements OnModuleDestroy {
               message: `已完成 ${completed}/${ids.length}` })
             if (completed % 20 === 0) await this.prisma.book.update({ where: { id: book.id }, data: { wordCount: totalWords } })
             break
-          } catch (err: any) {
+          } catch (err: unknown) {
             if (err.message === '__CANCELLED__') throw err
             if (retry >= 2) {
               failed++; completed++
@@ -193,7 +194,7 @@ export class FanqieCrawlerService implements OnModuleDestroy {
       update({ status: 'completed', message: '下载完成！', result })
       setTimeout(() => this.progressMap.delete(key), 5 * 60 * 1000)
       return result
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err.message === '__CANCELLED__') {
         update({ status: 'cancelled', message: '已取消' })
         this.cancelFlags.delete(key); this.pauseFlags.delete(key)

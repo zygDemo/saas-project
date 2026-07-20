@@ -104,7 +104,7 @@ export class FileService {
         fileAsset.count({ where })
       ])
       return toPaginatedResponse(
-        records.map((file: any) => this.mapFileAsset(file)),
+        records.map((file: Record<string, unknown>) => this.mapFileAsset(file)),
         total,
         pagination
       )

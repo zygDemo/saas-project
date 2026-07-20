@@ -2,6 +2,7 @@ import request from '@/utils/http'
 import type { BasePageResponse, PageQuery } from '@/types/api/contract'
 
 export interface BusinessQuery extends PageQuery {
+  orgId?: number
   [key: string]: unknown
 }
 

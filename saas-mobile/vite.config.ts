@@ -7,7 +7,7 @@ import { uViewProResolver, ZPagingResolver } from '@uni-helper/vite-plugin-uni-c
 import UniRoot from '@uni-ku/root'
 import UnoCSS from 'unocss/vite'
 import type { PluginOption } from 'vite'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 
 const require = createRequire(import.meta.url)
 
@@ -66,7 +66,11 @@ function createVersionFilePlugin(): PluginOption {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd())
+  const rawProxyUrl = env.VITE_API_PROXY_URL || env.VITE_API_URL || 'http://localhost:3001'
+  const apiProxyUrl = new URL(rawProxyUrl).origin
+  return {
   base: '/saas/mobile/',
   resolve: {
     alias: {
@@ -97,7 +101,7 @@ export default defineConfig({
     host: true,
     proxy: {
       '/saas/api': {
-        target: 'http://localhost:3001',
+        target: apiProxyUrl,
         changeOrigin: true,
       },
     },
@@ -112,4 +116,5 @@ export default defineConfig({
   optimizeDeps: {
     exclude: process.env.UNI_PLATFORM === 'h5' && process.env.NODE_ENV === 'development' ? ['uview-pro'] : [],
   },
+  }
 })

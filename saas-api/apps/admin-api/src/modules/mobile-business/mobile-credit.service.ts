@@ -181,7 +181,7 @@ export class MobileCreditService {
       this.prisma.application.count({ where })
     ])
     const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
-    const rows = records.map((item: any) => mapApplication(item, apiPrefix))
+    const rows = records.map((item: Record<string, unknown>) => mapApplication(item, apiPrefix))
     return {
       code: 200,
       msg: 'success',
@@ -251,7 +251,7 @@ export class MobileCreditService {
         ruleConfig: true,
       }
     })
-    return configs.map((c: any) => {
+    return configs.map((c: Record<string, unknown>) => {
       const ruleConfig = (c.ruleConfig as Record<string, unknown>) || {}
       return {
         id: c.id,

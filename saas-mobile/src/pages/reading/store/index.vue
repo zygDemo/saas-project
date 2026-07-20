@@ -1,3 +1,119 @@
+<script setup lang="ts">
+import layout from "@/components/layout/layout.vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
+import { onLoad } from "@dcloudio/uni-app";
+import { useStoreBooks } from "@/composables/reading/useStoreBooks";
+import type { BookItem, SubTabItem } from "@/composables/reading/useStoreBooks";
+
+interface BannerItem {
+  id: string;
+  image: string;
+  title: string;
+  desc: string;
+  link?: string;
+}
+
+interface BookList {
+  id: string;
+  title: string;
+  desc: string;
+  bookCount: number;
+  covers: string[];
+}
+
+const {
+  keyword, currentMainTab, currentSubTab, currentRankTab, currentFilter,
+  refreshing, hasMore, isLoadingMore,
+  subTabs, currentSubTabs,
+  bookList, hotBooks, rankBooks, filteredBooks,
+  fetchCategories, fetchBooks, onRefresh, onLoadMore,
+  switchMainTab, switchSubTab, onSearch,
+} = useStoreBooks();
+
+const mainTabs = [
+  { id: 0, name: "男生" },
+  { id: 1, name: "女生" },
+  { id: 2, name: "出版" },
+];
+
+const rankTabs = [
+  { id: 0, name: "畅销榜" },
+  { id: 1, name: "热搜榜" },
+  { id: 2, name: "完结榜" },
+  { id: 3, name: "新书榜" },
+];
+
+const filters = [
+  { id: "hot", name: "最热" },
+  { id: "new", name: "最新" },
+  { id: "finish", name: "完结" },
+  { id: "serial", name: "连载" },
+];
+
+// 倒计时
+const countdown = ref({ hours: "05", minutes: "23", seconds: "45" });
+let countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+const updateCountdown = () => {
+  let total = 5 * 3600 + 23 * 60 + 45;
+  countdownTimer = setInterval(() => {
+    total--;
+    if (total <= 0) { clearInterval(countdownTimer!); return; }
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const seconds = total % 60;
+    countdown.value = {
+      hours: hours.toString().padStart(2, "0"),
+      minutes: minutes.toString().padStart(2, "0"),
+      seconds: seconds.toString().padStart(2, "0"),
+    };
+  }, 1000);
+};
+
+onMounted(() => updateCountdown());
+onUnmounted(() => { if (countdownTimer) clearInterval(countdownTimer); });
+
+// Banner
+const bannerList = ref<BannerItem[]>([
+  { id: "1", image: "/static/reading/covers/banner1.svg", title: "新书推荐", desc: "《诡秘之主》作者新书上线", link: "" },
+  { id: "2", image: "/static/reading/covers/banner2.svg", title: "限时免费", desc: "精选100本好书限时畅读", link: "" },
+  { id: "3", image: "/static/reading/covers/banner3.svg", title: "完本推荐", desc: "经典完本，一口气看完", link: "" },
+]);
+
+// 书单
+const bookLists = ref<BookList[]>([
+  { id: "1", title: "玄幻必读经典", desc: "不可错过的玄幻巨作", bookCount: 50, covers: ["/static/reading/covers/list1a.svg", "/static/reading/covers/list1b.svg", "/static/reading/covers/list1c.svg"] },
+  { id: "2", title: "仙侠修真精选", desc: "修仙问道，逍遥天地", bookCount: 35, covers: ["/static/reading/covers/list2a.svg", "/static/reading/covers/list2b.svg", "/static/reading/covers/list2c.svg"] },
+  { id: "3", title: "都市爽文合集", desc: "都市逆袭，爽快阅读", bookCount: 42, covers: ["/static/reading/covers/list3a.svg", "/static/reading/covers/list3b.svg", "/static/reading/covers/list3c.svg"] },
+]);
+
+// 限免
+const freeBooks = computed(() => bookList.value.slice(0, 4).map((book, idx) => ({ ...book, originalPrice: [25, 30, 20, 15][idx] || 20 })));
+
+const formatNumber = (num: number) => {
+  if (num >= 10000000) return `${(num / 10000000).toFixed(1)}千万`;
+  if (num >= 10000) return `${(num / 10000).toFixed(1)}万`;
+  return num.toString();
+};
+
+const switchRankTab = (idx: number) => { currentRankTab.value = idx; };
+
+const onBannerClick = (banner: BannerItem) => { if (banner.link) uni.navigateTo({ url: banner.link }); };
+const goDetail = (book: BookItem) => { uni.navigateTo({ url: `/pages/reading/store/detail?id=${book.id}` }); };
+const goRanking = () => { uni.showToast({ title: "排行榜功能开发中", icon: "none" }); };
+const goFreeBooks = () => { uni.showToast({ title: "限免专区开发中", icon: "none" }); };
+const goBookList = () => { uni.showToast({ title: "书单功能开发中", icon: "none" }); };
+const goFinish = () => { currentFilter.value = "finish"; };
+const goAuthor = () => { uni.showToast({ title: "作者专区开发中", icon: "none" }); };
+const goBookListDetail = (list: BookList) => { uni.showToast({ title: `查看书单：${list.title}`, icon: "none" }); };
+const viewMore = (_type: string) => { uni.showToast({ title: "更多功能开发中", icon: "none" }); };
+
+onLoad(() => {
+  fetchCategories();
+  fetchBooks();
+});
+</script>
+
 <template>
   <layout nav-title="书城" :show-tabbar="true" tabbar-scope="reading" :active-tab="0" back back-url="/pages/reading/index/index">
     <scroll-view
@@ -340,627 +456,6 @@
     </scroll-view>
   </layout>
 </template>
-
-<script setup lang="ts">
-import layout from "@/components/layout/layout.vue";
-import { computed, ref, onMounted, onUnmounted, watch } from "vue";
-import { onLoad } from "@dcloudio/uni-app";
-import { useReadingApi } from "@/api/reading";
-
-interface BookItem {
-  id: string;
-  title: string;
-  author: string;
-  cover: string;
-  category: string;
-  isSerial: boolean;
-  isHot?: boolean;
-  views: number;
-  desc: string;
-  totalChapters: number;
-  wordCount: string;
-  rating: number;
-  originalPrice?: number;
-}
-
-interface BannerItem {
-  id: string;
-  image: string;
-  title: string;
-  desc: string;
-  link?: string;
-}
-
-interface BookList {
-  id: string;
-  title: string;
-  desc: string;
-  bookCount: number;
-  covers: string[];
-}
-
-const keyword = ref("");
-const currentMainTab = ref(0);
-const currentSubTab = ref(0);
-const currentRankTab = ref(0);
-const currentFilter = ref("hot");
-const refreshing = ref(false);
-let countdownTimer: ReturnType<typeof setInterval> | null = null;
-const readingApi = useReadingApi();
-
-// 分页状态
-const currentPage = ref(1);
-const pageSize = ref(20);
-const totalCount = ref(0);
-const hasMore = ref(true);
-const isLoadingMore = ref(false);
-
-const mainTabs = [
-  { id: 0, name: "男生" },
-  { id: 1, name: "女生" },
-  { id: 2, name: "出版" },
-];
-
-interface CategoryItem {
-  id: string | number;
-  name: string;
-  parentId: string | number | null;
-  realId?: string | number | null;
-}
-
-// 从后端加载的分类数据
-let _apiCategories: CategoryItem[] = [];
-
-interface SubTabItem {
-  id: number;
-  name: string;
-  realId: string | number | null;
-}
-
-const subTabs = ref<SubTabItem[][]>([
-  [
-    { id: 0, name: "全部", realId: null },
-    { id: 1, name: "玄幻", realId: null },
-    { id: 2, name: "仙侠", realId: null },
-    { id: 3, name: "都市", realId: null },
-    { id: 4, name: "历史", realId: null },
-    { id: 5, name: "科幻", realId: null },
-    { id: 6, name: "游戏", realId: null },
-    { id: 7, name: "悬疑", realId: null },
-    { id: 8, name: "武侠", realId: null },
-    { id: 9, name: "奇幻", realId: null },
-  ],
-  [
-    { id: 0, name: "全部", realId: null },
-    { id: 1, name: "现代言情", realId: null },
-    { id: 2, name: "古代言情", realId: null },
-    { id: 3, name: "仙侠奇缘", realId: null },
-    { id: 4, name: "浪漫青春", realId: null },
-    { id: 5, name: "悬疑推理", realId: null },
-    { id: 6, name: "科幻空间", realId: null },
-    { id: 7, name: "宫斗宅斗", realId: null },
-    { id: 8, name: "经商种田", realId: null },
-  ],
-  [
-    { id: 0, name: "全部", realId: null },
-    { id: 1, name: "文学", realId: null },
-    { id: 2, name: "小说", realId: null },
-    { id: 3, name: "传记", realId: null },
-    { id: 4, name: "历史", realId: null },
-    { id: 5, name: "哲学", realId: null },
-    { id: 6, name: "经济", realId: null },
-    { id: 7, name: "科技", realId: null },
-    { id: 8, name: "艺术", realId: null },
-  ],
-]);
-
-const currentSubTabs = computed(() => subTabs.value[currentMainTab.value] || subTabs.value[0]);
-
-const rankTabs = [
-  { id: 0, name: "畅销榜" },
-  { id: 1, name: "热搜榜" },
-  { id: 2, name: "完结榜" },
-  { id: 3, name: "新书榜" },
-];
-
-const filters = [
-  { id: "hot", name: "最热" },
-  { id: "new", name: "最新" },
-  { id: "finish", name: "完结" },
-  { id: "serial", name: "连载" },
-];
-
-const countdown = ref({ hours: "05", minutes: "23", seconds: "45" });
-
-const bannerList = ref<BannerItem[]>([
-  {
-    id: "1",
-    image: "/static/reading/covers/banner1.svg",
-    title: "新书推荐",
-    desc: "《诡秘之主》作者新书上线",
-    link: "",
-  },
-  {
-    id: "2",
-    image: "/static/reading/covers/banner2.svg",
-    title: "限时免费",
-    desc: "精选100本好书限时畅读",
-    link: "",
-  },
-  {
-    id: "3",
-    image: "/static/reading/covers/banner3.svg",
-    title: "完本推荐",
-    desc: "经典完本，一口气看完",
-    link: "",
-  },
-]);
-
-const bookList = ref<BookItem[]>([
-  {
-    id: "1",
-    title: "斗破苍穹",
-    author: "天蚕土豆",
-    cover: "/static/reading/covers/book1.svg",
-    category: "玄幻",
-    isSerial: false,
-    isHot: true,
-    views: 12580000,
-    desc: "三十年河东，三十年河西，莫欺少年穷！",
-    totalChapters: 1648,
-    wordCount: "532万字",
-    rating: 4.8,
-  },
-  {
-    id: "2",
-    title: "凡人修仙传",
-    author: "忘语",
-    cover: "/static/reading/covers/book2.svg",
-    category: "仙侠",
-    isSerial: false,
-    isHot: true,
-    views: 9870000,
-    desc: "凡人流鼻祖之作",
-    totalChapters: 2446,
-    wordCount: "746万字",
-    rating: 4.7,
-  },
-  {
-    id: "3",
-    title: "诡秘之主",
-    author: "爱潜水的乌贼",
-    cover: "/static/reading/covers/book3.svg",
-    category: "玄幻",
-    isSerial: false,
-    isHot: true,
-    views: 8650000,
-    desc: "蒸汽与机械的世界",
-    totalChapters: 1432,
-    wordCount: "428万字",
-    rating: 4.9,
-  },
-  {
-    id: "4",
-    title: "大奉打更人",
-    author: "卖报小郎君",
-    cover: "/static/reading/covers/book4.svg",
-    category: "仙侠",
-    isSerial: true,
-    views: 7890000,
-    desc: "这个世界有儒释道三教",
-    totalChapters: 986,
-    wordCount: "356万字",
-    rating: 4.6,
-  },
-  {
-    id: "5",
-    title: "夜的命名术",
-    author: "会说话的肘子",
-    cover: "/static/reading/covers/book5.svg",
-    category: "都市",
-    isSerial: true,
-    views: 6540000,
-    desc: "黑夜给了我黑色的眼睛",
-    totalChapters: 756,
-    wordCount: "268万字",
-    rating: 4.5,
-  },
-  {
-    id: "6",
-    title: "赘婿",
-    author: "愤怒的香蕉",
-    cover: "/static/reading/covers/book6.svg",
-    category: "历史",
-    isSerial: true,
-    views: 5430000,
-    desc: "一个现代金融巨头穿越成赘婿",
-    totalChapters: 1123,
-    wordCount: "412万字",
-    rating: 4.4,
-  },
-  {
-    id: "7",
-    title: "庆余年",
-    author: "猫腻",
-    cover: "/static/reading/covers/book7.svg",
-    category: "历史",
-    isSerial: false,
-    views: 4320000,
-    desc: "积善之家，必有余庆",
-    totalChapters: 746,
-    wordCount: "378万字",
-    rating: 4.8,
-  },
-  {
-    id: "8",
-    title: "超神机械师",
-    author: "齐佩甲",
-    cover: "/static/reading/covers/book8.svg",
-    category: "科幻",
-    isSerial: false,
-    views: 3210000,
-    desc: "机械与星际的史诗",
-    totalChapters: 1463,
-    wordCount: "516万字",
-    rating: 4.6,
-  },
-  {
-    id: "9",
-    title: "全球高武",
-    author: "老鹰吃小鸡",
-    cover: "/static/reading/covers/book9.svg",
-    category: "都市",
-    isSerial: false,
-    views: 2980000,
-    desc: "武道巅峰，全球争锋",
-    totalChapters: 1256,
-    wordCount: "452万字",
-    rating: 4.3,
-  },
-  {
-    id: "10",
-    title: "十方武圣",
-    author: "莫默",
-    cover: "/static/reading/covers/book10.svg",
-    category: "玄幻",
-    isSerial: true,
-    views: 2150000,
-    desc: "武道极致，十方无敌",
-    totalChapters: 534,
-    wordCount: "156万字",
-    rating: 4.2,
-  },
-]);
-
-// 格式化字数
-const formatWordCount = (count?: number) => {
-  if (!count) return "";
-  if (count >= 10000) return `${(count / 10000).toFixed(0)}万字`;
-  return `${count}字`;
-};
-
-// 从API获取图书列表
-const fetchBooks = async (kw?: string, append = false) => {
-  if (isLoadingMore.value) return;
-  if (!append) {
-    currentPage.value = 1;
-  }
-  const page = append ? currentPage.value : 1;
-  isLoadingMore.value = true;
-  try {
-    const params = { page, pageSize: pageSize.value } as const;
-    if (kw) (params as Record<string, unknown>).keyword = kw;
-    if (currentSubTab.value > 0) {
-      const cat = currentSubTabs.value?.[currentSubTab.value];
-      if (cat?.realId) (params as Record<string, unknown>).categoryId = cat.realId;
-    }
-    const res = await readingApi.getBooks(params);
-    if (res?.code === 200 && res.data?.items) {
-      const items = res.data.items.map((item) => ({
-        id: String(item.id),
-        title: item.title || "",
-        author: item.author || "未知",
-        cover: item.cover || "/static/reading/covers/default.svg",
-        category: item.category?.name || "其他",
-        isSerial: item.isSerial ?? false,
-        isHot: item.isHot ?? false,
-        views: item.readCount || 0,
-        desc: item.desc || "",
-        totalChapters: item.chapterCount || 0,
-        wordCount: formatWordCount(item.wordCount),
-        rating: Number(item.rating) || 0,
-      }));
-      if (append) {
-        bookList.value.push(...items);
-      } else {
-        bookList.value = items;
-      }
-      totalCount.value = res.data.total || 0;
-      hasMore.value = bookList.value.length < totalCount.value;
-      currentPage.value = page + 1;
-      // 更新衍生数据
-      if (!append) {
-        refreshDerivedBooks();
-      }
-    }
-  } catch (e) {
-    console.error("获取图书列表失败", e);
-  } finally {
-    isLoadingMore.value = false;
-  }
-}
-
-onLoad(() => {
-  fetchCategories();
-  fetchBooks();
-});
-
-const freeBooks = ref<BookItem[]>(bookList.value.slice(0, 4).map((book, idx) => ({
-  ...book,
-  originalPrice: [25, 30, 20, 15][idx] || 20,
-})));
-
-const bookLists = ref<BookList[]>([
-  {
-    id: "1",
-    title: "玄幻必读经典",
-    desc: "不可错过的玄幻巨作",
-    bookCount: 50,
-    covers: [
-      "/static/reading/covers/list1a.svg",
-      "/static/reading/covers/list1b.svg",
-      "/static/reading/covers/list1c.svg",
-    ],
-  },
-  {
-    id: "2",
-    title: "仙侠修真精选",
-    desc: "修仙问道，逍遥天地",
-    bookCount: 35,
-    covers: [
-      "/static/reading/covers/list2a.svg",
-      "/static/reading/covers/list2b.svg",
-      "/static/reading/covers/list2c.svg",
-    ],
-  },
-  {
-    id: "3",
-    title: "都市爽文合集",
-    desc: "都市逆袭，爽快阅读",
-    bookCount: 42,
-    covers: [
-      "/static/reading/covers/list3a.svg",
-      "/static/reading/covers/list3b.svg",
-      "/static/reading/covers/list3c.svg",
-    ],
-  },
-]);
-
-const hotBooks = computed(() => {
-  const hotList = bookList.value.filter((b) => b.isHot);
-  return (hotList.length ? hotList : bookList.value).slice(0, 5);
-});
-const rankBooks = computed(() => {
-  const books = [...bookList.value];
-  switch (currentRankTab.value) {
-    case 0: // 畅销榜 - 按阅读量
-      return books.sort((a, b) => b.views - a.views).slice(0, 8);
-    case 1: // 热搜榜 - 按评分
-      return books.sort((a, b) => b.rating - a.rating).slice(0, 8);
-    case 2: // 完结榜 - 只显示已完结
-      return books.filter(b => !b.isSerial).slice(0, 8);
-    case 3: // 新书榜 - 保持创建顺序（倒序）
-      return books.reverse().slice(0, 8);
-    default:
-      return books.slice(0, 8);
-  }
-});
-
-const filteredBooks = computed(() => {
-  const kw = keyword.value.trim().toLowerCase();
-  const catId = currentSubTab.value;
-
-  return bookList.value
-    .filter((book) => {
-      // 分类匹配：catId=0全部，否则按名称匹配
-      const targetCat = currentSubTabs.value[catId];
-      const categoryMatched = catId === 0 || book.category === targetCat?.name;
-      const keywordMatched =
-        !kw ||
-        book.title.toLowerCase().includes(kw) ||
-        book.author.toLowerCase().includes(kw) ||
-        book.desc.toLowerCase().includes(kw);
-      return categoryMatched && keywordMatched;
-    })
-    .sort((a, b) => {
-      if (currentFilter.value === "hot") return b.views - a.views;
-      if (currentFilter.value === "new") return 0;
-      if (currentFilter.value === "finish") return a.isSerial === b.isSerial ? 0 : a.isSerial ? 1 : -1;
-      if (currentFilter.value === "serial") return a.isSerial === b.isSerial ? 0 : a.isSerial ? -1 : 1;
-      return 0;
-    });
-});
-
-// 从 API 加载真实分类
-async function fetchCategories() {
-  try {
-    const res = await readingApi.getCategories();
-    const cats = (res?.data ?? []) as CategoryItem[];
-    if (Array.isArray(cats) && cats.length > 0) {
-      _apiCategories = cats;
-      // 用真实分类替换每组的分类标签（保留"全部"）
-      const topLevelCats = cats.filter((c) => c.parentId === null || c.parentId === 0);
-      if (topLevelCats.length > 0) {
-        // 将顶级分类填充到每个主tab的子分类中
-        const firstGroup: SubTabItem[] = [{ id: 0, name: "全部", realId: null }];
-        topLevelCats.forEach((cat, idx) => {
-          firstGroup.push({ id: idx + 1, name: cat.name, realId: cat.id });
-        });
-        subTabs.value = [
-          firstGroup,
-          // 女生和出版 tab 也使用同样的分类，但可以根据 parentId 区分
-          [
-            { id: 0, name: "全部", realId: null },
-            ...cats.filter((c) => c.parentId === 1).map((c, i) => ({ id: i + 1, name: c.name, realId: c.id } as SubTabItem)),
-          ],
-          [
-            { id: 0, name: "全部", realId: null },
-            ...cats.filter((c) => c.parentId === 2).map((c, i) => ({ id: i + 1, name: c.name, realId: c.id } as SubTabItem)),
-          ],
-        ];
-      }
-    }
-  } catch {
-    // 使用内置的分类
-  }
-};
-
-const formatNumber = (num: number) => {
-  if (num >= 10000000) return `${(num / 10000000).toFixed(1)}千万`;
-  if (num >= 10000) return `${(num / 10000).toFixed(1)}万`;
-  return num.toString();
-};
-
-function refreshDerivedBooks() {
-  freeBooks.value = bookList.value
-    .filter((book) => book.originalPrice || !book.isSerial)
-    .slice(0, 4)
-    .map((book) => ({
-      ...book,
-      originalPrice: book.originalPrice || 20,
-    }));
-}
-
-const updateCountdown = () => {
-  let total = 5 * 3600 + 23 * 60 + 45;
-  countdownTimer = setInterval(() => {
-    total--;
-    if (total <= 0) {
-      clearInterval(countdownTimer!);
-      return;
-    }
-    const hours = Math.floor(total / 3600);
-    const minutes = Math.floor((total % 3600) / 60);
-    const seconds = total % 60;
-    countdown.value = {
-      hours: hours.toString().padStart(2, "0"),
-      minutes: minutes.toString().padStart(2, "0"),
-      seconds: seconds.toString().padStart(2, "0"),
-    };
-  }, 1000);
-};
-
-onMounted(() => {
-  updateCountdown();
-});
-
-onUnmounted(() => {
-  if (countdownTimer) {
-    clearInterval(countdownTimer);
-  }
-});
-
-const onRefresh = async () => {
-  refreshing.value = true;
-  hasMore.value = true;
-  isLoadingMore.value = false;
-  try {
-    await fetchBooks();
-    uni.showToast({ title: "已刷新", icon: "success" });
-  } finally {
-    refreshing.value = false;
-  }
-};
-
-const onLoadMore = () => {
-  if (hasMore.value && !isLoadingMore.value) {
-    fetchBooks(keyword.value.trim() || undefined, true);
-  }
-};
-
-const switchMainTab = (idx: number) => {
-  currentMainTab.value = idx;
-  currentSubTab.value = 0;
-  hasMore.value = true;
-  fetchBooks(keyword.value.trim() || undefined);
-};
-
-const switchSubTab = (idx: number) => {
-  currentSubTab.value = idx;
-  hasMore.value = true;
-  fetchBooks(keyword.value.trim() || undefined);
-};
-
-const switchRankTab = (idx: number) => {
-  currentRankTab.value = idx;
-};
-
-let lastManualSearchTime = 0;
-const onSearch = () => {
-  // 用户主动搜索：切换到全部tab，用关键词发起服务端搜索
-  lastManualSearchTime = Date.now();
-  currentMainTab.value = 0;
-  currentSubTab.value = 0;
-  fetchBooks(keyword.value.trim() || undefined);
-};
-
-// 输入框实时搜索防抖
-let searchTimer: ReturnType<typeof setTimeout> | null = null;
-watch(keyword, (newVal) => {
-  if (searchTimer) clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => {
-    // 如果用户刚手动搜索过（500ms内），跳过防抖回调
-    if (Date.now() - lastManualSearchTime < 600) return;
-    if (newVal.trim()) {
-      currentMainTab.value = 0;
-      currentSubTab.value = 0;
-      fetchBooks(newVal.trim());
-    } else {
-      fetchBooks();
-    }
-  }, 500);
-});
-
-const onBannerClick = (banner: BannerItem) => {
-  if (banner.link) {
-    uni.navigateTo({ url: banner.link });
-  }
-};
-
-const goDetail = (book: BookItem) => {
-  uni.navigateTo({
-    url: `/pages/reading/store/detail?id=${book.id}`,
-  });
-};
-
-const goRanking = () => {
-  uni.showToast({ title: "排行榜功能开发中", icon: "none" });
-};
-
-const goFreeBooks = () => {
-  uni.showToast({ title: "限免专区开发中", icon: "none" });
-};
-
-const goBookList = () => {
-  uni.showToast({ title: "书单功能开发中", icon: "none" });
-};
-
-const goFinish = () => {
-  currentFilter.value = "finish";
-};
-
-const goAuthor = () => {
-  uni.showToast({ title: "作者专区开发中", icon: "none" });
-};
-
-const goBookListDetail = (list: BookList) => {
-  uni.showToast({ title: `查看书单：${list.title}`, icon: "none" });
-};
-
-const viewMore = (_type: string) => {
-  uni.showToast({ title: "更多功能开发中", icon: "none" });
-};
-</script>
 
 <style scoped lang="scss">
 .store-scroll {
@@ -1941,10 +1436,4 @@ const viewMore = (_type: string) => {
     color: #b8bcc7;
   }
 }
-</style>
-
-<style>
-/* 覆盖全局竖线 */
-.section-title::before { display: none !important; }
-.section-title { padding-left: 0 !important; }
 </style>

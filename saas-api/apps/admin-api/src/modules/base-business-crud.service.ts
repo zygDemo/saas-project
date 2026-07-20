@@ -12,10 +12,16 @@ export interface PrismaModelDelegate {
   update(args: unknown): Promise<unknown>
 }
 
+/** 兼容 PrismaService(Proxy 模式) 和 Prisma.TransactionClient 的最小接口 */
+interface PrismaLike {
+  $transaction<T>(fn: (tx: PrismaLike) => Promise<T>): Promise<T>
+  $transaction<T>(queries: unknown[]): Promise<T>
+}
+
 interface CrudOptions<TCreate, TUpdate, TQuery> {
   model: PrismaModelDelegate
   /** 兼容 PrismaService(Proxy 模式) 和 Prisma.TransactionClient，运行时均有 $transaction */
-  prisma: any
+  prisma: PrismaLike
   searchableFields?: string[]
   exactFields?: string[]
   include?: unknown

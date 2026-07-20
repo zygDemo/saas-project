@@ -5,8 +5,7 @@ import { orgConfigRoutes } from './org-config'
 import { dataCenterRoutes } from './data-center'
 import { systemRoutes } from './system'
 import { operationCenterRoutes } from './operation-center'
-import { readingRoutes,
-  foodRoutes } from './reading'
+import { readingRoutes } from './reading'
 import { foodRoutes } from './food'
 import { businessRoutes } from './business'
 

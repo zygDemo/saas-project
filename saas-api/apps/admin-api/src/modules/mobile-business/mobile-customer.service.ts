@@ -107,7 +107,7 @@ export class MobileCustomerService {
         take: 100
       })
       const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
-      const rows = customers.map((customer: any) => ({
+      const rows = customers.map((customer: Record<string, unknown>) => ({
         ...mapCustomer(customer, apiPrefix),
         dataSource: query.dataSource ?? 2,
         approval: 4,

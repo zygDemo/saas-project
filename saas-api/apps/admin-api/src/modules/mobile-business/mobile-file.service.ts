@@ -93,7 +93,7 @@ export class MobileFileService {
             {
               id: 1,
               fileName: '产品所需资料',
-              children: checklist.map((item: any, index: number) => ({
+              children: checklist.map((item: Record<string, unknown>, index: number) => ({
                 fileCode: item.code || `PFL${String(index + 1).padStart(3, '0')}`,
                 fileType: item.code || `PFL${String(index + 1).padStart(3, '0')}`,
                 fileName: item.name || `文件${index + 1}`,

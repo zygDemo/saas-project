@@ -174,7 +174,7 @@ model User {
   nickName     String
   gender       String      @default("未知")
   phone        String?
-  email        String
+  email        String?
   avatar       String?
   status       UserStatus  @default(ONLINE)
   createdBy    String      @default("system")
@@ -927,6 +927,7 @@ model ApprovalRecord {
   @@index([applicationId])
   @@index([approverId])
   @@index([stage])
+  deletedAt    DateTime?
 }
 
 model SignRecord {

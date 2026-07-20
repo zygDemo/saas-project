@@ -53,6 +53,12 @@ export class AuditLogQueryDto extends DateRangeQueryDto {
   @IsOptional()
   @IsString()
   status?: string
+
+  @ApiPropertyOptional({ description: '机构ID筛选' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  orgId?: number
 }
 
 export class AuditLogStatsDto extends DateRangeQueryDto {
@@ -60,4 +66,10 @@ export class AuditLogStatsDto extends DateRangeQueryDto {
   @IsOptional()
   @IsString()
   module?: string
+
+  @ApiPropertyOptional({ description: '机构ID筛选' })
+  @IsOptional()
+  @ToNumber()
+  @IsInt()
+  orgId?: number
 }

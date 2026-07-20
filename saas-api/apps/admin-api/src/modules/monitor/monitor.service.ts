@@ -42,7 +42,7 @@ export class MonitorService {
     ])
 
     return toPaginatedResponse(
-      records.map((item: any) => ({
+      records.map((item: Record<string, unknown>) => ({
         id: item.id,
         type: this.inferType(item.module, item.statusCode),
         module: item.module,
@@ -141,7 +141,7 @@ export class MonitorService {
     return {
       total,
       errorTotal,
-      sourceBreakdown: sourceBreakdown.map((item: any) => ({
+      sourceBreakdown: sourceBreakdown.map((item: Record<string, unknown>) => ({
         source: item.action,
         count: item._count.action,
       })),

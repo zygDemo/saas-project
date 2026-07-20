@@ -1,3 +1,306 @@
+<script setup lang="ts">
+import { computed, ref, watch } from "vue";
+import { onLoad, onShareAppMessage, onUnload } from "@dcloudio/uni-app";
+import { useReadingApi } from "@/api/reading";
+import type { ChapterLiteItem } from "@/api/reading";
+import { useReadingStore } from "@/stores/reading";
+import type { Chapter, Bookmark } from "./reader-helpers";
+import { useReaderNotes } from "@/composables/reading/useReaderNotes";
+import { useReaderSettings } from "@/composables/reading/useReaderSettings";
+import { useReaderBookmarks } from "@/composables/reading/useReaderBookmarks";
+import { useReaderChapter } from "@/composables/reading/useReaderChapter";
+
+const readingApi = useReadingApi();
+const readingStore = useReadingStore();
+
+const bookId = ref(0);
+const chapterId = ref(0);
+const currentPage = ref(0);
+
+// ---- composables ----
+const notes = useReaderNotes(() => bookId.value, () => chapterId.value);
+const settings = useReaderSettings();
+const bookmarks = useReaderBookmarks(
+  () => bookId.value,
+  () => chapterId.value,
+  () => currentPage.value,
+  () => chapter.value,
+  () => chapterPages.value,
+);
+const chapter = useReaderChapter(
+  () => bookId.value,
+  (v?: number) => {
+    if (v !== undefined) chapterId.value = v;
+    return chapterId.value;
+  },
+  (v?: number) => {
+    if (v !== undefined) currentPage.value = v;
+    return currentPage.value;
+  },
+);
+
+// aliases for template
+const {
+  showNotePopup, selectedText, noteContent, _noteColor,
+  noteStartPos, noteEndPos, chapterNotes,
+  loadChapterNotes, saveNote, onLongPress,
+} = notes;
+
+const {
+  isNightMode, fontSize, lineHeight, bgColor, pageMode,
+  brightness, isListenMode, isLandscape,
+  bgColorStyle, textStyle, setPageMode, setLineHeight,
+  toggleNightMode, decreaseFontSize, increaseFontSize,
+  onBgColorChange, onBrightnessChange, toggleListenMode,
+  detectOrientation,
+} = settings;
+
+const {
+  bookmarks: bookmarkList, showBookmarkPopup, isBookmarked,
+  checkBookmarkStatus, toggleBookmark, deleteBookmark, formatBookmarkTime,
+} = bookmarks;
+
+const {
+  chapterList, chapterContent, isContentLoading, totalChapters,
+  currentChapter, currentChapterIndex, hasPrevChapter, hasNextChapter,
+  currentPages: chapterPages,
+  loadChapterContent, preloadAdjacentChapters,
+  validateChapterAccess, syncLocalProgress,
+  saveReadingProgress, debouncedSaveProgress,
+} = chapter;
+
+// ---- UI state ----
+const showToolbar = ref(false);
+const showChapterPopup = ref(false);
+const showSettingsPopup = ref(false);
+const verticalScrollTop = ref(0);
+const touchStartX = ref(0);
+const touchStartY = ref(0);
+const isAutoLoading = ref(false);
+
+const toggleToolbar = () => { showToolbar.value = !showToolbar.value; };
+
+const goBack = () => {
+  try { (uni as unknown as { showStatusBar?: () => void }).showStatusBar?.(); } catch {}
+  uni.navigateBack();
+};
+
+const shareBook = () => {
+  uni.showToast({ title: "请点击右上角分享", icon: "none" });
+};
+
+onShareAppMessage(() => ({
+  title: currentChapter.value?.title || "精彩好书",
+  path: `/pages/reading/reader/index?bookId=${bookId.value}&chapterId=${chapterId.value}`,
+}));
+
+// ---- 翻页 & 导航 ----
+const prevChapter = async () => {
+  if (!hasPrevChapter.value) return;
+  const prevIdx = currentChapterIndex.value - 1;
+  chapterId.value = Number(chapterList.value[prevIdx].id);
+  currentPage.value = 0;
+  checkBookmarkStatus();
+  chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
+  preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
+  loadChapterNotes();
+  debouncedSaveProgress();
+};
+
+const nextChapter = async () => {
+  if (!hasNextChapter.value) return;
+  const nextIdx = currentChapterIndex.value + 1;
+  chapterId.value = Number(chapterList.value[nextIdx].id);
+  currentPage.value = 0;
+  checkBookmarkStatus();
+  chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
+  preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
+  loadChapterNotes();
+  debouncedSaveProgress();
+};
+
+const onTouchStart = (e: TouchEvent) => {
+  touchStartX.value = e.touches[0].clientX;
+  touchStartY.value = e.touches[0].clientY;
+};
+
+const onTouchEnd = (ev: TouchEvent) => {
+  if (pageMode.value === "vertical") return;
+  const endX = ev.changedTouches[0].clientX;
+  const endY = ev.changedTouches[0].clientY;
+  const diffX = endX - touchStartX.value;
+  const diffY = endY - touchStartY.value;
+  if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+    if (diffX > 0) {
+      if (currentPage.value > 0) currentPage.value--;
+      else if (hasPrevChapter.value) prevChapter();
+    } else {
+      if (currentPage.value < chapterPages.value.length - 1) currentPage.value++;
+      else if (hasNextChapter.value) nextChapter();
+    }
+  }
+};
+
+watch(pageMode, (newVal) => {
+  currentPage.value = 0;
+  if (newVal === "vertical") verticalScrollTop.value = 0;
+});
+
+// ---- 垂直滚动 ----
+const onScrollToLower = async () => {
+  if (hasNextChapter.value && !isAutoLoading.value) {
+    isAutoLoading.value = true;
+    try {
+      const nextIdx = currentChapterIndex.value + 1;
+      chapterId.value = Number(chapterList.value[nextIdx].id);
+      chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
+      preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
+      loadChapterNotes();
+      verticalScrollTop.value = 0;
+      checkBookmarkStatus();
+    } catch (err) {
+      console.error("vertical auto-load failed", err);
+    } finally {
+      isAutoLoading.value = false;
+    }
+  }
+};
+
+const onPageChange = async (changeEvent: { current: number; detail?: { current?: number } }) => {
+  currentPage.value = changeEvent.detail?.current ?? changeEvent.current;
+  checkBookmarkStatus();
+  debouncedSaveProgress();
+  if (
+    currentPage.value >= chapterPages.value.length - 1 &&
+    hasNextChapter.value && !isAutoLoading.value
+  ) {
+    isAutoLoading.value = true;
+    try {
+      const nextIdx = currentChapterIndex.value + 1;
+      chapterId.value = Number(chapterList.value[nextIdx].id);
+      currentPage.value = 0;
+      chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
+      preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
+      loadChapterNotes();
+      checkBookmarkStatus();
+      debouncedSaveProgress();
+    } catch (err) {
+      console.error("auto-load next chapter failed", err);
+    } finally {
+      isAutoLoading.value = false;
+    }
+  }
+};
+
+const onProgressChange = (e: { detail: { value: number } }) => {
+  currentPage.value = e.detail.value;
+  checkBookmarkStatus();
+};
+
+const resetScrollToTop = () => { verticalScrollTop.value = 0; };
+
+// ---- 章节弹窗 ----
+const showChapterList = () => { showChapterPopup.value = true; };
+
+const jumpToChapter = async (ch: Chapter) => {
+  if (await validateChapterAccess(ch)) {
+    chapterId.value = Number(ch.id);
+    currentPage.value = 0;
+    showChapterPopup.value = false;
+    checkBookmarkStatus();
+    chapterContent.value = await loadChapterContent(String(bookId.value), String(ch.id));
+    debouncedSaveProgress();
+  }
+};
+
+const jumpToBookmark = (bm: Bookmark) => {
+  if (String(bm.chapterId) !== String(chapterId.value)) {
+    chapterId.value = Number(bm.chapterId);
+  }
+  currentPage.value = bm.page;
+  showBookmarkPopup.value = false;
+  checkBookmarkStatus();
+  debouncedSaveProgress();
+};
+
+// ---- lifecycle ----
+onLoad(async (options) => {
+  if (options?.bookId) bookId.value = Number(options.bookId);
+  if (options?.chapterId) chapterId.value = Number(options.chapterId);
+
+  if (bookId.value) {
+    try {
+      const liteRes = await readingApi.getChaptersLite(bookId.value);
+      const allItems = (liteRes as any)?.data?.items || liteRes.data || [];
+      chapterList.value = allItems.map((item: ChapterLiteItem) => ({
+        id: String(item.id),
+        title: item.title,
+        isVip: !!item.isVip,
+      }));
+
+      const localProgress = readingStore.getReadingProgress(bookId.value);
+      let savedChapterId = localProgress?.chapterId || "";
+      let savedPage = localProgress?.page || 0;
+
+      if (!options?.chapterId) {
+        try {
+          const progressRes = await readingApi.getProgress(bookId.value);
+          const saved = progressRes?.data;
+          if (saved?.chapterId) {
+            const exists = allItems.some(
+              (item: ChapterLiteItem) => String(item.id) === String(saved.chapterId),
+            );
+            if (exists) {
+              savedChapterId = String(saved.chapterId);
+              savedPage = saved.page || 0;
+            }
+          }
+        } catch { /* 无保存进度 */ }
+      }
+
+      if (!chapterId.value && savedChapterId) chapterId.value = Number(savedChapterId);
+      if (!chapterId.value && allItems.length) {
+        try { (uni as unknown as { hideStatusBar?: () => void }).hideStatusBar?.(); } catch {}
+        chapterId.value = Number(allItems[0].id);
+      }
+
+      if (chapterId.value) {
+        isContentLoading.value = true;
+        try {
+          chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
+          preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
+          loadChapterNotes();
+          if (savedPage > 0) {
+            currentPage.value = Math.min(savedPage, Math.max(chapterPages.value.length - 1, 0));
+          }
+          syncLocalProgress();
+        } finally {
+          isContentLoading.value = false;
+        }
+      }
+    } catch (e) {
+      console.error("reader fetch error", e);
+    }
+  }
+
+  totalChapters.value = chapterList.value.length;
+  checkBookmarkStatus();
+});
+
+onUnload(() => {
+  syncLocalProgress();
+  saveReadingProgress().catch((e) => console.warn("保存阅读进度失败", e));
+  settings.saveSettings();
+});
+
+detectOrientation();
+uni.onWindowResize(() => { detectOrientation(); });
+
+const showNoteEditor = () => {
+  uni.showToast({ title: "笔记功能开发中", icon: "none" });
+};
+</script>
+
 <template>
   <view class="reader-page" :class="{ 'night-mode': isNightMode, 'landscape-mode': isLandscape }">
     <!-- 顶部工具栏 -->
@@ -418,768 +721,6 @@
     </view>
   </view>
 </template>
-
-<script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import { onLoad, onShareAppMessage, onUnload } from "@dcloudio/uni-app";
-import { useReadingApi } from "@/api/reading";
-import type { ChapterLiteItem } from "@/api/reading";
-import { useReadingStore } from "@/stores/reading";
-import {
-  bgColors,
-  cacheChapter,
-  formatBookmarkTime,
-  getCachedChapter,
-  loadBookmarks,
-  loadSettings,
-  saveBookmarkList,
-  STORAGE_KEY
-
-} from "./reader-helpers";
-import type { Bookmark, Chapter } from "./reader-helpers";
-
-const readingApi = useReadingApi();
-const bookId = ref(0);
-const chapterId = ref(0);
-const showNotePopup = ref(false);
-const selectedText = ref('');
-const noteContent = ref('');
-const _noteColor = ref('#FFEB3B');
-const noteStartPos = ref(0);
-const noteEndPos = ref(0);
-
-// 笔记相关状态
-const chapterNotes = ref<any[]>([]);
-
-// 加载当前章节的笔记
-async function loadChapterNotes() {
-  try {
-    const res = await readingApi.getNotesByChapter(bookId.value, chapterId.value);
-    chapterNotes.value = Array.isArray(res) ? res : (res?.data || []);
-  } catch { chapterNotes.value = []; }
-}
-
-// 创建笔记/高亮
-async function _saveNote() {
-  if (!selectedText.value && !noteContent.value) return;
-  try {
-    await readingApi.createNote({
-      bookId: bookId.value,
-      chapterId: chapterId.value,
-      content: noteContent.value || '',
-      startPos: noteStartPos.value,
-      endPos: noteEndPos.value,
-    });
-    uni.showToast({ title: '笔记已保存', icon: 'success' });
-    showNotePopup.value = false;
-    selectedText.value = '';
-    noteContent.value = '';
-    loadChapterNotes();
-  } catch { uni.showToast({ title: '保存失败', icon: 'none' }); }
-}
-
-// 长按选择文本创建高亮
-function _onLongPress(_e: any) {
-  // #ifdef H5
-  const selection = window.getSelection?.();
-  if (selection && selection.toString().trim()) {
-    selectedText.value = selection.toString().trim();
-    showNotePopup.value = true;
-  }
-  // #endif
-}
-
-const readingStore = useReadingStore();
-const showToolbar = ref(false);
-const showChapterPopup = ref(false);
-const showSettingsPopup = ref(false);
-const showBookmarkPopup = ref(false);
-
-// 初始化设置（优先从本地存储读取）
-const savedSettings = loadSettings();
-const isNightMode = ref(savedSettings?.isNightMode ?? false);
-const fontSize = ref(savedSettings?.fontSize ?? 18);
-const lineHeight = ref(savedSettings?.lineHeight ?? 1.8);
-const bgColor = ref(savedSettings?.bgColor ?? "default");
-const pageMode = ref(savedSettings?.pageMode ?? "slide");
-const brightness = ref(savedSettings?.brightness ?? 80);
-
-const isListenMode = ref(false);
-const isBookmarked = ref(false);
-const currentPage = ref(0);
-const verticalScrollTop = ref(0);
-const totalChapters = ref(0);
-const touchStartX = ref(0);
-const touchStartY = ref(0);
-
-const bgColorStyle = computed(() => {
-  const color = bgColors.find((c) => c.value === bgColor.value);
-  return color?.color || "#f5f0e6";
-});
-
-const chapterList = ref<Chapter[]>([]);
-
-const bookmarks = ref<Bookmark[]>(loadBookmarks());
-
-function saveBookmarks() {
-  saveBookmarkList(bookmarks.value);
-}
-
-/** 加载章节内容：优先缓存，否则调用 API */
-async function loadChapterContent(
-  targetBookId: string,
-  targetChapterId: string,
-): Promise<string> {
-  // 1. 优先从缓存读取
-  const cached = getCachedChapter(targetBookId, targetChapterId);
-  if (cached) {
-    return cached.content;
-  }
-
-  // 2. 调用 API 获取
-  const detail = await readingApi.getChapterDetail(targetChapterId);
-  const content = detail?.data?.content || "";
-  const title = detail?.data?.title || "";
-
-  // 3. 写入缓存
-  cacheChapter(targetBookId, targetChapterId, content, title);
-
-  return content;
-}
-
-// 章节预加载：加载当前章节后，后台预加载前后各1章
-async function preloadAdjacentChapters(targetBookId: string, targetChapterId: string) {
-  const idx = chapterList.value.findIndex((c) => c.id === targetChapterId);
-  if (idx === -1) return;
-  const toPreload: string[] = [];
-  if (idx > 0) toPreload.push(chapterList.value[idx - 1].id);
-  if (idx < chapterList.value.length - 1) toPreload.push(chapterList.value[idx + 1].id);
-  for (const cid of toPreload) {
-    const cached = getCachedChapter(targetBookId, cid);
-    if (!cached) {
-      try {
-        const detail = await readingApi.getChapterDetail(cid);
-        const c = detail?.data?.content || '';
-        const t = detail?.data?.title || '';
-        if (c) cacheChapter(targetBookId, cid, c, t);
-      } catch { /* 静默失败，不影响阅读 */ }
-    }
-  }
-}
-
-    const currentChapter = computed(() => {
-  return (
-    chapterList.value.find((c) => String(c.id) === String(chapterId.value)) ||
-    chapterList.value[0]
-  );
-});
-
-const currentChapterIndex = computed(() => {
-  return chapterList.value.findIndex((c) => String(c.id) === String(chapterId.value));
-});
-
-const hasPrevChapter = computed(() => currentChapterIndex.value > 0);
-const hasNextChapter = computed(
-  () => currentChapterIndex.value < chapterList.value.length - 1,
-);
-
-const isContentLoading = ref(false);
-
-// 章节内容（从 API 获取，不再使用硬编码 mock）
-const chapterContent = ref("");
-
-const currentPages = computed(() => {
-  // 模拟分页：每页约 500 字
-  const content = chapterContent.value;
-  const pageSize = 500;
-  const pages = [];
-  for (let i = 0; i < content.length; i += pageSize) {
-    pages.push(content.slice(i, i + pageSize));
-  }
-  return pages.length > 0 ? pages : [content];
-});
-
-const textStyle = computed(() => ({
-  fontSize: `${fontSize.value}px`,
-  lineHeight: lineHeight.value,
-}));
-
-// 将章节内容按段落分割
-function splitIntoParagraphs(text: string): string[] {
-  if (!text) return [];
-  // 按空行分割段落，过滤掉纯空白的段落
-  return text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p !== '');
-}
-
-// 当前章节的段落数组
-const chapterParagraphs = computed(() => {
-  return splitIntoParagraphs(chapterContent.value);
-});
-
-// 将分页内容也按段落分割
-function getPageParagraphs(pageText: string): string[] {
-  return splitIntoParagraphs(pageText);
-}
-
-// 保存设置到本地存储
-function saveSettings() {
-  try {
-    uni.setStorageSync(
-      STORAGE_KEY,
-      JSON.stringify({
-        fontSize: fontSize.value,
-        lineHeight: lineHeight.value,
-        bgColor: bgColor.value,
-        pageMode: pageMode.value,
-        brightness: brightness.value,
-        isNightMode: isNightMode.value,
-      }),
-    );
-  } catch {
-    // ignore
-  }
-}
-
-// 监听设置变化并保存到本地存储
-watch(
-  [fontSize, lineHeight, bgColor, pageMode, brightness, isNightMode],
-  () => {
-    saveSettings();
-  },
-);
-
-// 切换翻页模式
-const setPageMode = (mode: string) => {
-  pageMode.value = mode;
-};
-
-// 切换行间距
-const setLineHeight = (val: number) => {
-  lineHeight.value = val;
-};
-
-// 切换翻页模式时重置页码
-watch(pageMode, (newVal, _oldVal) => {
-  currentPage.value = 0;
-  if (newVal === "vertical") {
-    verticalScrollTop.value = 0;
-  }
-});
-
-const onTouchStart = (e: TouchEvent) => {
-  touchStartX.value = e.touches[0].clientX;
-  touchStartY.value = e.touches[0].clientY;
-};
-
-const checkBookmarkStatus = () => {
-  isBookmarked.value = bookmarks.value.some(
-    (b) => String(b.chapterId) === String(chapterId.value) && b.page === currentPage.value,
-  );
-};
-
-// 防抖保存进度
-let saveProgressTimer: ReturnType<typeof setTimeout> | null = null;
-
-function getSaveProgressPayload() {
-  const numericBookId = Number(bookId.value);
-  const numericChapterId = Number(chapterId.value);
-
-  if (!Number.isFinite(numericBookId) || !Number.isFinite(numericChapterId)) {
-    return null;
-  }
-
-  const totalPages = Math.max(currentPages.value.length, 1);
-  const page = Math.max(0, Math.min(currentPage.value, totalPages - 1));
-  const progress =
-    totalPages > 1 ? Math.round((page / (totalPages - 1)) * 10000) / 100 : 100;
-
-  return {
-    bookId: numericBookId,
-    chapterId: numericChapterId,
-    page,
-    progress,
-  };
-}
-
-async function saveReadingProgress() {
-  const payload = getSaveProgressPayload();
-  if (!payload) return;
-
-  readingStore.saveReadingProgress(
-    payload.bookId,
-    payload.chapterId,
-    payload.page,
-    payload.progress,
-    currentChapter.value?.title,
-  );
-
-  const result = await readingApi.saveProgress(payload);
-  if (result?.code !== undefined && result.code !== 200) {
-    throw result;
-  }
-}
-
-function syncLocalReadingProgress() {
-  const payload = getSaveProgressPayload();
-  if (!payload) return;
-
-  readingStore.saveReadingProgress(
-    payload.bookId,
-    payload.chapterId,
-    payload.page,
-    payload.progress,
-    currentChapter.value?.title,
-  );
-}
-
-const debouncedSaveProgress = () => {
-  if (saveProgressTimer) clearTimeout(saveProgressTimer);
-  saveProgressTimer = setTimeout(async () => {
-    try {
-      await saveReadingProgress();
-    } catch (e) {
-      console.warn("保存阅读进度失败，已保留本地进度", e);
-    }
-  }, 2000);
-};
-
-const prevChapter = async () => {
-  if (!hasPrevChapter.value) return;
-  const prevIdx = currentChapterIndex.value - 1;
-  chapterId.value = Number(chapterList.value[prevIdx].id);
-  currentPage.value = 0;
-  checkBookmarkStatus();
-  chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
-    // 预加载相邻章节
-    preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
-    loadChapterNotes();
-  debouncedSaveProgress();
-};
-
-const nextChapter = async () => {
-  if (!hasNextChapter.value) return;
-  const nextIdx = currentChapterIndex.value + 1;
-  chapterId.value = Number(chapterList.value[nextIdx].id);
-  currentPage.value = 0;
-  checkBookmarkStatus();
-  chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
-    // 预加载相邻章节
-    preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
-    loadChapterNotes();
-  debouncedSaveProgress();
-};
-
-const onTouchEnd = (ev: TouchEvent) => {
-  // 垂直模式下不处理水平滑动
-  if (pageMode.value === "vertical") return;
-
-  const endX = ev.changedTouches[0].clientX;
-  const endY = ev.changedTouches[0].clientY;
-  const diffX = endX - touchStartX.value;
-  const diffY = endY - touchStartY.value;
-
-  // 水平滑动超过 50px 才触发翻页
-  if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
-    if (diffX > 0) {
-      // 向右滑动，上一页
-      if (currentPage.value > 0) {
-        currentPage.value--;
-      } else if (hasPrevChapter.value) {
-        prevChapter();
-      }
-    } else {
-      // 向左滑动，下一页
-      if (currentPage.value < currentPages.value.length - 1) {
-        currentPage.value++;
-      } else if (hasNextChapter.value) {
-        nextChapter();
-      }
-    }
-  }
-};
-
-onLoad(async (options) => {
-  if (options?.bookId) {
-    bookId.value = Number(options.bookId);
-  }
-  if (options?.chapterId) {
-    chapterId.value = Number(options.chapterId);
-  }
-
-  if (bookId.value) {
-    try {
-      // 使用轻量接口一次性加载全部章节目录（仅 id/title/sort）
-      const liteRes = await readingApi.getChaptersLite(bookId.value);
-      const allItems = (liteRes as any)?.data?.items || liteRes.data || [];
-
-      chapterList.value = allItems.map((item: ChapterLiteItem) => ({
-        id: String(item.id),
-        title: item.title,
-        isVip: !!item.isVip,
-      }));
-
-      // 先尝试读取已保存的阅读进度（仅请求一次）
-      const localProgress = readingStore.getReadingProgress(bookId.value);
-      let savedChapterId = localProgress?.chapterId || "";
-      let savedPage = localProgress?.page || 0;
-      if (!options?.chapterId) {
-        // 只有当 URL 没有指定章节时才恢复进度
-        try {
-          const progressRes = await readingApi.getProgress(bookId.value);
-          const saved = progressRes?.data;
-          if (saved?.chapterId) {
-            const exists = allItems.some(
-              (item: ChapterLiteItem) => String(item.id) === String(saved.chapterId),
-            );
-            if (exists) {
-              savedChapterId = String(saved.chapterId);
-              savedPage = saved.page || 0;
-            }
-          }
-        } catch {
-          // 无保存进度
-        }
-      }
-
-      // 确定要加载的章节
-      if (!chapterId.value && savedChapterId) {
-        chapterId.value = Number(savedChapterId);
-      }
-      if (!chapterId.value && allItems.length) {
-    // 进入全屏阅读模式
-    try {
-      (uni as unknown as { hideStatusBar?: () => void }).hideStatusBar?.();
-    } catch {}
-    chapterId.value = Number(allItems[0].id);
-      }
-
-      if (chapterId.value) {
-        isContentLoading.value = true;
-        try {
-          chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
-    // 预加载相邻章节
-    preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
-    loadChapterNotes();
-          // 恢复保存的页码
-          if (savedPage > 0) {
-            currentPage.value = Math.min(savedPage, Math.max(currentPages.value.length - 1, 0));
-          }
-          syncLocalReadingProgress();
-        } finally {
-          isContentLoading.value = false;
-        }
-      }
-    } catch (e) {
-      console.error("reader fetch error", e);
-    }
-  }
-
-  totalChapters.value = chapterList.value.length;
-  checkBookmarkStatus();
-});
-
-onUnload(() => {
-  // 离开页面时立即保存进度（不防抖）
-  syncLocalReadingProgress();
-  saveReadingProgress().catch((e) => console.warn("保存阅读进度失败，已保留本地进度", e));
-  // 最后保存一次设置
-  saveSettings();
-});
-
-const toggleToolbar = () => {
-  showToolbar.value = !showToolbar.value;
-};
-
-const goBack = () => {
-  // 退出全屏阅读模式
-  try {
-    (uni as unknown as { showStatusBar?: () => void }).showStatusBar?.();
-  } catch {}
-  uni.navigateBack();
-};
-
-const shareBook = () => {
-  // uni.showShareMenu 在小程序环境中受限制，使用页面胶囊按钮触发分享
-  // onShareAppMessage 生命周期会自动处理分享
-  uni.showToast({ title: "请点击右上角分享", icon: "none" });
-};
-
-// 小程序分享配置（由页面右上角胶囊按钮触发）
-onShareAppMessage(() => {
-  return {
-    title: currentChapter.value?.title || '精彩好书',
-    path: `/pages/reading/reader/index?bookId=${bookId.value}&chapterId=${chapterId.value}`,
-  };
-});
-
-const isAutoLoading = ref(false);
-
-const onVerticalScroll = (_scrollEvent: unknown) => {
-  // scroll-view 滚动事件，实际加载通过 scrolltolower 触发
-};
-
-const resetScrollToTop = () => {
-  // 通过 :key="chapterId" 变化会重建 scroll-view，自动回到顶部
-  verticalScrollTop.value = 0;
-};
-
-const onScrollToLower = async () => {
-  // 滚动到底部，自动加载下一章
-  if (hasNextChapter.value && !isAutoLoading.value) {
-    isAutoLoading.value = true;
-    try {
-      const nextIdx = currentChapterIndex.value + 1;
-      chapterId.value = Number(chapterList.value[nextIdx].id);
-      chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
-    // 预加载相邻章节
-    preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
-    loadChapterNotes();
-      // 滚动到新章节顶部
-      resetScrollToTop();
-      checkBookmarkStatus();
-    } catch (err) {
-      console.error("vertical auto-load failed", err);
-    } finally {
-      isAutoLoading.value = false;
-    }
-  }
-};
-
-const onPageChange = async (changeEvent: { current: number; detail?: { current?: number } }) => {
-  currentPage.value = changeEvent.detail?.current ?? changeEvent.current;
-  checkBookmarkStatus();
-  debouncedSaveProgress();
-  // 滑到最后一页时自动加载下一章
-  if (
-    currentPage.value >= currentPages.value.length - 1 &&
-    hasNextChapter.value &&
-    !isAutoLoading.value
-  ) {
-    isAutoLoading.value = true;
-    try {
-      const nextIdx = currentChapterIndex.value + 1;
-      chapterId.value = Number(chapterList.value[nextIdx].id);
-      currentPage.value = 0;
-      chapterContent.value = await loadChapterContent(String(bookId.value), String(chapterId.value));
-    // 预加载相邻章节
-    preloadAdjacentChapters(String(bookId.value), String(chapterId.value));
-    loadChapterNotes();
-      checkBookmarkStatus();
-      debouncedSaveProgress();
-    } catch (err) {
-      console.error("auto-load next chapter failed", err);
-    } finally {
-      isAutoLoading.value = false;
-    }
-  }
-};
-
-interface ReaderProgressEvent {
-  detail: {
-    value: number;
-  };
-}
-
-const onProgressChange = (progressEvent: ReaderProgressEvent) => {
-  currentPage.value = progressEvent.detail.value;
-  checkBookmarkStatus();
-};
-
-const showChapterList = () => {
-  showChapterPopup.value = true;
-};
-
-const showNoteEditor = () => {
-  uni.showToast({ title: "绗旇鍔熻兘寮€鍙戜腑", icon: "none" });
-};
-
-const jumpToChapter = async (chapter: Chapter) => {
-  if (await validateChapterAccess(chapter)) {
-    chapterId.value = Number(chapter.id);
-    currentPage.value = 0;
-    showChapterPopup.value = false;
-    checkBookmarkStatus();
-    chapterContent.value = await loadChapterContent(String(bookId.value), String(chapter.id));
-    debouncedSaveProgress();
-  }
-};
-
-const _readChapter = (chapter: Chapter) => {
-  validateChapterAccess(chapter).then((allowed) => {
-    if (!allowed) return;
-    uni.navigateTo({
-      url: `/pages/reading/reader/index?bookId=${bookId.value}&chapterId=${chapter.id}`,
-    });
-  });
-};
-
-async function validateChapterAccess(chapter: Chapter): Promise<boolean> {
-  if (!chapter.isVip) return true;
-  const hasPurchased = readingStore.hasPurchasedChapter(bookId.value, chapter.id);
-  if (hasPurchased) return true;
-  uni.showModal({
-    title: 'VIP 章节',
-    content: '该章节为 VIP 付费内容，是否前往购买？',
-    confirmText: '去购买',
-    cancelText: '取消',
-    success: (res) => {
-      if (res.confirm) {
-        handlePurchaseChapter(chapter);
-      }
-    },
-  });
-  return false;
-}
-
-async function handlePurchaseChapter(chapter: Chapter) {
-  try {
-    uni.showLoading({ title: '处理中...' });
-    const readingApi = useReadingApi();
-    await readingApi.purchaseChapter(chapter.id);
-    readingStore.markChapterPurchased(bookId.value, chapter.id, chapter.title);
-    uni.hideLoading();
-    uni.showToast({ title: '购买成功，已解锁章节', icon: 'success' });
-    chapterContent.value = await loadChapterContent(String(bookId.value), String(chapter.id));
-    currentPage.value = 0;
-    checkBookmarkStatus();
-    debouncedSaveProgress();
-  } catch {
-    uni.hideLoading();
-    uni.showToast({ title: '购买失败，请重试', icon: 'none' });
-  }
-}
-
-const toggleNightMode = () => {
-  isNightMode.value = !isNightMode.value;
-  bgColor.value = isNightMode.value ? "dark" : "default";
-};
-
-const decreaseFontSize = () => {
-  if (fontSize.value > 14) {
-    fontSize.value -= 2;
-  }
-};
-
-const increaseFontSize = () => {
-  if (fontSize.value < 28) {
-    fontSize.value += 2;
-  }
-};
-
-const showSettings = () => {
-  showSettingsPopup.value = true;
-};
-
-const onBgColorChange = (color: string) => {
-  bgColor.value = color;
-  if (color === "dark") {
-    isNightMode.value = true;
-  } else {
-    isNightMode.value = false;
-  }
-};
-
-interface ReaderBrightnessEvent {
-  detail: {
-    value: number;
-  };
-}
-
-const onBrightnessChange = (brightnessEvent: ReaderBrightnessEvent) => {
-  brightness.value = brightnessEvent.detail.value;
-  // 实际项目中这里可以调整屏幕亮度
-};
-
-const toggleBookmark = () => {
-  if (isBookmarked.value) {
-    // 删除当前页书签
-    const idx = bookmarks.value.findIndex(
-      (b) => String(b.chapterId) === String(chapterId.value) && b.page === currentPage.value,
-    );
-    if (idx > -1) {
-      bookmarks.value.splice(idx, 1);
-    }
-    isBookmarked.value = false;
-    saveBookmarks();
-    uni.showToast({ title: "已取消书签", icon: "success" });
-  } else {
-    // 添加书签
-    const content = currentPages.value[currentPage.value]?.slice(0, 50) || "";
-    bookmarks.value.unshift({
-      id: Date.now().toString(),
-      chapterId: String(chapterId.value),
-      chapterTitle: currentChapter.value?.title || "",
-      content: `${content}...`,
-      page: currentPage.value,
-      time: Date.now(),
-    });
-    isBookmarked.value = true;
-    saveBookmarks();
-    uni.showToast({ title: "已添加书签", icon: "success" });
-  }
-};
-
-const deleteBookmark = (bookmark: Bookmark) => {
-  uni.showModal({
-    title: "提示",
-    content: "确定删除这个书签？",
-    success: (res) => {
-      if (res.confirm) {
-        const idx = bookmarks.value.findIndex((b) => b.id === bookmark.id);
-        if (idx > -1) {
-          bookmarks.value.splice(idx, 1);
-        }
-        saveBookmarks();
-        checkBookmarkStatus();
-        uni.showToast({ title: "已删除", icon: "success" });
-      }
-    },
-  });
-};
-
-const jumpToBookmark = (bookmark: Bookmark) => {
-  if (String(bookmark.chapterId) !== String(chapterId.value)) {
-    chapterId.value = Number(bookmark.chapterId);
-  }
-  currentPage.value = bookmark.page;
-  showBookmarkPopup.value = false;
-  checkBookmarkStatus();
-  debouncedSaveProgress();
-};
-
-const toggleListenMode = () => {
-  isListenMode.value = !isListenMode.value;
-  if (isListenMode.value) {
-    uni.showToast({ title: "听书模式已开启", icon: "none" });
-    // 实际项目中这里可以调用 TTS API 进行语音朗读
-  } else {
-    uni.showToast({ title: "听书模式已关闭", icon: "none" });
-  }
-};
-
-// ==================== 横屏阅读模式 ====================
-
-const isLandscape = ref(false);
-
-/** 检测当前屏幕方向 */
-function detectOrientation() {
-  try {
-    // 优先使用新 API getWindowInfo，避免 deprecated 警告
-    const winInfo = (uni.getWindowInfo?.() || uni.getSystemInfoSync()) as { windowWidth: number; windowHeight: number };
-    isLandscape.value = (winInfo.windowWidth || 0) > (winInfo.windowHeight || 0);
-  } catch {
-    // ignore
-  }
-}
-
-// 初始化时检测方向
-detectOrientation();
-
-// 监听窗口尺寸变化（设备旋转）
-uni.onWindowResize(() => {
-  detectOrientation();
-});
-</script>
 
 <style scoped lang="scss">
 .reader-page {

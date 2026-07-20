@@ -76,8 +76,9 @@ function hasTenantInWhere(where: Record<string, unknown> | undefined): boolean {
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
-  [key: string]: any
-  private readonly _client: any  // PrismaClient. return type
+  /** Proxy 动态代理，需要 index signature */
+  [key: string]: unknown
+  private readonly _client: PrismaClient  // PrismaClient. return type
 
   constructor() {
     this._client = new PrismaClient().$extends({

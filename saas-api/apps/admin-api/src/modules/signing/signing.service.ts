@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 ﻿import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { PrismaService } from '../prisma/prisma.service'
@@ -41,7 +42,7 @@ export class SigningService extends BaseBusinessCrudService<CreateSigningDto, Up
     }
 
     // 使用事务同时更新签署记录和申请状态
-    const result = await this.prisma.$transaction(async (tx: any) => {
+    const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 更新签署记录为已签署
       const updatedSignRecord = await tx.signRecord.update({
         where: { id },
