@@ -12,7 +12,12 @@
             <text class="hero-slogan">多业务入口统一管理</text>
           </view>
           <view class="hero-avatar" @click="goProfile">
-            <image v-if="avatar" :src="avatar" mode="aspectFill" alt="用户头像" />
+            <image
+              v-if="avatar"
+              :src="avatar"
+              mode="aspectFill"
+              alt="用户头像"
+            />
             <text v-else class="hero-avatar__text">{{ avatarInitial }}</text>
           </view>
         </view>
@@ -21,7 +26,9 @@
       <!-- 公告横幅 -->
       <view class="notice-bar" @click="goNotice">
         <u-icon name="bell-fill" color="var(--u-type-warning)" size="28" />
-        <text class="notice-text">欢迎使用予艺助手，聚合多种服务一站式体验</text>
+        <text class="notice-text"
+          >欢迎使用予艺助手，聚合多种服务一站式体验</text
+        >
         <u-icon name="arrow-right" color="var(--u-tips-color)" size="24" />
       </view>
 
@@ -38,8 +45,11 @@
           <view
             v-for="item in serviceCards"
             :key="item.key"
-            class="service-card" role="button" :tabindex="0"
-            @click="item.handler" @keyup.enter="item.handler"
+            class="service-card"
+            role="button"
+            :tabindex="0"
+            @click="item.handler"
+            @keyup.enter="item.handler"
           >
             <view class="service-card-icon" :class="item.iconClass">
               <u-icon :name="item.icon" color="#fff" size="44" />
@@ -72,10 +82,16 @@
           <view
             v-for="item in shortcutItems"
             :key="item.key"
-            class="shortcut-item" role="button" :tabindex="0"
-            @click="item.handler" @keyup.enter="item.handler"
+            class="shortcut-item"
+            role="button"
+            :tabindex="0"
+            @click="item.handler"
+            @keyup.enter="item.handler"
           >
-            <view class="shortcut-icon-wrap" :style="{ background: item.bgColor }">
+            <view
+              class="shortcut-icon-wrap"
+              :style="{ background: item.bgColor }"
+            >
               <u-icon :name="item.icon" color="#fff" size="30" />
             </view>
             <text class="shortcut-label">{{ item.label }}</text>
@@ -84,7 +100,14 @@
       </view>
 
       <!-- 未登录提示 -->
-      <view v-if="!hasLogin" class="login-hint" role="button" tabindex="0" @click="goLogin" @keyup.enter="goLogin">
+      <view
+        v-if="!hasLogin"
+        class="login-hint"
+        role="button"
+        tabindex="0"
+        @click="goLogin"
+        @keyup.enter="goLogin"
+      >
         <u-icon name="account-fill" color="var(--u-type-primary)" size="32" />
         <text class="login-hint-text">登录后查看进件、订单、征信等</text>
         <u-icon name="arrow-right" color="var(--u-tips-color)" size="24" />
@@ -97,10 +120,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  APP_ROUTES,
-  getInitialMobileEntry,
-} from "@/common/navigation";
+import { APP_ROUTES, getInitialMobileEntry } from "@/common/navigation";
 import { fetchMobileConfig } from "@/api/mobile-config";
 import type { MobileConfigData, MobileModuleItem } from "@/api/mobile-config";
 import type { CurrentSystemValue } from "@/stores/local";
@@ -115,7 +135,9 @@ const userName = ref("");
 const currentDate = ref("");
 const avatar = ref("");
 const hasLogin = computed(() => Boolean(localStore.token));
-const avatarInitial = computed(() => (userName.value || "U").slice(0, 1).toUpperCase());
+const avatarInitial = computed(() =>
+  (userName.value || "U").slice(0, 1).toUpperCase(),
+);
 
 const greeting = computed(() => {
   const h = new Date().getHours();
@@ -135,7 +157,9 @@ const formatCurrentDate = (date: Date) => {
 const syncUserInfo = () => {
   const info = localStore.userInfo;
   if (info?.nickName || info?.realName || info?.userName || info?.username) {
-    userName.value = String(info.nickName || info.realName || info.userName || info.username);
+    userName.value = String(
+      info.nickName || info.realName || info.userName || info.username,
+    );
     avatar.value = info.avatar || "";
     return;
   }
@@ -255,24 +279,24 @@ function goLogin() {
 }
 
 const shortcutItems = ref([
-  {
-    key: "apply",
-    label: "我的进件",
-    icon: "file-text",
-    bgColor: "rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.85)",
-    handler: () => {
-      if (!hasLogin.value) return goLogin();
-      localStore.setCurrentSystem(CurrentSystem.CARLOAN);
-      uni.reLaunch({ url: APP_ROUTES.carloan.home });
-    },
-  },
-  {
-    key: "order",
-    label: "我的订单",
-    icon: "order",
-    bgColor: "rgba(var(--u-type-success-rgb, 25, 190, 107), 0.85)",
-    handler: () => uni.navigateTo({ url: APP_ROUTES.food.orders }),
-  },
+  // {
+  //   key: "apply",
+  //   label: "我的进件",
+  //   icon: "file-text",
+  //   bgColor: "rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.85)",
+  //   handler: () => {
+  //     if (!hasLogin.value) return goLogin();
+  //     localStore.setCurrentSystem(CurrentSystem.CARLOAN);
+  //     uni.reLaunch({ url: APP_ROUTES.carloan.home });
+  //   },
+  // },
+  // {
+  //   key: "order",
+  //   label: "我的订单",
+  //   icon: "order",
+  //   bgColor: "rgba(var(--u-type-success-rgb, 25, 190, 107), 0.85)",
+  //   handler: () => uni.navigateTo({ url: APP_ROUTES.food.orders }),
+  // },
   {
     key: "notice",
     label: "公告通知",
@@ -287,15 +311,16 @@ const shortcutItems = ref([
     bgColor: "rgba(var(--u-type-info-rgb, 144, 147, 153), 0.85)",
     handler: () => uni.makePhoneCall({ phoneNumber: "13818821494" }),
   },
-
 ]);
 
 /** 登录状态感知过滤：未登录时首页仅保留命理模块，快捷入口隐藏订单/进件 */
 function applyLoginAwareFilter() {
   if (!hasLogin.value) {
-    serviceCards.value = allServiceCards.filter((card) => card.key === 'mingli');
+    serviceCards.value = allServiceCards.filter(
+      (card) => card.key === "mingli",
+    );
     shortcutItems.value = allShortcutItems.filter(
-      (item) => item.key !== 'apply' && item.key !== 'order',
+      (item) => item.key !== "apply" && item.key !== "order",
     );
     return;
   }
@@ -320,7 +345,9 @@ function normalizeMobileConfig(response: unknown): MobileConfigData | null {
   const config = raw as unknown as MobileConfigData;
   if (!config || !Array.isArray(config.enabled)) return null;
   return {
-    available: Array.isArray(config.available) ? (config.available as MobileModuleItem[]) : [],
+    available: Array.isArray(config.available)
+      ? (config.available as MobileModuleItem[])
+      : [],
     enabled: config.enabled,
     defaultModule: config.defaultModule ?? null,
     isMultiModule: Boolean(config.isMultiModule),
@@ -352,9 +379,9 @@ function filterServiceCards(configOrEnabled: MobileConfigData | string[]) {
     : allServiceCards.filter((c) => enabledSet.has(c.key));
   // 快捷功能：保留不依赖特定模块的项(联系客服) + 匹配已启用模块的项
   shortcutItems.value = allShortcutItems.filter((item) => {
-    if (item.key === 'service' || item.key === 'notice') return true;
-    if (item.key === 'apply') return enabledSet.has('carloan');
-    if (item.key === 'order') return enabledSet.has('food');
+    if (item.key === "service" || item.key === "notice") return true;
+    if (item.key === "apply") return enabledSet.has("carloan");
+    if (item.key === "order") return enabledSet.has("food");
     return true;
   });
 }
@@ -487,7 +514,9 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   border: 1rpx solid rgba(226, 232, 240, 0.9);
   border-radius: 16rpx;
   padding: 16rpx 24rpx;
-  box-shadow: 4rpx 4rpx 12rpx rgba(30, 41, 59, 0.06), -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.9);
+  box-shadow:
+    4rpx 4rpx 12rpx rgba(30, 41, 59, 0.06),
+    -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.9);
 }
 
 .notice-text {
@@ -574,8 +603,12 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  box-shadow:
+    4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06),
+    -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
   overflow: hidden;
 
   &::after {
@@ -622,7 +655,7 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
 }
 
 .icon-credit {
-  background: linear-gradient(135deg, #409EFF 0%, #337ECC 100%);
+  background: linear-gradient(135deg, #409eff 0%, #337ecc 100%);
   box-shadow: 0 8rpx 20rpx rgba(64, 158, 255, 0.35);
 }
 
@@ -704,7 +737,9 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   border: 1rpx solid #e8edf5;
   border-radius: 22rpx;
   padding: 26rpx 24rpx 24rpx;
-  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
+  box-shadow:
+    4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06),
+    -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
 }
 
 .shortcut-grid {
@@ -720,7 +755,9 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   min-width: 0;
   padding: 8rpx 0;
   border-radius: 16rpx;
-  transition: transform 0.18s ease, background 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease;
 
   &:active {
     background: #f8fafc;

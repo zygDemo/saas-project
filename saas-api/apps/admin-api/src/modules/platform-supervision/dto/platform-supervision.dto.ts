@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger'
 import { IsInt, IsOptional, Min } from 'class-validator'
-import { ToNumber } from '../../../common/dto/common.dto'
+import { ToNumber } from '../../common/dto/common.dto'
 
 /** 平台监管机构统计查询参数 */
 export class PlatformStatsQueryDto {

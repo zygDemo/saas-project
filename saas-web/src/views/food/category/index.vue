@@ -16,7 +16,20 @@
         </template>
       </ArtTableHeader>
 
-      <ArtTable :loading="isLoading" :data="tableData" :columns="columns" />
+      <ArtTable :loading="isLoading" :data="tableData" :columns="columns">
+        <template #dishCount="{ row }">
+          {{ row._count?.dishes ?? 0 }}
+        </template>
+        <template #isActive="{ row }">
+          <ElTag :type="row.isActive ? 'success' : 'info'" size="small">
+            {{ row.isActive ? '启用' : '停用' }}
+          </ElTag>
+        </template>
+        <template #actions="{ row }">
+          <ElButton type="primary" link @click="openEditDialog(row)" v-auth="'edit'">编辑</ElButton>
+          <ElButton type="danger" link @click="handleDelete(row)" v-auth="'delete'">删除</ElButton>
+        </template>
+      </ArtTable>
 
       <div class="flex justify-center mt-4">
         <ElPagination
@@ -76,10 +89,10 @@
     { prop: 'id', label: 'ID', width: 80 },
     { prop: 'name', label: '分类名称' },
     { prop: 'icon', label: '图标' },
-    { prop: '_count.dishes', label: '菜品数量', width: 100 },
+    { prop: 'dishCount', label: '菜品数量', width: 100 },
     { prop: 'sortOrder', label: '排序', width: 80 },
-    { prop: 'isActive', label: '状态', width: 80 },
-    { prop: 'actions', label: '操作', width: 150 }
+    { prop: 'isActive', label: '状态', width: 80, useSlot: true },
+    { prop: 'actions', label: '操作', width: 150, useSlot: true }
   ]
 
   const loadData = async () => {
@@ -102,6 +115,21 @@
     formData.icon = ''
     formData.sortOrder = 0
     showDialog.value = true
+  }
+
+  const openEditDialog = (row: any) => {
+    isEdit.value = true
+    editId.value = row.id
+    formData.name = row.name
+    formData.icon = row.icon || ''
+    formData.sortOrder = row.sortOrder ?? 0
+    showDialog.value = true
+  }
+
+  const handleDelete = async (row: any) => {
+    await ElMessageBox.confirm(`确定删除分类「${row.name}」吗？`, '提示')
+    await deleteFoodCategory(row.id)
+    loadData()
   }
 
   const handleSave = async () => {

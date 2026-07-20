@@ -44,7 +44,6 @@ async function bootstrap() {
     prefix: `/${normalizedApiPrefix}/uploads/`,
   })
   // 生产环境启用完整 Helmet，开发环境关闭 CSP（避免阻止 HMR eval）
-  const nodeEnv = config.get<string>('NODE_ENV', 'development')
   app.use(helmet({
     contentSecurityPolicy: nodeEnv === 'production' ? undefined : false,
   }))

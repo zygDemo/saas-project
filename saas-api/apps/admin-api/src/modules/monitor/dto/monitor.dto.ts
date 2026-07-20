@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger'
 import { IsInt, IsOptional, IsString, Min } from 'class-validator'
-import { ToNumber } from '../../../common/dto/common.dto'
+import { ToNumber } from '../../common/dto/common.dto'
 
 /** 监控日志查询参数 */
 export class MonitorLogQueryDto {

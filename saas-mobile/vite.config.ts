@@ -97,7 +97,7 @@ export default defineConfig({
     host: true,
     proxy: {
       '/saas/api': {
-        target: 'https://www.yugui.store',
+        target: 'http://localhost:3001',
         changeOrigin: true,
       },
     },
