@@ -58,6 +58,10 @@ const envFilePaths = [
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([{
+      ttl: 60000,  // 60秒时间窗口
+      limit: 100,  // 每个IP最多100次请求
+    }]),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: envFilePaths

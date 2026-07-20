@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core'
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
+import helmet from 'helmet'
 import { NestExpressApplication } from '@nestjs/platform-express'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { join, dirname } from 'path'
@@ -42,6 +43,12 @@ async function bootstrap() {
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: `/${normalizedApiPrefix}/uploads/`,
   })
+  // 生产环境启用完整 Helmet，开发环境关闭 CSP（避免阻止 HMR eval）
+  const nodeEnv = config.get<string>('NODE_ENV', 'development')
+  app.use(helmet({
+    contentSecurityPolicy: nodeEnv === 'production' ? undefined : false,
+  }))
+
   app.enableCors({
     origin: allowAllCors ? true : allowedOrigins,
     credentials: true,
