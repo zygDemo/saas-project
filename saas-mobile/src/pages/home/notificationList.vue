@@ -32,7 +32,7 @@
 
       <!-- 加载更多 -->
       <view v-if="loading" class="loading">
-        <u-loading-icon size="36" />
+        <u-loading size="36" />
       </view>
       <view v-else-if="!hasMore && notifications.length" class="no-more">
         <text class="no-more-text">没有更多了</text>

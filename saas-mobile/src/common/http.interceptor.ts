@@ -269,13 +269,18 @@ const ALLOWED_EXTENSIONS = [
   "avi",
 ];
 
+function getFileExtension(filePath: string): string {
+  const match = filePath.match(/\.([a-zA-Z0-9]+)(?:[?#]|$)/);
+  return match ? match[1].toLowerCase() : "";
+}
+
 /** 校验文件大小和类型 */
 function validateFileBeforeUpload(filePath: string): {
   valid: boolean;
   msg?: string;
 } {
   // 1. 文件类型校验（通过扩展名）
-  const ext = filePath.split(".").pop()?.toLowerCase() || "";
+  const ext = getFileExtension(filePath);
   if (ext && !ALLOWED_EXTENSIONS.includes(ext)) {
     return { valid: false, msg: `不支持的文件格式: .${ext}` };
   }

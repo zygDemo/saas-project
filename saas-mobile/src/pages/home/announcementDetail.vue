@@ -15,7 +15,7 @@
         </view>
       </view>
       <view v-else-if="loading" class="loading">
-        <u-loading-icon size="48" />
+        <u-loading size="48" />
       </view>
       <view v-else class="empty">
         <u-icon name="info-circle" size="80" color="#ddd" />
