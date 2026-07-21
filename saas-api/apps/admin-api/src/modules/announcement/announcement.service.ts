@@ -1,3 +1,4 @@
+import { NotificationService } from '../notification/notification.service'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { PaginatedResponse } from '../../common/types/pagination'
@@ -8,7 +9,8 @@ import { CreateAnnouncementDto, UpdateAnnouncementDto, AnnouncementQueryDto } fr
 
 @Injectable()
 export class AnnouncementService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService) {}
 
   async getList(query: AnnouncementQueryDto): Promise<PaginatedResponse<unknown>> {
     const tenantId = getRequiredTenantId()

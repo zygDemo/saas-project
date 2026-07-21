@@ -106,6 +106,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { fetchActiveAnnouncements } from "@/api/announcement";
+import { useWebSocket } from "@/composables/useWebSocket";
 import { useLocalStore } from "@/stores/local";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildSignRouteQuery, buildSupplementRouteQuery, buildDetailRouteQuery } from "@/common/carloan-route-query";
@@ -118,6 +120,8 @@ const noMore = ref(false);
 const currentTab = ref("all");
 
 // 消息类型：approval(审批)、supplement(补件)、signing(签约)、loan(放款)、repayment(还款)、system(系统)
+const { connect: wsConnect, onNotification } = useWebSocket();
+
 const messages = ref([]);
 
 const tabTitle = computed(() => {
@@ -262,6 +266,38 @@ function addMessage(msg) {
   saveMessages();
 }
 
+// 从后端获取公告并转换为消息格式
+async function loadAnnouncements() {
+  try {
+    const res = await fetchActiveAnnouncements();
+    const list = res?.data || res || [];
+    if (!Array.isArray(list) || list.length === 0) return;
+
+    const stored = uni.getStorageSync("MESSAGE_CENTER_DATA") || [];
+    const existingIds = new Set(stored.map((m) => m.announcementId));
+
+    // 将新公告转为消息格式并合并
+    const newMessages = list
+      .filter((a) => !existingIds.has(a.id))
+      .map((a) => ({
+        id: Date.now() + a.id,
+        announcementId: a.id,
+        type: "system",
+        title: a.title,
+        content: a.content,
+        time: a.publishAt || a.createdAt,
+        read: false,
+      }));
+
+    if (newMessages.length > 0) {
+      messages.value = [...newMessages, ...stored];
+      saveMessages();
+    }
+  } catch (e) {
+    console.warn("获取公告失败:", e);
+  }
+}
+
 // 初始化示例消息（首次使用时）
 function initDemoMessages() {
   const stored = uni.getStorageSync("MESSAGE_CENTER_DATA");
@@ -330,9 +366,27 @@ function initDemoMessages() {
   saveMessages();
 }
 
-onMounted(() => {
+onMounted(async () => {
   initDemoMessages();
   loadMessages();
+  await loadAnnouncements();
+
+  // 连接 WebSocket 接收实时通知
+  wsConnect();
+  onNotification((msg) => {
+    // 将实时通知添加到消息列表顶部
+    const newMsg = {
+      id: Date.now(),
+      type: msg.type || 'system',
+      title: msg.title || '新通知',
+      content: msg.content || '',
+      time: new Date().toISOString(),
+      read: false,
+      ...msg.extra,
+    };
+    messages.value = [newMsg, ...messages.value];
+    saveMessages();
+  });
 });
 </script>
 

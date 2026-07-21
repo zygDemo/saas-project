@@ -59,6 +59,6 @@ export const useSessionStore = defineStore("session", {
   persist: {
     key: "session-store",
     storage: ((globalThis as unknown) as { sessionStorage?: Storage }).sessionStorage || sessionStorageAdapter,
-    paths: ["transferToken", "orderInfo", "transferInfo", "loanBusinessNodes"],
+    pick: ["transferToken", "orderInfo", "transferInfo", "loanBusinessNodes"],
   },
 });

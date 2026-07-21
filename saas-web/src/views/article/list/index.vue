@@ -34,7 +34,7 @@
           <div class="relative aspect-[16/9.5]">
             <ElImage
               class="flex align-center justify-center w-full h-full object-cover bg-gray-200"
-              :src="item.home_img"
+              :src="item.coverImg"
               lazy
               fit="cover"
             >
@@ -42,7 +42,7 @@
 
             <span
               class="absolute top-1 right-1 bg-black/50 rounded text-xs px-1 py-0.5 text-white"
-              >{{ item.type_name }}</span
+              >{{ item.typeName }}</span
             >
           </div>
           <div class="px-2 py-1">
@@ -50,10 +50,10 @@
             <div class="flex-b w-full h-6 mt-1">
               <div class="flex-c text-g-500">
                 <ArtSvgIcon icon="ri:time-line" class="mr-1 text-sm" />
-                <span class="text-sm">{{ useDateFormat(item.create_time, 'YYYY-MM-DD') }}</span>
+                <span class="text-sm">{{ useDateFormat(item.createdAt, 'YYYY-MM-DD') }}</span>
                 <div class="w-px h-3 bg-g-400 mx-3.5"></div>
                 <ArtSvgIcon icon="ri:eye-line" class="mr-1 text-sm" />
-                <span class="text-sm">{{ item.count }}</span>
+                <span class="text-sm">{{ item.viewCount }}</span>
               </div>
               <ElButton
                 class="opacity-0 group-hover:opacity-100"
@@ -93,18 +93,18 @@
   import { router } from '@/router'
   import { useDateFormat } from '@vueuse/core'
   import EmojiText from '@/utils/ui/emojo'
-  import { ArticleList } from '@/mock/temp/articleList'
+  import { fetchArticleList } from '@/api/article'
   import { useCommon } from '@/hooks/core/useCommon'
 
   defineOptions({ name: 'ArticleList' })
 
   interface Article {
     id: number
-    home_img: string
-    type_name: string
+    coverImg: string
+    typeName: string
     title: string
-    create_time: string
-    count: number
+    createdAt: string
+    viewCount: number
   }
 
   interface GetArticleListOptions {
@@ -132,16 +132,15 @@
         yearVal.value = 'All'
       }
 
-      // TODO: 替换为真实 API 调用
-      // const params = {
-      //   page: currentPage.value,
-      //   size: pageSize.value,
-      //   searchVal: searchVal.value,
-      //   year: yearVal.value === 'All' ? '' : yearVal.value
-      // }
-      // const res = await ArticleService.getArticleList(params)
+      const res = await fetchArticleList({
+        page: currentPage.value,
+        size: pageSize.value,
+        keyword: searchVal.value,
+        year: yearVal.value === 'All' ? '' : yearVal.value
+      })
 
-      articleList.value = ArticleList as Article[]
+      articleList.value = (res.list || []) as Article[]
+      total.value = res.total ?? 0
 
       if (backTop) {
         useCommon().scrollToTop()

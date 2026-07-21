@@ -48,6 +48,7 @@ import { ProductTemplateModule } from './modules/product-template/product-templa
 import { ThirdPartyServiceModule } from './modules/third-party-service/third-party-service.module'
 import { WorkOrderModule } from './modules/work-order/work-order.module'
 import { PlatformSupervisionModule } from './modules/platform-supervision/platform-supervision.module'
+import { NotificationModule } from './modules/notification/notification.module'
 
 const appEnv = process.env.NODE_ENV || 'development'
 const envFilePaths = [
@@ -122,7 +123,8 @@ const envFilePaths = [
     ThirdPartyServiceModule,
     WorkOrderModule,
     PlatformSupervisionModule,
-    FoodModule
+    FoodModule,
+    NotificationModule
   ]
 })
 export class AppModule implements NestModule {

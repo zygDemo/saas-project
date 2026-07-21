@@ -438,8 +438,7 @@
   import { ElMessageBox } from 'element-plus'
   import { useTable, CacheInvalidationStrategy } from '@/hooks/core/useTable'
   import { fetchGetUserList } from '@/api/system-manage'
-  import { ACCOUNT_TABLE_DATA } from '@/mock/temp/formData'
-  import { getColumnKey } from '@/hooks/core/useTableColumns'
+    import { getColumnKey } from '@/hooks/core/useTableColumns'
 
   defineOptions({ name: 'AdvancedTableDemo' })
 
@@ -791,7 +790,7 @@
 
         return records.map((item, index: number) => ({
           ...item,
-          avatar: ACCOUNT_TABLE_DATA[index % ACCOUNT_TABLE_DATA.length].avatar,
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${index}`,
           department: ['技术部', '产品部', '运营部', '市场部', '设计部'][
             Math.floor(Math.random() * 5)
           ],

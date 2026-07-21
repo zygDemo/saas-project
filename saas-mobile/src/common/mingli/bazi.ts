@@ -287,17 +287,18 @@ export function getMonthZhu(yearGan: string, month: number): { gan: string; zhi:
 }
 
 export function getDayZhu(year: number, month: number, day: number): { gan: string; zhi: string } {
-  // 注意：此处使用本地时区构造日期，若用户处于非东八区，跨午夜可能产生 1 天偏差。
-  // 八字排盘传统上以真太阳时（东经120°）为准，如需精确，应在调用前将输入日期时间
-  // 转换为东八区时间再传入。
-  const baseDate = new Date(1900, 0, 1);
-  const targetDate = new Date(year, month - 1, day);
+  // 日柱计算以 2000-01-07（甲子日）为锚点基准日。
+  // 传统八字排盘以真太阳时（东经 120°）为准，此处使用本地时区构造日期；
+  // 若用户处于非东八区，跨午夜可能产生 1 天偏差，调用方应在传入前转换为东八区日期。
+  const baseDate = new Date(2000, 0, 7) // 2000-01-07 = 甲子日
+  const targetDate = new Date(year, month - 1, day)
   const diffDays = Math.floor(
     (targetDate.getTime() - baseDate.getTime()) / (24 * 60 * 60 * 1000),
-  );
-  const ganIndex = ((diffDays % 10) + 10) % 10;
-  const zhiIndex = ((diffDays % 12) + 12) % 12;
-  return { gan: TIAN_GAN[ganIndex], zhi: DI_ZHI[zhiIndex] };
+  )
+  // 甲子日为 anchor：gan(甲)=TIAN_GAN[0], zhi(子)=DI_ZHI[0]
+  const ganIndex = ((diffDays % 10) + 10) % 10
+  const zhiIndex = ((diffDays % 12) + 12) % 12
+  return { gan: TIAN_GAN[ganIndex], zhi: DI_ZHI[zhiIndex] }
 }
 
 export function getHourZhu(dayGan: string, hour: number): { gan: string; zhi: string } {

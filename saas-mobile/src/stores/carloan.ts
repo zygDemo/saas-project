@@ -113,6 +113,6 @@ export const useCarloanStore = defineStore("carloan", {
   persist: {
     key: "carloan-store",
     storage: ((globalThis as unknown) as { sessionStorage?: Storage }).sessionStorage || sessionStorageAdapter,
-    paths: ["currentOrder", "pageContext", "workbenchFilter", "latestQuery", "draftMap"],
+    pick: ["currentOrder", "pageContext", "workbenchFilter", "latestQuery", "draftMap"],
   },
 });

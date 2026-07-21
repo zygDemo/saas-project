@@ -77,11 +77,10 @@
 
 <script setup lang="ts">
   import { Plus } from '@element-plus/icons-vue'
-  import { ApiStatus } from '@/utils/http/status'
-  import { useUserStore } from '@/store/modules/user'
+    import { useUserStore } from '@/store/modules/user'
   import EmojiText from '@/utils/ui/emojo'
   import { PageModeEnum } from '@/enums/formEnum'
-  import axios from 'axios'
+  import { fetchArticleDetail, fetchAllArticleTypes, fetchCreateArticle, fetchUpdateArticle } from '@/api/article'
   import { useCommon } from '@/hooks/core/useCommon'
   import { API_BASE_URL } from '@/utils/http'
 
@@ -98,16 +97,7 @@
     }
   }
 
-  interface ArticleDetailResponse {
-    code: number
-    data: {
-      title: string
-      blog_class: string
-      html_content: string
-    }
-  }
-
-  const MAX_IMAGE_SIZE = 2 // MB
+    const MAX_IMAGE_SIZE = 2 // MB
   const EMPTY_EDITOR_CONTENT = '<p><br></p>'
 
   const route = useRoute()
@@ -145,20 +135,12 @@
    */
   const getArticleTypes = async () => {
     try {
-      const { data } = await axios.get('https://www.qiniu.lingchen.kim/classify.json')
-      if (data.code === 200) {
-        articleTypes.value = data.data
-      }
+      const res = await fetchAllArticleTypes()
+      articleTypes.value = (res.data || res) as ArticleType[]
     } catch (error) {
       console.error('获取文章分类失败:', error)
       ElMessage.error('获取文章分类失败')
     }
-
-    // TODO: 替换为真实 API 调用
-    // const res = await ArticleService.getArticleTypes({})
-    // if (res.code === ApiStatus.success) {
-    //   articleTypes.value = res.data
-    // }
   }
 
   /**
@@ -166,16 +148,15 @@
    */
   const getArticleDetail = async () => {
     try {
-      const { data } = await axios.get<ArticleDetailResponse>(
-        'https://www.qiniu.lingchen.kim/blog_list.json'
-      )
-
-      if (data.code === ApiStatus.success) {
-        const { title, blog_class, html_content } = data.data
-        articleName.value = title
-        articleType.value = Number(blog_class)
-        editorHtml.value = html_content
-      }
+      const id = Number(route.query.id)
+      if (!id) return
+      const res = await fetchArticleDetail(id)
+      const data = res.data || res
+      articleName.value = data.title
+      articleType.value = data.typeId
+      editorHtml.value = data.content || ''
+      cover.value = data.coverImg || ''
+      visible.value = data.status === 'PUBLISHED'
     } catch (error) {
       console.error('获取文章详情失败:', error)
       ElMessage.error('获取文章详情失败')
@@ -231,22 +212,15 @@
 
     try {
       const cleanedContent = cleanCodeContent(editorHtml.value)
-
-      // TODO: 替换为真实 API 调用
-      // const params = {
-      //   title: articleName.value,
-      //   type: articleType.value,
-      //   content: cleanedContent,
-      //   cover: cover.value,
-      //   visible: visible.value
-      // }
-      // const res = await ArticleService.addArticle(params)
-      // if (res.code === ApiStatus.success) {
-      //   ElMessage.success('文章发布成功')
-      //   router.push({ name: 'ArticleList' })
-      // }
-
-      console.log('新增文章:', { cleanedContent })
+      await fetchCreateArticle({
+        title: articleName.value,
+        content: cleanedContent,
+        typeId: articleType.value,
+        coverImg: cover.value,
+        status: visible.value ? 'PUBLISHED' : 'DRAFT'
+      })
+      ElMessage.success('文章发布成功')
+      router.push({ name: 'ArticleList' })
     } catch (error) {
       console.error('发布文章失败:', error)
       ElMessage.error('发布文章失败')
@@ -261,23 +235,15 @@
 
     try {
       const cleanedContent = cleanCodeContent(editorHtml.value)
-
-      // TODO: 替换为真实 API 调用
-      // const params = {
-      //   id: route.query.id,
-      //   title: articleName.value,
-      //   type: articleType.value,
-      //   content: cleanedContent,
-      //   cover: cover.value,
-      //   visible: visible.value
-      // }
-      // const res = await ArticleService.editArticle(params)
-      // if (res.code === ApiStatus.success) {
-      //   ElMessage.success('文章保存成功')
-      //   router.push({ name: 'ArticleList' })
-      // }
-
-      console.log('编辑文章:', { cleanedContent })
+      await fetchUpdateArticle(Number(route.query.id), {
+        title: articleName.value,
+        content: cleanedContent,
+        typeId: articleType.value,
+        coverImg: cover.value,
+        status: visible.value ? 'PUBLISHED' : 'DRAFT'
+      })
+      ElMessage.success('文章保存成功')
+      router.push({ name: 'ArticleList' })
     } catch (error) {
       console.error('保存文章失败:', error)
       ElMessage.error('保存文章失败')

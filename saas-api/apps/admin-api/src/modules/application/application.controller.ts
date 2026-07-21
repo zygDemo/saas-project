@@ -1,4 +1,5 @@
 ﻿import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
+import { NotificationService } from '../notification/notification.service'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { ApplicationService } from './application.service'
@@ -29,7 +30,8 @@ import {
 @UseGuards(JwtAuthGuard)
 @Controller('application')
 export class ApplicationController {
-  constructor(private readonly service: ApplicationService) {}
+  constructor(private readonly service: ApplicationService,
+    private readonly notificationService: NotificationService) {}
 
   @Get('list')
   @ApiOperation({ summary: '列表查询' })
@@ -123,20 +125,32 @@ export class ApplicationController {
 
   @Post(':id/approve')
   @ApiOperation({ summary: '审批通过' })
-  approve(@Param('id') id: string, @Body() dto: ApprovalActionDto) {
-    return this.service.approve(Number(id), dto)
+  async approve(@Param('id') id: string, @Body() dto: ApprovalActionDto) {
+    const result = await this.service.approve(Number(id), dto)
+    this.notificationService.pushApprovalStatus(0, {
+      applicationId: Number(id), status: '审批通过', title: '审批结果通知'
+    }).catch(() => {})
+    return result
   }
 
   @Post(':id/reject')
   @ApiOperation({ summary: '审批驳回' })
-  reject(@Param('id') id: string, @Body() dto: ApprovalActionDto) {
-    return this.service.reject(Number(id), dto)
+  async reject(@Param('id') id: string, @Body() dto: ApprovalActionDto) {
+    const result = await this.service.reject(Number(id), dto)
+    this.notificationService.pushApprovalStatus(0, {
+      applicationId: Number(id), status: '审批拒绝', title: '审批结果通知'
+    }).catch(() => {})
+    return result
   }
 
   @Post(':id/supplement')
   @ApiOperation({ summary: '要求补件' })
-  requestSupplement(@Param('id') id: string, @Body() dto: SupplementActionDto) {
-    return this.service.requestSupplement(Number(id), dto)
+  async requestSupplement(@Param('id') id: string, @Body() dto: SupplementActionDto) {
+    const result = await this.service.requestSupplement(Number(id), dto)
+    this.notificationService.pushSupplement(0, {
+      applicationId: Number(id), title: '补件通知'
+    }).catch(() => {})
+    return result
   }
 
   @Post(':id/submit-funder-review')
@@ -165,8 +179,12 @@ export class ApplicationController {
 
   @Post(':id/complete-signing')
   @ApiOperation({ summary: '签约完成' })
-  completeSigning(@Param('id') id: string, @Body() dto: CompleteSigningDto) {
-    return this.service.completeSigning(Number(id), dto)
+  async completeSigning(@Param('id') id: string, @Body() dto: CompleteSigningDto) {
+    const result = await this.service.completeSigning(Number(id), dto)
+    this.notificationService.pushSigning(0, {
+      applicationId: Number(id), title: '签约完成通知'
+    }).catch(() => {})
+    return result
   }
 
   @Post(':id/gps-installed')
@@ -207,8 +225,12 @@ export class ApplicationController {
 
   @Post(':id/confirm-disbursement')
   @ApiOperation({ summary: '放款确认' })
-  confirmDisbursement(@Param('id') id: string, @Body() dto: ConfirmDisbursementDto) {
-    return this.service.confirmDisbursement(Number(id), dto)
+  async confirmDisbursement(@Param('id') id: string, @Body() dto: ConfirmDisbursementDto) {
+    const result = await this.service.confirmDisbursement(Number(id), dto)
+    this.notificationService.pushLoan(0, {
+      applicationId: Number(id), amount: dto.disburseAmount || 0
+    }).catch(() => {})
+    return result
   }
 
   @Post('repayment-plan/:planId/register')

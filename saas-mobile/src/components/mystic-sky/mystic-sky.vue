@@ -59,39 +59,39 @@ const nearStars = makeStars(12, [5, 7], 'near')
 
 /* === 极光带 === */
 .aurora { position: absolute; border-radius: 50%; filter: blur(32rpx); opacity: .16; animation: auroraFlow 26s ease-in-out infinite alternate; }
-.aurora-a { width: 620rpx; height: 240rpx; top: 60rpx; left: -140rpx; background: radial-gradient(ellipse, rgba(111,83,247,.18), transparent 72%); }
-.aurora-b { width: 540rpx; height: 220rpx; top: 220rpx; right: -120rpx; background: radial-gradient(ellipse, rgba(143, 99, 255, .14), transparent 72%); animation-delay: -12s; }
+.aurora-a { width: 620rpx; height: 240rpx; top: 60rpx; left: -140rpx; background: radial-gradient(ellipse, rgba(41,182,246,.22), transparent 72%); }
+.aurora-b { width: 540rpx; height: 220rpx; top: 220rpx; right: -120rpx; background: radial-gradient(ellipse, rgba(124, 92, 255, .18), transparent 72%); animation-delay: -12s; }
 
 /* === 星云 === */
 .nebula { position: absolute; border-radius: 50%; opacity: .14; animation: mysticFloat 24s ease-in-out infinite alternate; }
-.nebula-one { width: 460rpx; height: 280rpx; top: 50rpx; right: -200rpx; background: radial-gradient(circle, rgba(111,83,247,.12), transparent 70%); box-shadow: 0 0 140rpx 70rpx rgba(111,83,247,.08); }
-.nebula-two { width: 380rpx; height: 260rpx; left: -180rpx; bottom: 10rpx; background: radial-gradient(circle, rgba(143,99,255,.08), transparent 72%); box-shadow: 0 0 120rpx 60rpx rgba(143,99,255,.06); animation-delay: -4s; }
+.nebula-one { width: 460rpx; height: 280rpx; top: 50rpx; right: -200rpx; background: radial-gradient(circle, rgba(41,182,246,.12), transparent 70%); box-shadow: 0 0 140rpx 70rpx rgba(41,182,246,.08); }
+.nebula-two { width: 380rpx; height: 260rpx; left: -180rpx; bottom: 10rpx; background: radial-gradient(circle, rgba(124,92,255,.10), transparent 72%); box-shadow: 0 0 120rpx 60rpx rgba(124,92,255,.06); animation-delay: -4s; }
 .nebula-three { width: 300rpx; height: 200rpx; top: 340rpx; left: 40%; background: radial-gradient(circle, var(--ming-purple-faint), transparent 72%); animation-delay: -4s; }
 
 /* === 星星（三层） === */
 .star { position: absolute; border-radius: 50%; animation: mysticTwinkle 6s ease-in-out infinite; }
-.star-far { background: rgba(255, 240, 220, .6); box-shadow: 0 0 4rpx rgba(227,220,235,.55); }
-.star-mid { background: var(--ming-purple-light); box-shadow: 0 0 8rpx rgba(227,220,235,.42), 0 0 3rpx var(--ming-purple-light); }
-.star-near { background: #fff8d8; box-shadow: 0 0 10rpx rgba(203,195,220,.45), 0 0 5rpx rgba(227,220,235,.38), 0 0 3rpx #fff; animation-duration: 7s; }
+.star-far { background: rgba(200, 235, 255, .55); box-shadow: 0 0 4rpx rgba(129,212,250,.45); }
+.star-mid { background: var(--ming-purple-light); box-shadow: 0 0 8rpx rgba(129,212,250,.38), 0 0 3rpx var(--ming-purple-light); }
+.star-near { background: #d8f3ff; box-shadow: 0 0 10rpx rgba(79,195,247,.42), 0 0 5rpx rgba(129,212,250,.35), 0 0 3rpx #fff; animation-duration: 7s; }
 
 /* === 流星 === */
-.shooting-star { position: absolute; width: 4rpx; height: 4rpx; border-radius: 50%; background: var(--ming-purple-light); box-shadow: 0 0 8rpx rgba(227,220,235,.36), 0 0 4rpx rgba(203,195,220,.3); opacity: .12; }
+.shooting-star { position: absolute; width: 4rpx; height: 4rpx; border-radius: 50%; background: var(--ming-purple-light); box-shadow: 0 0 8rpx rgba(129,212,250,.42), 0 0 4rpx rgba(79,195,247,.32); opacity: .12; }
 .shooting-star::after { content: ''; position: absolute; top: 50%; right: 0; width: 90rpx; height: 2rpx; transform: translateY(-50%); background: linear-gradient(90deg, transparent, var(--ming-purple-soft), var(--ming-purple-light)); border-radius: 50%; }
 .shooting-star-1 { top: 15%; left: 0; animation: shooting 18s ease-out 3s infinite; }
 .shooting-star-2 { top: 35%; left: 0; animation: shooting 22s ease-out 8s infinite; }
 
 /* === 行星轨道（太阳系感） === */
-.orbit { position: absolute; border: 1rpx solid rgba(203,195,220,.14); border-radius: 50%; left: 50%; }
+.orbit { position: absolute; border: 1rpx solid rgba(129,212,250,.14); border-radius: 50%; left: 50%; }
 .orbit-one { width: 200rpx; height: 200rpx; top: 50%; margin: -100rpx 0 0 -100rpx; transform: rotate(-18deg); animation: mysticSpin 28s linear infinite; }
 .orbit-two { width: 320rpx; height: 320rpx; top: 50%; margin: -160rpx 0 0 -160rpx; border-style: dashed; animation: mysticSpinReverse 36s linear infinite; }
 .orbit-three { width: 440rpx; height: 440rpx; top: 50%; margin: -220rpx 0 0 -220rpx; border-style: dotted; opacity: .22; animation: mysticSpin 52s linear infinite; }
 .orbit-four { width: 560rpx; height: 560rpx; top: 50%; margin: -280rpx 0 0 -280rpx; border-style: dotted; opacity: .16; animation: mysticSpinReverse 72s linear infinite; }
 
 /* === 行星 === */
-.planet { position: absolute; border-radius: 50%; background: rgba(227,220,235,.72); }
+.planet { position: absolute; border-radius: 50%; background: rgba(200, 240, 255, .72); }
 .planet-1 { width: 12rpx; height: 12rpx; left: 0; top: 50%; margin-top: -6rpx; box-shadow: 0 0 16rpx var(--ming-purple), 0 0 6rpx var(--ming-purple-light); }
-.planet-2 { width: 16rpx; height: 16rpx; right: 0; top: 50%; margin-top: -8rpx; background: var(--ming-purple-light); box-shadow: 0 0 12rpx rgba(203,195,220,.34), 0 0 5rpx rgba(227,220,235,.3); }
-.planet-3 { width: 10rpx; height: 10rpx; left: 50%; top: 0; margin-left: -5rpx; box-shadow: 0 0 8rpx rgba(227,220,235,.3); }
+.planet-2 { width: 16rpx; height: 16rpx; right: 0; top: 50%; margin-top: -8rpx; background: var(--ming-purple-light); box-shadow: 0 0 12rpx rgba(79,195,247,.34), 0 0 5rpx rgba(129,212,250,.3); }
+.planet-3 { width: 10rpx; height: 10rpx; left: 50%; top: 0; margin-left: -5rpx; box-shadow: 0 0 8rpx rgba(129,212,250,.3); }
 
 @keyframes mysticTwinkle { 0%, 100% { opacity: .22; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.35); } }
 @keyframes mysticFloat { from { transform: translate3d(-14rpx, -8rpx, 0) scale(.95); } to { transform: translate3d(18rpx, 16rpx, 0) scale(1.08); } }

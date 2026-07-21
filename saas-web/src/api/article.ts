@@ -140,3 +140,57 @@ export function fetchDeleteArticleType(id: number) {
     url: `/article/type/${id}`
   })
 }
+
+
+// ==================== 文章评论 ====================
+
+export interface ArticleComment {
+  id: number
+  tenantId: number
+  articleId: number
+  userId?: number
+  userName: string
+  content: string
+  status: string
+  parentId?: number
+  likeCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateCommentData {
+  articleId: number
+  content: string
+  userName?: string
+  parentId?: number
+}
+
+/** 获取文章评论列表 */
+export function fetchCommentsByArticle(articleId: number) {
+  return request.get<ArticleComment[]>({
+    url: `/article/${articleId}/comments`
+  })
+}
+
+/** 获取评论列表（分页） */
+export function fetchCommentList(params: { articleId?: number; status?: string; page?: number; size?: number }) {
+  return request.get<{ list: ArticleComment[]; total: number }>({
+    url: '/article/comment/list',
+    params
+  })
+}
+
+/** 发表评论 */
+export function fetchCreateComment(data: CreateCommentData) {
+  return request.post({
+    url: '/article/comment',
+    data
+  })
+}
+
+/** 删除评论 */
+export function fetchDeleteComment(id: number) {
+  return request.del({
+    url: `/article/comment/${id}`
+  })
+}

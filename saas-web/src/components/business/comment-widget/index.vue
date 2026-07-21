@@ -43,8 +43,39 @@
 <script setup lang="ts">
   import { ref } from 'vue'
   import CommentItem from './widget/CommentItem.vue'
-  import { commentList, Comment } from '@/mock/temp/commentDetail'
-  const comments = commentList
+  import { ref, onMounted } from 'vue'
+import { fetchCommentsByArticle, fetchCreateComment } from '@/api/article'
+import type { ArticleComment } from '@/api/article'
+
+type Comment = ArticleComment & { replies?: ArticleComment[] }
+  const comments = ref<Comment[]>([])
+
+async function loadComments(articleId?: number) {
+  if (!articleId) return
+  try {
+    const res = await fetchCommentsByArticle(articleId)
+    const list = res.data || res || []
+    // 构建评论树
+    const map = new Map<number, Comment>()
+    const roots: Comment[] = []
+    for (const item of list) {
+      map.set(item.id, { ...item, replies: [] })
+    }
+    for (const item of list) {
+      const node = map.get(item.id)!
+      if (item.parentId && map.has(item.parentId)) {
+        map.get(item.parentId)!.replies!.push(node)
+      } else {
+        roots.push(node)
+      }
+    }
+    comments.value = roots
+  } catch (e) {
+    console.warn('加载评论失败:', e)
+  }
+}
+
+onMounted(() => loadComments(props.articleId))
 
   const newComment = ref<Partial<Comment>>({
     author: '',

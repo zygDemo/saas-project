@@ -18,6 +18,19 @@
           </view>
         </view>
 
+        <!-- 公告横幅 -->
+        <view
+          v-if="latestAnnouncement"
+          class="announcement-banner"
+          role="button"
+          tabindex="0"
+          @click="goTo(APP_ROUTES.carloan.portal.messageCenter)"
+        >
+          <u-icon name="volume-up" size="32" color="var(--u-type-primary)" />
+          <text class="announcement-text">{{ latestAnnouncement.title }}</text>
+          <u-icon name="arrow-right" size="24" color="#c0c4cc" />
+        </view>
+
         <view class="block-head">
           <text class="block-title">快捷入口</text>
           <text class="block-tip">扫码或直接发起业务</text>
@@ -78,6 +91,18 @@
             <text class="overview-value">{{ item.value }}</text>
             <text class="overview-label">{{ item.label }}</text>
           </view>
+        </view>
+      </view>
+
+      <!-- 待办入口 -->
+      <view class="todo-entry" role="button" tabindex="0" @click="goTo(APP_ROUTES.carloan.portal.todoCenter)">
+        <view class="todo-entry__left">
+          <u-icon name="list" size="36" color="var(--u-type-primary)" />
+          <text class="todo-entry__text">待办中心</text>
+        </view>
+        <view class="todo-entry__right">
+          <text class="todo-entry__tip">补件、签约、审批</text>
+          <u-icon name="arrow-right" size="28" color="#c0c4cc" />
         </view>
       </view>
 
@@ -161,6 +186,8 @@ import { useLocalStore } from "@/stores";
 import { CurrentSystem } from "@/stores/local";
 import { computed, onMounted, ref } from "vue";
 import { isDev } from "@/common/env";
+import { fetchActiveAnnouncements } from "@/api/announcement";
+import { useWebSocket } from "@/composables/useWebSocket";
 import { APP_ROUTES } from "@/common/navigation";
 
 const { currentTheme } = useTheme();
@@ -169,10 +196,12 @@ const themeColor = computed(() => {
 });
 
 const localStore = useLocalStore();
+const { connect: wsConnect, onNotification } = useWebSocket();
 const businessApi = useCarloanApi();
 
 // 消息未读数
 const unreadCount = ref(0);
+const latestAnnouncement = ref(null);
 
 function loadUnreadCount() {
   try {
@@ -261,10 +290,36 @@ const loadOverview = async () => {
   }
 };
 
+async function loadLatestAnnouncement() {
+  try {
+    const res = await fetchActiveAnnouncements();
+    const list = res?.data || res || [];
+    if (Array.isArray(list) && list.length > 0) {
+      latestAnnouncement.value = list[0];
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+
 onMounted(() => {
   localStore.setCurrentSystem(CurrentSystem.CARLOAN);
   loadOverview();
   loadUnreadCount();
+  loadLatestAnnouncement();
+
+  // 连接 WebSocket 实时通知
+  if (localStore.token) {
+    wsConnect();
+    onNotification((msg) => {
+      // 更新未读数
+      unreadCount.value++;
+      // 如果是公告，刷新公告横幅
+      if (msg.type === 'announcement') {
+        loadLatestAnnouncement();
+      }
+    });
+  }
 });
 
 const ORDER_FILTER_STORAGE_KEY = "WORKBENCH_ORDER_FILTER";
@@ -983,5 +1038,59 @@ const sections = computed(() => {
   .modal { background-color: #1e1e1e; }
   .popup { background-color: #1e1e1e; }
   .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
+}
+
+.announcement-banner {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: #f0f5ff;
+  border: 1rpx solid #d6e4ff;
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  margin: 0 24rpx 24rpx;
+}
+
+.announcement-text {
+  flex: 1;
+  font-size: 26rpx;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.todo-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  margin: 0 24rpx 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+}
+
+.todo-entry__left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.todo-entry__text {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.todo-entry__right {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.todo-entry__tip {
+  font-size: 24rpx;
+  color: #8c8c8c;
 }
 </style>

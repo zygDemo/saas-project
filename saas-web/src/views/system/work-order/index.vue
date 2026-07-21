@@ -97,17 +97,18 @@
       <el-form :model="searchForm" inline>
         <el-form-item label="工单类型">
           <el-select v-model="searchForm.type" placeholder="请选择工单类型" clearable>
-            <el-option label="系统维护工单" value="system_maintenance" />
-            <el-option label="数据修正工单" value="data_correction" />
-            <el-option label="客户问题工单" value="customer_issue" />
+            <el-option label="反馈" value="FEEDBACK" />
+            <el-option label="缺陷" value="BUG" />
+            <el-option label="建议" value="SUGGESTION" />
+            <el-option label="支持" value="SUPPORT" />
           </el-select>
         </el-form-item>
         <el-form-item label="工单状态">
           <el-select v-model="searchForm.status" placeholder="请选择状态" clearable>
-            <el-option label="待处理" value="pending" />
-            <el-option label="处理中" value="processing" />
-            <el-option label="已完成" value="completed" />
-            <el-option label="已关闭" value="closed" />
+            <el-option label="待处理" value="OPEN" />
+            <el-option label="处理中" value="PROCESSING" />
+            <el-option label="已解决" value="RESOLVED" />
+            <el-option label="已关闭" value="CLOSED" />
           </el-select>
         </el-form-item>
         <el-form-item label="创建时间">
@@ -162,17 +163,18 @@
         </el-form-item>
         <el-form-item label="工单类型" prop="type">
           <el-select v-model="formData.type" placeholder="请选择工单类型">
-            <el-option label="系统维护工单" value="system_maintenance" />
-            <el-option label="数据修正工单" value="data_correction" />
-            <el-option label="客户问题工单" value="customer_issue" />
+            <el-option label="反馈" value="FEEDBACK" />
+            <el-option label="缺陷" value="BUG" />
+            <el-option label="建议" value="SUGGESTION" />
+            <el-option label="支持" value="SUPPORT" />
           </el-select>
         </el-form-item>
         <el-form-item label="优先级" prop="priority">
           <el-radio-group v-model="formData.priority">
-            <el-radio label="low">低</el-radio>
-            <el-radio label="medium">中</el-radio>
-            <el-radio label="high">高</el-radio>
-            <el-radio label="urgent">紧急</el-radio>
+            <el-radio label="LOW">低</el-radio>
+            <el-radio label="NORMAL">中</el-radio>
+            <el-radio label="HIGH">高</el-radio>
+            <el-radio label="URGENT">紧急</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="工单描述" prop="description">
@@ -229,6 +231,12 @@
   import { ElMessage, ElMessageBox, ElTag, ElButton, ElSpace } from 'element-plus'
   import { Plus } from '@element-plus/icons-vue'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import {
+    fetchWorkOrderList,
+    fetchCreateWorkOrder,
+    fetchUpdateWorkOrder,
+    fetchDeleteWorkOrder
+  } from '@/api/work-order'
   import {
     getDbOpsStatus,
     runDbMigrate,
@@ -408,38 +416,7 @@
   })
 
   // 表格数据
-  const tableData = ref([
-    {
-      id: 'WO20260618001',
-      title: '系统数据库优化',
-      type: 'system_maintenance',
-      status: 'pending',
-      priority: 'high',
-      assignee: '张三',
-      creator: '管理员',
-      createdAt: '2026-06-18 10:00:00'
-    },
-    {
-      id: 'WO20260618002',
-      title: '客户信息修正',
-      type: 'data_correction',
-      status: 'processing',
-      priority: 'medium',
-      assignee: '李四',
-      creator: '管理员',
-      createdAt: '2026-06-18 09:30:00'
-    },
-    {
-      id: 'WO20260618003',
-      title: '客户投诉处理',
-      type: 'customer_issue',
-      status: 'completed',
-      priority: 'urgent',
-      assignee: '王五',
-      creator: '管理员',
-      createdAt: '2026-06-17 15:00:00'
-    }
-  ])
+  const tableData = ref<WorkOrder[]>([])
 
   const loading = ref(false)
 
@@ -459,7 +436,7 @@
   const formData = reactive({
     title: '',
     type: '',
-    priority: 'medium',
+    priority: 'NORMAL',
     description: '',
     attachments: []
   })
@@ -543,18 +520,20 @@
 
   const getTypeTag = (type: string): TagType => {
     const map: Record<string, TagType> = {
-      system_maintenance: 'warning',
-      data_correction: 'info',
-      customer_issue: 'danger'
+      FEEDBACK: 'info',
+      BUG: 'danger',
+      SUGGESTION: 'warning',
+      SUPPORT: 'primary'
     }
     return map[type] || 'info'
   }
 
   const getTypeLabel = (type: string) => {
     const map: Record<string, string> = {
-      system_maintenance: '系统维护',
-      data_correction: '数据修正',
-      customer_issue: '客户问题'
+      FEEDBACK: '反馈',
+      BUG: '缺陷',
+      SUGGESTION: '建议',
+      SUPPORT: '支持'
     }
     return map[type] || type
   }
@@ -562,20 +541,20 @@
   // 状态标签
   const getStatusTag = (status: string) => {
     const map: Record<string, TagType> = {
-      pending: 'info',
-      processing: 'warning',
-      completed: 'success',
-      closed: 'info'
+      OPEN: 'info',
+      PROCESSING: 'warning',
+      RESOLVED: 'success',
+      CLOSED: 'info'
     }
     return map[status] || 'info'
   }
 
   const getStatusLabel = (status: string) => {
     const map: Record<string, string> = {
-      pending: '待处理',
-      processing: '处理中',
-      completed: '已完成',
-      closed: '已关闭'
+      OPEN: '待处理',
+      PROCESSING: '处理中',
+      RESOLVED: '已解决',
+      CLOSED: '已关闭'
     }
     return map[status] || status
   }
@@ -583,31 +562,41 @@
   // 优先级标签
   const getPriorityTag = (priority: string) => {
     const map: Record<string, TagType> = {
-      low: 'info',
-      medium: 'primary',
-      high: 'warning',
-      urgent: 'danger'
+      LOW: 'info',
+      NORMAL: 'primary',
+      HIGH: 'warning',
+      URGENT: 'danger'
     }
     return map[priority] || 'info'
   }
 
   const getPriorityLabel = (priority: string) => {
     const map: Record<string, string> = {
-      low: '低',
-      medium: '中',
-      high: '高',
-      urgent: '紧急'
+      LOW: '低',
+      NORMAL: '中',
+      HIGH: '高',
+      URGENT: '紧急'
     }
     return map[priority] || priority
   }
 
   // 搜索
-  const handleSearch = () => {
+  const handleSearch = async () => {
     loading.value = true
-    // TODO: 调用API获取数据
-    setTimeout(() => {
+    try {
+      const res = await fetchWorkOrderList({
+        page: pagination.current,
+        size: pagination.size,
+        orderType: searchForm.type || undefined,
+        status: searchForm.status || undefined
+      })
+      tableData.value = (res.list || res.data?.list || []) as WorkOrder[]
+      pagination.total = res.total ?? res.data?.total ?? 0
+    } catch (e) {
+      console.error('获取工单列表失败:', e)
+    } finally {
       loading.value = false
-    }, 500)
+    }
   }
 
   // 重置
@@ -642,25 +631,48 @@
   }
 
   // 删除
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleDelete = (row: WorkOrder) => {
-    ElMessageBox.confirm('确定要删除该工单吗？', '提示', {
-      type: 'warning'
-    }).then(() => {
+  const handleDelete = async (row: WorkOrder) => {
+    try {
+      await ElMessageBox.confirm('确定要删除该工单吗？', '提示', { type: 'warning' })
+      await fetchDeleteWorkOrder(row.id)
       ElMessage.success('删除成功')
-    })
+      handleSearch()
+    } catch (e) {
+      if (e !== 'cancel') ElMessage.error('删除失败')
+    }
   }
 
   // 提交表单
-  const handleSubmit = () => {
-    dialogVisible.value = false
-    ElMessage.success('创建成功')
+  const handleSubmit = async () => {
+    try {
+      await fetchCreateWorkOrder({
+        title: formData.title,
+        content: formData.description,
+        orderType: formData.type as any,
+        priority: formData.priority as any
+      })
+      dialogVisible.value = false
+      ElMessage.success('创建成功')
+      handleSearch()
+    } catch (e) {
+      ElMessage.error('创建失败')
+    }
   }
 
   // 指派提交
-  const handleAssignSubmit = () => {
-    assignDialogVisible.value = false
-    ElMessage.success('指派成功')
+  const handleAssignSubmit = async () => {
+    try {
+      if (assignForm.assigneeId) {
+        await fetchUpdateWorkOrder(Number(assignForm.assigneeId), {
+          assigneeId: Number(assignForm.assigneeId)
+        })
+      }
+      assignDialogVisible.value = false
+      ElMessage.success('指派成功')
+      handleSearch()
+    } catch (e) {
+      ElMessage.error('指派失败')
+    }
   }
 
   // 上传成功

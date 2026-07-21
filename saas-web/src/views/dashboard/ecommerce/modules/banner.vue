@@ -47,6 +47,7 @@
 
 <script setup lang="ts">
   import bannerCover from '@imgs/login/lf_icon2.webp'
+  import { router } from '@/router'
   import { useUserStore } from '@/store/modules/user'
 
   const userStore = useUserStore()
@@ -60,6 +61,6 @@
    * 处理横幅点击事件
    */
   const handleBannerClick = (): void => {
-    // TODO: 添加横幅点击处理逻辑
+    router.push({ name: 'DataStats' })
   }
 </script>

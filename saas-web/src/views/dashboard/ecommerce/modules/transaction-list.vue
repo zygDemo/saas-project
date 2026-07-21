@@ -1,3 +1,4 @@
+<!-- 最近活动列表 -->
 <template>
   <ArtDataListCard
     class="mb-5 max-sm:mb-4"
@@ -6,11 +7,16 @@
     title="最近活动"
     subtitle="订单处理状态"
     :showMoreButton="true"
+    :loading="loading"
     @more="handleMore"
   />
 </template>
 
 <script setup lang="ts">
+  import { ref, onMounted } from 'vue'
+  import { router } from '@/router'
+  import { fetchDataCenterStats } from '@/api/data-center'
+
   interface TransactionItem {
     title: string
     status: string
@@ -19,52 +25,62 @@
     icon: string
   }
 
-  /**
-   * 最近活动数据列表
-   * 展示订单处理、退款申请、投诉处理等业务活动状态
-   */
-  const dataList: TransactionItem[] = [
+  const loading = ref(false)
+
+  /** 最近活动数据 - 从数据中心获取后展示各阶段订单 */
+  const dataList = ref<TransactionItem[]>([
     {
-      title: '新订单 #38291',
-      status: '待处理',
-      time: '5分钟',
+      title: '暂无最近活动',
+      status: '等待数据',
+      time: '-',
       class: 'bg-theme/12 text-theme',
       icon: 'ri:shopping-bag-4-line'
-    },
-    {
-      title: '退款申请 #12845',
-      status: '处理中',
-      time: '10分钟',
-      class: 'bg-secondary/12 text-secondary',
-      icon: 'ri:profile-line'
-    },
-    {
-      title: '客户投诉处理',
-      status: '待处理',
-      time: '15分钟',
-      class: 'bg-warning/12 text-warning',
-      icon: 'ri:customer-service-2-line'
-    },
-    {
-      title: '库存不足提醒',
-      status: '紧急',
-      time: '20分钟',
-      class: 'bg-danger/12 text-danger',
-      icon: 'ri:box-1-line'
-    },
-    {
-      title: '订单 #29384 已发货',
-      status: '已完成',
-      time: '20分钟',
-      class: 'bg-success/12 text-success',
-      icon: 'ri:shopping-bag-3-line'
     }
-  ]
+  ])
 
-  /**
-   * 处理查看更多按钮点击事件
-   */
-  const handleMore = (): void => {
-    // TODO: 添加查看更多逻辑
+  const PHASE_MAP: Record<number, { title: string; icon: string; class: string }> = {
+    1100: { title: '身份证录入', icon: 'ri:user-line', class: 'bg-theme/12 text-theme' },
+    1110: { title: '车辆信息录入', icon: 'ri:car-line', class: 'bg-secondary/12 text-secondary' },
+    1200: { title: '征信/申请', icon: 'ri:file-list-3-line', class: 'bg-warning/12 text-warning' },
+    2000: { title: '审批中', icon: 'ri:time-line', class: 'bg-theme/12 text-theme' },
+    3000: { title: '补件处理', icon: 'ri:folder-upload-line', class: 'bg-warning/12 text-warning' },
+    4000: { title: '签约阶段', icon: 'ri:edit-line', class: 'bg-success/12 text-success' },
+    5000: { title: '放款阶段', icon: 'ri:money-cny-circle-line', class: 'bg-success/12 text-success' }
   }
+
+  async function loadRecentActivity() {
+    loading.value = true
+    try {
+      const res = await fetchDataCenterStats()
+      const data = res?.data || res || {}
+      const phases = data.phases || []
+
+      if (phases.length > 0) {
+        dataList.value = phases
+          .filter((p: any) => p.count > 0)
+          .slice(0, 5)
+          .map((p: any) => {
+            const info = PHASE_MAP[p.code] || { title: p.name, icon: 'ri:file-line', class: 'bg-theme/12 text-theme' }
+            return {
+              title: `${info.title} ${p.count}件`,
+              status: p.count > 0 ? '进行中' : '已完成',
+              time: '实时',
+              class: info.class,
+              icon: info.icon
+            }
+          })
+      }
+    } catch (e) {
+      console.warn('获取最近活动失败:', e)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /** 查看更多 → 跳转到订单查询 */
+  const handleMore = (): void => {
+    router.push({ name: 'BusinessOrderQuery' })
+  }
+
+  onMounted(loadRecentActivity)
 </script>

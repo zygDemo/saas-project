@@ -8,7 +8,9 @@ import {
   ArticleQueryDto,
   CreateArticleTypeDto,
   ArticleTypeQueryDto
-} from './dto/article.dto'
+,
+  CreateCommentDto,
+  CommentQueryDto} from './dto/article.dto'
 
 @Injectable()
 export class ArticleService {
@@ -235,4 +237,78 @@ export class ArticleService {
       data: { deletedAt: new Date() }
     })
   }
+
+
+  // ==================== 评论管理 ====================
+
+  async getComments(query: CommentQueryDto) {
+    const tenantId = getCurrentTenantId()
+    const pagination = getPagination(query)
+    const where: Record<string, unknown> = { tenantId, deletedAt: null }
+
+    if (query.articleId) where.articleId = query.articleId
+    if (query.status) where.status = query.status
+
+    const [records, total] = await this.prisma.$transaction([
+      this.prisma.articleComment.findMany({
+        where,
+        skip: pagination.skip,
+        take: pagination.take,
+        orderBy: { createdAt: 'desc' }
+      }),
+      this.prisma.articleComment.count({ where })
+    ])
+
+    return toPaginatedResponse(records, total, pagination)
+  }
+
+  async getCommentsByArticleId(articleId: number) {
+    const tenantId = getCurrentTenantId()
+    return this.prisma.articleComment.findMany({
+      where: { articleId, tenantId, deletedAt: null, status: 'PUBLISHED' },
+      orderBy: { createdAt: 'desc' }
+    })
+  }
+
+  async createComment(dto: CreateCommentDto) {
+    const tenantId = getCurrentTenantId()
+
+    // 验证文章存在
+    const article = await this.prisma.article.findFirst({
+      where: { id: dto.articleId, tenantId, deletedAt: null }
+    })
+    if (!article) throw new NotFoundException('文章不存在')
+
+    // 验证父评论存在
+    if (dto.parentId) {
+      const parent = await this.prisma.articleComment.findFirst({
+        where: { id: dto.parentId, tenantId, deletedAt: null }
+      })
+      if (!parent) throw new NotFoundException('父评论不存在')
+    }
+
+    return this.prisma.articleComment.create({
+      data: {
+        tenantId,
+        articleId: dto.articleId,
+        content: dto.content,
+        userName: dto.userName || '匿名',
+        parentId: dto.parentId,
+      }
+    })
+  }
+
+  async deleteComment(id: number) {
+    const tenantId = getCurrentTenantId()
+    const comment = await this.prisma.articleComment.findFirst({
+      where: { id, tenantId, deletedAt: null }
+    })
+    if (!comment) throw new NotFoundException('评论不存在')
+
+    return this.prisma.articleComment.update({
+      where: { id },
+      data: { deletedAt: new Date() }
+    })
+  }
+
 }

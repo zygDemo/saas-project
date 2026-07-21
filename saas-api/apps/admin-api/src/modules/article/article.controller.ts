@@ -16,7 +16,9 @@ import {
   ArticleQueryDto,
   CreateArticleTypeDto,
   ArticleTypeQueryDto
-} from './dto/article.dto'
+,
+  CreateCommentDto,
+  CommentQueryDto} from './dto/article.dto'
 import { GetCurrentUserId } from '../../common/decorators/auth.decorator'
 
 @ApiTags('文章管理')
@@ -94,4 +96,32 @@ export class ArticleController {
   async removeType(@Param('id') id: string) {
     return this.articleService.removeType(+id)
   }
+
+
+  // ==================== 评论管理 ====================
+
+  @Get('comment/list')
+  @ApiOperation({ summary: '获取评论列表（分页）' })
+  async getComments(@Query() query: CommentQueryDto) {
+    return this.articleService.getComments(query)
+  }
+
+  @Get(':id/comments')
+  @ApiOperation({ summary: '获取文章评论列表' })
+  async getCommentsByArticle(@Param('id') id: string) {
+    return this.articleService.getCommentsByArticleId(+id)
+  }
+
+  @Post('comment')
+  @ApiOperation({ summary: '发表评论' })
+  async createComment(@Body() dto: CreateCommentDto) {
+    return this.articleService.createComment(dto)
+  }
+
+  @Delete('comment/:id')
+  @ApiOperation({ summary: '删除评论' })
+  async deleteComment(@Param('id') id: string) {
+    return this.articleService.deleteComment(+id)
+  }
+
 }

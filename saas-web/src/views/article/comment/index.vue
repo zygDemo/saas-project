@@ -73,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-  import { commentList } from '@/mock/temp/commentList'
+  import { fetchCommentList, fetchCreateComment, fetchDeleteComment } from '@/api/article'
 
   defineOptions({ name: 'ArticleComment' })
 
@@ -129,4 +129,27 @@
     showDrawer.value = true
     clickItem.value = item
   }
+
+// 加载评论列表
+async function loadComments() {
+  loading.value = true
+  try {
+    const res = await fetchCommentList({ page: 1, size: 50, status: 'PUBLISHED' })
+    const list = res.list || res.data?.list || []
+    commentList.value = list.map((item: any) => ({
+      id: item.id,
+      date: (item.createdAt || '').slice(0, 10),
+      content: item.content,
+      collection: item.likeCount || 0,
+      comment: 0,
+      userName: item.userName || '匿名'
+    }))
+  } catch (e) {
+    console.warn('获取评论失败:', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(loadComments)
 </script>
