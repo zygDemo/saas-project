@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import {
   Application as ApplicationModel,
   ApplicationFile,
+  ApplicationStatus,
   ApprovalRecord,
   Customer,
   Disbursement,
@@ -14,6 +15,7 @@ import {
   User,
   Vehicle
 } from '@prisma/client'
+import { DEFAULT_FLOW_STATUS_MAP } from '../../common/constants/flow.constants'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { FlowConfigService } from '../flow-config/flow-config.service'
 import { PrismaService } from '../prisma/prisma.service'
@@ -40,6 +42,7 @@ interface FlowMappingCache {
   nodeNames: Record<number, string>
   nodePhases: Record<number, number>
   phaseNames: Record<number, string>
+  statusMappings: Record<ApplicationStatus, { currentNode: number; currentStatus: number }>
 }
 
 // ==================== 常量 ====================
@@ -54,7 +57,12 @@ const DETAIL_FILE_TYPE_LABELS: Record<string, string> = {
   BANK_CARD: '银行卡', CONTRACT: '合同', OTHER: '其他材料'
 }
 
-const EMPTY_FLOW_MAPPINGS: FlowMappingCache = { nodeNames: {}, nodePhases: {}, phaseNames: {} }
+const EMPTY_FLOW_MAPPINGS: FlowMappingCache = {
+  nodeNames: {},
+  nodePhases: {},
+  phaseNames: {},
+  statusMappings: { ...DEFAULT_FLOW_STATUS_MAP }
+}
 
 function omitEmptyValues(source: Record<string, unknown>) {
   return Object.fromEntries(Object.entries(source).filter(([, value]) => value !== undefined))
@@ -82,6 +90,19 @@ export class ApplicationMapper {
 
   getFlowMappings(): FlowMappingCache {
     return this.flowMappingsCache || EMPTY_FLOW_MAPPINGS
+  }
+
+  /**
+   * 根据机构和状态获取流程补丁（currentNode / currentStatus）。
+   * 优先使用机构自定义流程配置，未配置时使用默认兜底映射。
+   */
+  async getFlowPatch(
+    orgId: number | undefined,
+    status: ApplicationStatus
+  ): Promise<{ currentNode: number; currentStatus: number }> {
+    await this.loadFlowMappings(orgId)
+    const mappings = this.getFlowMappings()
+    return mappings.statusMappings[status] || DEFAULT_FLOW_STATUS_MAP[status]
   }
 
   // ==================== 列表/详情映射 ====================

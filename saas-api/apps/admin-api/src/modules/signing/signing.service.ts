@@ -1,7 +1,8 @@
 import { Prisma } from '@prisma/client'
-﻿import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { PrismaService } from '../prisma/prisma.service'
+import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { CreateSigningDto, UpdateSigningDto, SigningQueryDto } from './dto/signing.dto'
 
 @Injectable()
@@ -12,7 +13,7 @@ export class SigningService extends BaseBusinessCrudService<CreateSigningDto, Up
       prisma,
       exactFields: ['applicationId', 'status'],
       include: { application: true },
-        detailInclude: { application: { include: { customer: true, product: true } } },
+      detailInclude: { application: { include: { customer: true, product: true } } },
       validateCreate: async (dto) => {
         await this.ensureRelatedExists(this.prisma.application, dto.applicationId, '进件不存在')
       },
@@ -22,51 +23,34 @@ export class SigningService extends BaseBusinessCrudService<CreateSigningDto, Up
     })
   }
 
-  /**
-   * 授权签署 - 一键完成签署
-   */
+  /** 授权签署 - 一键完成签署 */
   async authorizeSign(id: number) {
-    // 查询签署记录
+    const tenantId = getCurrentTenantId()
     const signRecord = await this.prisma.signRecord.findFirst({
-      where: { id },
+      where: { id, ...(tenantId && { tenantId }), deletedAt: null },
       include: { application: true }
     })
 
-    if (!signRecord) {
-      throw new NotFoundException('签署记录不存在')
-    }
-
-    // 检查状态，只有 PENDING 或 SENT 状态才能签署
-    if (!['PENDING', 'SENT'].includes(signRecord.status)) {
+    if (!signRecord) throw new NotFoundException('签署记录不存在')
+    if (!['PENDING', 'SENT'].includes(signRecord.status))
       throw new BadRequestException(`当前状态 ${signRecord.status} 不允许签署`)
-    }
 
-    // 使用事务同时更新签署记录和申请状态
-    const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // 更新签署记录为已签署
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updatedSignRecord = await tx.signRecord.update({
-        where: { id },
-        data: {
-          status: 'SIGNED',
-          signedAt: new Date()
-        }
+        where: tenantId ? { id, tenantId } : { id },
+        data: { status: 'SIGNED', signedAt: new Date() }
       })
 
-      // 更新申请状态为已签约
       await tx.application.update({
-        where: { id: signRecord.applicationId },
-        data: {
-          status: 'SIGNED'
-        }
+        where: tenantId ? { id: signRecord.applicationId, tenantId } : { id: signRecord.applicationId },
+        data: { status: 'SIGNED' }
       })
 
-      return updatedSignRecord
+      return {
+        code: 200,
+        message: '授权签署成功',
+        data: updatedSignRecord
+      }
     })
-
-    return {
-      code: 200,
-      message: '授权签署成功',
-      data: result
-    }
   }
 }

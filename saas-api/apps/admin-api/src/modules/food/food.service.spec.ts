@@ -111,6 +111,7 @@ describe('FoodService', () => {
       await service.updateOrderStatus(1, 'COMPLETED' as any)
       expect(mockPrisma.foodOrder.update).toHaveBeenCalled()
     })
+  })
 
   describe('购物车', () => {
     it('getCart 应返回购物车列表', async () => {

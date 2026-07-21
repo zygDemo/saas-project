@@ -42,8 +42,8 @@ export interface NotificationEvent {
 }
 
 @Injectable()
-export class NotificationService {
-  private readonly logger = new Logger(NotificationService.name)
+export class ApplicationNotificationService {
+  private readonly logger = new Logger(ApplicationNotificationService.name)
 
   constructor(private readonly prisma: PrismaService) {}
 

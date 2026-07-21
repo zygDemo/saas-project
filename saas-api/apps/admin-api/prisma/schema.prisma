@@ -1,4 +1,3 @@
-
 // ==================== 基础设施域 (Infrastructure) ====================
 
 generator client {
@@ -142,54 +141,57 @@ model Tenant {
   userBookshelves   UserBookshelf[]
   readingProgresses ReadingProgress[]
   bookReviews       BookReview[]
-  readingNotes ReadingNote[]
+  readingNotes      ReadingNote[]
   systemParams      SystemParam[]
   announcements     Announcement[]
-  messageTemplates MessageTemplate[]
+  messageTemplates  MessageTemplate[]
   collectionRecords CollectionRecord[]
   earlyRepayments   EarlyRepayment[]
   workOrders        WorkOrder[]
 
   // 文章模块
-  articles          Article[]
-  articleTypes      ArticleType[]
+  articles     Article[]
+  articleTypes ArticleType[]
 
   // 点餐模块
-  foodCategories  FoodCategory[]
-  foodDishes      FoodDish[]
-  foodOrders      FoodOrder[]
-  foodCarts       FoodCart[]
+  foodCategories   FoodCategory[]
+  foodDishes       FoodDish[]
+  foodOrders       FoodOrder[]
+  foodCarts        FoodCart[]
+  notificationLogs NotificationLog[]
 
   // 移动端模块配置
-  mobileModules       Json?    // ["carloan","food","credit"] 已启用的移动端模块
-  defaultMobileModule String?  // 单模块模式下的默认模块 key
+  mobileModules       Json? // ["carloan","food","credit"] 已启用的移动端模块
+  defaultMobileModule String? // 单模块模式下的默认模块 key
+  articleComments     ArticleComment[]
 }
 
 model User {
-  id           Int         @id @default(autoincrement())
-  tenantId     Int
-  deptId       Int?
-  userName     String
-  passwordHash String
-  nickName     String
-  gender       String      @default("未知")
-  phone        String?
-  email        String?
-  avatar       String?
-  status       UserStatus  @default(ONLINE)
-  createdBy    String      @default("system")
-  updatedBy    String      @default("system")
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  foodOrders   FoodOrder[]
-  foodCarts    FoodCart[]
-  tenant       Tenant      @relation(fields: [tenantId], references: [id])
-  dept         Department? @relation(fields: [deptId], references: [id])
-  roles        UserRole[]
+  id               Int               @id @default(autoincrement())
+  tenantId         Int
+  deptId           Int?
+  userName         String
+  passwordHash     String
+  nickName         String
+  gender           String            @default("未知")
+  phone            String?
+  email            String?
+  avatar           String?
+  status           UserStatus        @default(ONLINE)
+  createdBy        String            @default("system")
+  updatedBy        String            @default("system")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  foodOrders       FoodOrder[]
+  foodCarts        FoodCart[]
+  notificationLogs NotificationLog[]
+  tenant           Tenant            @relation(fields: [tenantId], references: [id])
+  dept             Department?       @relation(fields: [deptId], references: [id])
+  roles            UserRole[]
 
   // 移动端模块配置（用户级，最高优先级）
-  mobileModules       Json?    // ["carloan"] 用户可访问的移动端模块
-  mobileMultiModule   Boolean  @default(false) // 是否支持多业务模块
+  mobileModules     Json? // ["carloan"] 用户可访问的移动端模块
+  mobileMultiModule Boolean @default(false) // 是否支持多业务模块
 
   // 业务关联
   leads        Lead[]
@@ -200,12 +202,12 @@ model User {
   chapterPurchases ChapterPurchase[]
   reviewLikes      ReviewLike[]
   articleLikes     ArticleLike[]
+  deletedAt        DateTime? // 软删除时间戳
 
   @@unique([tenantId, userName])
   @@unique([tenantId, email])
   @@index([tenantId])
   @@index([deptId])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model Role {
@@ -224,14 +226,14 @@ model Role {
   permissions RolePermission[]
 
   // 移动端模块配置（角色级，覆盖租户配置）
-  mobileModules       Json?    // ["carloan","food"] 角色可访问的移动端模块
-  mobileMultiModule   Boolean  @default(false) // 是否支持多业务模块
+  mobileModules     Json? // ["carloan","food"] 角色可访问的移动端模块
+  mobileMultiModule Boolean @default(false) // 是否支持多业务模块
 
-  departments  RoleDepartment[]
+  departments RoleDepartment[]
+  deletedAt   DateTime? // 软删除时间戳
 
   @@unique([tenantId, code])
   @@index([tenantId])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model UserRole {
@@ -265,20 +267,20 @@ model Menu {
   children    Menu[]       @relation("MenuTree")
   roles       RoleMenu[]
   permissions Permission[]
+  deletedAt   DateTime? // 软删除时间戳
 
   @@unique([tenantId, name])
   @@index([tenantId])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model RoleMenu {
-  roleId Int
-  menuId Int
-  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  menu   Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  roleId    Int
+  menuId    Int
+  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  menu      Menu      @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  deletedAt DateTime? // 软删除时间戳
 
   @@id([roleId, menuId])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model RoleDepartment {
@@ -301,10 +303,10 @@ model Permission {
   tenant    Tenant           @relation(fields: [tenantId], references: [id])
   menu      Menu             @relation(fields: [menuId], references: [id], onDelete: Cascade)
   roles     RolePermission[]
+  deletedAt DateTime? // 软删除时间戳
 
   @@unique([tenantId, menuId, authMark])
   @@index([tenantId])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model RolePermission {
@@ -312,9 +314,9 @@ model RolePermission {
   permissionId Int
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  deletedAt    DateTime? // 软删除时间戳
 
   @@id([roleId, permissionId])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model DictType {
@@ -328,32 +330,32 @@ model DictType {
   updatedAt DateTime   @updatedAt
   tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   items     DictData[]
+  deletedAt DateTime? // 软删除时间戳
 
   @@unique([tenantId, code])
   @@index([tenantId])
   @@index([status])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model DictData {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   tenantId  Int
   typeId    Int
   label     String
   value     String
-  sort      Int      @default(0)
-  status    String   @default("ACTIVE")
+  sort      Int       @default(0)
+  status    String    @default("ACTIVE")
   remark    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  type      DictType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type      DictType  @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  deletedAt DateTime? // 软删除时间戳
 
   @@unique([tenantId, typeId, value])
   @@index([tenantId])
   @@index([typeId])
   @@index([status])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model FileAsset {
@@ -377,7 +379,8 @@ model FileAsset {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  deletedAt DateTime? // 软删除时间戳
 
   @@index([tenantId])
   @@index([orgId])
@@ -385,7 +388,6 @@ model FileAsset {
   @@index([categoryCode])
   @@index([status])
   @@index([uploadedBy])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model OperationLog {
@@ -413,17 +415,17 @@ model OperationLog {
 }
 
 model SystemParam {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   tenantId  Int
-  group     String?  @db.VarChar(50)   // 参数分组：basic, security, sms 等
-  name      String   @db.VarChar(100)  // 参数名称
-  key       String   @db.VarChar(100)  // 参数键（英文唯一标识）
-  value     String?  @db.Text          // 参数值
-  type      String   @default("STRING") @db.VarChar(20) // STRING, NUMBER, BOOLEAN, JSON
-  status    String   @default("ACTIVE") @db.VarChar(20)
-  remark    String?  @db.VarChar(500)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  group     String?   @db.VarChar(50) // 参数分组：basic, security, sms 等
+  name      String    @db.VarChar(100) // 参数名称
+  key       String    @db.VarChar(100) // 参数键（英文唯一标识）
+  value     String?   @db.Text // 参数值
+  type      String    @default("STRING") @db.VarChar(20) // STRING, NUMBER, BOOLEAN, JSON
+  status    String    @default("ACTIVE") @db.VarChar(20)
+  remark    String?   @db.VarChar(500)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -433,7 +435,6 @@ model SystemParam {
   @@index([group])
   @@index([status])
 }
-
 
 // ==================== 机构配置域 (Organization & Config) ====================
 
@@ -461,28 +462,28 @@ model Organization {
   leads        Lead[]
   customers    Customer[]
   applications Application[]
+  deletedAt    DateTime? // 软删除时间戳
 
   @@index([tenantId])
   @@index([status])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model Department {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   tenantId  Int
   orgId     Int
   parentId  Int?
   name      String
   managerId Int? // 部门负责人用户 ID
-  sort      Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  sort      Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  parent   Department?  @relation("DeptTree", fields: [parentId], references: [id], onDelete: Cascade)
-  children Department[] @relation("DeptTree")
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  org      Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  parent   Department?      @relation("DeptTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children Department[]     @relation("DeptTree")
   users    User[]
   roles    RoleDepartment[]
 
@@ -522,11 +523,11 @@ model Product {
   tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   org          Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
   applications Application[]
+  deletedAt    DateTime? // 软删除时间戳
 
   @@index([tenantId])
   @@index([orgId])
   @@index([status])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model Funder {
@@ -550,11 +551,11 @@ model Funder {
   tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   org          Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
   applications Application[]
+  deletedAt    DateTime? // 软删除时间戳
 
   @@unique([orgId, code])
   @@index([tenantId])
   @@index([orgId])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model FlowConfig {
@@ -577,8 +578,9 @@ model FlowConfig {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  deletedAt DateTime? // 软删除时间戳
 
   @@unique([orgId, businessType, nodeCode])
   @@index([tenantId])
@@ -586,113 +588,111 @@ model FlowConfig {
   @@index([businessType])
   @@index([nodeCode])
   @@index([status])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model PackagePlan {
-  id          Int      @id @default(autoincrement())
-  name        String   @db.VarChar(100)   // 套餐名称
-  code        String   @unique @db.VarChar(50) // 套餐编码
-  description String?  @db.VarChar(500)   // 套餐描述
-  price       Decimal  @db.Decimal(10, 2) // 月费
-  maxUsers    Int      @default(0)        // 最大用户数，0=不限
-  maxOrgs     Int      @default(0)        // 最大机构数，0=不限
-  features    Json?                        // 功能特性列表
-  status      String   @default("ACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(100) // 套餐名称
+  code        String    @unique @db.VarChar(50) // 套餐编码
+  description String?   @db.VarChar(500) // 套餐描述
+  price       Decimal   @db.Decimal(10, 2) // 月费
+  maxUsers    Int       @default(0) // 最大用户数，0=不限
+  maxOrgs     Int       @default(0) // 最大机构数，0=不限
+  features    Json? // 功能特性列表
+  status      String    @default("ACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
   @@index([status])
 }
 
 model ProductTemplate {
-  id              Int      @id @default(autoincrement())
-  name            String   @db.VarChar(100)   // 模板名称
-  productType     String   @db.VarChar(50)    // 产品类型：抵押贷、信用贷、融资租赁
-  description     String?  @db.VarChar(500)
-  minRate         Decimal? @db.Decimal(5, 4)
-  maxRate         Decimal? @db.Decimal(5, 4)
-  minAmount       Decimal? @db.Decimal(15, 2)
-  maxAmount       Decimal? @db.Decimal(15, 2)
-  minTerm         Int?
-  maxTerm         Int?
-  repaymentMethod String?  @db.VarChar(50)
-  accessConditions Json?                       // 准入条件模板
-  fileChecklist   Json?                       // 所需文件清单模板
-  status          String   @default("ACTIVE") @db.VarChar(20)
-  sortOrder       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime?
+  id               Int       @id @default(autoincrement())
+  name             String    @db.VarChar(100) // 模板名称
+  productType      String    @db.VarChar(50) // 产品类型：抵押贷、信用贷、融资租赁
+  description      String?   @db.VarChar(500)
+  minRate          Decimal?  @db.Decimal(5, 4)
+  maxRate          Decimal?  @db.Decimal(5, 4)
+  minAmount        Decimal?  @db.Decimal(15, 2)
+  maxAmount        Decimal?  @db.Decimal(15, 2)
+  minTerm          Int?
+  maxTerm          Int?
+  repaymentMethod  String?   @db.VarChar(50)
+  accessConditions Json? // 准入条件模板
+  fileChecklist    Json? // 所需文件清单模板
+  status           String    @default("ACTIVE") @db.VarChar(20)
+  sortOrder        Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
 
   @@index([status])
   @@index([productType])
 }
 
 model ThirdPartyService {
-  id          Int      @id @default(autoincrement())
-  name        String   @db.VarChar(100)   // 服务名称
-  code        String   @unique @db.VarChar(50)  // 服务编码
-  serviceType String   @db.VarChar(50)    // 类型：SMS, OCR, GPS, CREDIT, PAYMENT
-  provider    String   @db.VarChar(100)   // 服务商
-  apiUrl      String?  @db.VarChar(500)   // API地址
-  config      Json?                        // 配置信息（加密存储）
-  status      String   @default("ACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE, ERROR
-  lastTestAt  DateTime?                    // 最后测试时间
-  lastTestOk  Boolean?                     // 最后测试结果
-  remark      String?  @db.VarChar(500)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(100) // 服务名称
+  code        String    @unique @db.VarChar(50) // 服务编码
+  serviceType String    @db.VarChar(50) // 类型：SMS, OCR, GPS, CREDIT, PAYMENT
+  provider    String    @db.VarChar(100) // 服务商
+  apiUrl      String?   @db.VarChar(500) // API地址
+  config      Json? // 配置信息（加密存储）
+  status      String    @default("ACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE, ERROR
+  lastTestAt  DateTime? // 最后测试时间
+  lastTestOk  Boolean? // 最后测试结果
+  remark      String?   @db.VarChar(500)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
   @@index([status])
   @@index([serviceType])
 }
 
-
 // ==================== 客户管理域 (Customer Management) ====================
 
 model Customer {
-  id               Int       @id @default(autoincrement())
-  tenantId         Int
-  orgId            Int
-  name             String
-  phone            String
-  idCard           String? // 身份证号
-  gender           Gender    @default(UNKNOWN)
-  birthDate        DateTime?
-  nation           String?
-  householdAddress String?
-  issuingAuthority String?
-  idCardValidFrom  String?
-  idCardValidTo    String?
-  idCardFront      String?
-  idCardBack       String?
-  maritalStatus    String?
-  education        String?
-  degree           String?     // 学位
-  occupation       String?
-  companyName      String?     // 单位名称
-  monthlyIncome    Decimal?    @db.Decimal(15, 2)
-  dwellingCondition String?    // 居住状况
-  liveProvince     String?     // 居住省
-  liveCity         String?     // 居住市
-  liveDistrict     String?     // 居住区
-  liveDetailedAddress String?  // 居住详细地址
-  childrenNum      Int?        // 供养子女数
-  workingProvince  String?     // 单位省
-  workingCity      String?     // 单位市
-  workingDistrict  String?     // 单位区
+  id                     Int       @id @default(autoincrement())
+  tenantId               Int
+  orgId                  Int
+  name                   String
+  phone                  String
+  idCard                 String? // 身份证号
+  gender                 Gender    @default(UNKNOWN)
+  birthDate              DateTime?
+  nation                 String?
+  householdAddress       String?
+  issuingAuthority       String?
+  idCardValidFrom        String?
+  idCardValidTo          String?
+  idCardFront            String?
+  idCardBack             String?
+  maritalStatus          String?
+  education              String?
+  degree                 String? // 学位
+  occupation             String?
+  companyName            String? // 单位名称
+  monthlyIncome          Decimal?  @db.Decimal(15, 2)
+  dwellingCondition      String? // 居住状况
+  liveProvince           String? // 居住省
+  liveCity               String? // 居住市
+  liveDistrict           String? // 居住区
+  liveDetailedAddress    String? // 居住详细地址
+  childrenNum            Int? // 供养子女数
+  workingProvince        String? // 单位省
+  workingCity            String? // 单位市
+  workingDistrict        String? // 单位区
   workingDetailedAddress String? // 单位详细地址
-  workingTelephone String?     // 公司电话
-  address          String?
-  emergencyName    String?
-  emergencyPhone   String?
-  status           String    @default("ACTIVE")
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  workingTelephone       String? // 公司电话
+  address                String?
+  emergencyName          String?
+  emergencyPhone         String?
+  status                 String    @default("ACTIVE")
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   org          Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -700,13 +700,13 @@ model Customer {
   vehicles     Vehicle[]
   bankCards    BankCard[]
   applications Application[]
+  deletedAt    DateTime? // 软删除时间戳
 
   @@unique([orgId, phone])
   @@index([tenantId])
   @@index([tenantId, phone])
   @@index([orgId])
   @@index([idCard])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model CustomerContact {
@@ -719,44 +719,44 @@ model CustomerContact {
   isEmergency Boolean  @default(false)
   createdAt   DateTime @default(now())
 
-  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer  Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  deletedAt DateTime? // 软删除时间戳
 
   @@index([customerId])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model Vehicle {
-  id                     Int       @id @default(autoincrement())
-  customerId             Int
-  vin                    String? // 车架号
-  plateNumber            String? // 车牌号
-  brand                  String?
-  model                  String?
-  ownerName              String?
-  address                String?
-  usageNature            String?
-  sealInfo               String?
-  engineNumber           String?
-  registerDate           DateTime?
-  vehicleImgUrl          String?
-  color                  String?
-  year                   Int?
-  mileage                Int?
-  purchasePrice          Decimal?  @db.Decimal(15, 2)
-  estimateValue          Decimal?  @db.Decimal(15, 2) // 评估价/估值
-  isMortgaged            Boolean   @default(false)
-  mortgageInfo           String?
-  fuelType               Int?      // 燃油类型：1-油车 2-纯电 3-油电混合
-  isFault                Int?      // 是否故障：1-是 2-否
-  purchaseType           Int?      // 购买方式：1-全款 2-按揭
-  purchaseDate           DateTime? // 购买日期
-  loanAmount             Decimal?  @db.Decimal(15, 2) // 贷款金额（分）
-  loanTerm               Int?      // 贷款期限（年）
-  monthlyPayment         Decimal?  @db.Decimal(15, 2) // 月还款金额（分）
-  isInsurance            Int?      // 是否投保：1-是 2-否
+  id                      Int       @id @default(autoincrement())
+  customerId              Int
+  vin                     String? // 车架号
+  plateNumber             String? // 车牌号
+  brand                   String?
+  model                   String?
+  ownerName               String?
+  address                 String?
+  usageNature             String?
+  sealInfo                String?
+  engineNumber            String?
+  registerDate            DateTime?
+  vehicleImgUrl           String?
+  color                   String?
+  year                    Int?
+  mileage                 Int?
+  purchasePrice           Decimal?  @db.Decimal(15, 2)
+  estimateValue           Decimal?  @db.Decimal(15, 2) // 评估价/估值
+  isMortgaged             Boolean   @default(false)
+  mortgageInfo            String?
+  fuelType                Int? // 燃油类型：1-油车 2-纯电 3-油电混合
+  isFault                 Int? // 是否故障：1-是 2-否
+  purchaseType            Int? // 购买方式：1-全款 2-按揭
+  purchaseDate            DateTime? // 购买日期
+  loanAmount              Decimal?  @db.Decimal(15, 2) // 贷款金额（分）
+  loanTerm                Int? // 贷款期限（年）
+  monthlyPayment          Decimal?  @db.Decimal(15, 2) // 月还款金额（分）
+  isInsurance             Int? // 是否投保：1-是 2-否
   insuranceExpirationDate DateTime? // 保险到期日
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
@@ -788,8 +788,8 @@ model Lead {
   idCard       String? // 身份证号（脱敏存储）
   carBrand     String?
   carModel     String?
-  province     String?    // 省
-  city         String?    // 市
+  province     String? // 省
+  city         String? // 市
   loanAmount   Decimal?   @db.Decimal(15, 2)
   remark       String?
   status       LeadStatus @default(PENDING_ASSIGN)
@@ -803,6 +803,7 @@ model Lead {
   org       Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
   assignee  User?          @relation(fields: [assigneeId], references: [id])
   followUps LeadFollowUp[]
+  deletedAt DateTime? // 软删除时间戳
 
   @@index([tenantId])
   @@index([orgId])
@@ -810,7 +811,6 @@ model Lead {
   @@index([tenantId, phone])
   @@index([status])
   @@index([assigneeId])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model LeadFollowUp {
@@ -827,54 +827,54 @@ model LeadFollowUp {
   @@index([leadId])
 }
 
-
 // ==================== 车贷业务域 (Car Loan Business) ====================
 
 model Application {
-  id                 Int               @id @default(autoincrement())
-  tenantId           Int
-  orgId              Int
-  customerId         Int
-  productId          Int?
-  funderId           Int?
-  applicationNo      String            @unique // 订单号/申请编号
-  amount             Decimal           @db.Decimal(15, 2)
-  term               Int // 期限（月）
-  rate               Decimal           @db.Decimal(5, 4) // 年利率
-  repaymentMethod    String
-  purpose            String? // 贷款用途
-  status             ApplicationStatus @default(DRAFT)
-  businessType       String            @default("CAR_LOAN")
-  currentNode        Int               @default(1100)
-  currentStatus      Int               @default(10)
-  creatorId          Int // 创建人（业务员）
-  sourceLeadId       Int? // 来源线索
-  supplementReason   String? // 补件原因
-  supplementDeadline DateTime? // 补件截止时间
-  isSupplementCustomer Int? @default(0) // 客户资料补件状态: 0-未知 1-已补充 2-待补充
-  isSupplementVehicle  Int? @default(0) // 车辆资料补件状态
-  isSupplementOrder    Int? @default(0) // 订单信息补件状态
-  isSupplementFile     Int? @default(0) // 文件信息补件状态
-  approvedAmount     Decimal?          @db.Decimal(15, 2) // 审批通过金额
-  approvedTerm       Int? // 审批通过期限
-  approvedRate       Decimal?          @db.Decimal(5, 4) // 审批通过利率
-  remark             String?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  id                   Int               @id @default(autoincrement())
+  tenantId             Int
+  orgId                Int
+  customerId           Int
+  productId            Int?
+  funderId             Int?
+  applicationNo        String            @unique // 订单号/申请编号
+  amount               Decimal           @db.Decimal(15, 2)
+  term                 Int // 期限（月）
+  rate                 Decimal           @db.Decimal(5, 4) // 年利率
+  repaymentMethod      String
+  purpose              String? // 贷款用途
+  status               ApplicationStatus @default(DRAFT)
+  businessType         String            @default("CAR_LOAN")
+  currentNode          Int               @default(1100)
+  currentStatus        Int               @default(10)
+  creatorId            Int // 创建人（业务员）
+  sourceLeadId         Int? // 来源线索
+  supplementReason     String? // 补件原因
+  supplementDeadline   DateTime? // 补件截止时间
+  isSupplementCustomer Int?              @default(0) // 客户资料补件状态: 0-未知 1-已补充 2-待补充
+  isSupplementVehicle  Int?              @default(0) // 车辆资料补件状态
+  isSupplementOrder    Int?              @default(0) // 订单信息补件状态
+  isSupplementFile     Int?              @default(0) // 文件信息补件状态
+  approvedAmount       Decimal?          @db.Decimal(15, 2) // 审批通过金额
+  approvedTerm         Int? // 审批通过期限
+  approvedRate         Decimal?          @db.Decimal(5, 4) // 审批通过利率
+  remark               String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 
-  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  org          Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  customer     Customer          @relation(fields: [customerId], references: [id])
-  product      Product?          @relation(fields: [productId], references: [id])
-  funder       Funder?           @relation(fields: [funderId], references: [id])
-  creator      User              @relation("ApplicationCreator", fields: [creatorId], references: [id])
-  files        ApplicationFile[]
-  approvals    ApprovalRecord[]
-  signRecord   SignRecord?
-  disbursement Disbursement?
-  repayments         RepaymentPlan[]
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  org               Organization       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  customer          Customer           @relation(fields: [customerId], references: [id])
+  product           Product?           @relation(fields: [productId], references: [id])
+  funder            Funder?            @relation(fields: [funderId], references: [id])
+  creator           User               @relation("ApplicationCreator", fields: [creatorId], references: [id])
+  files             ApplicationFile[]
+  approvals         ApprovalRecord[]
+  signRecord        SignRecord?
+  disbursement      Disbursement?
+  repayments        RepaymentPlan[]
   collectionRecords CollectionRecord[]
   earlyRepayments   EarlyRepayment[]
+  deletedAt         DateTime? // 软删除时间戳
 
   @@index([tenantId])
   @@index([orgId])
@@ -886,7 +886,6 @@ model Application {
   @@index([creatorId])
   @@index([applicationNo])
   @@index([tenantId, applicationNo])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model ApplicationFile {
@@ -900,10 +899,10 @@ model ApplicationFile {
   createdAt     DateTime @default(now())
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  deletedAt   DateTime? // 软删除时间戳
 
   @@index([applicationId])
   @@index([fileType])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model ApprovalRecord {
@@ -922,12 +921,12 @@ model ApprovalRecord {
   tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   approver    User        @relation(fields: [approverId], references: [id])
+  deletedAt   DateTime?
 
   @@index([tenantId])
   @@index([applicationId])
   @@index([approverId])
   @@index([stage])
-  deletedAt    DateTime?
 }
 
 model SignRecord {
@@ -945,9 +944,9 @@ model SignRecord {
 
   tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  deletedAt   DateTime? // 软删除时间戳
 
   @@index([tenantId])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model Disbursement {
@@ -972,9 +971,9 @@ model Disbursement {
 
   tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  deletedAt   DateTime? // 软删除时间戳
 
   @@index([tenantId])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model RepaymentPlan {
@@ -999,13 +998,13 @@ model RepaymentPlan {
   tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   application Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   records     RepaymentRecord[]
+  deletedAt   DateTime? // 软删除时间戳
 
   @@unique([applicationId, period])
   @@index([tenantId])
   @@index([applicationId])
   @@index([status])
   @@index([dueDate])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model RepaymentRecord {
@@ -1031,16 +1030,16 @@ model RepaymentRecord {
 }
 
 model CollectionRecord {
-  id            Int      @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   tenantId      Int
   applicationId Int
   collectorId   Int?
-  collectType   String   @default("PHONE")
+  collectType   String    @default("PHONE")
   content       String
   result        String?
   nextAction    String?
   nextDate      DateTime?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
 
   tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
@@ -1051,22 +1050,22 @@ model CollectionRecord {
 }
 
 model EarlyRepayment {
-  id              Int      @id @default(autoincrement())
-  tenantId        Int
-  applicationId   Int
-  repayType       String   @default("FULL")
-  amount          Decimal  @db.Decimal(15, 2)
-  principal       Decimal  @db.Decimal(15, 2)
-  interest        Decimal  @db.Decimal(15, 2)
-  penalty         Decimal  @default(0) @db.Decimal(15, 2)
-  reason          String?
-  repayStatus     String   @default("PENDING")
-  approvedBy      Int?
-  approvedAt      DateTime?
-  completedAt     DateTime?
-  remark          String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            Int       @id @default(autoincrement())
+  tenantId      Int
+  applicationId Int
+  repayType     String    @default("FULL")
+  amount        Decimal   @db.Decimal(15, 2)
+  principal     Decimal   @db.Decimal(15, 2)
+  interest      Decimal   @db.Decimal(15, 2)
+  penalty       Decimal   @default(0) @db.Decimal(15, 2)
+  reason        String?
+  repayStatus   String    @default("PENDING")
+  approvedBy    Int?
+  approvedAt    DateTime?
+  completedAt   DateTime?
+  remark        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
@@ -1076,24 +1075,23 @@ model EarlyRepayment {
   @@index([repayStatus])
 }
 
-
 // ==================== 运营管理域 (Operations) ====================
 
 model MessageTemplate {
-  id        Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   tenantId  Int
-  name      String   @db.VarChar(100)  // 模板名称
-  code      String   @db.VarChar(80)   // 模板编码
-  channel   String   @default("SMS") @db.VarChar(30) // SMS, APP, WECHAT, EMAIL, SYSTEM
-  scene     String   @default("GENERAL") @db.VarChar(50) // 业务场景
-  title     String?  @db.VarChar(200)  // 标题/主题
-  content   String   @db.Text          // 模板内容
-  variables Json?                       // 变量说明 [{key,label,example}
+  name      String  @db.VarChar(100) // 模板名称
+  code      String  @db.VarChar(80) // 模板编码
+  channel   String  @default("SMS") @db.VarChar(30) // SMS, APP, WECHAT, EMAIL, SYSTEM
+  scene     String  @default("GENERAL") @db.VarChar(50) // 业务场景
+  title     String? @db.VarChar(200) // 标题/主题
+  content   String  @db.Text // 模板内容
+  variables Json? // 变量说明 [{key,label,example}
 
-  status    String   @default("ACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE, DRAFT
-  remark    String?  @db.VarChar(500)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status    String    @default("ACTIVE") @db.VarChar(20) // ACTIVE, INACTIVE, DRAFT
+  remark    String?   @db.VarChar(500)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -1106,21 +1104,21 @@ model MessageTemplate {
 }
 
 model Announcement {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   tenantId  Int
-  title     String   @db.VarChar(200)  // 公告标题
-  content   String?  @db.Text          // 公告内容（富文本）
-  type      String   @default("NOTICE") @db.VarChar(20) // NOTICE, ANNOUNCEMENT, ALERT
-  level     String   @default("NORMAL") @db.VarChar(20) // NORMAL, IMPORTANT, URGENT
-  status    String   @default("DRAFT") @db.VarChar(20)  // DRAFT, PUBLISHED, EXPIRED
-  publishAt DateTime?                  // 发布时间
-  expireAt  DateTime?                  // 过期时间
-  target    String?  @db.VarChar(100)  // 发布范围
-  topFlag   Boolean  @default(false)   // 是否置顶
-  viewCount Int      @default(0)       // 查看次数
-  remark    String?  @db.VarChar(500)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  title     String    @db.VarChar(200) // 公告标题
+  content   String?   @db.Text // 公告内容（富文本）
+  type      String    @default("NOTICE") @db.VarChar(20) // NOTICE, ANNOUNCEMENT, ALERT
+  level     String    @default("NORMAL") @db.VarChar(20) // NORMAL, IMPORTANT, URGENT
+  status    String    @default("DRAFT") @db.VarChar(20) // DRAFT, PUBLISHED, EXPIRED
+  publishAt DateTime? // 发布时间
+  expireAt  DateTime? // 过期时间
+  target    String?   @db.VarChar(100) // 发布范围
+  topFlag   Boolean   @default(false) // 是否置顶
+  viewCount Int       @default(0) // 查看次数
+  remark    String?   @db.VarChar(500)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -1132,21 +1130,21 @@ model Announcement {
 }
 
 model WorkOrder {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int
-  title       String   @db.VarChar(200)   // 工单标题
-  content     String?  @db.Text           // 工单内容
-  orderType   String   @default("FEEDBACK") @db.VarChar(30) // FEEDBACK, BUG, SUGGESTION, SUPPORT
-  priority    String   @default("NORMAL") @db.VarChar(20)   // LOW, NORMAL, HIGH, URGENT
-  status      String   @default("OPEN") @db.VarChar(20)     // OPEN, PROCESSING, RESOLVED, CLOSED
-  creatorId   Int?                        // 创建人
-  assigneeId  Int?                        // 处理人
-  resolvedAt  DateTime?
-  closedAt    DateTime?
-  remark      String?  @db.VarChar(500)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
+  id         Int       @id @default(autoincrement())
+  tenantId   Int
+  title      String    @db.VarChar(200) // 工单标题
+  content    String?   @db.Text // 工单内容
+  orderType  String    @default("FEEDBACK") @db.VarChar(30) // FEEDBACK, BUG, SUGGESTION, SUPPORT
+  priority   String    @default("NORMAL") @db.VarChar(20) // LOW, NORMAL, HIGH, URGENT
+  status     String    @default("OPEN") @db.VarChar(20) // OPEN, PROCESSING, RESOLVED, CLOSED
+  creatorId  Int? // 创建人
+  assigneeId Int? // 处理人
+  resolvedAt DateTime?
+  closedAt   DateTime?
+  remark     String?   @db.VarChar(500)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -1156,7 +1154,6 @@ model WorkOrder {
   @@index([priority])
   @@index([createdAt])
 }
-
 
 // ==================== 读书管理域 (Reading) ====================
 
@@ -1170,12 +1167,12 @@ model BookCategory {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  books  Book[]
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  books     Book[]
+  deletedAt DateTime? // 软删除时间戳
 
   @@index([tenantId])
   @@index([parentId])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model Book {
@@ -1208,20 +1205,20 @@ model Book {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category    BookCategory?     @relation(fields: [categoryId], references: [id])
-  chapters    BookChapter[]
-  bookshelves UserBookshelf[]
-  progress    ReadingProgress[]
-  reviews     BookReview[]
-    readingNotes ReadingNote[]
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category     BookCategory?     @relation(fields: [categoryId], references: [id])
+  chapters     BookChapter[]
+  bookshelves  UserBookshelf[]
+  progress     ReadingProgress[]
+  reviews      BookReview[]
+  readingNotes ReadingNote[]
+  deletedAt    DateTime?
 
   @@index([tenantId])
   @@index([categoryId])
   @@index([status])
   @@index([isHot])
   @@index([isRecommend])
-  deletedAt    DateTime?
 }
 
 model BookChapter {
@@ -1237,15 +1234,15 @@ model BookChapter {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant           Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  book             Book             @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  book             Book              @relation(fields: [bookId], references: [id], onDelete: Cascade)
   chapterPurchases ChapterPurchase[]
+  readingNotes     ReadingNote[]
+  deletedAt        DateTime?
 
   @@unique([bookId, sort])
   @@index([tenantId])
-  readingNotes ReadingNote[]
   @@index([bookId])
-  deletedAt    DateTime?
 }
 
 model UserBookshelf {
@@ -1256,13 +1253,13 @@ model UserBookshelf {
   lastReadAt DateTime? // 最后阅读时间
   createdAt  DateTime  @default(now())
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  book      Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  deletedAt DateTime? // 软删除时间戳
 
   @@unique([userId, bookId])
   @@index([tenantId])
   @@index([userId])
-  deletedAt    DateTime?   // 软删除时间戳
 }
 
 model ReadingProgress {
@@ -1299,8 +1296,8 @@ model BookReview {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  book        Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  book        Book         @relation(fields: [bookId], references: [id], onDelete: Cascade)
   reviewLikes ReviewLike[]
 
   @@unique([userId, bookId])
@@ -1310,68 +1307,70 @@ model BookReview {
 }
 
 model ReadingNote {
-  id         Int      @id @default(autoincrement())
-  tenantId   Int
-  userId     Int
-  bookId     Int
-  chapterId  Int
-  highlight  String?  @db.Text // 高亮文本
-  note       String?  @db.Text // 笔记内容
-  color      String   @default("#FFEB3B") // 高亮颜色
-  startPos   Int      @default(0) // 高亮起始位置
-  endPos     Int      @default(0) // 高亮结束位置
-  status     Int      @default(1) // 状态 1:正常 0:隐藏
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  book      Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  id        Int         @id @default(autoincrement())
+  tenantId  Int
+  userId    Int
+  bookId    Int
+  chapterId Int
+  highlight String?     @db.Text // 高亮文本
+  note      String?     @db.Text // 笔记内容
+  color     String      @default("#FFEB3B") // 高亮颜色
+  startPos  Int         @default(0) // 高亮起始位置
+  endPos    Int         @default(0) // 高亮结束位置
+  status    Int         @default(1) // 状态 1:正常 0:隐藏
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  book      Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
   chapter   BookChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  deletedAt DateTime?
+
   @@index([tenantId])
   @@index([userId])
   @@index([bookId])
   @@index([chapterId])
-  deletedAt  DateTime?
 }
+
 // ==================== 文章管理 ====================
 model Article {
-  id          Int      @id @default(autoincrement())
-  tenantId    Int
-  title       String
-  content     String?  @db.Text
-  summary     String?  @db.VarChar(500)
-  coverImg    String?
-  typeId      Int?
-  typeName    String?
-  status      String   @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
-  viewCount   Int      @default(0)
-  likeCount   Int      @default(0)
-  isTop       Boolean  @default(false)
-  publishAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
+  id        Int       @id @default(autoincrement())
+  tenantId  Int
+  title     String
+  content   String?   @db.Text
+  summary   String?   @db.VarChar(500)
+  coverImg  String?
+  typeId    Int?
+  typeName  String?
+  status    String    @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+  viewCount Int       @default(0)
+  likeCount Int       @default(0)
+  isTop     Boolean   @default(false)
+  publishAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   articleLikes ArticleLike[]
+  comments     ArticleComment[]
 
   @@index([tenantId])
   @@index([status])
   @@index([typeId])
-  comments    ArticleComment[]
 }
 
 model ArticleComment {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   tenantId  Int
   articleId Int
   userId    Int?
-  userName  String   @default("匿名") @db.VarChar(50)
-  content   String   @db.Text
-  status    String   @default("PUBLISHED") @db.VarChar(20) // PENDING, PUBLISHED, REJECTED
-  parentId  Int?     // 父评论ID，支持回复
-  likeCount Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  userName  String    @default("匿名") @db.VarChar(50)
+  content   String    @db.Text
+  status    String    @default("PUBLISHED") @db.VarChar(20) // PENDING, PUBLISHED, REJECTED
+  parentId  Int? // 父评论ID，支持回复
+  likeCount Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -1383,15 +1382,14 @@ model ArticleComment {
   @@index([createdAt])
 }
 
-
 model ArticleType {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   tenantId  Int
   name      String
-  sort      Int      @default(0)
-  status    String   @default("ACTIVE")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  sort      Int       @default(0)
+  status    String    @default("ACTIVE")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -1399,7 +1397,6 @@ model ArticleType {
   @@unique([tenantId, name])
   @@index([tenantId])
 }
-
 
 model ChapterPurchase {
   id        Int      @id @default(autoincrement())
@@ -1446,16 +1443,16 @@ model ArticleLike {
 // ==================== 点餐模块 ====================
 
 model FoodCategory {
-  id        Int         @id @default(autoincrement())
-  name      String      @db.VarChar(50)
-  icon      String?     @db.VarChar(100)
-  sortOrder Int         @default(0)
-  isActive  Boolean     @default(true)
+  id        Int        @id @default(autoincrement())
+  name      String     @db.VarChar(50)
+  icon      String?    @db.VarChar(100)
+  sortOrder Int        @default(0)
+  isActive  Boolean    @default(true)
   tenantId  Int
-  tenant    Tenant      @relation(fields: [tenantId], references: [id])
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
   dishes    FoodDish[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   @@index([tenantId])
 }
@@ -1503,31 +1500,49 @@ model FoodOrder {
 }
 
 model FoodOrderItem {
-  id        Int        @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   orderId   Int
-  order     FoodOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order     FoodOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   dishId    Int
-  dish      FoodDish   @relation(fields: [dishId], references: [id])
-  quantity  Int        @default(1)
-  price     Decimal    @db.Decimal(10, 2)
-  createdAt DateTime   @default(now())
+  dish      FoodDish  @relation(fields: [dishId], references: [id])
+  quantity  Int       @default(1)
+  price     Decimal   @db.Decimal(10, 2)
+  createdAt DateTime  @default(now())
 
   @@index([orderId])
   @@index([dishId])
 }
 
 model FoodCart {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   userId    Int
-  user      User      @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
   dishId    Int
-  dish      FoodDish  @relation(fields: [dishId], references: [id])
-  quantity  Int       @default(1)
+  dish      FoodDish @relation(fields: [dishId], references: [id])
+  quantity  Int      @default(1)
   tenantId  Int
-  tenant    Tenant    @relation(fields: [tenantId], references: [id])
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, dishId])
   @@index([tenantId])
+}
+
+model NotificationLog {
+  id        Int       @id @default(autoincrement())
+  tenantId  Int
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  userId    Int?
+  user      User?     @relation(fields: [userId], references: [id])
+  type      String    @db.VarChar(32)
+  title     String    @db.VarChar(200)
+  content   String
+  extra     Json?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([createdAt])
 }

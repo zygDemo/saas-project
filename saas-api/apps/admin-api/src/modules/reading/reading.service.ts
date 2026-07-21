@@ -172,7 +172,8 @@ export class ReadingService {
   // ==================== 书籍管理 ====================
 
   async getBooks(tenantId: number, query: BookQueryDto) {
-    const { keyword, categoryId, status, isHot, isRecommend, isFinished, page = 1, pageSize = 20 } = query;
+    const { keyword, categoryId, status, isHot, isRecommend, isFinished, page = 1, pageSize: rawPageSize = 20 } = query;
+    const pageSize = Math.min(Math.max(Number(rawPageSize) || 20, 1), 100)
     const where: Record<string, unknown> = { tenantId, deletedAt: null };
 
     if (keyword) {
@@ -507,7 +508,8 @@ export class ReadingService {
   }
 
   async getChapters(tenantId: number, query: ChapterQueryDto) {
-    const { bookId, keyword, page = 1, pageSize = 100 } = query;
+    const { bookId, keyword, page = 1, pageSize: rawPageSize = 100 } = query;
+    const pageSize = Math.min(Math.max(Number(rawPageSize) || 100, 1), 200)
     const where: Record<string, unknown> = { tenantId, bookId, deletedAt: null };
 
     if (keyword) {

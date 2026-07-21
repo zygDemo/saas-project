@@ -1,4 +1,6 @@
 ﻿import { BadRequestException, Injectable } from '@nestjs/common'
+import { ApplicationStatus } from '@prisma/client'
+import { DEFAULT_FLOW_STATUS_MAP, FlowStatus } from '../../common/constants/flow.constants'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { PrismaService } from '../prisma/prisma.service'
@@ -479,7 +481,7 @@ export class FlowConfigService extends BaseBusinessCrudService<
   }
 
   /**
-   * 从数据库查询指定机构的流程映射（nodeName / phaseCode / phaseName），
+   * 从数据库查询指定机构的流程映射（nodeName / phaseCode / phaseName / statusMap），
    * 用于 application 等模块替代硬编码常量。
    * 不传 orgId 时返回所有已配置机构的聚合映射。
    */
@@ -496,6 +498,10 @@ export class FlowConfigService extends BaseBusinessCrudService<
     const nodeNames: Record<number, string> = {}
     const nodePhases: Record<number, number> = {}
     const phaseNames: Record<number, string> = {}
+    const statusMappings: Record<ApplicationStatus, { currentNode: number; currentStatus: number }> = {} as Record<
+      ApplicationStatus,
+      { currentNode: number; currentStatus: number }
+    >
 
     for (const config of configs) {
       const code = Number(config.nodeCode)
@@ -507,9 +513,30 @@ export class FlowConfigService extends BaseBusinessCrudService<
         nodePhases[code] = phaseCode
         if (ruleConfig?.phaseName) phaseNames[phaseCode] = String(ruleConfig.phaseName)
       }
+      const statusMap = (ruleConfig?.statusMap || {}) as Record<string, { currentStatus: number }>
+      for (const [status, meta] of Object.entries(statusMap)) {
+        if (!Object.values(ApplicationStatus).includes(status as ApplicationStatus)) continue
+        statusMappings[status as ApplicationStatus] = { currentNode: code, currentStatus: Number(meta?.currentStatus) || FlowStatus.PENDING }
+      }
     }
 
-    return { nodeNames, nodePhases, phaseNames }
+    return { nodeNames, nodePhases, phaseNames, statusMappings }
+  }
+
+  /**
+   * 解析指定机构和状态对应的流程补丁（currentNode / currentStatus）。
+   * 优先读取机构的 FlowConfig 配置，未配置或缺失时使用 DEFAULT_FLOW_STATUS_MAP 兜底。
+   */
+  async getStatusFlowPatch(
+    orgId: number | undefined,
+    status: ApplicationStatus,
+    businessType = 'CAR_LOAN'
+  ): Promise<{ currentNode: number; currentStatus: number }> {
+    if (orgId) {
+      const { statusMappings } = await this.getFlowMappings(orgId, businessType)
+      if (statusMappings[status]) return statusMappings[status]
+    }
+    return DEFAULT_FLOW_STATUS_MAP[status]
   }
 
   async initDefault(dto: InitDefaultFlowConfigDto) {
@@ -619,6 +646,16 @@ export class FlowConfigService extends BaseBusinessCrudService<
     if (node.executor) config.executor = node.executor
     if (node.steps?.length) config.steps = node.steps
     if (node.amountLimit !== undefined) config.amountLimit = node.amountLimit
+
+    // 根据默认状态映射，提取归属于当前节点的状态映射
+    const statusMap: Record<string, { currentStatus: number }> = {}
+    for (const [status, mapping] of Object.entries(DEFAULT_FLOW_STATUS_MAP)) {
+      if (mapping.currentNode === node.code) {
+        statusMap[status] = { currentStatus: mapping.currentStatus }
+      }
+    }
+    if (Object.keys(statusMap).length) config.statusMap = statusMap
+
     return config
   }
 }

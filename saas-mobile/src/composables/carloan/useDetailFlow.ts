@@ -69,6 +69,7 @@ export function useDetailFlow(opts: {
   detail: () => any;
   loading: () => boolean;
   currentNodeCode: () => string;
+  activeFlowTab: () => string;
   flowConfig: () => any;
   flowNodes: () => any[];
   entryProgress: () => any;
@@ -185,7 +186,7 @@ export function useDetailFlow(opts: {
   }
 
   const stageEntryItems = computed(() => {
-    const tab = opts.flowConfig()?.activeTab || "precheck";
+    const tab = opts.activeFlowTab() || opts.flowConfig()?.activeTab || "precheck";
     if (tab === "supplement") return supplementEntryItems;
     if (tab === "approval") return approvalEntryItems;
     if (tab === "signing") return signingEntryItems;

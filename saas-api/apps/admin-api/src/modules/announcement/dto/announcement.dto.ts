@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
 import { IsBoolean, IsIn, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
+import { ToEmptyAsUndefined } from '../../common/dto/common.dto'
 
 const ANNOUNCE_TYPE = ['NOTICE', 'ANNOUNCEMENT', 'ALERT'] as const
 const ANNOUNCE_LEVEL = ['NORMAL', 'IMPORTANT', 'URGENT'] as const
@@ -19,16 +20,19 @@ export class CreateAnnouncementDto {
 
   @ApiPropertyOptional({ description: '公告类型', enum: ANNOUNCE_TYPE, example: 'NOTICE' })
   @IsOptional()
+  @ToEmptyAsUndefined()
   @IsIn(ANNOUNCE_TYPE)
   type?: string
 
   @ApiPropertyOptional({ description: '重要程度', enum: ANNOUNCE_LEVEL, example: 'NORMAL' })
   @IsOptional()
+  @ToEmptyAsUndefined()
   @IsIn(ANNOUNCE_LEVEL)
   level?: string
 
   @ApiPropertyOptional({ description: '状态', enum: ANNOUNCE_STATUS, example: 'DRAFT' })
   @IsOptional()
+  @ToEmptyAsUndefined()
   @IsIn(ANNOUNCE_STATUS)
   status?: string
 
@@ -71,22 +75,27 @@ export class AnnouncementQueryDto {
 
   @ApiPropertyOptional({ description: '公告类型', enum: ANNOUNCE_TYPE })
   @IsOptional()
+  @ToEmptyAsUndefined()
   @IsIn(ANNOUNCE_TYPE)
   type?: string
 
   @ApiPropertyOptional({ description: '重要程度', enum: ANNOUNCE_LEVEL })
   @IsOptional()
+  @ToEmptyAsUndefined()
   @IsIn(ANNOUNCE_LEVEL)
   level?: string
 
   @ApiPropertyOptional({ description: '状态', enum: ANNOUNCE_STATUS })
   @IsOptional()
+  @ToEmptyAsUndefined()
   @IsIn(ANNOUNCE_STATUS)
   status?: string
 
   @ApiPropertyOptional({ description: '当前页码' })
+  @IsOptional()
   current?: string | number
 
   @ApiPropertyOptional({ description: '每页条数' })
+  @IsOptional()
   size?: string | number
 }

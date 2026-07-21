@@ -147,7 +147,7 @@ export class FileService {
     this.validateBusinessBinding(dto)
     await this.validateOrg(dto.orgId)
     try {
-      return await fileAsset.update({ where: { id }, data: dto })
+      return await fileAsset.update({ where: this.withTenant({ id }), data: dto })
     } catch (error) {
       this.throwIfMissingFileAssetStorage(error)
       throw error
@@ -158,7 +158,7 @@ export class FileService {
     const fileAsset = this.requireFileAssetModel()
     await this.getDetail(id)
     try {
-      await fileAsset.update({ where: { id }, data: { deletedAt: new Date() } })
+      await fileAsset.update({ where: this.withTenant({ id }), data: { deletedAt: new Date() } })
     } catch (error) {
       this.throwIfMissingFileAssetStorage(error)
       throw error
@@ -172,8 +172,10 @@ export class FileService {
 
     const fileAsset = this.requireFileAssetModel()
     try {
-      const result = await fileAsset.deleteMany({
-        where: this.withTenant({ id: { in: uniqueIds } })
+      // 与 remove() 保持一致，使用软删除而非硬删除
+      const result = await fileAsset.updateMany({
+        where: this.withTenant({ id: { in: uniqueIds } }),
+        data: { deletedAt: new Date() }
       })
       return { ids: uniqueIds, count: result.count }
     } catch (error) {

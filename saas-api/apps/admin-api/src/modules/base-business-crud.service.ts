@@ -93,7 +93,8 @@ export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate ex
 
   async remove(id: number) {
     await this.ensureExists(id)
-    await this.options.model.update({ where: { id }, data: { deletedAt: new Date() } })
+    const where = this.addTenantFilter({ id })
+    await this.options.model.update({ where, data: { deletedAt: new Date() } })
     return { id }
   }
 
@@ -106,7 +107,11 @@ export abstract class BaseBusinessCrudService<TCreate extends object, TUpdate ex
 
   protected async ensureRelatedExists(model: PrismaModelDelegate, id: number | undefined, message: string) {
     if (!hasValue(id)) return
-    const item = await model.findFirst({ where: { id } })
+    // 添加租户过滤，防止跨租户引用其他租户的数据
+    const tenantId = getCurrentTenantId()
+    const where: Record<string, unknown> = { id }
+    if (tenantId) where.tenantId = tenantId
+    const item = await model.findFirst({ where })
     if (!item) throw new BadRequestException(message)
     return item
   }

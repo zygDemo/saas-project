@@ -49,6 +49,10 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  fallbackUrl: {
+    type: String,
+    default: "",
+  },
   showNavBack: {
     type: Boolean,
     default: true,
@@ -92,7 +96,7 @@ const handleBack = () => {
     return;
   }
 
-  navigateBackOrFallback();
+  navigateBackOrFallback(props.fallbackUrl);
 };
 </script>
 

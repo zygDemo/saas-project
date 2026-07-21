@@ -78,7 +78,8 @@ export class MobileFileService {
     if (!Number.isInteger(id) || id <= 0) throw new BadRequestException('文件ID不正确')
     const fileAsset = getFileAssetModel(this.prisma)
     if (!fileAsset?.update) return { id }
-    await fileAsset.update({ where: { id }, data: { status: 'INACTIVE' } })
+    const tenantId = getRequiredTenantId()
+    await fileAsset.update({ where: { id, ...(tenantId && { orgId: { tenantId } }) }, data: { status: 'INACTIVE' } })
     return { id }
   }
 
@@ -327,7 +328,7 @@ export class MobileFileService {
 
   async linkApplicationFiles(application: Record<string, unknown>, customer: Record<string, unknown>) {
     const vehicles = await this.prisma.vehicle.findMany({
-      where: { customerId: customer.id as number },
+      where: { customerId: customer.id as number, deletedAt: null },
       select: { id: true }
     })
     const vehicleIds = vehicles.map((vehicle: { id: number }) => vehicle.id)

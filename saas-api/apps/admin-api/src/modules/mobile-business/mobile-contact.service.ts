@@ -42,7 +42,7 @@ export class MobileContactService {
 
     if (dto.id) {
       const existing = await this.prisma.customerContact.findFirst({
-        where: { id: dto.id, customerId: customer.id }
+        where: { id: dto.id, customerId: customer.id, deletedAt: null }
       })
       if (!existing) throw new NotFoundException('联系人不存在')
       return this.prisma.customerContact.update({
@@ -66,7 +66,11 @@ export class MobileContactService {
   }
 
   async deleteContact(id: number) {
-    await this.prisma.customerContact.update({ where: { id }, data: { deletedAt: new Date() } })
+    const tenantId = getRequiredTenantId()
+    await this.prisma.customerContact.update({
+      where: { id, customerId: { tenantId } },
+      data: { deletedAt: new Date() }
+    })
     return { code: 200, msg: 'success' }
   }
 }

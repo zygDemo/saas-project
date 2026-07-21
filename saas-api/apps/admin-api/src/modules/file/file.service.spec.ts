@@ -103,6 +103,7 @@ describe('FileService', () => {
     it('空数组应抛异常', async () => {
       await expect(service.batchRemove([])).rejects.toThrow(BadRequestException)
     })
+  })
 
   describe('上传', () => {
     it('uploadImage 应创建文件记录', async () => {

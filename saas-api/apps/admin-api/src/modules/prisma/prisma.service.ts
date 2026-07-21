@@ -30,6 +30,7 @@ const TENANT_MODELS = [
   'readingprogress',
   'bookreview',
   'workorder',
+  'notificationlog',
 ]
 
 function isTenantModel(model: string | undefined): boolean {

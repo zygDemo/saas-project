@@ -81,9 +81,11 @@ export class RoleQueryDto {
   endTime?: string
 
   @ApiPropertyOptional({ description: '当前页码' })
+  @IsOptional()
   current?: string | number
 
   @ApiPropertyOptional({ description: '每页条数' })
+  @IsOptional()
   size?: string | number
 }
 

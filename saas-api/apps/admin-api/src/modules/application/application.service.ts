@@ -34,8 +34,8 @@ import {
   RequestDisbursementDto,
   SettleApplicationDto,
 } from './dto/business-action.dto'
-import { ApprovalWorkflowService, flowPatch } from './approval-workflow.service'
-import { NotificationService } from './notification.service'
+import { ApprovalWorkflowService } from './approval-workflow.service'
+import { ApplicationNotificationService } from './notification.service'
 import { RepaymentService } from '../repayment/repayment.service'
 import { DisbursementService } from '../disbursement/disbursement.service'
 import { ApplicationMapper, ApplicationWithFlow, ApplicationWithIncludes } from './application.mapper'
@@ -58,7 +58,7 @@ export class ApplicationService extends BaseBusinessCrudService<
     private readonly prisma: PrismaService,
     private readonly dataScopeService: DataScopeService,
     private readonly approvalWorkflow: ApprovalWorkflowService,
-    private readonly notificationService: NotificationService,
+    private readonly notificationService: ApplicationNotificationService,
     private readonly repaymentService: RepaymentService,
     private readonly disbursementService: DisbursementService,
     private readonly mapper: ApplicationMapper,
@@ -87,25 +87,17 @@ export class ApplicationService extends BaseBusinessCrudService<
         if (hasQueryValue(query.applicationNo)) where.applicationNo = containsText(String(query.applicationNo))
         return where
       },
-      getExtraWhere: async () => {
-        const roleIds = (await import('../../common/tenant/tenant-context')).getCurrentUserRoles()
-        if (!roleIds.length) return {}
-        const roles = await this.prisma.role.findMany({ where: { id: { in: roleIds } }, select: { dataScope: true } })
-        const scopePriority: Record<string, number> = { SELF: 1, DEPT: 2, CUSTOM: 3, ALL: 4 }
-        const minScope = roles.map((r: { dataScope: string }) => r.dataScope).sort((a: string, b: string) => (scopePriority[a] ?? 99) - (scopePriority[b] ?? 99))[0]
-        if (!minScope || minScope === 'ALL') return {}
-        const visibleIds = await this.dataScopeService.getVisibleUserIds(minScope)
-        return this.dataScopeService.injectDataScope({}, visibleIds)
-      },
+      getExtraWhere: () => this.dataScopeService.buildDataScopeFilter('creatorId'),
       include: { org: true, customer: true, product: true, funder: true, creator: { select: { id: true, userName: true, nickName: true } } },
       detailInclude: { org: { include: { flowConfigs: true } }, customer: { include: { vehicles: { orderBy: { id: 'desc' } } } }, product: true, funder: true, creator: { select: { id: true, userName: true, nickName: true } }, files: { orderBy: { createdAt: 'desc' } }, approvals: { orderBy: { createdAt: 'desc' }, include: { approver: { select: { id: true, userName: true, nickName: true } } } }, signRecord: true, disbursement: true, repayments: { orderBy: { period: 'asc' } } },
       validateCreate: async (dto) => { await this.prepareCreateRelations(dto); await this.ensureRelatedExists(this.prisma.user, dto.creatorId, '创建人不存在') },
       validateUpdate: async (id, dto) => { await this.prepareUpdateRelations(id, dto); await this.ensureRelatedExists(this.prisma.user, dto.creatorId, '创建人不存在') },
-      beforeCreate: (dto) => {
+      beforeCreate: async (dto) => {
         const data = omitNested(dto as unknown as Record<string, unknown>, ['files'])
         data.status = dto.status || ApplicationStatus.DRAFT
         data.businessType = dto.businessType || 'CAR_LOAN'
-        const flow = flowPatch(data.status as ApplicationStatus)
+        const orgId = dto.orgId || (dto.customerId ? await this.resolveOrgIdByCustomer(dto.customerId) : undefined)
+        const flow = await this.mapper.getFlowPatch(orgId, data.status as ApplicationStatus)
         data.currentNode = dto.currentNode ?? flow.currentNode
         data.currentStatus = dto.currentStatus ?? flow.currentStatus
         if (dto.files?.length) { data.files = { create: dto.files } }
@@ -128,7 +120,7 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   override async getDetail(id: number) {
-    const where: Record<string, unknown> = { id }
+    const where: Record<string, unknown> = { id, deletedAt: null }
     const tenantId = getCurrentTenantId()
     if (tenantId) where.tenantId = tenantId
     const application = await this.prisma.application.findFirst({
@@ -152,7 +144,7 @@ export class ApplicationService extends BaseBusinessCrudService<
   async getFlowList(query: ApplicationQueryDto) {
     await this.mapper.loadFlowMappings(query.orgId)
     const pagination = getPagination(query)
-    const where: Record<string, unknown> = {}
+    const where: Record<string, unknown> = { deletedAt: null }
     const tenantId = getCurrentTenantId()
     if (tenantId) where.tenantId = tenantId
     if (query.orgId) where.orgId = query.orgId
@@ -204,9 +196,10 @@ export class ApplicationService extends BaseBusinessCrudService<
   // ==================== 签约流程 ====================
 
   async startSigning(id: number, dto: StartSigningDto) {
-    await this.approvalWorkflow.findAndAssertStatus(
+    const application = await this.approvalWorkflow.findAndAssertStatus(
       id, [ApplicationStatus.FINAL_REVIEW_PASSED, ApplicationStatus.FUNDER_REVIEW_PASSED], '当前状态不允许发起签约'
     )
+    const flow = await this.mapper.getFlowPatch(application.orgId ?? undefined, ApplicationStatus.PENDING_SIGN)
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const tenantId = getCurrentTenantId()!
       await tx.signRecord.upsert({
@@ -215,7 +208,7 @@ export class ApplicationService extends BaseBusinessCrudService<
         create: { tenantId, applicationId: id, status: SignStatus.SENT, contractUrl: dto.contractUrl, expiredAt: dto.expiredAt }
       })
       const result = await tx.application.update({
-        where: { id }, data: { status: ApplicationStatus.PENDING_SIGN, ...flowPatch(ApplicationStatus.PENDING_SIGN) }
+        where: { id }, data: { status: ApplicationStatus.PENDING_SIGN, ...flow }
       })
       await this.notificationService.sendOnSigningStarted(id, result).catch(() => {})
       return result
@@ -223,7 +216,8 @@ export class ApplicationService extends BaseBusinessCrudService<
   }
 
   async completeSigning(id: number, dto: CompleteSigningDto) {
-    await this.approvalWorkflow.findAndAssertStatus(id, [ApplicationStatus.PENDING_SIGN], '当前状态不允许完成签约')
+    const application = await this.approvalWorkflow.findAndAssertStatus(id, [ApplicationStatus.PENDING_SIGN], '当前状态不允许完成签约')
+    const flow = await this.mapper.getFlowPatch(application.orgId ?? undefined, ApplicationStatus.PENDING_LOAN_REQUEST)
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const tenantId = getCurrentTenantId()!
       await tx.signRecord.upsert({
@@ -237,7 +231,7 @@ export class ApplicationService extends BaseBusinessCrudService<
         create: { tenantId, applicationId: id, status: DisbursementStatus.PENDING_APPLICATION }
       })
       return tx.application.update({
-        where: { id }, data: { status: ApplicationStatus.PENDING_LOAN_REQUEST, ...flowPatch(ApplicationStatus.PENDING_LOAN_REQUEST) }
+        where: { id }, data: { status: ApplicationStatus.PENDING_LOAN_REQUEST, ...flow }
       })
     })
   }
@@ -248,8 +242,9 @@ export class ApplicationService extends BaseBusinessCrudService<
     const application = await this.approvalWorkflow.findAndAssertStatus(
       id, [ApplicationStatus.SIGNED, ApplicationStatus.PENDING_LOAN_REQUEST, ApplicationStatus.LOAN_REQUEST_REJECTED], '当前状态不允许提交请款资料'
     )
+    const flow = await this.mapper.getFlowPatch(application.orgId ?? undefined, ApplicationStatus.LOAN_REQUEST_REVIEWING)
     return this.prisma.application.update({
-      where: { id }, data: { status: ApplicationStatus.LOAN_REQUEST_REVIEWING, ...flowPatch(ApplicationStatus.LOAN_REQUEST_REVIEWING), remark: dto.remark ?? application.remark }
+      where: { id }, data: { status: ApplicationStatus.LOAN_REQUEST_REVIEWING, ...flow, remark: dto.remark ?? application.remark }
     })
   }
 
@@ -313,8 +308,9 @@ export class ApplicationService extends BaseBusinessCrudService<
         await tx.lead.update({ where: { id: application.sourceLeadId }, data: { status: LeadStatus.CONVERTED } })
       }
 
+      const flow = await this.mapper.getFlowPatch(application.orgId ?? undefined, ApplicationStatus.DISBURSED)
       const result = await tx.application.update({
-        where: { id }, data: { status: ApplicationStatus.DISBURSED, ...flowPatch(ApplicationStatus.DISBURSED) }
+        where: { id }, data: { status: ApplicationStatus.DISBURSED, ...flow }
       })
       await this.notificationService.sendOnLoanDisbursed(id, result, Number(dto.disburseAmount)).catch(() => {})
       return result
@@ -338,10 +334,11 @@ export class ApplicationService extends BaseBusinessCrudService<
 
   async settle(id: number, dto: SettleApplicationDto) {
     const application = await this.approvalWorkflow.findAndAssertStatus(id, [ApplicationStatus.DISBURSED], '当前状态不允许结清')
+    const flow = await this.mapper.getFlowPatch(application.orgId ?? undefined, ApplicationStatus.SETTLED)
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await this.repaymentService.settleApplication(tx, id)
       const result = await tx.application.update({
-        where: { id }, data: { status: ApplicationStatus.SETTLED, ...flowPatch(ApplicationStatus.SETTLED), remark: dto.remark ?? application.remark }
+        where: { id }, data: { status: ApplicationStatus.SETTLED, ...flow, remark: dto.remark ?? application.remark }
       })
       await this.notificationService.sendOnLoanSettled(id, result).catch(() => {})
       return result
@@ -407,6 +404,14 @@ export class ApplicationService extends BaseBusinessCrudService<
     const item = await model.findFirst({ where }) as Record<string, any> | null
     if (!item) throw new BadRequestException(message)
     return item
+  }
+
+  private async resolveOrgIdByCustomer(customerId: number): Promise<number | undefined> {
+    const customer = await this.prisma.customer.findFirst({
+      where: { id: customerId, deletedAt: null },
+      select: { orgId: true }
+    })
+    return customer?.orgId ?? undefined
   }
 
   private addTenantId(where: Record<string, unknown>): Record<string, unknown> {

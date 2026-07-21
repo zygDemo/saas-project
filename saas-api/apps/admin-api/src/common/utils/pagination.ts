@@ -14,7 +14,7 @@ export interface PaginationMeta {
 
 export function getPagination(query: PaginationQuery): PaginationMeta {
   const current = Math.max(Number(query.current ?? 1) || 1, 1)
-  const size = Math.min(Math.max(Number(query.size ?? 20) || 20, 1), 200)
+  const size = Math.min(Math.max(Number(query.size ?? 20) || 20, 1), 100)
 
   return {
     current,

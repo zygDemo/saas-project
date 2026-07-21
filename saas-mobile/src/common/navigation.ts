@@ -543,10 +543,20 @@ export function getFallbackRouteByPage(route = getCurrentPageRoute()): string {
   return APP_ROUTES.portal.home;
 }
 
-export function navigateBackOrFallback() {
+export function navigateBackOrFallback(fallbackUrl?: string) {
   const pages = getCurrentPages();
   if (pages.length > 1) {
     uni.navigateBack({ delta: 1 });
+    return;
+  }
+
+  if (fallbackUrl) {
+    const route = normalizeRoute(fallbackUrl);
+    if (isSystemTabbarRoute(route)) {
+      uni.switchTab({ url: route });
+    } else {
+      uni.redirectTo({ url: route });
+    }
     return;
   }
 

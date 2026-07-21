@@ -24,12 +24,39 @@
       </view>
 
       <!-- 公告横幅 -->
-      <view class="notice-bar" @click="goNotice">
+      <view v-if="announcements.length" class="notice-bar" @click="goAnnouncement(announcements[0])">
         <u-icon name="bell-fill" color="var(--u-type-warning)" size="28" />
-        <text class="notice-text">
-          欢迎使用予艺助手，聚合多种服务一站式体验
-        </text>
+        <text class="notice-text">{{ announcements[activeAnnouncementIdx]?.title }}</text>
         <u-icon name="arrow-right" color="var(--u-tips-color)" size="24" />
+      </view>
+
+      <!-- 通知消息 -->
+      <view v-if="notifications.length" class="notify-section">
+        <view class="section-head section-head--compact">
+          <view class="section-label">
+            <view class="section-mark section-mark--warn" />
+            <text class="section-label-text">消息通知</text>
+          </view>
+          <text class="section-meta" @click="goNotificationList">全部</text>
+        </view>
+        <view class="notify-list">
+          <view
+            v-for="item in notifications"
+            :key="item.id"
+            class="notify-item"
+            :class="{ 'notify-item--unread': !item.readAt }"
+            @click="handleNotificationTap(item)"
+          >
+            <view class="notify-icon" :class="`notify-icon--${item.type}`">
+              <u-icon :name="getNotifyIcon(item.type)" size="26" color="#fff" />
+            </view>
+            <view class="notify-body">
+              <text class="notify-title">{{ item.title }}</text>
+              <text class="notify-content">{{ item.content }}</text>
+            </view>
+            <text class="notify-time">{{ formatNotifyTime(item.createdAt) }}</text>
+          </view>
+        </view>
       </view>
 
       <!-- 业务服务 2×2 网格 -->
@@ -123,8 +150,12 @@
 import { APP_ROUTES, getInitialMobileEntry } from "@/common/navigation";
 import { fetchMobileConfig } from "@/api/mobile-config";
 import type { MobileConfigData, MobileModuleItem } from "@/api/mobile-config";
+import type { AnnouncementItem } from "@/api/announcement";
+import type { NotificationItem } from "@/api/notification";
+import { fetchActiveAnnouncements } from "@/api/announcement";
+import { fetchNotificationList, markNotificationRead } from "@/api/notification";
 import type { CurrentSystemValue } from "@/stores/local";
-import { computed, ref } from "vue";
+import { computed, ref, onBeforeUnmount } from "vue";
 import { onLoad, onShow } from "@dcloudio/uni-app";
 import layout from "@/components/layout/layout.vue";
 import { CurrentSystem, useLocalStore } from "@/stores/local";
@@ -212,6 +243,93 @@ onShow(() => {
   }
   // 未登录：仅展示命理模块，快捷入口隐藏订单/进件
   applyLoginAwareFilter();
+  // 加载公告和通知
+  loadAnnouncements();
+  loadNotifications();
+});
+
+// ========== 公告 ==========
+const announcements = ref<AnnouncementItem[]>([]);
+const activeAnnouncementIdx = ref(0);
+let announcementTimer: ReturnType<typeof setInterval> | null = null;
+
+async function loadAnnouncements() {
+  try {
+    const res = await fetchActiveAnnouncements();
+    const list = (Array.isArray(res) ? res : []) as AnnouncementItem[];
+    announcements.value = list.slice(0, 5);
+    if (announcements.value.length > 1) {
+      stopAnnouncementRotation();
+      announcementTimer = setInterval(() => {
+        activeAnnouncementIdx.value = (activeAnnouncementIdx.value + 1) % announcements.value.length;
+      }, 4000);
+    }
+  } catch {}
+}
+
+function stopAnnouncementRotation() {
+  if (announcementTimer) {
+    clearInterval(announcementTimer);
+    announcementTimer = null;
+  }
+}
+
+function goAnnouncement(item: AnnouncementItem) {
+  if (!item) return;
+  uni.navigateTo({ url: `/pages/home/announcementDetail?id=${item.id}` });
+}
+
+// ========== 通知 ==========
+const notifications = ref<NotificationItem[]>([]);
+
+async function loadNotifications() {
+  if (!localStore.token) return;
+  try {
+    const res = await fetchNotificationList({ current: 1, size: 5 });
+    const data = res as unknown as { records?: NotificationItem[] };
+    notifications.value = data.records ?? [];
+  } catch {}
+}
+
+function goNotificationList() {
+  uni.navigateTo({ url: "/pages/home/notificationList" });
+}
+
+async function handleNotificationTap(item: NotificationItem) {
+  if (!item.readAt) {
+    try {
+      await markNotificationRead(item.id);
+      item.readAt = new Date().toISOString();
+    } catch {}
+  }
+  if (item.extra?.applicationId) {
+    localStore.setCurrentSystem(CurrentSystem.CARLOAN);
+    uni.navigateTo({ url: `/pages/carloan/precheck/applyDetail?id=${item.extra.applicationId}` });
+  }
+}
+
+function getNotifyIcon(type: string): string {
+  const map: Record<string, string> = {
+    approval: "checkmark-circle", supplement: "edit-pen", signing: "file-text",
+    loan: "rmb-circle", announcement: "bell", order: "list", system: "setting",
+  };
+  return map[type] || "info-circle";
+}
+
+function formatNotifyTime(dateStr: string): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const diff = Date.now() - d.getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "刚刚";
+  if (m < 60) return `${m}分钟前`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}小时前`;
+  return `${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+onBeforeUnmount(() => {
+  stopAnnouncementRotation();
 });
 
 const serviceCards = ref([
@@ -302,7 +420,7 @@ const shortcutItems = ref([
     label: "公告通知",
     icon: "bell",
     bgColor: "rgba(var(--u-type-warning-rgb, 255, 153, 0), 0.85)",
-    handler: () => uni.showToast({ title: "公告功能建设中", icon: "none" }),
+    handler: () => goNotificationList(),
   },
   {
     key: "service",
@@ -390,7 +508,6 @@ const goProfile = () => {
   if (!hasLogin.value) return goLogin();
   uni.switchTab({ url: APP_ROUTES.my.home });
 };
-const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "none" });
 </script>
 
 <style scoped lang="scss">
@@ -526,6 +643,93 @@ const goNotice = () => uni.showToast({ title: "公告功能建设中", icon: "no
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ===== 通知列表 ===== */
+.notify-section {
+  margin: 0 28rpx 8rpx;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
+  box-shadow: 4rpx 4rpx 12rpx rgba(30, 41, 59, 0.06);
+}
+
+.section-mark--warn {
+  background: linear-gradient(135deg, #ff9a56, #ff6b6b);
+}
+
+.notify-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.notify-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx;
+  border-radius: 12rpx;
+  background: #f8f9fb;
+
+  &--unread {
+    background: #f0f4ff;
+    border-left: 4rpx solid var(--u-type-primary, #4f7cff);
+  }
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+.notify-icon {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &--approval { background: linear-gradient(135deg, #667eea, #764ba2); }
+  &--supplement { background: linear-gradient(135deg, #f093fb, #f5576c); }
+  &--signing { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+  &--loan { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+  &--announcement { background: linear-gradient(135deg, #ff9a56, #ff6b6b); }
+  &--order { background: linear-gradient(135deg, #a18cd1, #fbc2eb); }
+  &--system { background: linear-gradient(135deg, #89919c, #bdc3c7); }
+}
+
+.notify-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.notify-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notify-content {
+  font-size: 22rpx;
+  color: #999;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notify-time {
+  font-size: 20rpx;
+  color: #ccc;
+  flex-shrink: 0;
 }
 
 .section-head {

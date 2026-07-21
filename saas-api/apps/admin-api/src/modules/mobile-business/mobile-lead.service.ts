@@ -11,8 +11,6 @@ export class MobileLeadService {
 
   async addSalesLead(dto: MobileSalesLeadDto, user: RequestUser, headerOrgId?: number) {
     const org = await getDefaultOrg(this.prisma, headerOrgId)
-
-    // 兼容前端字段名：customerName → personName, phone → telephone
     const personName = dto.personName || dto.customerName
     const telephone = dto.telephone || dto.phone
 
@@ -20,7 +18,7 @@ export class MobileLeadService {
     if (!telephone?.trim()) throw new BadRequestException('手机号不能为空')
 
     const customer = await this.prisma.customer.findFirst({
-      where: { orgId: org.id, phone: telephone }
+      where: { orgId: org.id, phone: telephone, tenantId: org.tenantId, deletedAt: null }
     })
 
     if (customer) {
@@ -83,7 +81,7 @@ export class MobileLeadService {
     if (!customer) throw new NotFoundException('客户不存在')
 
     const lead = await this.prisma.lead.findFirst({
-      where: { phone: customer.phone, orgId: customer.orgId }
+      where: { phone: customer.phone, orgId: customer.orgId, tenantId, deletedAt: null }
     })
 
     if (!lead) throw new NotFoundException('线索不存在')
@@ -119,7 +117,7 @@ export class MobileLeadService {
     if (!customer) return []
 
     const lead = await this.prisma.lead.findFirst({
-      where: { phone: customer.phone }
+      where: { phone: customer.phone, tenantId, deletedAt: null }
     })
 
     if (!lead) return []

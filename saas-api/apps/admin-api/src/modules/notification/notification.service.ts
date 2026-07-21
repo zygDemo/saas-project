@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
+import { PrismaService } from '../prisma/prisma.service'
 import { NotificationGateway } from './notification.gateway'
+import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 
 export type NotificationType =
   | 'announcement'   // 公告
@@ -26,12 +28,35 @@ export interface PushNotification {
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name)
 
-  constructor(private readonly gateway: NotificationGateway) {}
+  constructor(
+    private readonly gateway: NotificationGateway,
+    private readonly prisma: PrismaService
+  ) {}
 
-  /**
-   * 推送通知给指定用户
-   */
-  pushToUser(userId: number, notification: Omit<PushNotification, 'userId'>) {
+  /** 持久化通知到数据库 */
+  private async persist(tenantId: number, notification: { type: string; title: string; content: string; userId?: number; extra?: Record<string, unknown> }) {
+    try {
+      await this.prisma.notificationLog.create({
+        data: {
+          tenantId,
+          userId: notification.userId ?? null,
+          type: notification.type,
+          title: notification.title,
+          content: notification.content,
+          extra: notification.extra ?? undefined,
+        }
+      })
+    } catch (err) {
+      this.logger.warn(`通知持久化失败: ${(err as Error).message}`)
+    }
+  }
+
+  /** 推送通知给指定用户 */
+  async pushToUser(userId: number, notification: Omit<PushNotification, 'userId'>) {
+    const tenantId = notification.tenantId ?? getCurrentTenantId()
+    if (tenantId) {
+      await this.persist(tenantId, { ...notification, userId })
+    }
     try {
       this.gateway.emitToUser(userId, 'notification', {
         type: notification.type,
@@ -45,10 +70,9 @@ export class NotificationService {
     }
   }
 
-  /**
-   * 推送通知给指定租户所有在线用户
-   */
-  pushToTenant(tenantId: number, notification: Omit<PushNotification, 'tenantId'>) {
+  /** 推送通知给指定租户所有在线用户 */
+  async pushToTenant(tenantId: number, notification: Omit<PushNotification, 'tenantId'>) {
+    await this.persist(tenantId, notification)
     try {
       this.gateway.emitToTenant(tenantId, 'notification', {
         type: notification.type,
@@ -63,26 +87,28 @@ export class NotificationService {
     }
   }
 
-  /**
-   * 推送公告给指定租户
-   */
-  pushAnnouncement(tenantId: number, announcement: { id: number; title: string; content: string }) {
-    try {
-    this.gateway.emitToTenant(tenantId, 'announcement', {
+  /** 推送公告给指定租户 */
+  async pushAnnouncement(tenantId: number, announcement: { id: number; title: string; content: string }) {
+    await this.persist(tenantId, {
       type: 'announcement',
       title: announcement.title,
       content: announcement.content,
       extra: { announcementId: announcement.id },
     })
-    this.logger.debug(`推送公告 → tenant:${tenantId}: ${announcement.title}`)
+    try {
+      this.gateway.emitToTenant(tenantId, 'announcement', {
+        type: 'announcement',
+        title: announcement.title,
+        content: announcement.content,
+        extra: { announcementId: announcement.id },
+      })
+      this.logger.debug(`推送公告 → tenant:${tenantId}: ${announcement.title}`)
     } catch (err) {
       this.logger.warn(`推送公告失败 → tenant:${tenantId}: ${(err as Error).message}`)
     }
   }
 
-  /**
-   * 推送审批状态变更
-   */
+  /** 推送审批状态变更 */
   pushApprovalStatus(
     userId: number,
     data: { applicationId: number; status: string; title: string },
@@ -95,9 +121,7 @@ export class NotificationService {
     })
   }
 
-  /**
-   * 推送补件通知
-   */
+  /** 推送补件通知 */
   pushSupplement(
     userId: number,
     data: { applicationId: number; title: string },
@@ -110,9 +134,7 @@ export class NotificationService {
     })
   }
 
-  /**
-   * 推送签约通知
-   */
+  /** 推送签约通知 */
   pushSigning(
     userId: number,
     data: { applicationId: number; title: string },
@@ -125,9 +147,7 @@ export class NotificationService {
     })
   }
 
-  /**
-   * 推送放款通知
-   */
+  /** 推送放款通知 */
   pushLoan(
     userId: number,
     data: { applicationId: number; amount: number },
@@ -140,9 +160,51 @@ export class NotificationService {
     })
   }
 
-  /**
-   * 获取在线用户统计
-   */
+  /** 获取通知列表（分页） */
+  async getNotifications(userId: number, query?: { current?: number; size?: number }) {
+    const current = Math.max(Number(query?.current ?? 1) || 1, 1)
+    const size = Math.min(Math.max(Number(query?.size ?? 20) || 20, 1), 100)
+    const tenantId = getCurrentTenantId()
+    const where = { tenantId: tenantId!, userId }
+    const [records, total] = await Promise.all([
+      this.prisma.notificationLog.findMany({
+        where,
+        skip: (current - 1) * size,
+        take: size,
+        orderBy: { createdAt: 'desc' }
+      }),
+      this.prisma.notificationLog.count({ where })
+    ])
+    return { records, total, current, size }
+  }
+
+  /** 标记通知为已读 */
+  async markAsRead(id: number, userId: number) {
+    const tenantId = getCurrentTenantId()
+    return this.prisma.notificationLog.update({
+      where: { id, tenantId: tenantId!, userId },
+      data: { readAt: new Date() }
+    })
+  }
+
+  /** 全部标记已读 */
+  async markAllAsRead(userId: number) {
+    const tenantId = getCurrentTenantId()
+    return this.prisma.notificationLog.updateMany({
+      where: { tenantId: tenantId!, userId, readAt: null },
+      data: { readAt: new Date() }
+    })
+  }
+
+  /** 获取未读通知数量 */
+  async getUnreadCount(userId: number) {
+    const tenantId = getCurrentTenantId()
+    return this.prisma.notificationLog.count({
+      where: { tenantId: tenantId!, userId, readAt: null }
+    })
+  }
+
+  /** 获取在线用户统计 */
   getOnlineStats() {
     return this.gateway.getOnlineStats()
   }

@@ -4,7 +4,8 @@ import { onLoad, onShow } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { useCarloanStore } from "@/stores/carloan";
 import FlowRecordPopup from "@/components/carloan/FlowRecordPopup.vue";
-import { flowTabList, resolveFlowTabByNode, resolvePageTitle } from "@/common/carloan/applyDetail-flow";
+import { flowTabList, resolveFlowTabByNode, resolvePageTitle, businessNodeText } from "@/common/carloan/applyDetail-flow";
+import { APP_ROUTES } from "@/common/navigation";
 import { useDetailFlow } from "@/composables/carloan/useDetailFlow";
 import { enrichLifecycleRecords } from "@/composables/carloan/useApprovalFlow";
 import {
@@ -70,10 +71,7 @@ async function loadDetail() {
 const currentNodeCode = computed(() =>
   String([carloanStore.pageContext.nodeCode, detail.value?.nodeCode, detail.value?.currentNode, detail.value?.businessNode].find(Boolean) || ""),
 );
-const currentNodeLabel = computed(() => {
-  const { businessNodeText } = require("@/common/carloan/applyDetail-flow");
-  return businessNodeText(currentNodeCode.value);
-});
+const currentNodeLabel = computed(() => businessNodeText(currentNodeCode.value));
 const isPreAuditDetail = computed(() => ["1100", "1200", "PRE_AUDIT", "INITIAL_AUDIT"].includes(currentNodeCode.value));
 const isSupplementDetail = computed(() => ["1300", "1310", "1320", "1330", "1340", "SUPPLEMENT_MATERIALS"].includes(currentNodeCode.value));
 const isLoanRequestDetail = computed(() => {
@@ -85,6 +83,7 @@ const isLoanRequestDetail = computed(() => {
 const customerDisplayName = computed(() => detail.value?.name || detail.value?.customerName || detail.value?.personName || carloanStore.pageContext.customerName || "");
 const customerDisplayPhone = computed(() => detail.value?.phone || detail.value?.telephone || detail.value?.mobile || carloanStore.pageContext.customerPhone || "");
 const orderNo = computed(() => detail.value?.creditOrderId || detail.value?.orderNo || detail.value?.applicationNo || carloanStore.pageContext.creditOrderId || "");
+const latestRemark = computed(() => detail.value?.latestRemark || detail.value?.remark || detail.value?.opinion || "");
 const detailUuid = computed(() => carloanStore.pageContext.uuid || pickDetailUuid(detail.value || {}) || "");
 
 const entryProgress = computed(() => {
@@ -105,6 +104,7 @@ const {
   detail: () => detail.value,
   loading: () => loading.value,
   currentNodeCode: () => currentNodeCode.value,
+  activeFlowTab: () => activeFlowTab.value,
   flowConfig: () => flowConfig.value,
   flowNodes: () => flowNodes.value,
   entryProgress: () => entryProgress.value,
@@ -187,7 +187,7 @@ onShow(() => { if (initialLoaded) loadDetail(); });
 </script>
 
 <template>
-  <app-page :nav-title="pageTitle">
+  <app-page :nav-title="pageTitle" :fallback-url="APP_ROUTES.carloan.orders">
     <view v-if="detail" class="pre-audit-detail-page">
       <view class="pre-customer-card">
         <view class="pre-customer-header">

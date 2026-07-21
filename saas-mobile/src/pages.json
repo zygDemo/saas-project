@@ -35,6 +35,18 @@
     },
     {
       "path": "pages/my/agreement"
+    },
+    {
+      "path": "pages/home/notificationList",
+      "style": {
+        "navigationBarTitleText": "消息通知"
+      }
+    },
+    {
+      "path": "pages/home/announcementDetail",
+      "style": {
+        "navigationBarTitleText": "公告详情"
+      }
     }
   ],
   "globalStyle": {

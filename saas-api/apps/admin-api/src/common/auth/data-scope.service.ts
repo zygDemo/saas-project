@@ -115,4 +115,33 @@ export class DataScopeService {
     })
     return [...new Set<number>(roleDepts.map((rd) => (rd as { departmentId: number }).departmentId))]
   }
+
+  /**
+   * 一站式构建数据权限过滤条件
+   *
+   * 自动从 AsyncLocalStorage 获取当前用户角色，计算最小数据权限范围，
+   * 返回可直接合并到 Prisma where 的过滤条件。
+   *
+   * @param field 数据权限过滤字段，默认 'creatorId'
+   * @returns Prisma where 条件对象，ALL 权限时返回空对象
+   */
+  async buildDataScopeFilter(field = 'creatorId'): Promise<Record<string, unknown>> {
+    const roleIds = getCurrentUserRoles()
+    if (!roleIds.length) return {}
+
+    const roles = await this.prisma.role.findMany({
+      where: { id: { in: roleIds } },
+      select: { dataScope: true }
+    })
+
+    const scopePriority: Record<string, number> = { SELF: 1, DEPT: 2, CUSTOM: 3, ALL: 4 }
+    const minScope = roles
+      .map((r: { dataScope: string }) => r.dataScope)
+      .sort((a: string, b: string) => (scopePriority[a] ?? 99) - (scopePriority[b] ?? 99))[0]
+
+    if (!minScope || minScope === 'ALL') return {}
+
+    const visibleIds = await this.getVisibleUserIds(minScope as DataScope)
+    return this.injectDataScope({}, visibleIds, field)
+  }
 }

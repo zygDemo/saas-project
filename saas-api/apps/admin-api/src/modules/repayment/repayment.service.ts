@@ -4,7 +4,6 @@ import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PrismaService } from '../prisma/prisma.service'
 import { DataScopeService } from '../../common/auth/data-scope.service'
-import { getCurrentUserRoles } from '../../common/tenant/tenant-context'
 import { CreateRepaymentDto, UpdateRepaymentDto, RepaymentQueryDto } from './dto/repayment.dto'
 
 @Injectable()
@@ -19,14 +18,9 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
       exactFields: ['applicationId', 'status'],
       include: { application: true, records: true },
       getExtraWhere: async () => {
-        const roleIds = getCurrentUserRoles()
-        if (!roleIds.length) return {}
-        const roles = await prisma.role.findMany({ where: { id: { in: roleIds } }, select: { dataScope: true } })
-        const scopePriority: Record<string, number> = { SELF: 1, DEPT: 2, CUSTOM: 3, ALL: 4 }
-        const minScope = roles.map(r => r.dataScope).sort((a, b) => (scopePriority[a] ?? 99) - (scopePriority[b] ?? 99))[0]
-        if (!minScope || minScope === 'ALL') return {}
-        const visibleIds = await dataScopeService.getVisibleUserIds(minScope)
-        return { application: { creatorId: { in: visibleIds } } }
+        // 还款计划通过 application.creatorId 做数据权限过滤（嵌套路径）
+        const filter = await this.dataScopeService.buildDataScopeFilter('creatorId')
+        return filter.creatorId ? { application: { creatorId: filter.creatorId } } : {}
       },
       validateCreate: async (dto) => {
         await this.ensureRelatedExists(this.prisma.application, dto.applicationId, '进件不存在')
@@ -40,12 +34,21 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
   // ==================== 还款计划查询 ====================
 
   /** 获取进件的还款计划列表 */
-  async getRepaymentPlans(applicationId: number) {
-    return this.prisma.repaymentPlan.findMany({
-      where: this.addTenantId({ applicationId }),
-      orderBy: { period: 'asc' },
-      include: { records: { orderBy: { createdAt: 'desc' } } }
-    })
+  async getRepaymentPlans(applicationId: number, query?: { current?: number; size?: number }) {
+    const current = Math.max(Number(query?.current ?? 1) || 1, 1)
+    const size = Math.min(Math.max(Number(query?.size ?? 50) || 50, 1), 100)
+    const where = this.addTenantId({ applicationId })
+    const [records, total] = await Promise.all([
+      this.prisma.repaymentPlan.findMany({
+        where,
+        skip: (current - 1) * size,
+        take: size,
+        orderBy: { period: 'asc' },
+        include: { records: { orderBy: { createdAt: 'desc' } } }
+      }),
+      this.prisma.repaymentPlan.count({ where })
+    ])
+    return { records, total, current, size }
   }
 
   // ==================== 还款登记 ====================
@@ -96,6 +99,9 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
         where: this.addTenantId({ id: planId })
       })
       if (!plan) throw new BadRequestException('还款计划不存在')
+      if (plan.status === RepaymentStatus.PAID || plan.status === RepaymentStatus.SETTLED) {
+        throw new BadRequestException('该期已结清，无法重复还款')
+      }
 
       const principal = dto.principal ?? dto.amount
       const interest = dto.interest ?? 0
@@ -105,6 +111,25 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
       const paidTotal = Number(plan.paidTotal) + dto.amount
       const totalDue = Number(plan.totalAmount) + Number(plan.penaltyAmount)
       const nextStatus = paidTotal >= totalDue ? RepaymentStatus.PAID : RepaymentStatus.PARTIAL
+
+      // 乐观锁：用当前 paidTotal 作为条件，防止并发重复还款
+      const updateResult = await tx.repaymentPlan.updateMany({
+        where: {
+          id: planId,
+          paidTotal: plan.paidTotal,
+          status: { notIn: [RepaymentStatus.PAID, RepaymentStatus.SETTLED] }
+        },
+        data: {
+          paidPrincipal,
+          paidInterest,
+          paidTotal,
+          status: nextStatus,
+          paidAt: nextStatus === RepaymentStatus.PAID ? new Date() : plan.paidAt
+        }
+      })
+      if (updateResult.count === 0) {
+        throw new BadRequestException('还款状态已变更，请刷新后重试')
+      }
 
       await tx.repaymentRecord.create({
         data: {
@@ -121,15 +146,8 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
           createdBy: dto.createdBy
         }
       })
-      return tx.repaymentPlan.update({
+      return tx.repaymentPlan.findFirst({
         where: { id: planId },
-        data: {
-          paidPrincipal,
-          paidInterest,
-          paidTotal,
-          status: nextStatus,
-          paidAt: nextStatus === RepaymentStatus.PAID ? new Date() : plan.paidAt
-        },
         include: { records: true, application: true }
       })
     })
@@ -139,7 +157,8 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
 
   /** 获取逾期还款计划列表 */
   async getOverduePlans(query: { page?: number; pageSize?: number }) {
-    const { page = 1, pageSize = 20 } = query
+    const { page = 1, pageSize: rawPageSize = 20 } = query
+    const pageSize = Math.min(Math.max(Number(rawPageSize) || 20, 1), 100)
     const where = this.addTenantId({
       status: RepaymentStatus.OVERDUE,
       deletedAt: null
@@ -184,11 +203,20 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
   }
 
   /** 获取催收记录列表 */
-  async getCollectionRecords(applicationId: number) {
-    return this.prisma.collectionRecord.findMany({
-      where: this.addTenantId({ applicationId }),
-      orderBy: { createdAt: 'desc' }
-    })
+  async getCollectionRecords(applicationId: number, query?: { current?: number; size?: number }) {
+    const current = Math.max(Number(query?.current ?? 1) || 1, 1)
+    const size = Math.min(Math.max(Number(query?.size ?? 20) || 20, 1), 100)
+    const where = this.addTenantId({ applicationId })
+    const [records, total] = await Promise.all([
+      this.prisma.collectionRecord.findMany({
+        where,
+        skip: (current - 1) * size,
+        take: size,
+        orderBy: { createdAt: 'desc' }
+      }),
+      this.prisma.collectionRecord.count({ where })
+    ])
+    return { records, total, current, size }
   }
 
   // ==================== 提前还款 ====================
@@ -241,6 +269,7 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
         const unpaidPlans = await tx.repaymentPlan.findMany({
           where: {
             applicationId,
+            deletedAt: null,
             status: { in: [RepaymentStatus.NOT_DUE, RepaymentStatus.OVERDUE, RepaymentStatus.PARTIAL] }
           }
         })
@@ -292,8 +321,9 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
   }
 
   async approveEarlyRepayment(id: number, dto: { approvedBy: number; remark?: string }) {
+    const tenantId = getCurrentTenantId()
     return this.prisma.earlyRepayment.update({
-      where: { id },
+      where: tenantId ? { id, tenantId } : { id },
       data: {
         repayStatus: 'APPROVED',
         approvedBy: dto.approvedBy,
@@ -304,8 +334,9 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
   }
 
   async completeEarlyRepayment(id: number) {
+    const tenantId = getCurrentTenantId()
     return this.prisma.earlyRepayment.update({
-      where: { id },
+      where: tenantId ? { id, tenantId } : { id },
       data: { repayStatus: 'COMPLETED', completedAt: new Date() }
     })
   }
@@ -370,15 +401,17 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
     tx: Prisma.TransactionClient,
     applicationId: number
   ) {
+    const tenantId = getCurrentTenantId()
+    const baseWhere = tenantId ? { applicationId, tenantId } : { applicationId }
     const unpaid = await tx.repaymentPlan.count({
       where: {
-        applicationId,
+        ...baseWhere,
         status: { notIn: [RepaymentStatus.PAID, RepaymentStatus.SETTLED] }
       }
     })
     if (unpaid > 0) throw new BadRequestException('仍有未结清还款计划')
     await tx.repaymentPlan.updateMany({
-      where: { applicationId },
+      where: baseWhere,
       data: { status: RepaymentStatus.SETTLED }
     })
   }

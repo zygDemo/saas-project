@@ -179,12 +179,12 @@ export class DictService {
     return { id }
   }
   private async findTypeOrThrow(tenantId: number, id: number) {
-    const item = await this.prisma.dictType.findFirst({ where: { id, tenantId } })
+    const item = await this.prisma.dictType.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!item) throw new NotFoundException('Dict type not found')
     return item
   }
   private async findDataOrThrow(tenantId: number, id: number) {
-    const item = await this.prisma.dictData.findFirst({ where: { id, tenantId } })
+    const item = await this.prisma.dictData.findFirst({ where: { id, tenantId, deletedAt: null } })
     if (!item) throw new NotFoundException('Dict data not found')
     return item
   }

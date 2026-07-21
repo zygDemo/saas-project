@@ -2,6 +2,7 @@
 import { ApplicationStatus, DisbursementStatus, Prisma } from '@prisma/client'
 import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
+import { FlowNode, FlowStatus } from '../../common/constants/flow.constants'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateDisbursementDto, UpdateDisbursementDto, DisbursementQueryDto } from './dto/disbursement.dto'
 @Injectable()
@@ -91,8 +92,8 @@ export class DisbursementService extends BaseBusinessCrudService<CreateDisbursem
         where: { id: applicationId },
         data: {
           status: ApplicationStatus.PENDING_DISBURSEMENT,
-          currentNode: 1800,
-          currentStatus: 10
+          currentNode: FlowNode.DISBURSEMENT,
+          currentStatus: FlowStatus.PENDING
         }
       })
     })
@@ -151,8 +152,8 @@ export class DisbursementService extends BaseBusinessCrudService<CreateDisbursem
         where: { id: applicationId },
         data: {
           status: ApplicationStatus.DISBURSED,
-          currentNode: 1900,
-          currentStatus: 90
+          currentNode: FlowNode.POST_LOAN,
+          currentStatus: FlowStatus.COMPLETED
         }
       })
     })

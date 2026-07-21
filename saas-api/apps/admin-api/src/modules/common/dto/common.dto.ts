@@ -25,6 +25,13 @@ export function ToBoolean() {
   })
 }
 
+export function ToEmptyAsUndefined() {
+  return Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined) return undefined
+    return value
+  })
+}
+
 export class IdParamDto {
   @ApiProperty({ description: '主键ID' })
   @ToNumber()
@@ -41,12 +48,12 @@ export class PageQueryDto {
   @Min(1)
   current?: number
 
-  @ApiPropertyOptional({ description: '每页数量', default: 20, maximum: 200 })
+  @ApiPropertyOptional({ description: '每页数量', default: 20, maximum: 1000 })
   @IsOptional()
   @ToNumber()
   @IsInt()
   @Min(1)
-  @Max(200)
+  @Max(1000)
   size?: number
 }
 

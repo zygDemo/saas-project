@@ -7,7 +7,7 @@ export class MobileBankCardService {
 
   async getBankCards(customerId: number) {
     return this.prisma.bankCard.findMany({
-      where: { customerId },
+      where: { customerId, deletedAt: null },
       orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }]
     })
   }

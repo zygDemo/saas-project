@@ -116,6 +116,7 @@ describe('OrganizationService', () => {
       mockPrisma.organization.findFirst.mockResolvedValue(null)
       await expect(service.disable(999)).rejects.toThrow()
     })
+  })
 
   describe('校验', () => {
     it('信用代码重复应抛异常', async () => {

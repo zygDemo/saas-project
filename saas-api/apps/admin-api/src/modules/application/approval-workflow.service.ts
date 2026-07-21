@@ -2,8 +2,10 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { ApplicationStatus, ApprovalAction, Prisma } from '@prisma/client'
 import type { Application } from '@prisma/client'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
+import { FlowNode, FlowStatus } from '../../common/constants/flow.constants'
+import { FlowConfigService } from '../flow-config/flow-config.service'
 import { PrismaService } from '../prisma/prisma.service'
-import { NotificationService } from './notification.service'
+import { ApplicationNotificationService } from './notification.service'
 import type { PrismaModelDelegate } from '../base-business-crud.service'
 
 /**
@@ -71,50 +73,12 @@ const TRANSITIONS = {
 
 // ============ 流程状态映射工具函数 ============
 
-function flowByApplicationStatus(status: ApplicationStatus) {
-  const map: Record<ApplicationStatus, { currentNode: number; currentStatus: number }> = {
-    [ApplicationStatus.DRAFT]: { currentNode: 1100, currentStatus: 10 },
-    [ApplicationStatus.SUBMITTED]: { currentNode: 1100, currentStatus: 10 },
-    [ApplicationStatus.PENDING_RISK_PRE]: { currentNode: 1200, currentStatus: 10 },
-    [ApplicationStatus.RISK_PRE_PASSED]: { currentNode: 1250, currentStatus: 20 },
-    [ApplicationStatus.RISK_PRE_REJECTED]: { currentNode: 1200, currentStatus: 30 },
-    [ApplicationStatus.PENDING_FUNDER_PRE]: { currentNode: 1250, currentStatus: 10 },
-    [ApplicationStatus.FUNDER_PRE_PASSED]: { currentNode: 1300, currentStatus: 20 },
-    [ApplicationStatus.FUNDER_PRE_REJECTED]: { currentNode: 1250, currentStatus: 30 },
-    [ApplicationStatus.PENDING_SUPPLEMENT]: { currentNode: 1300, currentStatus: 50 },
-    [ApplicationStatus.PENDING_FIRST_REVIEW]: { currentNode: 1400, currentStatus: 10 },
-    [ApplicationStatus.FIRST_REVIEW_PASSED]: { currentNode: 1450, currentStatus: 20 },
-    [ApplicationStatus.FIRST_REVIEW_REJECTED]: { currentNode: 1400, currentStatus: 30 },
-    [ApplicationStatus.PENDING_FINAL_REVIEW]: { currentNode: 1450, currentStatus: 10 },
-    [ApplicationStatus.FINAL_REVIEW_PASSED]: { currentNode: 1500, currentStatus: 20 },
-    [ApplicationStatus.FINAL_REVIEW_REJECTED]: { currentNode: 1450, currentStatus: 30 },
-    [ApplicationStatus.PENDING_FUNDER_REVIEW]: { currentNode: 1500, currentStatus: 10 },
-    [ApplicationStatus.FUNDER_REVIEW_PASSED]: { currentNode: 1600, currentStatus: 20 },
-    [ApplicationStatus.FUNDER_REVIEW_REJECTED]: { currentNode: 1500, currentStatus: 30 },
-    [ApplicationStatus.PENDING_SIGN]: { currentNode: 1600, currentStatus: 10 },
-    [ApplicationStatus.SIGNING_PROGRESS]: { currentNode: 1600, currentStatus: 10 },
-    [ApplicationStatus.SIGNED]: { currentNode: 1660, currentStatus: 20 },
-    [ApplicationStatus.PENDING_LOAN_REQUEST]: { currentNode: 1700, currentStatus: 10 },
-    [ApplicationStatus.LOAN_REQUEST_REVIEWING]: { currentNode: 1700, currentStatus: 10 },
-    [ApplicationStatus.LOAN_REQUEST_APPROVED]: { currentNode: 1800, currentStatus: 20 },
-    [ApplicationStatus.LOAN_REQUEST_REJECTED]: { currentNode: 1700, currentStatus: 30 },
-    [ApplicationStatus.PENDING_DISBURSEMENT]: { currentNode: 1800, currentStatus: 10 },
-    [ApplicationStatus.DISBURSED]: { currentNode: 1900, currentStatus: 90 },
-    [ApplicationStatus.CANCELLED]: { currentNode: 0, currentStatus: 30 },
-    [ApplicationStatus.SETTLED]: { currentNode: 1900, currentStatus: 90 }
-  }
-  return map[status]
-}
-
-export function flowPatch(status: ApplicationStatus) {
-  return flowByApplicationStatus(status)
-}
-
 @Injectable()
 export class ApprovalWorkflowService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notificationService: NotificationService
+    private readonly notificationService: ApplicationNotificationService,
+    private readonly flowConfigService: FlowConfigService
   ) {}
 
   // ==================== 状态校验工具方法 ====================
@@ -136,17 +100,20 @@ export class ApprovalWorkflowService {
     return application
   }
 
-  /** 添加租户过滤条件 */
+  /** 添加租户过滤条件 + 排除软删除 */
   addTenantId(where: Record<string, unknown>): Record<string, unknown> {
     const tenantId = getCurrentTenantId()
-    if (!tenantId) return where
-    return { ...where, tenantId }
+    if (!tenantId) return { ...where, deletedAt: null }
+    return { ...where, tenantId, deletedAt: null }
   }
 
-  /** 确保关联数据存在 */
+  /** 确保关联数据存在（含租户校验） */
   async ensureRelatedExists(model: PrismaModelDelegate, id: number | undefined, message: string) {
     if (id === undefined || id === null) return
-    const item = await model.findFirst({ where: { id } })
+    const tenantId = getCurrentTenantId()
+    const where: Record<string, unknown> = { id }
+    if (tenantId) where.tenantId = tenantId
+    const item = await model.findFirst({ where })
     if (!item) throw new BadRequestException(message)
     return item
   }
@@ -191,17 +158,24 @@ export class ApprovalWorkflowService {
     updateData: Record<string, unknown>
   ) {
     const tenantId = getCurrentTenantId()
+    // 使用 updateMany + 条件过滤，原子性地完成状态校验和更新，消除 TOCTOU 竞态
     const where: Record<string, unknown> = { id, status: { in: allowedStatuses } }
     if (tenantId) where.tenantId = tenantId
-    const application = await this.prisma.application.findFirst({ where })
-    if (!application) {
-      const exists = await this.prisma.application.findFirst({
-        where: tenantId ? { id, tenantId } : { id }
-      })
+
+    const result = await this.prisma.application.updateMany({ where, data: updateData })
+    if (result.count === 0) {
+      // 区分「不存在」和「状态不允许」
+      const existsWhere: Record<string, unknown> = { id }
+      if (tenantId) existsWhere.tenantId = tenantId
+      const exists = await this.prisma.application.findFirst({ where: existsWhere })
       if (!exists) throw new NotFoundException('数据不存在')
       throw new BadRequestException(statusMessage)
     }
-    return this.prisma.application.update({ where: { id }, data: updateData })
+    // 返回更新后的完整记录
+    const updated = await this.prisma.application.findFirst({
+      where: tenantId ? { id, tenantId } : { id }
+    })
+    return updated!
   }
 
   // ==================== 通用审批流转事务 ====================
@@ -221,13 +195,41 @@ export class ApprovalWorkflowService {
     },
     nextStatus: ApplicationStatus,
     extraUpdateData: Record<string, unknown> = {},
-    preLoadedApplication?: unknown
+    preLoadedApplication?: Application | null
   ) {
-    if (!preLoadedApplication) await this.findAndAssertStatus(id, allowedStatuses, statusMessage)
+    // preLoadedApplication 仅用于外部已校验的场景（如 riskPreReject 传入了 application）
+    // 但事务内仍需原子性条件更新，防止并发穿透
+    const tenantId = getCurrentTenantId()
+    const statusWhere: Record<string, unknown> = { id, status: { in: allowedStatuses } }
+    if (tenantId) statusWhere.tenantId = tenantId
+
+    // 在事务外解析流程补丁（避免事务内引入额外 IO 并复用缓存）
+    const orgId = preLoadedApplication?.orgId
+    const flow = await this.flowConfigService.getStatusFlowPatch(orgId ?? undefined, nextStatus)
+
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // 先原子更新状态，用 updateMany + 条件过滤消除 TOCTOU 竞态
+      const updateResult = await tx.application.updateMany({
+        where: statusWhere,
+        data: {
+          status: nextStatus,
+          ...flow,
+          ...extraUpdateData
+        }
+      })
+
+      if (updateResult.count === 0) {
+        const existsWhere: Record<string, unknown> = { id }
+        if (tenantId) existsWhere.tenantId = tenantId
+        const exists = await tx.application.findFirst({ where: existsWhere })
+        if (!exists) throw new NotFoundException('数据不存在')
+        throw new BadRequestException(statusMessage)
+      }
+
+      // 状态更新成功后，创建审批记录
       await tx.approvalRecord.create({
         data: {
-          tenantId: getCurrentTenantId()!,
+          tenantId: tenantId!,
           applicationId: id,
           approverId: approvalData.approverId,
           stage: approvalData.stage,
@@ -238,28 +240,37 @@ export class ApprovalWorkflowService {
           rate: approvalData.rate
         }
       })
-      const result = await tx.application.update({
-        where: { id },
-        data: {
-          status: nextStatus,
-          ...flowPatch(nextStatus),
-          ...extraUpdateData
-        }
+
+      return tx.application.findFirst({
+        where: tenantId ? { id, tenantId } : { id }
       })
-      return result
     })
+  }
+
+  // ==================== 流程补丁解析 ====================
+
+  private async resolveFlowPatchById(
+    id: number,
+    status: ApplicationStatus
+  ): Promise<{ currentNode: number; currentStatus: number }> {
+    const application = await this.prisma.application.findUnique({
+      where: { id },
+      select: { orgId: true }
+    })
+    return this.flowConfigService.getStatusFlowPatch(application?.orgId ?? undefined, status)
   }
 
   // ==================== 业务流程方法 ====================
 
   async submit(id: number) {
+    const flow = await this.resolveFlowPatchById(id, ApplicationStatus.PENDING_RISK_PRE)
     return this.atomicTransition(
       id,
       [ApplicationStatus.DRAFT, ApplicationStatus.PENDING_SUPPLEMENT],
       '当前状态不允许提交',
       {
         status: ApplicationStatus.PENDING_RISK_PRE,
-        ...flowPatch(ApplicationStatus.PENDING_RISK_PRE)
+        ...flow
       }
     )
   }
@@ -271,7 +282,8 @@ export class ApprovalWorkflowService {
   async riskPrePass(id: number, dto: { reviewerId?: number; approverId?: number; opinion?: string }) {
     const reviewerId = dto.reviewerId || dto.approverId
     if (reviewerId) await this.ensureRelatedExists(this.prisma.user, reviewerId, '预审人不存在')
-    if (reviewerId && dto.opinion?.trim()) {
+    // 有审批人时始终走 transitionWithApproval 创建审批记录，保证审计链完整
+    if (reviewerId) {
       return this.transitionWithApproval(
         id,
         [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE],
@@ -281,13 +293,14 @@ export class ApprovalWorkflowService {
         { remark: dto.opinion }
       )
     }
+    const flow = await this.resolveFlowPatchById(id, ApplicationStatus.PENDING_FUNDER_PRE)
     return this.atomicTransition(
       id,
       [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE],
       '当前状态不允许风控预审通过',
       {
         status: ApplicationStatus.PENDING_FUNDER_PRE,
-        ...flowPatch(ApplicationStatus.PENDING_FUNDER_PRE),
+        ...flow,
         remark: dto.opinion
       }
     )
@@ -316,11 +329,12 @@ export class ApprovalWorkflowService {
       await this.notificationService.sendOnApprovalRejected(id, application, '风控预审', dto.opinion!).catch(() => {})
       return result
     }
+    const flow = await this.flowConfigService.getStatusFlowPatch(application.orgId ?? undefined, ApplicationStatus.RISK_PRE_REJECTED)
     return this.prisma.application.update({
       where: { id },
       data: {
         status: ApplicationStatus.RISK_PRE_REJECTED,
-        ...flowPatch(ApplicationStatus.RISK_PRE_REJECTED),
+        ...flow,
         remark: dto.opinion ?? application.remark
       }
     })
@@ -342,7 +356,7 @@ export class ApprovalWorkflowService {
       '当前状态不允许风控预审驳回',
       { approverId: reviewerId, stage: 'RISK_PRE', action: ApprovalAction.RETURN, opinion: dto.opinion },
       ApplicationStatus.SUBMITTED,
-      { currentNode: 1140, currentStatus: 40, remark: dto.opinion }
+      { currentNode: FlowNode.SUBMISSION_RETURNED, currentStatus: FlowStatus.RETURNED, remark: dto.opinion }
     )
   }
 
@@ -381,11 +395,12 @@ export class ApprovalWorkflowService {
       [ApplicationStatus.PENDING_SUPPLEMENT, ApplicationStatus.FUNDER_PRE_PASSED],
       '当前状态不允许完成资料补充'
     )
+    const flow = await this.flowConfigService.getStatusFlowPatch(application.orgId ?? undefined, ApplicationStatus.PENDING_FIRST_REVIEW)
     return this.prisma.application.update({
       where: { id },
       data: {
         status: ApplicationStatus.PENDING_FIRST_REVIEW,
-        ...flowPatch(ApplicationStatus.PENDING_FIRST_REVIEW),
+        ...flow,
         supplementReason: dto.reason ?? application.supplementReason,
         supplementDeadline: dto.deadline ? new Date(dto.deadline) : application.supplementDeadline
       }
@@ -476,11 +491,12 @@ export class ApprovalWorkflowService {
       '当前状态不允许提交资方审批'
     )
     if (!application.funderId) throw new BadRequestException('未选择资方，不能提交资方审批')
+    const flow = await this.flowConfigService.getStatusFlowPatch(application.orgId ?? undefined, ApplicationStatus.PENDING_FUNDER_REVIEW)
     return this.prisma.application.update({
       where: { id },
       data: {
         status: ApplicationStatus.PENDING_FUNDER_REVIEW,
-        ...flowPatch(ApplicationStatus.PENDING_FUNDER_REVIEW)
+        ...flow
       }
     })
   }

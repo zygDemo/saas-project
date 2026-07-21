@@ -20,7 +20,7 @@ export class FunderService extends BaseBusinessCrudService<CreateFunderDto, Upda
   private async validateFunder(dto: CreateFunderDto | UpdateFunderDto, id?: number) {
     await this.ensureRelatedExists(this.prisma.organization, dto.orgId, '机构不存在')
     if (dto.code && dto.orgId) {
-      const item = await this.prisma.funder.findFirst({ where: { orgId: dto.orgId, code: dto.code } })
+      const item = await this.prisma.funder.findFirst({ where: { orgId: dto.orgId, code: dto.code, deletedAt: null } })
       if (item && item.id !== id) throw new BadRequestException('同一机构下资方编码已存在')
     }
   }
