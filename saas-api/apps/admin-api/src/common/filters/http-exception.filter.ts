@@ -1,36 +1,96 @@
-﻿import {
+import {
   ArgumentsHost,
   BadRequestException,
   Catch,
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common'
+import { ThrottlerException } from '@nestjs/throttler'
+import { WsException } from '@nestjs/websockets'
 import { Prisma } from '@prisma/client'
-import { Response } from 'express'
+import { Request, Response } from 'express'
 import { ApiStatus } from '../constants/api-status'
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(HttpExceptionFilter.name)
+
   catch(exception: unknown, host: ArgumentsHost) {
+    // WebSocket 异常单独处理
+    if (host.getType() === 'ws') {
+      this.handleWsException(exception, host)
+      return
+    }
+
+    this.handleHttpException(exception, host)
+  }
+
+  // ─── WebSocket 错误 ─────────────────────────────────────────────
+  private handleWsException(exception: unknown, host: ArgumentsHost) {
+    const client = host.switchToWs().getClient()
+
+    let message = 'WebSocket 错误'
+    let code = 1000
+
+    if (exception instanceof WsException) {
+      const error = exception.getError()
+      message = typeof error === 'string' ? error : (error as any)?.message || message
+      code = (error as any)?.code ?? 1000
+    } else if (exception instanceof HttpException) {
+      message = extractMessage(exception.getResponse())
+      code = exception.getStatus()
+    } else if (exception instanceof Error) {
+      message = exception.message
+    }
+
+    this.logger.error(`[WS] ${message}`, exception instanceof Error ? exception.stack : '')
+
+    client.emit('exception', { status: 'error', message, code })
+  }
+
+  // ─── HTTP 错误 ──────────────────────────────────────────────────
+  private handleHttpException(exception: unknown, host: ArgumentsHost) {
+    const request = host.switchToHttp().getRequest<Request>()
     const response = host.switchToHttp().getResponse<Response>()
+    const traceId = (request.headers['x-request-id'] as string) || `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+
     const status = getStatus(exception)
-    const body = exception instanceof HttpException ? exception.getResponse() : null
     const message =
-      extractMessage(body) ??
+      extractMessage(exception instanceof HttpException ? exception.getResponse() : null) ??
       extractPrismaMessage(exception) ??
       extractMulterMessage(exception) ??
+      extractThrottlerMessage(exception) ??
       '服务器内部错误'
 
-    response.status(200).json({
+    // 5xx 记录完整堆栈
+    if (status >= 500) {
+      this.logger.error(`[${request.method}] ${request.url} → ${status} ${message}`, exception instanceof Error ? exception.stack : '')
+    } else {
+      this.logger.warn(`[${request.method}] ${request.url} → ${status} ${message}`)
+    }
+
+    const body: Record<string, unknown> = {
       code: statusToApiCode(status),
       msg: message,
       data: null,
-    })
+    }
+
+    // 开发模式返回完整堆栈
+    if (process.env.NODE_ENV === 'development' && exception instanceof Error) {
+      body.traceId = exception.stack
+    } else {
+      body.traceId = traceId
+    }
+
+    response.status(200).json(body)
   }
 }
 
+// ─── 状态码解析 ────────────────────────────────────────────────────
 function getStatus(exception: unknown) {
+  if (exception instanceof ThrottlerException) return HttpStatus.TOO_MANY_REQUESTS
   if (exception instanceof HttpException) return exception.getStatus()
   if (exception instanceof Prisma.PrismaClientKnownRequestError) {
     if (exception.code === 'P2002') return HttpStatus.CONFLICT
@@ -39,6 +99,11 @@ function getStatus(exception: unknown) {
   }
   if (isMulterError(exception)) return HttpStatus.BAD_REQUEST
   return HttpStatus.INTERNAL_SERVER_ERROR
+}
+
+function extractThrottlerMessage(exception: unknown) {
+  if (exception instanceof ThrottlerException) return '请求过于频繁，请稍后再试'
+  return undefined
 }
 
 /** 检测 Multer 相关错误（包括 NestJS 包装后的 BadRequestException） */
@@ -50,7 +115,6 @@ function isMulterError(exception: unknown) {
       return true
     }
   }
-  // 也检测原生 MulterError（MulterError 有 code 和 field 属性）
   const err = exception as { code?: string; field?: string; message?: string }
   if (err?.code && err?.field && err?.message) {
     return true
@@ -99,6 +163,7 @@ function statusToApiCode(status: number) {
   if (status === HttpStatus.UNAUTHORIZED) return ApiStatus.unauthorized
   if (status === HttpStatus.FORBIDDEN) return ApiStatus.forbidden
   if (status === HttpStatus.NOT_FOUND) return ApiStatus.notFound
+  if (status === HttpStatus.TOO_MANY_REQUESTS) return ApiStatus.error
   if (status >= 500) return ApiStatus.internalServerError
   return ApiStatus.error
 }

@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common'
-import { ApiOperation, ApiTags } from '@nestjs/swagger'
+import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger'
 import { Public } from '../../common/decorators/public.decorator'
 import { ApiTenantHeader } from '../../common/decorators/tenant-header.decorator'
 import { AuthService } from './auth.service'
@@ -14,6 +14,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
+  @ApiResponse({ status: 200, description: '成功' })
   @Post('login')
   @HttpCode(200)
   @ApiTenantHeader()
@@ -23,6 +24,7 @@ export class AuthController {
   }
 
   @Public()
+  @ApiResponse({ status: 200, description: '成功' })
   @Post('register')
   @ApiTenantHeader()
   @ApiOperation({ summary: '用户注册' })
@@ -31,6 +33,7 @@ export class AuthController {
   }
 
   @Public()
+  @ApiResponse({ status: 200, description: '成功' })
   @Post('email/send-code')
   @HttpCode(200)
   @ApiTenantHeader()
@@ -40,6 +43,7 @@ export class AuthController {
   }
 
   @Public()
+  @ApiResponse({ status: 200, description: '成功' })
   @Post('email/login')
   @HttpCode(200)
   @ApiTenantHeader()

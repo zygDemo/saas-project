@@ -1,7 +1,8 @@
-﻿import { BadRequestException, Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { PrismaService } from '../prisma/prisma.service'
+import { CacheService } from '../redis/cache.service'
 import { CreateOrganizationDto, UpdateOrganizationDto, OrganizationQueryDto } from './dto/org.dto'
 
 @Injectable()
@@ -10,7 +11,10 @@ export class OrganizationService extends BaseBusinessCrudService<
   UpdateOrganizationDto,
   OrganizationQueryDto
 > {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
+  ) {
     super({
       model: prisma.organization,
       prisma,
@@ -39,72 +43,49 @@ export class OrganizationService extends BaseBusinessCrudService<
           }
         }
       },
-      buildWhere: (query) => {
-        const where: Record<string, unknown> = {}
-        const contains = (value: string) => ({ contains: value, mode: 'insensitive' })
-
-        if (query.keyword) {
-          where.OR = [
-            { name: contains(query.keyword) },
-            { code: contains(query.keyword) },
-            { creditCode: contains(query.keyword) },
-            { contactName: contains(query.keyword) },
-            { contactPhone: contains(query.keyword) }
-          ]
-        }
-        if (query.name) where.name = contains(query.name)
-        if (query.code) where.code = contains(query.code)
-        if (query.creditCode) where.creditCode = contains(query.creditCode)
-        if (query.contactPhone) where.contactPhone = contains(query.contactPhone)
-        if (query.status) where.status = query.status
-        if (query.packageType) where.packageType = query.packageType
-        if (query.apiEnabled !== undefined) where.apiEnabled = query.apiEnabled
-
-        const now = new Date()
-        const expiringAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-        if (query.expireState === 'EXPIRED') where.expireAt = { lt: now }
-        if (query.expireState === 'EXPIRING') where.expireAt = { gte: now, lte: expiringAt }
-        if (query.expireState === 'VALID') where.expireAt = { gt: expiringAt }
-        if (query.expireState === 'UNSET') where.expireAt = null
-
-        return where
-      },
-      validateCreate: async (dto) => {
-        await this.ensureUniqueCode(dto.code)
-        await this.ensureUniqueCreditCode(dto.creditCode)
-      },
-      validateUpdate: async (id, dto) => {
-        await this.ensureUniqueCode(dto.code, id)
-        await this.ensureUniqueCreditCode(dto.creditCode, id)
-      }
+      searchableFields: ['name'],
+      exactFields: ['status'],
+      validateCreate: async (dto) => this.validateOrg(dto),
+      validateUpdate: async (_id, dto) => this.validateOrg(dto)
     })
   }
 
-  async enable(id: number) {
-    await this.ensureExists(id)
-    return this.prisma.organization.update({ where: { id }, data: { status: 'ACTIVE' } })
+  private get cachePrefix() { return `org:${getCurrentTenantId()}:` }
+
+  async getList(query: OrganizationQueryDto) {
+    const key = `${this.cachePrefix}list:${JSON.stringify(query)}`
+    return this.cache.getOrSet(key, () => super.getList(query), 300)
   }
 
-  async disable(id: number) {
-    await this.ensureExists(id)
-    return this.prisma.organization.update({ where: { id }, data: { status: 'INACTIVE' } })
+  async getDetail(id: number) {
+    const key = `${this.cachePrefix}detail:${id}`
+    return this.cache.getOrSet(key, () => super.getDetail(id), 600)
   }
 
-  private async ensureUniqueCode(code?: string, excludeId?: number) {
-    if (!code) return
-    const tenantId = getCurrentTenantId()
-    const where: Record<string, unknown> = { code }
-    if (tenantId) where.tenantId = tenantId
-    const item = await this.prisma.organization.findFirst({ where })
-    if (item && item.id !== excludeId) throw new BadRequestException('机构编码已存在')
+  async create(dto: CreateOrganizationDto) {
+    const result = await super.create(dto)
+    await this.cache.delByPrefix('org:', getCurrentTenantId() as number)
+    return result
   }
 
-  private async ensureUniqueCreditCode(creditCode?: string, excludeId?: number) {
-    if (!creditCode) return
-    const tenantId = getCurrentTenantId()
-    const where: Record<string, unknown> = { creditCode }
-    if (tenantId) where.tenantId = tenantId
-    const item = await this.prisma.organization.findFirst({ where })
-    if (item && item.id !== excludeId) throw new BadRequestException('统一社会信用代码已存在')
+  async update(id: number, dto: UpdateOrganizationDto) {
+    const result = await super.update(id, dto)
+    await this.cache.delByPrefix('org:', getCurrentTenantId() as number)
+    return result
+  }
+
+  async remove(id: number) {
+    const result = await super.remove(id)
+    await this.cache.delByPrefix('org:', getCurrentTenantId() as number)
+    return result
+  }
+
+  private async validateOrg(dto: CreateOrganizationDto | UpdateOrganizationDto) {
+    if (dto.creditCode) {
+      const existing = await this.prisma.organization.findFirst({
+        where: { creditCode: dto.creditCode, deletedAt: null }
+      })
+      if (existing) throw new BadRequestException('统一社会信用代码已存在')
+    }
   }
 }

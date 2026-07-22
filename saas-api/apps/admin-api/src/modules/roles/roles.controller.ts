@@ -1,58 +1,67 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards } from '@nestjs/common'
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { CreateRoleDto, SaveRolePermissionDto, UpdateRoleDto, RoleQueryDto } from './dto/role.dto'
 import { RolesService } from './roles.service'
 
 @ApiTags('角色管理')
 @ApiBearerAuth()
+@ApiResponse({ status: 401, description: '未授权' })
 @UseGuards(JwtAuthGuard)
 @Controller('role')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
+  @ApiResponse({ status: 200, description: '成功' })
   @Get('list')
   @ApiOperation({ summary: '获取角色列表', description: '分页查询角色列表，支持关键字搜索' })
   list(@Query() query: RoleQueryDto) {
     return this.rolesService.getRoleList(query)
   }
 
+  @ApiResponse({ status: 200, description: '成功' })
   @Post('create')
   @ApiOperation({ summary: '新增角色', description: '创建角色基础信息' })
   create(@Body() dto: CreateRoleDto) {
     return this.rolesService.createRole(dto)
   }
 
+  @ApiResponse({ status: 200, description: '成功' })
   @Post(':id')
   @ApiOperation({ summary: '编辑角色', description: '根据角色 ID 更新角色信息' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRoleDto) {
     return this.rolesService.updateRole(id, dto)
   }
 
+  @ApiResponse({ status: 200, description: '成功' })
   @Post(':id/delete')
   @ApiOperation({ summary: '删除角色', description: '根据角色 ID 删除角色' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.rolesService.deleteRole(id)
   }
 
+  @ApiResponse({ status: 200, description: '成功' })
   @Get(':id/permissions')
   @ApiOperation({ summary: '获取角色权限', description: '获取角色已绑定的菜单和权限标识' })
   getPermissions(@Param('id', ParseIntPipe) id: number) {
     return this.rolesService.getRolePermission(id)
   }
 
+  @ApiResponse({ status: 200, description: '成功' })
   @Post(':id/permissions')
   @ApiOperation({ summary: '保存角色权限', description: '保存角色菜单和按钮权限配置' })
   savePermissions(@Param('id', ParseIntPipe) id: number, @Body() dto: SaveRolePermissionDto) {
     return this.rolesService.saveRolePermission(id, dto)
   }
 
+  @ApiResponse({ status: 200, description: '成功' })
   @Get(':id/data-scope')
   @ApiOperation({ summary: '获取角色数据权限', description: '获取角色的数据范围配置和自定义部门列表' })
   getDataScope(@Param('id', ParseIntPipe) id: number) {
     return this.rolesService.getRoleDataScope(id)
   }
 
+  @ApiResponse({ status: 200, description: '成功' })
   @Post(':id/data-scope')
   @ApiOperation({ summary: '保存角色数据权限', description: '保存角色数据范围配置（ALL/DEPT/SELF/CUSTOM）和自定义部门列表' })
   saveDataScope(

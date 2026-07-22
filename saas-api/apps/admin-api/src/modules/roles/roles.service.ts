@@ -2,14 +2,31 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { Prisma } from '@prisma/client'
 import { PaginatedResponse } from '../../common/types/pagination'
 import { getPagination, toPaginatedResponse } from '../../common/utils/pagination'
+import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PrismaService } from '../prisma/prisma.service'
+import { CacheService } from '../redis/cache.service'
 import { CreateRoleDto, SaveRolePermissionDto, UpdateRoleDto, RoleQueryDto } from './dto/role.dto'
 
 @Injectable()
 export class RolesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
+  ) {}
+
+  private get cachePrefix() { return `roles:${getCurrentTenantId()}:` }
 
   async getRoleList(query: RoleQueryDto): Promise<PaginatedResponse<unknown>> {
+    const key = `${this.cachePrefix}list:${JSON.stringify(query)}`
+    const cached = await this.cache.get<PaginatedResponse<unknown>>(key)
+    if (cached) return cached
+
+    const result = await this._getRoleList(query)
+    await this.cache.set(key, result, 300)
+    return result
+  }
+
+  private async _getRoleList(query: RoleQueryDto): Promise<PaginatedResponse<unknown>> {
     const pagination = getPagination(query)
     const where: Prisma.RoleWhereInput = {
       id: query.roleId ? Number(query.roleId) : undefined,
@@ -39,12 +56,12 @@ export class RolesService {
     ])
 
     return toPaginatedResponse(records.map(mapRoleListItem), total, pagination)
+    return toPaginatedResponse(records.map(mapRoleListItem), total, pagination)
   }
 
   async createRole(dto: CreateRoleDto) {
     await this.assertRoleCodeAvailable(dto.roleCode)
 
-    // 用事务保证 role 创建 + department 关联的原子性
     const role = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const created = await tx.role.create({
         data: {
@@ -56,7 +73,6 @@ export class RolesService {
         }
       })
 
-      // 如果是 CUSTOM 范围，保存自定义部门关联
       if (dto.dataScope === 'CUSTOM' && dto.departmentIds?.length) {
         await tx.roleDepartment.createMany({
           data: dto.departmentIds.map((deptId) => ({ roleId: created.id, departmentId: deptId })),
@@ -67,6 +83,7 @@ export class RolesService {
       return created
     })
 
+    await this.cache.delByPrefix('roles:', getCurrentTenantId() as number)
     return mapRoleListItem(role)
   }
 
@@ -85,11 +102,9 @@ export class RolesService {
     if (dto.enabled !== undefined) updateData.enabled = dto.enabled
     if (dto.dataScope !== undefined) updateData.dataScope = dto.dataScope
 
-    // 用事务保证 role 更新 + department 关联的原子性
     await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.role.update({ where: { id }, data: updateData })
 
-      // 如果更新了 dataScope 或 departmentIds，同步部门关联
       if (dto.dataScope !== undefined || dto.departmentIds !== undefined) {
         const newScope = dto.dataScope ?? role.dataScope
         if (newScope === 'CUSTOM' && dto.departmentIds) {
@@ -106,6 +121,7 @@ export class RolesService {
       }
     })
 
+    await this.cache.delByPrefix('roles:', getCurrentTenantId() as number)
     const updatedRole = await this.prisma.role.findFirst({ where: { id } })
     return mapRoleListItem(updatedRole!)
   }
@@ -115,61 +131,8 @@ export class RolesService {
     if (!role) throw new NotFoundException('角色不存在')
 
     await this.prisma.role.update({ where: { id }, data: { deletedAt: new Date() } })
+    await this.cache.delByPrefix('roles:', getCurrentTenantId() as number)
     return { id }
-  }
-
-  /** 获取角色数据权限配置（dataScope + 自定义部门 ID 列表） */
-  async getRoleDataScope(id: number) {
-    const role = await this.prisma.role.findFirst({
-      where: { id },
-      include: {
-        departments: { select: { departmentId: true } }
-      }
-    })
-    if (!role) throw new NotFoundException('角色不存在')
-
-    return {
-      roleId: role.id,
-      dataScope: role.dataScope,
-      departmentIds: role.departments.map((d: { departmentId: number }) => d.departmentId)
-    }
-  }
-
-  /** 保存角色数据权限配置 */
-  async saveRoleDataScope(id: number, dto: { dataScope: string; departmentIds?: number[] }) {
-    const role = await this.prisma.role.findFirst({ where: { id } })
-    if (!role) throw new NotFoundException('角色不存在')
-
-    // 用事务保证原子性
-    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      await tx.role.update({ where: { id }, data: { dataScope: dto.dataScope } })
-      await tx.roleDepartment.deleteMany({ where: { roleId: id } })
-      if (dto.dataScope === 'CUSTOM' && dto.departmentIds?.length) {
-        await tx.roleDepartment.createMany({
-          data: dto.departmentIds.map((deptId) => ({ roleId: id, departmentId: deptId })),
-          skipDuplicates: true
-        })
-      }
-    })
-
-    return this.getRoleDataScope(id)
-  }
-
-  async getRolePermission(id: number) {
-    const role = await this.prisma.role.findFirst({
-      where: { id },
-      include: {
-        menus: { select: { menuId: true } },
-        permissions: { select: { permissionId: true } }
-      }
-    })
-    if (!role) throw new NotFoundException('角色不存在')
-
-    return {
-      roleId: role.id,
-      menuIds: role.menus.map((item: { menuId: number }) => item.menuId),
-      permissionIds: role.permissions.map((item: { permissionId: number }) => item.permissionId)
-    }
   }
 
   async saveRolePermission(id: number, dto: SaveRolePermissionDto) {
@@ -203,6 +166,7 @@ export class RolesService {
         : [])
     ])
 
+    await this.cache.delByPrefix('roles:', getCurrentTenantId() as number)
     return this.getRolePermission(id)
   }
 
