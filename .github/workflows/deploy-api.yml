@@ -56,7 +56,7 @@ jobs:
             docker compose pull api
             docker compose up -d postgres redis
             echo "===== 执行 Prisma migration ====="
-            docker compose run --rm --no-deps api pnpm prisma migrate deploy
+            docker compose run --rm --no-deps api pnpm run prisma:migrate:prod
             echo "===== 同步生产菜单/角色菜单/按钮权限 ====="
             docker compose run --rm --no-deps api pnpm run db:sync-roles:prod
             docker compose up -d api
