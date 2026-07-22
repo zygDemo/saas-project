@@ -89,8 +89,9 @@
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { APP_ROUTES } from '@/common/navigation'
-import { isDongYao } from '@/common/mingli/liuyao'
+import { isDongYao, liuYaoPaiPan } from '@/common/mingli/liuyao'
 import { getMingliHistory } from '@/common/mingli/history'
+import { setLiuYaoState } from '@/common/mingli/state'
 import MysticSky from '@/components/mystic-sky/mystic-sky.vue'
 
 interface CoinFace { label: '字' | '花'; value: 2 | 3 }
@@ -136,7 +137,11 @@ async function shake() {
 }
 function handleMainAction() {
   if (currentStep.value >= 6) {
-    const query = `values=${yaoList.value.join(',')}&question=${encodeURIComponent(question.value.trim() || '心中所问')}`
+    const q = question.value.trim() || '心中所问'
+    const result = liuYaoPaiPan(q, yaoList.value)
+    setLiuYaoState({ question: q, values: [...yaoList.value], result })
+    // 保留少量关键参数在 URL 中，用于刷新或直接打开时的 fallback 计算
+    const query = `values=${yaoList.value.join(',')}&question=${encodeURIComponent(q)}`
     uni.navigateTo({ url: `${APP_ROUTES.mingli.liuyao.result}?${query}` })
     return
   }

@@ -25,44 +25,13 @@
     <view class="paper-body">
       <view class="section-title"><text>✦</text><view><text class="title-main">双方信息</text><text class="title-sub">请输入两人生辰八字</text></view><text>✦</text></view>
 
-      <!-- 男方信息 -->
-      <view class="person-card">
-        <text class="person-label">男方</text>
-        <view class="form-row">
-          <text class="form-label">出生日期</text>
-          <picker mode="date" :value="male.birthDate" @change="onMaleDateChange">
-            <view class="form-picker">{{ male.birthDate || '请选择日期' }}</view>
-          </picker>
-        </view>
-        <view class="form-row">
-          <text class="form-label">出生时辰</text>
-          <picker :range="hourOptions" :range-key="'label'" :value="male.hourIndex" @change="onMaleHourChange">
-            <view class="form-picker">{{ hourOptions[male.hourIndex].label }}</view>
-          </picker>
-        </view>
-      </view>
+      <person-form v-model="male" title="男方" />
+      <person-form v-model="female" title="女方" />
 
-      <!-- 女方信息 -->
-      <view class="person-card">
-        <text class="person-label">女方</text>
-        <view class="form-row">
-          <text class="form-label">出生日期</text>
-          <picker mode="date" :value="female.birthDate" @change="onFemaleDateChange">
-            <view class="form-picker">{{ female.birthDate || '请选择日期' }}</view>
-          </picker>
-        </view>
-        <view class="form-row">
-          <text class="form-label">出生时辰</text>
-          <picker :range="hourOptions" :range-key="'label'" :value="female.hourIndex" @change="onFemaleHourChange">
-            <view class="form-picker">{{ hourOptions[female.hourIndex].label }}</view>
-          </picker>
-        </view>
-      </view>
-
-      <button class="submit-btn" hover-class="tap-active" :disabled="!canSubmit" @tap="analyze">开始合婚</button>
+      <button class="submit-btn" hover-class="tap-active" :disabled="!canSubmit" aria-label="开始合婚分析" @tap="analyze">开始合婚</button>
 
       <!-- 结果展示 -->
-      <view v-if="result" class="result-section">
+      <view v-if="result" class="result-section" role="region" aria-label="合婚分析结果">
         <view class="score-card">
           <view class="score-ring">
             <text class="score-num">{{ result.score }}</text>
@@ -117,11 +86,9 @@ import { APP_ROUTES } from '@/common/navigation'
 import { paiPan, WUXING_SHENG, WUXING_KE, type WuXing } from '@/common/mingli/bazi'
 import { getMingliHistory } from '@/common/mingli/history'
 import MysticSky from '@/components/mystic-sky/mystic-sky.vue'
+import PersonForm, { type PersonFormData } from '@/components/mingli/person-form.vue'
 
-interface PersonInfo {
-  birthDate: string
-  hourIndex: number
-}
+interface PersonInfo extends PersonFormData {}
 
 interface MarriageResult {
   score: number
@@ -137,24 +104,9 @@ interface MarriageResult {
 }
 
 const historyCount = ref(0)
-const male = ref<PersonInfo>({ birthDate: '', hourIndex: 6 })
-const female = ref<PersonInfo>({ birthDate: '', hourIndex: 6 })
+const male = ref<PersonInfo>({ birthDate: '', birthHour: 12 })
+const female = ref<PersonInfo>({ birthDate: '', birthHour: 12 })
 const result = ref<MarriageResult | null>(null)
-
-const hourOptions = [
-  { label: '子时 (23:00-01:00)', value: 0 },
-  { label: '丑时 (01:00-03:00)', value: 1 },
-  { label: '寅时 (03:00-05:00)', value: 2 },
-  { label: '卯时 (05:00-07:00)', value: 3 },
-  { label: '辰时 (07:00-09:00)', value: 4 },
-  { label: '巳时 (09:00-11:00)', value: 5 },
-  { label: '午时 (11:00-13:00)', value: 6 },
-  { label: '未时 (13:00-15:00)', value: 7 },
-  { label: '申时 (15:00-17:00)', value: 8 },
-  { label: '酉时 (17:00-19:00)', value: 9 },
-  { label: '戌时 (19:00-21:00)', value: 10 },
-  { label: '亥时 (21:00-23:00)', value: 11 },
-]
 
 const canSubmit = computed(() => male.value.birthDate && female.value.birthDate)
 
@@ -169,17 +121,12 @@ function goBack() {
 function goHome() { uni.reLaunch({ url: APP_ROUTES.portal.home }) }
 function goHistory() { uni.navigateTo({ url: APP_ROUTES.mingli.history }) }
 
-function onMaleDateChange(e: { detail: { value: string } }) { male.value.birthDate = e.detail.value }
-function onMaleHourChange(e: { detail: { value: number } }) { male.value.hourIndex = Number(e.detail.value) }
-function onFemaleDateChange(e: { detail: { value: string } }) { female.value.birthDate = e.detail.value }
-function onFemaleHourChange(e: { detail: { value: number } }) { female.value.hourIndex = Number(e.detail.value) }
-
 function analyze() {
   const [mYear, mMonth, mDay] = male.value.birthDate.split('-').map(Number)
   const [fYear, fMonth, fDay] = female.value.birthDate.split('-').map(Number)
 
-  const maleResult = paiPan(mYear, mMonth, mDay, hourOptions[male.value.hourIndex].value, 'male')
-  const femaleResult = paiPan(fYear, fMonth, fDay, hourOptions[female.value.hourIndex].value, 'female')
+  const maleResult = paiPan(mYear, mMonth, mDay, male.value.birthHour, 'male')
+  const femaleResult = paiPan(fYear, fMonth, fDay, female.value.birthHour, 'female')
 
   const maleWuXing = maleResult.riZhuWuXing
   const femaleWuXing = femaleResult.riZhuWuXing
@@ -286,8 +233,8 @@ function getMarriageAdvice(male: WuXing, female: WuXing, score: number): string 
 }
 
 function reset() {
-  male.value = { birthDate: '', hourIndex: 6 }
-  female.value = { birthDate: '', hourIndex: 6 }
+  male.value = { birthDate: '', birthHour: 12 }
+  female.value = { birthDate: '', birthHour: 12 }
   result.value = null
 }
 </script>
@@ -309,7 +256,7 @@ function reset() {
 .love-ring{position:absolute;z-index:3;left:50%;bottom:-60rpx;width:200rpx;height:200rpx;margin-left:-100rpx;display:flex;align-items:center;justify-content:center;border:2rpx solid var(--ming-border-purple);border-radius:50%;color:var(--ming-text-purple);font:700 80rpx STKaiti,serif;box-shadow:0 0 60rpx var(--ming-shadow-purple),inset 0 0 30rpx var(--ming-purple-faint);animation:archiveBreathe 4s ease-in-out infinite}
 .paper-body{position:relative;margin-top:-18rpx;min-height:500rpx;padding:40rpx 25rpx calc(48rpx + env(safe-area-inset-bottom));border-radius:34rpx 34rpx 0 0;background:radial-gradient(circle at 50% 0,rgba(22,36,73,.55) 0,transparent 60%),var(--ming-bg-deep)}
 .section-title{display:flex;align-items:center;justify-content:center;gap:20rpx;color:var(--ming-cyan);text-align:center}.section-title view{display:flex;flex-direction:column}.title-main{color:var(--ming-text-primary);font:700 39rpx STKaiti,serif;letter-spacing:5rpx}.title-sub{margin-top:3rpx;color:var(--ming-text-primary);font-size:19rpx;letter-spacing:3rpx;text-shadow:0 0 6rpx rgba(79,195,247,.18)}
-.person-card{margin-top:28rpx;padding:32rpx;border:1rpx solid rgba(79,195,247,.28);border-radius:24rpx 8rpx;background:linear-gradient(135deg,rgba(16,28,56,.86),rgba(10,18,38,.92));box-shadow:0 14rpx 34rpx rgba(0,0,0,.18),inset 0 0 0 1rpx rgba(255,255,255,.05)}.person-label{display:block;margin-bottom:24rpx;padding-bottom:16rpx;border-bottom:1rpx solid rgba(79,195,247,.14);font:700 34rpx STKaiti,serif;color:var(--ming-text-primary);letter-spacing:4rpx}.form-row{display:flex;align-items:center;margin-bottom:20rpx}.form-label{width:160rpx;color:var(--ming-text-primary);font-size:25rpx;font-weight:600;text-shadow:0 0 6rpx rgba(79,195,247,.18)}.form-picker{flex:1;padding:18rpx 24rpx;border:1rpx solid rgba(79,195,247,.2);border-radius:14rpx;background:rgba(10,16,34,.6);color:var(--ming-text-primary);font-size:25rpx;transition:all .3s}.form-picker:active{border-color:rgba(79,195,247,.4);background:rgba(10,16,34,.8)}
+:deep(.person-card:first-of-type) { margin-top: 8rpx; }
 .submit-btn{margin-top:32rpx;height:92rpx;border:0;border-radius:46rpx;color:var(--ming-text-primary);background:var(--ming-gradient-btn);box-shadow:0 12rpx 26rpx rgba(41,182,246,.22),inset 0 0 0 1rpx rgba(255,255,255,.1);font:700 29rpx STKaiti,serif;letter-spacing:4rpx;display:flex;align-items:center;justify-content:center;line-height:1}.submit-btn::after{display:none;border:0}.submit-btn:active{transform:translateY(2rpx)}.submit-btn[disabled]{opacity:.45}
 .result-section{margin-top:40rpx}
 .score-card{display:flex;flex-direction:column;align-items:center;padding:40rpx;border:1rpx solid rgba(79,195,247,.28);border-radius:24rpx 8rpx;background:linear-gradient(135deg,rgba(16,28,56,.86),rgba(10,18,38,.92));box-shadow:0 14rpx 34rpx rgba(0,0,0,.18),inset 0 0 0 1rpx rgba(255,255,255,.05)}.score-ring{width:200rpx;height:200rpx;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3rpx solid var(--ming-border-purple);border-radius:50%;box-shadow:0 0 40rpx var(--ming-shadow-purple),inset 0 0 30rpx var(--ming-purple-faint)}.score-num{font:700 80rpx STKaiti,serif;color:var(--ming-text-primary);line-height:1}.score-label{color:var(--ming-text-primary);font-size:24rpx;text-shadow:0 0 6rpx rgba(79,195,247,.18)}.score-level{margin-top:20rpx;font:700 36rpx STKaiti,serif;color:var(--ming-cyan);letter-spacing:4rpx}

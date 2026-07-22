@@ -118,7 +118,7 @@
         </view>
       </view>
 
-      <button class="again-btn" hover-class="tap-active" @tap="again">重新摇卦</button>
+      <button class="again-btn" hover-class="tap-active" aria-label="重新摇卦" @tap="again">重新摇卦</button>
       <text class="disclaimer">传统文化推演结果仅供参考，请理性看待</text>
     </view>
 
@@ -135,6 +135,7 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import { APP_ROUTES } from '@/common/navigation'
 import { liuYaoPaiPan, type LiuYaoResult } from '@/common/mingli/liuyao'
 import { getMingliHistory, getMingliRecord, saveMingliRecord } from '@/common/mingli/history'
+import { getLiuYaoState, clearLiuYaoState } from '@/common/mingli/state'
 import MysticSky from '@/components/mystic-sky/mystic-sky.vue'
 
 const result = ref<LiuYaoResult | null>(null)
@@ -241,6 +242,17 @@ onLoad((options) => {
     }
     return
   }
+
+  // 优先从内存状态读取完整结果对象，避免 URL query 长度限制和重复计算
+  const state = getLiuYaoState()
+  if (state) {
+    result.value = state.result
+    saveResult(state.question)
+    clearLiuYaoState()
+    return
+  }
+
+  // fallback：从 URL query 重新计算（支持刷新或直接分享链接）
   const valuesStr = String(options?.values || '')
   if (!valuesStr) return
   const values = valuesStr.split(',').map(Number).filter(n => [6, 7, 8, 9].includes(n))
@@ -251,14 +263,17 @@ onLoad((options) => {
 
 function build(input: { values: number[]; question: string }, shouldSave: boolean) {
   result.value = liuYaoPaiPan(input.question, input.values)
-  if (shouldSave) {
-    saveMingliRecord({
-      type: 'liuyao',
-      title: `${result.value.benGua.fullName}`,
-      subtitle: input.question || '心中所问',
-      data: { ...input }
-    })
-  }
+  if (shouldSave) saveResult(input.question)
+}
+
+function saveResult(question: string) {
+  if (!result.value) return
+  saveMingliRecord({
+    type: 'liuyao',
+    title: `${result.value.benGua.fullName}`,
+    subtitle: question || '心中所问',
+    data: { values: result.value.yaoList.map(y => y.isDong ? (y.yinYang === '阳' ? 9 : 6) : (y.yinYang === '阳' ? 7 : 8)), question }
+  })
 }
 
 function again() {

@@ -1,35 +1,55 @@
 <template>
-  <view class="mystic-sky" aria-hidden="true">
+  <view class="mystic-sky" :class="{ 'reduced-motion': isReduced }" aria-hidden="true">
     <!-- 中心恒星 -->
     <view class="sun-core">
       <view class="sun-glow" />
       <view class="sun-corona" />
     </view>
     <!-- 极光带 -->
-    <view class="aurora aurora-a" />
-    <view class="aurora aurora-b" />
+    <view v-if="!isReduced" class="aurora aurora-a" />
+    <view v-if="!isReduced" class="aurora aurora-b" />
     <!-- 星云 -->
     <view class="nebula nebula-one" />
-    <view class="nebula nebula-two" />
-    <view class="nebula nebula-three" />
+    <view v-if="!isReduced" class="nebula nebula-two" />
+    <view v-if="!isReduced" class="nebula nebula-three" />
     <!-- 星星（三层：远/中/近） -->
     <view v-for="star in farStars" :key="'f' + star.id" class="star star-far" :style="star.style" />
     <view v-for="star in midStars" :key="'m' + star.id" class="star star-mid" :style="star.style" />
     <view v-for="star in nearStars" :key="'n' + star.id" class="star star-near" :style="star.style" />
     <!-- 流星 -->
-    <view class="shooting-star shooting-star-1" />
-    <view class="shooting-star shooting-star-2" />
+    <view v-if="!isReduced" class="shooting-star shooting-star-1" />
+    <view v-if="!isReduced" class="shooting-star shooting-star-2" />
     <!-- 行星轨道（太阳系感） -->
-    <view class="orbit orbit-one"><view class="planet planet-1" /></view>
-    <view class="orbit orbit-two"><view class="planet planet-2" /></view>
-    <view class="orbit orbit-three"><view class="planet planet-3" /></view>
-    <view class="orbit orbit-four" />
+    <view class="orbit orbit-one" :class="{ static: isReduced }"><view class="planet planet-1" /></view>
+    <view v-if="!isReduced" class="orbit orbit-two"><view class="planet planet-2" /></view>
+    <view v-if="!isReduced" class="orbit orbit-three"><view class="planet planet-3" /></view>
+    <view v-if="!isReduced" class="orbit orbit-four" />
   </view>
 </template>
 
 <script setup lang="ts">
-function makeStars(count: number, sizeRange: [number, number], prefix: string) {
-  return Array.from({ length: count }, (_, index) => {
+import { computed } from 'vue'
+
+interface Props {
+  reducedMotion?: boolean
+}
+
+const props = defineProps<Props>()
+
+function loadReducedMotionSetting(): boolean {
+  try {
+    return uni.getStorageSync('mingli_reduced_motion') === '1'
+  }
+  catch {
+    return false
+  }
+}
+
+const isReduced = computed(() => props.reducedMotion ?? loadReducedMotionSetting())
+
+function makeStars(count: number, sizeRange: [number, number], prefix: string, reduced: boolean) {
+  const finalCount = reduced ? Math.ceil(count / 2) : count
+  return Array.from({ length: finalCount }, (_, index) => {
     const size = sizeRange[0] + ((index * 7) % (sizeRange[1] - sizeRange[0] + 1))
     return {
       id: `${prefix}-${index}`,
@@ -38,15 +58,16 @@ function makeStars(count: number, sizeRange: [number, number], prefix: string) {
         top: `${(index * 53 + 7) % 92}%`,
         width: `${size}rpx`,
         height: `${size}rpx`,
-        animationDelay: `${(index % 9) * 0.45}s`,
-        animationDuration: `${2.2 + (index % 6) * 0.6}s`
+        animationDelay: reduced ? '0s' : `${(index % 9) * 0.45}s`,
+        animationDuration: reduced ? '0s' : `${2.2 + (index % 6) * 0.6}s`,
+        opacity: reduced ? '0.55' : undefined,
       }
     }
   })
 }
-const farStars = makeStars(32, [2, 3], 'far')
-const midStars = makeStars(20, [3, 4], 'mid')
-const nearStars = makeStars(12, [5, 7], 'near')
+const farStars = computed(() => makeStars(32, [2, 3], 'far', isReduced.value))
+const midStars = computed(() => makeStars(20, [3, 4], 'mid', isReduced.value))
+const nearStars = computed(() => makeStars(12, [5, 7], 'near', isReduced.value))
 </script>
 
 <style scoped>
@@ -92,6 +113,14 @@ const nearStars = makeStars(12, [5, 7], 'near')
 .planet-1 { width: 12rpx; height: 12rpx; left: 0; top: 50%; margin-top: -6rpx; box-shadow: 0 0 16rpx var(--ming-purple), 0 0 6rpx var(--ming-purple-light); }
 .planet-2 { width: 16rpx; height: 16rpx; right: 0; top: 50%; margin-top: -8rpx; background: var(--ming-purple-light); box-shadow: 0 0 12rpx rgba(79,195,247,.34), 0 0 5rpx rgba(129,212,250,.3); }
 .planet-3 { width: 10rpx; height: 10rpx; left: 50%; top: 0; margin-left: -5rpx; box-shadow: 0 0 8rpx rgba(129,212,250,.3); }
+
+/* === 减少动效模式 === */
+.mystic-sky.reduced-motion .star { animation: none !important; }
+.mystic-sky.reduced-motion .sun-core,
+.mystic-sky.reduced-motion .sun-glow,
+.mystic-sky.reduced-motion .sun-corona { animation: none !important; opacity: 0.9; transform: scale(1) !important; }
+.mystic-sky.reduced-motion .nebula { animation: none !important; opacity: 0.12 !important; }
+.mystic-sky.reduced-motion .orbit-one.static { animation: none !important; opacity: 0.2; }
 
 @keyframes mysticTwinkle { 0%, 100% { opacity: .22; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.35); } }
 @keyframes mysticFloat { from { transform: translate3d(-14rpx, -8rpx, 0) scale(.95); } to { transform: translate3d(18rpx, 16rpx, 0) scale(1.08); } }

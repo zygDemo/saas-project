@@ -114,7 +114,7 @@
       <view class="insight-card">
         <text class="insight-star">✧</text><view><text class="insight-title">命盘寄语</text><text class="insight-text">五行不是好坏的评分，而是理解自身节奏的一张光谱。看见强弱，方能更从容地调整方向。</text></view>
       </view>
-      <button class="again-btn" hover-class="tap-active" @tap="again">重新排盘</button>
+      <button class="again-btn" hover-class="tap-active" aria-label="重新排盘" @tap="again">重新排盘</button>
       <text class="disclaimer">传统文化推演结果仅供参考，请理性看待</text>
     </view>
 
@@ -128,6 +128,7 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import { APP_ROUTES } from '@/common/navigation'
 import { paiPan, WUXING_COLOR, type BaZiResult, type WuXing, type Zhu } from '@/common/mingli/bazi'
 import { getMingliHistory, getMingliRecord, saveMingliRecord } from '@/common/mingli/history'
+import { getBaziState, clearBaziState } from '@/common/mingli/state'
 import MysticSky from '@/components/mystic-sky/mystic-sky.vue'
 
 interface BaZiParams { birthDate: string; birthHour: number; gender: 'male' | 'female'; isLunar: boolean; timeLabel: string; lunarInfo?: string }
@@ -171,6 +172,25 @@ onLoad((options) => {
     if (record?.type === 'bazi') build(record.data as unknown as BaZiParams, false)
     return
   }
+
+  // 优先从内存状态读取完整结果对象，避免 URL query 长度限制和重复计算
+  const state = getBaziState()
+  if (state) {
+    params.value = {
+      birthDate: state.birthDate,
+      birthHour: state.birthHour,
+      gender: state.gender,
+      isLunar: state.isLunar,
+      timeLabel: state.timeLabel,
+      lunarInfo: state.lunarInfo,
+    }
+    result.value = state.result
+    saveResult()
+    clearBaziState()
+    return
+  }
+
+  // fallback：从 URL query 重新计算（支持刷新或直接分享链接）
   const birthDate = String(options?.birthDate || '')
   if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return
   build({
@@ -188,13 +208,16 @@ function build(input: BaZiParams, shouldSave: boolean) {
   if (![year, month, day, input.birthHour].every(Number.isFinite)) return
   params.value = input
   result.value = paiPan(year, month, day, input.birthHour, input.gender)
-  if (shouldSave) {
-    saveMingliRecord({
-      type: 'bazi', title: `${result.value.siZhu.day.gan}${result.value.siZhu.day.zhi}日主命盘`,
-      subtitle: `${input.birthDate} · ${input.timeLabel} · ${input.gender === 'male' ? '男命' : '女命'}`,
-      data: { ...input }
-    })
-  }
+  if (shouldSave) saveResult()
+}
+
+function saveResult() {
+  if (!result.value || !params.value) return
+  saveMingliRecord({
+    type: 'bazi', title: `${result.value.siZhu.day.gan}${result.value.siZhu.day.zhi}日主命盘`,
+    subtitle: `${params.value.birthDate} · ${params.value.timeLabel} · ${params.value.gender === 'male' ? '男命' : '女命'}`,
+    data: { ...params.value }
+  })
 }
 function again() { uni.redirectTo({ url: APP_ROUTES.mingli.bazi.input }) }
 function goHistory() { uni.navigateTo({ url: APP_ROUTES.mingli.history }) }
