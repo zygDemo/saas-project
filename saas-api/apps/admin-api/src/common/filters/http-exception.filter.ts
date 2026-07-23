@@ -73,8 +73,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     const body: Record<string, unknown> = {
       code: statusToApiCode(status),
-      msg: message,
       data: null,
+      msg: message,
     }
 
     // 开发模式返回完整堆栈
@@ -160,10 +160,10 @@ function extractMessage(body: unknown) {
 }
 
 function statusToApiCode(status: number) {
-  if (status === HttpStatus.UNAUTHORIZED) return ApiStatus.unauthorized
-  if (status === HttpStatus.FORBIDDEN) return ApiStatus.forbidden
-  if (status === HttpStatus.NOT_FOUND) return ApiStatus.notFound
-  if (status === HttpStatus.TOO_MANY_REQUESTS) return ApiStatus.error
-  if (status >= 500) return ApiStatus.internalServerError
-  return ApiStatus.error
+  if (status === HttpStatus.UNAUTHORIZED) return ApiStatus.UNAUTHORIZED
+  if (status === HttpStatus.FORBIDDEN) return ApiStatus.FORBIDDEN
+  if (status === HttpStatus.NOT_FOUND) return ApiStatus.NOT_FOUND
+  if (status === HttpStatus.TOO_MANY_REQUESTS) return ApiStatus.TOO_MANY_REQUESTS
+  if (status >= 500) return ApiStatus.INTERNAL_SERVER_ERROR
+  return ApiStatus.BAD_REQUEST
 }

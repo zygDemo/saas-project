@@ -71,6 +71,6 @@ export class MobileContactService {
       where: { id, customerId: { tenantId } },
       data: { deletedAt: new Date() }
     })
-    return { code: 200, msg: 'success' }
+    return null
   }
 }

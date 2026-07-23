@@ -74,8 +74,8 @@ export class TenantMiddleware implements NestMiddleware {
 
       res.status(status).json({
         code: statusToApiCode(status),
-        msg: extractMessage(body) ?? '服务器内部错误',
-        data: null
+        data: null,
+        msg: extractMessage(body) ?? '服务器内部错误'
       })
     }
   }
@@ -90,8 +90,8 @@ function extractMessage(body: unknown) {
 }
 
 function statusToApiCode(status: number) {
-  if (status === HttpStatus.UNAUTHORIZED) return ApiStatus.unauthorized
-  if (status === HttpStatus.FORBIDDEN) return ApiStatus.forbidden
-  if (status >= 500) return ApiStatus.internalServerError
-  return ApiStatus.error
+  if (status === HttpStatus.UNAUTHORIZED) return ApiStatus.UNAUTHORIZED
+  if (status === HttpStatus.FORBIDDEN) return ApiStatus.FORBIDDEN
+  if (status >= 500) return ApiStatus.INTERNAL_SERVER_ERROR
+  return ApiStatus.BAD_REQUEST
 }

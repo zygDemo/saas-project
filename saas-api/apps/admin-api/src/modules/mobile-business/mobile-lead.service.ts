@@ -23,13 +23,9 @@ export class MobileLeadService {
 
     if (customer) {
       return {
-        code: 200,
-        msg: 'success',
-        data: {
-          uuid: String(customer.id),
-          personName: customer.name,
-          telephone: customer.phone
-        }
+        uuid: String(customer.id),
+        personName: customer.name,
+        telephone: customer.phone
       }
     }
 
@@ -65,13 +61,9 @@ export class MobileLeadService {
     })
 
     return {
-      code: 200,
-      msg: 'success',
-      data: {
-        uuid: String(newCustomer.id),
-        personName: newCustomer.name,
-        telephone: newCustomer.phone
-      }
+      uuid: String(newCustomer.id),
+      personName: newCustomer.name,
+      telephone: newCustomer.phone
     }
   }
 
@@ -108,7 +100,7 @@ export class MobileLeadService {
       })
     }
 
-    return { code: 200, msg: 'success', data: followUp }
+    return followUp
   }
 
   async getFollowUpList(uuid: string) {
@@ -127,6 +119,6 @@ export class MobileLeadService {
       orderBy: { createdAt: 'desc' }
     })
 
-    return { code: 200, msg: 'success', data: records }
+    return records
   }
 }
