@@ -277,8 +277,6 @@
         </view>
       </template>
     </view>
-    <!-- 跳转确认弹窗 -->
-    <app-confirm ref="confirmRef" />
   </app-page>
 </template>
 
@@ -286,7 +284,6 @@
 import { ref, reactive, computed } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
-import { useConfirm } from "@/composables/useConfirm";
 import { useSessionStore } from "@/stores";
 import { closeBrowser } from "@/composables/useCloseBrowser";
 import { toFilePreviewUrl } from "@/common/file-url";
@@ -368,7 +365,6 @@ const faceResult = reactive<FaceResult>({
 const contractFiles = ref<ContractFile[]>([]);
 
 const businessApi = useCarloanApi();
-const { confirmRef, confirm } = useConfirm();
 const sessionStore = useSessionStore();
 const isCustomerRole = computed(() => {
   const roleTags = String(sessionStore.transferInfo?.roleTags || "");
@@ -820,9 +816,14 @@ async function handleContractSign() {
     }
 
     if (signUrl) {
-      confirm("即将跳转到合同签署页面，是否继续？", () => {
-        window.location.href = signUrl;
+      const ok = await showConfirmDialog({
+        title: "即将跳转到合同签署页面，是否继续？",
+        confirmText: "确认",
+        cancelText: "取消",
       });
+      if (ok) {
+        window.location.href = signUrl;
+      }
     } else {
       uni.showToast({ title: "获取签署链接失败", icon: "none" });
     }
@@ -891,9 +892,14 @@ async function handleSignContract() {
 
     if (signUrl) {
       saveAuthSignProgress();
-      confirm("即将跳转到授权书签署页面，是否继续？", () => {
-        window.location.href = signUrl;
+      const ok = await showConfirmDialog({
+        title: "即将跳转到授权书签署页面，是否继续？",
+        confirmText: "确认",
+        cancelText: "取消",
       });
+      if (ok) {
+        window.location.href = signUrl;
+      }
     } else {
       uni.showToast({ title: "发起签署失败，请稍后重试", icon: "none" });
     }

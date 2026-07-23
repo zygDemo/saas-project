@@ -8,8 +8,6 @@
       </view>
     </view>
 
-    <!-- 二次确认弹窗，仅开发环境使用 -->
-    <app-confirm v-if="isDev" ref="confirmRef" />
   </app-page>
 </template>
 
@@ -19,7 +17,6 @@ import { onLoad } from "@dcloudio/uni-app";
 import { useLocalStore, useSessionStore } from "@/stores";
 import type { TransferInfo } from "@/stores/session";
 import { useAuthApi } from "@/api/auth";
-import { useConfirm } from "@/composables/useConfirm";
 import { isDev } from "@/common/env";
 import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
@@ -49,7 +46,6 @@ const LOGIN_PAGE = "/pages/auth/login";
 const localStore = useLocalStore();
 const sessionStore = useSessionStore();
 const authApi = useAuthApi();
-const { confirmRef, confirm } = useConfirm();
 
 const loadingText = ref("正在处理跳转信息");
 const errorText = ref("");
@@ -207,12 +203,7 @@ function navigate(url: string, type: NavigateType = "redirectTo") {
   }
 
   // 二次确认后跳转目标页面
-  nextTick(() => {
-    if (confirmRef.value) {
-      confirm("即将跳转到目标页面，是否继续？", doNavigate);
-      return;
-    }
-
+  nextTick(async () => {
     const ok = await showConfirmDialog({
       title: '即将跳转到目标页面，是否继续？',
       confirmText: '确认',
