@@ -757,11 +757,13 @@ model Vehicle {
   insuranceExpirationDate DateTime? // 保险到期日
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
+  deletedAt               DateTime? // 软删除时间戳
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
   @@index([vin])
+  @@index([deletedAt])
 }
 
 model BankCard {

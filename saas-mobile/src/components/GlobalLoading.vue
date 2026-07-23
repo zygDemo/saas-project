@@ -1,12 +1,10 @@
 <template>
   <transition name="fade">
-    <view v-if="visible" class="global-loading-overlay" @touchmove.stop.prevent>
+    <view v-if="visible" class="global-loading-wrapper">
+      <!-- 锁定操作遮罩 -->
+      <view v-if="locked" class="global-loading-lock" @touchmove.stop.prevent></view>
       <view class="global-loading-card">
-        <!-- 旋转圆环 -->
-        <view class="spinner-ring">
-          <view class="spinner-ring__arc" />
-          <view class="spinner-ring__dot" />
-        </view>
+        <u-loading mode="circle" :show="true" :color="themeColor" :size="36" />
         <text class="global-loading-text">加载中...</text>
       </view>
     </view>
@@ -14,27 +12,45 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useGlobalLoading } from '@/composables/useGlobalLoading'
 
-const { visible } = useGlobalLoading()
+const { visible, locked } = useGlobalLoading()
+
+const themeColor = computed(() => {
+  if (typeof document !== 'undefined') {
+    return (
+      getComputedStyle(document.documentElement).getPropertyValue(
+        '--u-type-primary',
+      ).trim() || '#5240FE'
+    )
+  }
+  return '#5240FE'
+})
 </script>
 
 <style scoped lang="scss">
-/* ================== 遮罩层 ================== */
-.global-loading-overlay {
+.global-loading-wrapper {
   position: fixed;
   inset: 0;
   z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
+}
+
+.global-loading-lock {
+  position: absolute;
+  inset: 0;
   background: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(6rpx);
   -webkit-backdrop-filter: blur(6rpx);
 }
 
-/* ================== 卡片 ================== */
 .global-loading-card {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -50,46 +66,6 @@ const { visible } = useGlobalLoading()
   gap: 24rpx;
 }
 
-/* ================== 旋转圆环 ================== */
-.spinner-ring {
-  position: relative;
-  width: 72rpx;
-  height: 72rpx;
-}
-
-/* 灰色底环 */
-.spinner-ring::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 5rpx solid rgba(0, 0, 0, 0.06);
-}
-
-/* 渐变弧线 — 旋转动画 */
-.spinner-ring__arc {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 5rpx solid transparent;
-  border-top-color: #4f7cff;
-  border-right-color: #6366f1;
-  animation: spin 0.8s linear infinite;
-}
-
-/* 顶部高光点 */
-.spinner-ring__dot {
-  position: absolute;
-  top: 4rpx;
-  right: 8rpx;
-  width: 12rpx;
-  height: 12rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4f7cff, #6366f1);
-  box-shadow: 0 0 12rpx rgba(79, 124, 255, 0.4);
-}
-
-/* ================== 文字 ================== */
 .global-loading-text {
   font-size: 26rpx;
   color: #6b7280;
@@ -97,14 +73,6 @@ const { visible } = useGlobalLoading()
   letter-spacing: 1rpx;
 }
 
-/* ================== 动画 ================== */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* 淡入淡出 */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.25s ease;

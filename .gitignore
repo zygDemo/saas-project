@@ -55,3 +55,4 @@ test-results/
 playwright-report/
 build-errors.txt
 *_errors.txt
+*.log

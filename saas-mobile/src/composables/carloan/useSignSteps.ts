@@ -40,7 +40,14 @@ export function useSignSteps() {
   const authSignDone = ref(false);
   const contractSignDone = ref(false);
   const contractSignUrl = ref("");
-  const faceResult = ref<any>(null);
+  const faceResult = ref<any>({
+    show: false,
+    status: "checking" as "success" | "fail" | "checking",
+    statusText: "",
+    score: "",
+    msg: "",
+    passed: false,
+  });
   const contractFiles = ref<any[]>([]);
 
   const stepList = ref<StepItem[]>([

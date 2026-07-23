@@ -366,28 +366,21 @@ export async function guardMobileEntryStorageAsync<T>(action: () => Promise<T>) 
   try {
     return await action()
   } catch (error) {
-    console.error('[guardMobileEntryStorageAsync] original error:', error)
     if (isMissingMobileEntryStorage(error)) {
       const { BadRequestException } = await import('@nestjs/common')
-      const detail = error instanceof Error ? error.message : String(error)
-      throw new BadRequestException(`${MOBILE_ENTRY_STORAGE_ERROR} | 原始错误：${detail}`)
+      throw new BadRequestException(MOBILE_ENTRY_STORAGE_ERROR)
     }
     throw error
   }
 }
 export function isMissingMobileEntryStorage(error: unknown) {
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    return error.code === 'P2022'
+  // 仅在数据库列确实不存在（P2022）且缺失列属于移动端进件字段时才拦截，
+  // 避免把 Prisma Client 端校验错误（如 "Unknown argument"）误判为"字段未初始化"。
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2022') {
+    const message = error.message
+    return MOBILE_ENTRY_STORAGE_FIELDS.some((field) => message.includes(field))
   }
-  const message = error instanceof Error ? error.message : ''
-  const isKnownField = MOBILE_ENTRY_STORAGE_FIELDS.some((field) => message.includes(field))
-  return (
-    isKnownField &&
-    (message.includes('Unknown argument') ||
-      message.includes('does not exist') ||
-      message.includes('not found') ||
-      message.includes('column'))
-  )
+  return false
 }
 export function isMissingFileAssetStorage(error: unknown) {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {

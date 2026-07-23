@@ -24,6 +24,7 @@ export class MobileCustomerService {
         : await this.prisma.customer.findFirst({ where: { orgId: org.id, phone: dto.telephone } })
       const data: Record<string, any> = {
         orgId: customerByUuid?.orgId ?? customerByPhone?.orgId ?? org.id,
+        tenantId: customerByUuid?.tenantId ?? org.tenantId,
         name: dto.personName,
         phone: dto.telephone,
         idCard: dto.personIdcard,
