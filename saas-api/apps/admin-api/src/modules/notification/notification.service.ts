@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common'
+import { toPaginatedResponse } from '@saas/shared'
 import { PrismaService } from '../prisma/prisma.service'
 import { NotificationGateway } from './notification.gateway'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
@@ -175,7 +176,7 @@ export class NotificationService {
       }),
       this.prisma.notificationLog.count({ where })
     ])
-    return { records, total, current, size }
+    return toPaginatedResponse(records, total, { page: current, pageSize: size })
   }
 
   /** 标记通知为已读 */

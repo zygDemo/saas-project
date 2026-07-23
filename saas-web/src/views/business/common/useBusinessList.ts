@@ -433,9 +433,10 @@ export function useBusinessList() {
       }
       Object.assign(params, resolveDefaultQuery())
       const result = await fetchBusinessList(config.value.api, params, config.value.listApi)
-      const rawRecords = (result.records || []) as Record<string, unknown>[]
+      const meta = (result.meta || {}) as Record<string, unknown>
+      const rawRecords = (result.records || result.list || []) as Record<string, unknown>[]
       records.value = rawRecords.map((r) => flattenRelations(r))
-      pagination.value.total = result.total || 0
+      pagination.value.total = (result.total as number) || (meta.total as number) || 0
     } finally {
       loading.value = false
     }

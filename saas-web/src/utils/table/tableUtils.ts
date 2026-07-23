@@ -54,6 +54,13 @@ export interface TableError {
   details?: unknown
 }
 
+// 辅助函数：从对象中提取 meta 对象
+function getMeta(obj: Record<string, unknown> | undefined): Record<string, unknown> {
+  if (!obj || typeof obj !== 'object') return {}
+  const meta = obj.meta
+  return meta && typeof meta === 'object' ? (meta as Record<string, unknown>) : {}
+}
+
 // 辅助函数：从对象中提取记录数组
 function extractRecords<T>(obj: Record<string, unknown>, fields: string[]): T[] {
   for (const field of fields) {
@@ -64,12 +71,16 @@ function extractRecords<T>(obj: Record<string, unknown>, fields: string[]): T[] 
   return []
 }
 
-// 辅助函数：从对象中提取总数
+// 辅助函数：从对象中提取总数（兼容 { list, meta: { total } }）
 function extractTotal(obj: Record<string, unknown>, records: unknown[], fields: string[]): number {
   for (const field of fields) {
     if (field in obj && typeof obj[field] === 'number') {
       return obj[field] as number
     }
+  }
+  const meta = obj.meta
+  if (meta && typeof meta === 'object') {
+    return extractTotal(meta as Record<string, unknown>, records, fields)
   }
   return records.length
 }
@@ -83,7 +94,7 @@ function extractPagination(
   const sources = [obj, data ?? {}]
 
   const currentFields = tableConfig.currentFields
-  for (const src of sources) {
+  for (const src of [...sources, getMeta(obj), getMeta(data)]) {
     for (const field of currentFields) {
       if (field in src && typeof src[field] === 'number') {
         result.current = src[field] as number
@@ -94,7 +105,7 @@ function extractPagination(
   }
 
   const sizeFields = tableConfig.sizeFields
-  for (const src of sources) {
+  for (const src of [...sources, getMeta(obj), getMeta(data)]) {
     for (const field of sizeFields) {
       if (field in src && typeof src[field] === 'number') {
         result.size = src[field] as number

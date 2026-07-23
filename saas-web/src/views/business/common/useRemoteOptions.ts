@@ -18,7 +18,9 @@ export function useRemoteOptions(formModel: Record<string, unknown>) {
     })
     const labelField = config.labelField || 'name'
     const valueField = config.valueField || 'id'
-    return ((result.records || []) as Record<string, unknown>[])
+    const meta = (result.meta || {}) as Record<string, unknown>
+    const rawRecords = (result.records || result.list || []) as Record<string, unknown>[]
+    return rawRecords
       .filter((item) => item[valueField] !== undefined && item[valueField] !== null)
       .map((item) => ({
         label: formatRemoteOptionLabel(item, labelField, valueField),

@@ -15,12 +15,18 @@ export function useListPage<T>(options: UseListPageOptions<T>) {
     defaultParams = {},
     pageSize = 10,
     getRows = (res: unknown): T[] => {
-      const data = res as Record<string, unknown>;
-      return ((data.rows || data.data || []) as unknown) as T[];
+      const data = (res as Record<string, unknown>).data as Record<string, unknown>;
+      if (!data) return [];
+      const meta = data.meta as Record<string, unknown>;
+      return (
+        ((data.list || data.rows || data.data || data.records || []) as unknown) as T[]
+      );
     },
     getTotal = (res: unknown): number => {
-      const data = res as Record<string, unknown>;
-      return (data.total || 0) as number;
+      const data = (res as Record<string, unknown>).data as Record<string, unknown>;
+      if (!data) return 0;
+      const meta = data.meta as Record<string, unknown>;
+      return ((meta?.total || data.total || 0) as number);
     },
   } = options;
 

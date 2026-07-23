@@ -1,5 +1,6 @@
 ﻿import { BadRequestException, Injectable } from '@nestjs/common'
 import { Prisma, RepaymentStatus } from '@prisma/client'
+import { toPaginatedResponse } from '@saas/shared'
 import { BaseBusinessCrudService } from '../base-business-crud.service'
 import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 import { PrismaService } from '../prisma/prisma.service'
@@ -48,7 +49,7 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
       }),
       this.prisma.repaymentPlan.count({ where })
     ])
-    return { records, total, current, size }
+    return toPaginatedResponse(records, total, { page: current, pageSize: size })
   }
 
   // ==================== 还款登记 ====================
@@ -216,7 +217,7 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
       }),
       this.prisma.collectionRecord.count({ where })
     ])
-    return { records, total, current, size }
+    return toPaginatedResponse(records, total, { page: current, pageSize: size })
   }
 
   // ==================== 提前还款 ====================
