@@ -31,6 +31,7 @@ const TENANT_MODELS = [
   'bookreview',
   'workorder',
   'notificationlog',
+  'collectionrecord',
 ]
 
 function isTenantModel(model: string | undefined): boolean {
@@ -44,7 +45,8 @@ const SOFT_DELETE_MODELS = new Set([
   'flowconfig', 'fileasset', 'dicttype', 'dictdata',
   'bookcategory', 'book', 'bookchapter', 'userbookshelf',
   'customercontact', 'permission', 'repaymentplan', 'signrecord', 'disbursement',
-  'packageplan', 'producttemplate', 'thirdpartyservice', 'workorder'
+  'packageplan', 'producttemplate', 'thirdpartyservice', 'workorder',
+  'bankcard', 'leadfollowup', 'collectionrecord', 'repaymentrecord'
 ])
 
 function isSoftDeleteModel(model: string | undefined): boolean {
@@ -77,8 +79,8 @@ function hasTenantInWhere(where: Record<string, unknown> | undefined): boolean {
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
-  /** Proxy 动态代理，需要 index signature */
-  [key: string]: unknown
+  /** Proxy 动态代理，需要 index signature。用 any 而非 unknown，因为 Prisma 模型委托需要可赋值 */
+  [key: string]: any
   private readonly _client: PrismaClient  // PrismaClient. return type
 
   constructor() {

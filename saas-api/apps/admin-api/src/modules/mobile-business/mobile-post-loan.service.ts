@@ -3,7 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../prisma/prisma.service'
 import { mapApplication } from './mobile-business.utils'
-import { getCurrentTenantId } from '../../common/tenant/tenant-context'
+import { getCurrentTenantId, getCurrentTenantIdOrThrow } from '../../common/tenant/tenant-context'
 import { RepaymentStatus } from '@prisma/client'
 
 @Injectable()
@@ -52,7 +52,7 @@ export class MobilePostLoanService {
   }
 
   async registerRepaymentMobile(applicationId: number, dto: { amount: number; principal?: number; interest?: number; penalty?: number; paymentMethod: string; transactionNo?: string; remark?: string }) {
-    const tenantId = getCurrentTenantId()
+    const tenantId = getCurrentTenantIdOrThrow()
     const plan = await this.prisma.repaymentPlan.findFirst({
       where: {
         applicationId,
@@ -83,7 +83,7 @@ export class MobilePostLoanService {
 
       await tx.repaymentRecord.create({
         data: {
-          tenantId: tenantId!,
+          tenantId: tenantId,
           planId: current.id,
           amount: dto.amount,
           principal,

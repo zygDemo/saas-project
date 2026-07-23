@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { toPaginatedResponse } from '@saas/shared'
 import { PrismaService } from '../prisma/prisma.service'
 import { NotificationGateway } from './notification.gateway'
-import { getCurrentTenantId } from '../../common/tenant/tenant-context'
+import { getCurrentTenantId, getCurrentTenantIdOrThrow } from '../../common/tenant/tenant-context'
 
 export type NotificationType =
   | 'announcement'   // 公告
@@ -165,8 +165,8 @@ export class NotificationService {
   async getNotifications(userId: number, query?: { current?: number; size?: number }) {
     const current = Math.max(Number(query?.current ?? 1) || 1, 1)
     const size = Math.min(Math.max(Number(query?.size ?? 20) || 20, 1), 100)
-    const tenantId = getCurrentTenantId()
-    const where = { tenantId: tenantId!, userId }
+    const tenantId = getCurrentTenantIdOrThrow()
+    const where = { tenantId: tenantId, userId }
     const [records, total] = await Promise.all([
       this.prisma.notificationLog.findMany({
         where,
@@ -190,8 +190,8 @@ export class NotificationService {
   }) {
     const current = Math.max(Number(query?.current ?? 1) || 1, 1)
     const size = Math.min(Math.max(Number(query?.size ?? 20) || 20, 1), 100)
-    const tenantId = getCurrentTenantId()
-    const where: Record<string, unknown> = { tenantId: tenantId! }
+    const tenantId = getCurrentTenantIdOrThrow()
+    const where: Record<string, unknown> = { tenantId: tenantId }
     if (query?.type) where.type = query.type
     if (query?.userId) where.userId = Number(query.userId)
     if (query?.startTime || query?.endTime) {
@@ -217,27 +217,27 @@ export class NotificationService {
 
   /** 标记通知为已读 */
   async markAsRead(id: number, userId: number) {
-    const tenantId = getCurrentTenantId()
+    const tenantId = getCurrentTenantIdOrThrow()
     return this.prisma.notificationLog.update({
-      where: { id, tenantId: tenantId!, userId },
+      where: { id, tenantId: tenantId, userId },
       data: { readAt: new Date() }
     })
   }
 
   /** 全部标记已读 */
   async markAllAsRead(userId: number) {
-    const tenantId = getCurrentTenantId()
+    const tenantId = getCurrentTenantIdOrThrow()
     return this.prisma.notificationLog.updateMany({
-      where: { tenantId: tenantId!, userId, readAt: null },
+      where: { tenantId: tenantId, userId, readAt: null },
       data: { readAt: new Date() }
     })
   }
 
   /** 获取未读通知数量 */
   async getUnreadCount(userId: number) {
-    const tenantId = getCurrentTenantId()
+    const tenantId = getCurrentTenantIdOrThrow()
     return this.prisma.notificationLog.count({
-      where: { tenantId: tenantId!, userId, readAt: null }
+      where: { tenantId: tenantId, userId, readAt: null }
     })
   }
 

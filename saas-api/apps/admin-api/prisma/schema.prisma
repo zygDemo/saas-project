@@ -412,6 +412,7 @@ model OperationLog {
   @@index([module])
   @@index([createdAt])
   @@index([statusCode])
+  @@index([tenantId, createdAt])
 }
 
 model SystemParam {
@@ -707,6 +708,7 @@ model Customer {
   @@index([tenantId, phone])
   @@index([orgId])
   @@index([idCard])
+  @@index([orgId, idCard])
 }
 
 model CustomerContact {
@@ -774,10 +776,12 @@ model BankCard {
   cardType   String // 借记卡/信用卡
   isDefault  Boolean  @default(false)
   createdAt  DateTime @default(now())
+  deletedAt  DateTime?
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
+  @@index([deletedAt])
 }
 
 model Lead {
@@ -823,10 +827,12 @@ model LeadFollowUp {
   nextFollowAt DateTime?
   createdBy    Int?
   createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
 
   lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   @@index([leadId])
+  @@index([deletedAt])
 }
 
 // ==================== 车贷业务域 (Car Loan Business) ====================
@@ -865,10 +871,10 @@ model Application {
 
   tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   org               Organization       @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  customer          Customer           @relation(fields: [customerId], references: [id])
-  product           Product?           @relation(fields: [productId], references: [id])
-  funder            Funder?            @relation(fields: [funderId], references: [id])
-  creator           User               @relation("ApplicationCreator", fields: [creatorId], references: [id])
+  customer          Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  product           Product?           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  funder            Funder?            @relation(fields: [funderId], references: [id], onDelete: Restrict)
+  creator           User               @relation("ApplicationCreator", fields: [creatorId], references: [id], onDelete: Restrict)
   files             ApplicationFile[]
   approvals         ApprovalRecord[]
   signRecord        SignRecord?
@@ -1023,12 +1029,14 @@ model RepaymentRecord {
   remark        String?
   createdBy     Int? // 登记人
   createdAt     DateTime @default(now())
+  deletedAt     DateTime?
 
   tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   plan   RepaymentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([planId])
+  @@index([deletedAt])
 }
 
 model CollectionRecord {
@@ -1042,6 +1050,7 @@ model CollectionRecord {
   nextAction    String?
   nextDate      DateTime?
   createdAt     DateTime  @default(now())
+  deletedAt     DateTime?
 
   tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
@@ -1049,6 +1058,7 @@ model CollectionRecord {
   @@index([tenantId])
   @@index([applicationId])
   @@index([createdAt])
+  @@index([deletedAt])
 }
 
 model EarlyRepayment {
@@ -1259,7 +1269,7 @@ model UserBookshelf {
   book      Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
   deletedAt DateTime? // 软删除时间戳
 
-  @@unique([userId, bookId])
+  @@index([userId, bookId])
   @@index([tenantId])
   @@index([userId])
 }
@@ -1451,7 +1461,7 @@ model FoodCategory {
   sortOrder Int        @default(0)
   isActive  Boolean    @default(true)
   tenantId  Int
-  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   dishes    FoodDish[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -1472,7 +1482,7 @@ model FoodDish {
   sortOrder     Int             @default(0)
   salesCount    Int             @default(0)
   tenantId      Int
-  tenant        Tenant          @relation(fields: [tenantId], references: [id])
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   orderItems    FoodOrderItem[]
   cartItems     FoodCart[]
   createdAt     DateTime        @default(now())
@@ -1491,7 +1501,7 @@ model FoodOrder {
   userId     Int
   user       User            @relation(fields: [userId], references: [id])
   tenantId   Int
-  tenant     Tenant          @relation(fields: [tenantId], references: [id])
+  tenant     Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   items      FoodOrderItem[]
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
@@ -1523,7 +1533,7 @@ model FoodCart {
   dish      FoodDish @relation(fields: [dishId], references: [id])
   quantity  Int      @default(1)
   tenantId  Int
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1547,4 +1557,5 @@ model NotificationLog {
   @@index([tenantId])
   @@index([userId])
   @@index([createdAt])
+  @@index([userId, readAt])
 }

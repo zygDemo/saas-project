@@ -7,10 +7,14 @@ import { RequestUser } from '../../common/types/request-user'
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(config: ConfigService) {
+    const secret = config.get<string>('JWT_ACCESS_SECRET')
+    if (!secret) {
+      throw new Error('环境变量 JWT_ACCESS_SECRET 未配置，请先在 .env 或部署环境中设置访问令牌密钥。')
+    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: config.get<string>('JWT_ACCESS_SECRET', 'change-me-access-secret')
+      secretOrKey: secret
     })
   }
 

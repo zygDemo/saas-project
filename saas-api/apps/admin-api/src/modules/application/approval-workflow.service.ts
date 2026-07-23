@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { ApplicationStatus, ApprovalAction, Prisma } from '@prisma/client'
 import type { Application } from '@prisma/client'
-import { getCurrentTenantId } from '../../common/tenant/tenant-context'
+import { getCurrentTenantId, getCurrentTenantIdOrThrow } from '../../common/tenant/tenant-context'
 import { FlowNode, FlowStatus } from '../../common/constants/flow.constants'
 import { FlowConfigService } from '../flow-config/flow-config.service'
 import { PrismaService } from '../prisma/prisma.service'
@@ -199,8 +199,8 @@ export class ApprovalWorkflowService {
   ) {
     // preLoadedApplication 仅用于外部已校验的场景（如 riskPreReject 传入了 application）
     // 但事务内仍需原子性条件更新，防止并发穿透
-    const tenantId = getCurrentTenantId()
-    const statusWhere: Record<string, unknown> = { id, status: { in: allowedStatuses } }
+  const tenantId = getCurrentTenantIdOrThrow()
+  const statusWhere: Record<string, unknown> = { id, status: { in: allowedStatuses } }
     if (tenantId) statusWhere.tenantId = tenantId
 
     // 在事务外解析流程补丁（避免事务内引入额外 IO 并复用缓存）
@@ -229,7 +229,7 @@ export class ApprovalWorkflowService {
       // 状态更新成功后，创建审批记录
       await tx.approvalRecord.create({
         data: {
-          tenantId: tenantId!,
+          tenantId: tenantId,
           applicationId: id,
           approverId: approvalData.approverId,
           stage: approvalData.stage,
