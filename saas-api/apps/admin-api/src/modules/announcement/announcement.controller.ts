@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
+import { Public } from '../../common/decorators/public.decorator'
 import { AnnouncementService } from './announcement.service'
 import { CreateAnnouncementDto, UpdateAnnouncementDto, AnnouncementQueryDto } from './dto/announcement.dto'
 
@@ -20,6 +21,7 @@ export class AnnouncementController {
   }
 
   @ApiResponse({ status: 200, description: '成功' })
+  @Public()
   @Get('active')
   @ApiOperation({ summary: '获取当前有效公告' })
   getActive() {
