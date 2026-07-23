@@ -81,7 +81,12 @@ export const httpInterceptor: RequestInterceptor = {
       return false;
     }
 
-    // 4. 返回成功数据
+    // 4. 统一分页响应格式（兼容 { list, meta } 与旧的 { records, total }）
+    if (res.data?.data && typeof res.data.data === "object") {
+      res.data.data = normalizePaginatedData(res.data.data);
+    }
+
+    // 5. 返回成功数据
     return res.data;
   },
 };
@@ -97,6 +102,28 @@ interface ApiResponseLike {
 }
 
 // --- 错误处理辅助函数 ---
+
+/**
+ * 统一分页响应格式
+ * 后端统一返回 { list, meta }，前端旧代码可能读 records/rows/data/total
+ * 这里做兼容转换，同时保留 list/meta 和 records/rows/data/total/current/size
+ */
+function normalizePaginatedData(data: unknown): unknown {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return data;
+  const obj = data as Record<string, unknown>;
+  if (!("list" in obj) || !("meta" in obj)) return data;
+  const meta = (obj.meta || {}) as Record<string, unknown>;
+  return {
+    ...obj,
+    records: obj.list,
+    rows: obj.list,
+    data: obj.list,
+    total: meta.total,
+    current: meta.page,
+    size: meta.pageSize,
+    totalPages: meta.totalPages,
+  };
+}
 
 function handleHttpError(response: ApiResponseLike, meta: RequestMeta) {
   // 401 - 未授权

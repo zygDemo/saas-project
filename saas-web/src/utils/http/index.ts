@@ -217,6 +217,26 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+/**
+ * 统一分页响应格式
+ * 后端统一返回 { list, meta }，前端仍可能使用 .records/.total/.current/.size
+ * 这里做兼容转换，同时保留 list/meta 和 records/total/current/size
+ */
+function normalizePaginatedData<T>(data: T): T {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return data
+  const obj = data as Record<string, unknown>
+  if (!('list' in obj) || !('meta' in obj)) return data
+  const meta = (obj.meta || {}) as Record<string, unknown>
+  return {
+    ...obj,
+    records: obj.list,
+    total: meta.total,
+    current: meta.page,
+    size: meta.pageSize,
+    totalPages: meta.totalPages
+  } as T
+}
+
 /** 请求函数 */
 async function request<T = unknown>(config: ExtendedAxiosRequestConfig): Promise<T> {
   try {
@@ -227,7 +247,7 @@ async function request<T = unknown>(config: ExtendedAxiosRequestConfig): Promise
       showSuccess(res.data.msg)
     }
 
-    return res.data.data as T
+    return normalizePaginatedData(res.data.data) as T
   } catch (error) {
     if (error instanceof HttpError && error.code !== ApiStatus.unauthorized) {
       const showMsg = config.showErrorMessage !== false
