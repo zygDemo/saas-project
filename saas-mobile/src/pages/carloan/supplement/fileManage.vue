@@ -69,6 +69,11 @@
             </view>
           </view>
         </view>
+      <u-action-sheet
+        :list="uploadActions"
+        v-model="showUploadActionSheet"
+        @click="onUploadActionClick"
+      ></u-action-sheet>
       </view>
     </view>
   </app-page>
@@ -117,17 +122,22 @@ async function fetchFileList() {
 }
 
 // 显示上传选项（图片/文件）
+const uploadActions = [
+  { text: '拍照/相册' },
+  { text: '选择文件' }
+]
+const showUploadActionSheet = ref(false)
+
 function showUploadOptions() {
-  uni.showActionSheet({
-    itemList: ["拍照/相册", "选择文件"],
-    success: (res) => {
-      if (res.tapIndex === 0) {
-        chooseImage();
-      } else {
-        chooseDocument();
-      }
-    },
-  });
+  showUploadActionSheet.value = true
+}
+
+function onUploadActionClick(index: number) {
+  if (index === 0) {
+    chooseImage();
+  } else if (index === 1) {
+    chooseDocument();
+  }
 }
 
 // 选择图片

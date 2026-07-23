@@ -376,6 +376,11 @@
                   <view class="more-dot" />
                 </view>
               </view>
+              <u-action-sheet
+                :list="bookActions"
+                v-model="showBookActionSheet"
+                @click="onBookActionClick"
+              ></u-action-sheet>
             </view>
 
             <!-- 空状态 -->
@@ -707,41 +712,53 @@ const goDetail = (book: BookItem) => {
   });
 };
 
+const bookActions = ref([
+  { text: '查看详情' },
+  { text: '继续阅读' },
+  { text: '移出书架' },
+  { text: '下载全本' },
+  { text: '置顶' },
+])
+const showBookActionSheet = ref(false)
+const currentBookMenu = ref<BookItem | null>(null)
+
 const showBookMenu = (book: BookItem) => {
-  uni.showActionSheet({
-    itemList: ["查看详情", "继续阅读", "移出书架", "下载全本", "置顶"],
-    success: (res) => {
-      switch (res.tapIndex) {
-        case 0:
-          goDetail(book);
-          break;
-        case 1:
-          openBook(book);
-          break;
-        case 2:
-          const ok = await showConfirmDialog({
-            title: '提示',
-            message: `确定将《${book.title}》移出书架？`,
-          });
-          if (!ok) return;
-          readingStore.removeFromBookshelf(book.id);
-          try {
-            await readingApi.removeFromBookshelf(book.id);
-          } catch {
-            // ignore
-          }
-          uni.showToast({ title: '已移出书架', icon: 'success' });
-          break;
-        case 3:
-          readingStore.downloadBook(book.id, book);
-          uni.showToast({ title: "开始下载", icon: "success" });
-          break;
-        case 4:
-          uni.showToast({ title: "已置顶", icon: "success" });
-          break;
+  currentBookMenu.value = book
+  showBookActionSheet.value = true
+}
+
+const onBookActionClick = async (index: number) => {
+  const book = currentBookMenu.value
+  if (!book) return
+  switch (index) {
+    case 0:
+      goDetail(book);
+      break;
+    case 1:
+      openBook(book);
+      break;
+    case 2:
+      const ok = await showConfirmDialog({
+        title: '提示',
+        message: `确定将《${book.title}》移出书架？`,
+      });
+      if (!ok) return;
+      readingStore.removeFromBookshelf(book.id);
+      try {
+        await readingApi.removeFromBookshelf(book.id);
+      } catch {
+        // ignore
       }
-    },
-  });
+      uni.showToast({ title: '已移出书架', icon: 'success' });
+      break;
+    case 3:
+      readingStore.downloadBook(book.id, book);
+      uni.showToast({ title: "开始下载", icon: "success" });
+      break;
+    case 4:
+      uni.showToast({ title: "已置顶", icon: "success" });
+      break;
+  }
 };
 
 const goBookStore = () => {
