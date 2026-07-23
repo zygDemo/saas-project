@@ -73,11 +73,11 @@ export function useReadingApi() {
 
     /** 加入书架 */
     addToBookshelf: (bookId: number | string) =>
-      http.post<ApiResponse<void>>("/reading/bookshelf", { bookId }),
+      http.post<ApiResponse<void>>("/reading/bookshelf", { bookId }, { loadingText: "保存中..." }),
 
     /** 移出书架 */
     removeFromBookshelf: (bookId: number | string) =>
-      http.delete<ApiResponse<void>>(`/reading/bookshelf/${bookId}`),
+      http.delete<ApiResponse<void>>(`/reading/bookshelf/${bookId}`, undefined, { loadingText: "删除中..." }),
 
     /** 获取阅读进度 */
     getProgress: (bookId: number | string) =>
@@ -85,7 +85,7 @@ export function useReadingApi() {
 
     /** 保存阅读进度 */
     saveProgress: (data: { bookId: number; chapterId: number; progress: number }) =>
-      http.post<ApiResponse<void>>("/reading/progress", data),
+      http.post<ApiResponse<void>>("/reading/progress", data, { loadingText: "保存中..." }),
 
     /** 获取评论列表 */
     getReviews: (params?: { bookId?: number; page?: number; pageSize?: number }) =>
@@ -93,11 +93,11 @@ export function useReadingApi() {
 
     /** 发表评论 */
     createReview: (data: { bookId: number; content: string; rating?: number }) =>
-      http.post<ApiResponse<void>>("/reading/reviews", data),
+      http.post<ApiResponse<void>>("/reading/reviews", data, { loadingText: "提交中..." }),
 
     /** 删除评论 */
     deleteReview: (id: number | string) =>
-      http.delete<ApiResponse<void>>(`/reading/reviews/${id}`),
+      http.delete<ApiResponse<void>>(`/reading/reviews/${id}`, undefined, { loadingText: "删除中..." }),
 
     /** 获取阅读统计 */
     getStatistics: () =>
@@ -113,7 +113,7 @@ export function useReadingApi() {
 
     /** 购买章节 */
     purchaseChapter: (chapterId: number | string) =>
-      http.post<ApiResponse<{ purchased: boolean }>>(`/reading/chapters/${chapterId}/purchase`),
+      http.post<ApiResponse<{ purchased: boolean }>>(`/reading/chapters/${chapterId}/purchase`, undefined, { loadingText: "购买中..." }),
 
     /** 检查章节是否已购买 */
     checkChapterPurchased: (chapterId: number | string) =>
@@ -125,7 +125,7 @@ export function useReadingApi() {
 
     /** 点赞/取消点赞评论 */
     likeReview: (reviewId: number | string) =>
-      http.post<ApiResponse<{ liked: boolean }>>(`/reading/reviews/${reviewId}/like`),
+      http.post<ApiResponse<{ liked: boolean }>>(`/reading/reviews/${reviewId}/like`, undefined, { loadingText: "处理中..." }),
 
     /** 获取章节笔记 */
     getNotesByChapter: (bookId: number | string, chapterId: number | string) =>
@@ -133,6 +133,6 @@ export function useReadingApi() {
 
     /** 创建笔记 */
     createNote: (data: { bookId: number; chapterId: number; content: string; startPos?: number; endPos?: number }) =>
-      http.post<ApiResponse<void>>("/reading/notes", data),
+      http.post<ApiResponse<void>>("/reading/notes", data, { loadingText: "保存中..." }),
   };
 }

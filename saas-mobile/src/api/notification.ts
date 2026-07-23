@@ -29,8 +29,8 @@ export const fetchUnreadCount = () =>
 
 /** 标记单条通知为已读 */
 export const markNotificationRead = (id: number) =>
-  http.post(`/notification/${id}/read`);
+  http.post(`/notification/${id}/read`, undefined, { loadingText: "处理中..." });
 
 /** 全部标记已读 */
 export const markAllNotificationsRead = () =>
-  http.post("/notification/read-all");
+  http.post("/notification/read-all", undefined, { loadingText: "处理中..." });
