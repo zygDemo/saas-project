@@ -1,3 +1,4 @@
+
 import {
   Body,
   Controller,
@@ -6,11 +7,13 @@ import {
   Query,
   UploadedFile,
   UseGuards,
-  UseInterceptors
+  UseInterceptors,
+  Public
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { CurrentUser } from '../../../../common/decorators/current-user.decorator'
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard'
+import { RolesGuard } from '../../../../common/guards/roles.guard'
 import { RequestUser } from '../../../../common/types/request-user'
 import { OcrService } from '../../../ocr/ocr.service'
 import { UploadedImageFile } from '../../../file/file.service'
@@ -19,8 +22,6 @@ import { MobileVehicleInfoDto, MobileUuidQueryDto, OcrObjectKeyDto } from '../..
 import { MobileVehicleService } from '../../mobile-vehicle.service'
 
 @ApiTags('移动端车辆')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('m/vehicle')
 export class MobileVehicleController {
   constructor(
@@ -29,18 +30,23 @@ export class MobileVehicleController {
   ) {}
 
   @Post('addOrUpdateVehicle')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '保存车辆信息' })
   addOrUpdateVehicle(@Body() dto: MobileVehicleInfoDto, @CurrentUser() user: RequestUser) {
     return this.vehicleService.addOrUpdateVehicle(dto, user)
   }
 
   @Get('getVehicleInfo')
+  @Public()
   @ApiOperation({ summary: '获取车辆信息' })
   getVehicleInfo(@Query() query: MobileUuidQueryDto) {
     return this.vehicleService.getVehicleInfo(query.uuid)
   }
 
   @Post('getVehicleOcr')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '行驶证 OCR 识别' })
   @ApiConsumes('multipart/form-data', 'application/json')
   @ApiBody({

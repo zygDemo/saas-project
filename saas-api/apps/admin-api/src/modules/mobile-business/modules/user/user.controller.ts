@@ -1,3 +1,4 @@
+
 import {
   Body,
   Controller,
@@ -8,11 +9,13 @@ import {
   Query,
   UploadedFile,
   UseGuards,
-  UseInterceptors
+  UseInterceptors,
+  Public
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { CurrentUser } from '../../../../common/decorators/current-user.decorator'
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard'
+import { RolesGuard } from '../../../../common/guards/roles.guard'
 import { RequestUser } from '../../../../common/types/request-user'
 import { OcrService } from '../../../ocr/ocr.service'
 import { UploadedImageFile } from '../../../file/file.service'
@@ -26,8 +29,6 @@ import {
 import { MobileCustomerService } from '../../mobile-customer.service'
 
 @ApiTags('移动端客户')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('m/user')
 export class MobileUserController {
   constructor(
@@ -36,6 +37,8 @@ export class MobileUserController {
   ) {}
 
   @Post('addOrUpdateUserBasic')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '保存身份证信息' })
   addOrUpdateUserBasic(
     @Body() dto: MobileIdCardInfoDto,
@@ -46,6 +49,7 @@ export class MobileUserController {
   }
 
   @Get('getUserBasic')
+  @Public()
   @ApiOperation({ summary: '获取身份证信息' })
   getUserBasic(@Query() query: MobileUuidQueryDto) {
     return this.customerService.getUserBasic(query.uuid)
@@ -58,6 +62,8 @@ export class MobileUserController {
   }
 
   @Post('getIdCardOcr')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '身份证 OCR 识别' })
   @ApiConsumes('multipart/form-data', 'application/json')
   @ApiBody({
@@ -82,6 +88,7 @@ export class MobileUserController {
   }
 
   @Get('getUserList')
+  @Public()
   @ApiOperation({ summary: '客户列表' })
   getUserList(@Query() query: MobileUserListQueryDto) {
     return this.customerService.getUserList(query)

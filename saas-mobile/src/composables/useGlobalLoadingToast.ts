@@ -47,7 +47,10 @@ let defaultOptions: Required<ToastOptions> = {
   onOpened: undefined,
 }
 
-const { show, hide, update, confirm } = useGlobalLoading()
+
+function getLoading() {
+  return useGlobalLoading()
+}
 
 function normalize(options: ToastOptions | string): Required<ToastOptions> {
   if (typeof options === 'string') {
@@ -108,7 +111,8 @@ function showToast(options: ToastOptions | string): ToastWrapper {
     hide()
   }
   const effectiveType = opts.type || 'text'
-  const id = show({
+  const { show: glShow, hide: glHide, update: glUpdate } = useGlobalLoading()
+  const id = glShow({
     lock: opts.lock ?? (effectiveType === 'loading'),
     text: opts.message,
     type: effectiveType,
@@ -121,10 +125,10 @@ function showToast(options: ToastOptions | string): ToastWrapper {
     },
     set message(value) {
       opts.message = value
-      update(id, { text: value })
+      glUpdate(id, { text: value })
     },
     close: () => {
-      hide(id)
+      glHide(id)
       opts.onClose?.()
     },
   }
@@ -136,7 +140,7 @@ function showToast(options: ToastOptions | string): ToastWrapper {
 
   if (opts.duration && opts.duration > 0 && effectiveType !== 'loading') {
     setTimeout(() => {
-      hide(id)
+      glHide(id)
       activeToasts.delete(id)
       opts.onClose?.()
     }, opts.duration)
@@ -172,7 +176,8 @@ function showConfirmDialog(options: {
   lock?: boolean
   position?: ToastPosition
 }): Promise<boolean> {
-  return confirm({
+  const { confirm: glConfirm } = useGlobalLoading()
+  return glConfirm({
     text: options.title || options.message || '确认执行该操作吗？',
     lock: options.lock ?? false,
     position: options.position,

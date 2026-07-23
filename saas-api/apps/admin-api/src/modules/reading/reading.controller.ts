@@ -1,5 +1,6 @@
 import { RequestUser } from '../../common/types/request-user'
 import { CurrentUser } from '../../common/decorators/current-user.decorator'
+import { Public } from '../../common/decorators/public.decorator'
 import {
   Controller,
   Get,
