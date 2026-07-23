@@ -4,7 +4,8 @@ import request from '@/utils/http'
 
 /** 获取菜品分类列表 */
 export function getFoodCategories(params?: { keyword?: string; page?: number; pageSize?: number }) {
-  return request.get({ url: '/food/category/list', params })
+  const { page, pageSize, ...rest } = params || {}
+  return request.get({ url: '/food/category/list', params: { ...rest, current: page, size: pageSize } })
 }
 
 /** 创建菜品分类 */
@@ -26,7 +27,8 @@ export function deleteFoodCategory(id: number) {
 
 /** 获取菜品列表 */
 export function getFoodDishes(params?: { keyword?: string; categoryId?: number; isActive?: boolean; page?: number; pageSize?: number }) {
-  return request.get({ url: '/food/dish/list', params })
+  const { page, pageSize, ...rest } = params || {}
+  return request.get({ url: '/food/dish/list', params: { ...rest, current: page, size: pageSize } })
 }
 
 /** 获取菜品详情 */
@@ -53,7 +55,8 @@ export function deleteFoodDish(id: number) {
 
 /** 获取订单列表 */
 export function getFoodOrders(params?: { status?: number; orderNo?: string; page?: number; pageSize?: number }) {
-  return request.get({ url: '/food/order/list', params })
+  const { page, pageSize, ...rest } = params || {}
+  return request.get({ url: '/food/order/list', params: { ...rest, current: page, size: pageSize } })
 }
 
 /** 更新订单状态 */
