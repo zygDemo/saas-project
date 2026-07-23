@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, ParseIntPipe, Query, UseGuards, Req } from '@nestjs/common'
+import { Controller, Get, Post, Param, ParseIntPipe, Query, UseGuards, Req, Public } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { RolesGuard } from '../../common/guards/roles.guard'
@@ -6,15 +6,13 @@ import { Roles } from '../../common/decorators/roles.decorator'
 import { NotificationService } from './notification.service'
 
 @ApiTags('实时通知')
-@ApiBearerAuth()
-@ApiResponse({ status: 401, description: '未授权' })
-@UseGuards(JwtAuthGuard)
 @Controller('notification')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @ApiResponse({ status: 200, description: '成功' })
   @Get('stats')
+  @Public()
   @ApiOperation({ summary: '获取在线用户统计' })
   getStats() {
     return this.notificationService.getOnlineStats()
@@ -22,6 +20,7 @@ export class NotificationController {
 
   @ApiResponse({ status: 200, description: '成功' })
   @Get('list')
+  @Public()
   @ApiOperation({ summary: '获取当前用户通知列表' })
   getList(@Req() req: { user: { sub: number } }, @Query() query: { current?: string; size?: string }) {
     return this.notificationService.getNotifications(req.user.sub, {
@@ -57,6 +56,7 @@ export class NotificationController {
 
   @ApiResponse({ status: 200, description: '成功' })
   @Get('unread-count')
+  @Public()
   @ApiOperation({ summary: '获取未读通知数量' })
   getUnreadCount(@Req() req: { user: { sub: number } }) {
     return this.notificationService.getUnreadCount(req.user.sub)

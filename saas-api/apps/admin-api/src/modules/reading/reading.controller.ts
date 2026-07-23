@@ -56,12 +56,14 @@ export class ReadingController {
   // ==================== 书籍分类 ====================
 
   @Get('categories')
+  @Public()
   @ApiOperation({ summary: '获取书籍分类列表（支持树形结构）' })
   async getCategories(@Request() req: RequestUser, @Query() query: CategoryQueryDto) {
     return this.readingService.getCategories(req.tenantId, query);
   }
 
   @Get('categories/:id')
+  @Public()
   @ApiOperation({ summary: '获取书籍分类详情' })
   async getCategoryById(@Param('id') id: number, @Request() req: RequestUser) {
     return this.readingService.getCategoryById(+id, req.tenantId);
@@ -102,12 +104,14 @@ export class ReadingController {
   // ==================== 书籍管理 ====================
 
   @Get('books')
+  @Public()
   @ApiOperation({ summary: '获取书籍列表' })
   async getBooks(@Request() req: RequestUser, @Query() query: BookQueryDto) {
     return this.readingService.getBooks(req.tenantId, query);
   }
 
   @Get('books/:id')
+  @Public()
   @ApiOperation({ summary: '获取书籍详情' })
   async getBookById(@Param('id') id: number, @Request() req: RequestUser) {
     return this.readingService.getBookById(+id, req.tenantId);
@@ -183,18 +187,21 @@ export class ReadingController {
   // ==================== 章节管理 ====================
 
   @Get('chapters')
+  @Public()
   @ApiOperation({ summary: '获取章节列表' })
   async getChapters(@Request() req: RequestUser, @Query() query: ChapterQueryDto) {
     return this.readingService.getChapters(req.tenantId, query);
   }
 
   @Get('chapters/lite')
+  @Public()
   @ApiOperation({ summary: '获取章节列表（轻量版，仅返回 id/title/sort，无分页）' })
   async getChaptersLite(@Request() req: RequestUser, @Query('bookId') bookId: number) {
     return this.readingService.getChaptersLite(req.tenantId, +bookId);
   }
 
   @Get('chapters/:id')
+  @Public()
   @ApiOperation({ summary: '获取章节详情' })
   async getChapterById(@Param('id') id: number, @Request() req: RequestUser) {
     return this.readingService.getChapterById(+id, req.tenantId);
@@ -227,18 +234,21 @@ export class ReadingController {
   // ==================== 用户书架 ====================
 
   @Get('bookshelf')
+  @Public()
   @ApiOperation({ summary: '获取用户书架' })
   async getBookshelf(@Request() req: RequestUser) {
     return this.readingService.getBookshelf(req.sub, req.tenantId);
   }
 
   @Post('bookshelf')
+  @Public()
   @ApiOperation({ summary: '加入书架' })
   async addToBookshelf(@Request() req: RequestUser, @Body() dto: AddBookshelfDto) {
     return this.readingService.addToBookshelf(req.sub, req.tenantId, dto);
   }
 
   @Delete('bookshelf/:bookId')
+  @Public()
   @ApiOperation({ summary: '移出书架' })
   async removeFromBookshelf(@Param('bookId') bookId: number, @Request() req: RequestUser) {
     return this.readingService.removeFromBookshelf(req.sub, req.tenantId, +bookId);
@@ -247,12 +257,14 @@ export class ReadingController {
   // ==================== 阅读进度 ====================
 
   @Get('progress/:bookId')
+  @Public()
   @ApiOperation({ summary: '获取阅读进度' })
   async getReadingProgress(@Param('bookId') bookId: number, @Request() req: RequestUser) {
     return this.readingService.getReadingProgress(req.sub, req.tenantId, +bookId);
   }
 
   @Post('progress')
+  @Public()
   @ApiOperation({ summary: '保存阅读进度' })
   async saveReadingProgress(@Request() req: RequestUser, @Body() dto: SaveReadingProgressDto) {
     return this.readingService.saveReadingProgress(req.sub, req.tenantId, dto);
@@ -261,12 +273,14 @@ export class ReadingController {
   // ==================== 书籍评价 ====================
 
   @Get('reviews')
+  @Public()
   @ApiOperation({ summary: '获取书籍评价' })
   async getReviews(@Request() req: RequestUser, @Query() query: ReviewQueryDto) {
     return this.readingService.getReviews(req.tenantId, query);
   }
 
   @Post('reviews')
+  @Public()
   @ApiOperation({ summary: '创建书籍评价' })
   async createReview(@Request() req: RequestUser, @Body() dto: CreateReviewDto) {
     return this.readingService.createReview(req.sub, req.tenantId, dto);
@@ -291,6 +305,7 @@ export class ReadingController {
   // ==================== 统计 ====================
 
   @Get('statistics')
+  @Public()
   @ApiOperation({ summary: '获取读书统计（传入 personal=1 查询用户个人统计）' })
   async getStatistics(@Request() req: RequestUser, @Query('personal') personal?: string) {
     const userId = personal === '1' ? req.sub : undefined;
@@ -298,12 +313,14 @@ export class ReadingController {
   }
 
   @Get('hot')
+  @Public()
   @ApiOperation({ summary: '获取热门书籍' })
   async getHotBooks(@Request() req: RequestUser, @Query('limit') limit?: string) {
     return this.readingService.getHotBooks(req.tenantId, limit ? Number(limit) : undefined);
   }
 
   @Get('recommend')
+  @Public()
   @ApiOperation({ summary: '获取推荐书籍' })
   async getRecommendBooks(@Request() req: RequestUser, @Query('limit') limit?: string) {
     return this.readingService.getRecommendBooks(req.tenantId, limit ? Number(limit) : undefined);
@@ -313,12 +330,14 @@ export class ReadingController {
   // ==================== 阅读笔记/高亮 ====================
 
   @Get('notes')
+  @Public()
   @ApiOperation({ summary: '获取当前用户的笔记列表' })
   async getNotes(@Request() req: RequestUser, @Query() query: NoteQueryDto) {
     return this.readingService.getNotes(req.tenantId, req.sub, query);
   }
 
   @Get('notes/chapter/:bookId/:chapterId')
+  @Public()
   @ApiOperation({ summary: '获取指定章节的笔记' })
   async getNotesByChapter(
     @Request() req: RequestUser,
@@ -329,12 +348,14 @@ export class ReadingController {
   }
 
   @Post('notes')
+  @Public()
   @ApiOperation({ summary: '创建笔记/高亮' })
   async createNote(@Request() req: RequestUser, @Body() dto: CreateReadingNoteDto) {
     return this.readingService.createNote(req.tenantId, req.sub, dto);
   }
 
   @Put('notes/:id')
+  @Public()
   @ApiOperation({ summary: '更新笔记' })
   async updateNote(
     @Param('id') id: number,
@@ -345,6 +366,7 @@ export class ReadingController {
   }
 
   @Delete('notes/:id')
+  @Public()
   @ApiOperation({ summary: '删除笔记' })
   async deleteNote(@Param('id') id: number, @Request() req: RequestUser) {
     return this.readingService.deleteNote(+id, req.tenantId, req.sub);
@@ -354,6 +376,7 @@ export class ReadingController {
   // ==================== 评论点赞 ====================
 
   @Post('reviews/:id/like')
+  @Public()
   @ApiOperation({ summary: '点赞/取消点赞评论' })
   async likeReview(
     @Param('id') id: string,
