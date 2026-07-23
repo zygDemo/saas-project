@@ -15,6 +15,7 @@
     "test:cov": "jest --config jest.config.ts --coverage --passWithNoTests",
     "prisma:generate": "dotenv -e env/.env.development -- prisma generate",
     "prisma:migrate": "dotenv -e env/.env.development -- prisma migrate dev",
+    "prisma:migrate:deploy:dev": "dotenv -e env/.env.development -- prisma migrate deploy",
     "prisma:migrate:sit": "dotenv -e env/.env.sit -- prisma migrate deploy",
     "prisma:migrate:prod": "dotenv -e env/.env.production -- prisma migrate deploy",
     "prisma:seed": "dotenv -e env/.env.development -- tsx prisma/seed.ts",
