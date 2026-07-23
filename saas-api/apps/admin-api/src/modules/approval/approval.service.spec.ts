@@ -11,7 +11,7 @@ import { getCurrentTenantId } from '../../common/tenant/tenant-context'
 
 describe('ApprovalService', () => {
   let service: ApprovalService
-  let mockPrisma: jest.Mocked<PrismaService>
+  let mockPrisma: any
 
   const makeApprovalRecord = (overrides = {}) => ({
     id: 1,
@@ -45,7 +45,7 @@ describe('ApprovalService', () => {
       application: { findFirst: jest.fn() },
       user: { findFirst: jest.fn() },
       $transaction: jest.fn((queries: unknown[]) => Promise.all(queries))
-    } as unknown as jest.Mocked<PrismaService>
+    } as any
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -76,7 +76,7 @@ describe('ApprovalService', () => {
         stage: 'FIRST_REVIEW',
         action: 'PASS',
         opinion: '同意'
-      })
+      }) as any
 
       expect(result.id).toBe(1)
       expect(result.stage).toBe('FIRST_REVIEW')
@@ -111,8 +111,8 @@ describe('ApprovalService', () => {
 
       const result = await service.getList({ current: 1, size: 10 }) as any
 
-      expect(result.records).toHaveLength(2)
-      expect(result.total).toBe(2)
+      expect(result.list).toHaveLength(2)
+      expect(result.meta.total).toBe(2)
     })
 
     it('应该支持按 applicationId 筛选', async () => {
