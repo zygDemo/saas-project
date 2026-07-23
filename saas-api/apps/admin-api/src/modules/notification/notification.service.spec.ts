@@ -4,7 +4,7 @@ import { NotificationGateway } from './notification.gateway'
 
 describe('NotificationService', () => {
   let service: NotificationService
-  let mockGateway: any
+  let mockGateway: Record<string, unknown>
 
   beforeEach(async () => {
     mockGateway = {

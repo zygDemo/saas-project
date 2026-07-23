@@ -1,28 +1,26 @@
-﻿import { Body, Controller, Get, Param, ParseIntPipe, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { RequestUser } from '../../common/types/request-user';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { SaveEntityMobileConfigDto, UpdateMobileConfigDto } from './dto/mobile-config.dto';
 import { MobileConfigService } from './mobile-config.service';
 
 @ApiTags('移动端模块配置')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('R_SUPER', 'R_ADMIN')
 @Controller('mobile-config')
 export class MobileConfigController {
   constructor(private readonly service: MobileConfigService) {}
 
-  // ───── 移动端 APP 调用 ─────
-
-  /** 移动端首页调用：按 用户→角色→租户 优先级解析配置 */
   @Get('resolved')
   @ApiOperation({ summary: '获取当前用户的移动端模块配置（三级优先级解析）' })
   getResolvedConfig(@CurrentUser() user: RequestUser) {
     return this.service.getResolvedConfig(user.sub, user.tenantId);
   }
-
-  // ───── 租户级配置（管理端） ─────
 
   @Get()
   @ApiOperation({ summary: '获取当前租户的移动端模块配置（管理端使用）' })
@@ -35,8 +33,6 @@ export class MobileConfigController {
   updateConfig(@Body() dto: UpdateMobileConfigDto, @CurrentUser() user: RequestUser) {
     return this.service.updateConfig(dto, user.tenantId);
   }
-
-  // ───── 角色级配置（管理端） ─────
 
   @Get('role/:roleId')
   @ApiOperation({ summary: '获取指定角色的移动端模块配置' })
@@ -58,8 +54,6 @@ export class MobileConfigController {
   resetRoleConfig(@Param('roleId', ParseIntPipe) roleId: number) {
     return this.service.resetRoleConfig(roleId);
   }
-
-  // ───── 用户级配置（管理端） ─────
 
   @Get('user/:userId')
   @ApiOperation({ summary: '获取指定用户的移动端模块配置' })

@@ -19,7 +19,7 @@ const mockFileAsset = {
 
 describe('FileService', () => {
   let service: FileService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {

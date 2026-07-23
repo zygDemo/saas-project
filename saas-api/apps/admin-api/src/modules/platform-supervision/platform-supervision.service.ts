@@ -13,7 +13,7 @@ export class PlatformSupervisionService {
   async getStats(query: PlatformStatsQueryDto) {
     const pagination = getPagination(query)
 
-    const orgs: any[] = await this.prisma.organization.findMany({
+    const orgs: Array<Record<string, unknown>> = await this.prisma.organization.findMany({
       where: { deletedAt: null },
       select: { id: true, name: true, code: true, status: true, packageType: true, expireAt: true },
       skip: pagination.skip,

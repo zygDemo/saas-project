@@ -19,7 +19,7 @@ const mockUser = {
 
 describe('MobileConfigService', () => {
   let service: MobileConfigService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {

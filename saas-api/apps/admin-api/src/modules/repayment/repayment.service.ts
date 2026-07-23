@@ -246,9 +246,9 @@ export class RepaymentService extends BaseBusinessCrudService<CreateRepaymentDto
         orderBy: { period: 'asc' }
       })
        
-      principal = unpaidPlans.reduce((sum: number, p: any) => sum + Number(p.principal), 0)
+      principal = unpaidPlans.reduce((sum: number, p: Record<string, unknown>) => sum + Number(p.principal), 0)
        
-      interest = unpaidPlans.reduce((sum: number, p: any) => sum + Number(p.interest), 0)
+      interest = unpaidPlans.reduce((sum: number, p: Record<string, unknown>) => sum + Number(p.interest), 0)
       amount = Math.round((principal + interest) * 100) / 100
     }
 

@@ -15,7 +15,7 @@ const mockRole = {
 
 describe('RolesService', () => {
   let service: RolesService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {

@@ -366,9 +366,11 @@ export async function guardMobileEntryStorageAsync<T>(action: () => Promise<T>) 
   try {
     return await action()
   } catch (error) {
+    console.error('[guardMobileEntryStorageAsync] original error:', error)
     if (isMissingMobileEntryStorage(error)) {
       const { BadRequestException } = await import('@nestjs/common')
-      throw new BadRequestException(MOBILE_ENTRY_STORAGE_ERROR)
+      const detail = error instanceof Error ? error.message : String(error)
+      throw new BadRequestException(`${MOBILE_ENTRY_STORAGE_ERROR} | 原始错误：${detail}`)
     }
     throw error
   }

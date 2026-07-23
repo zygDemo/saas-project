@@ -3,7 +3,7 @@ import { QueueService } from './queue.service'
 
 describe('QueueService', () => {
   let service: QueueService
-  let mockQueue: any
+  let mockQueue: Record<string, unknown>
 
   beforeEach(async () => {
     mockQueue = {

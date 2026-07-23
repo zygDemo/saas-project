@@ -19,8 +19,8 @@ const mockAnnouncement = {
 
 describe('AnnouncementService', () => {
   let service: AnnouncementService
-  let mockPrisma: any
-  let mockNotification: any
+  let mockPrisma: Record<string, unknown>
+  let mockNotification: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {

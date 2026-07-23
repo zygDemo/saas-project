@@ -45,16 +45,6 @@ export class MobileUserController {
     return this.customerService.addOrUpdateUserBasic(dto, user, orgId ? Number(orgId) : undefined)
   }
 
-  @Post('addOrUpdateIdCardInfo')
-  @ApiOperation({ summary: '保存身份证信息别名' })
-  addOrUpdateIdCardInfo(
-    @Body() dto: MobileIdCardInfoDto,
-    @CurrentUser() user: RequestUser,
-    @Headers('x-org-id') orgId?: string
-  ) {
-    return this.customerService.addOrUpdateUserBasic(dto, user, orgId ? Number(orgId) : undefined)
-  }
-
   @Get('getUserBasic')
   @ApiOperation({ summary: '获取身份证信息' })
   getUserBasic(@Query() query: MobileUuidQueryDto) {

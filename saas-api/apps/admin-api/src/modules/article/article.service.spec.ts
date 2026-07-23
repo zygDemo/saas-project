@@ -37,7 +37,7 @@ const mockArticleType = {
 
 describe('ArticleService', () => {
   let service: ArticleService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {

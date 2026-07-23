@@ -10,7 +10,7 @@ jest.mock('child_process', () => ({
 
 describe('DbOpsService', () => {
   let service: DbOpsService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {

@@ -39,7 +39,7 @@ describe('FlowConfigService', () => {
         update: jest.fn()
       },
       organization: { findFirst: jest.fn() },
-      $transaction: jest.fn((queries: any[]) => Promise.all(queries))
+      $transaction: jest.fn((queries: unknown[]) => Promise.all(queries))
     } as unknown as jest.Mocked<PrismaService>
 
     const module: TestingModule = await Test.createTestingModule({
@@ -106,7 +106,7 @@ describe('FlowConfigService', () => {
       expect(result.nodes.length).toBeGreaterThan(0)
 
       // 验证核心节点存在
-      const nodeCodes = result.nodes.map((n: any) => n.code)
+      const nodeCodes = result.nodes.map((n: Record<string, unknown>) => n.code)
       expect(nodeCodes).toContain(1100) // 订单创建
       expect(nodeCodes).toContain(1200) // 风控预审
       expect(nodeCodes).toContain(1400) // 风控初审
@@ -122,7 +122,7 @@ describe('FlowConfigService', () => {
       const result = service.getMeta()
 
       expect(result.phases.length).toBeGreaterThan(0)
-      const phaseCodes = result.phases.map((p: any) => p.code)
+      const phaseCodes = result.phases.map((p: Record<string, unknown>) => p.code)
       expect(phaseCodes).toContain(1000) // 预审阶段
       expect(phaseCodes).toContain(1400) // 风控审批
       expect(phaseCodes).toContain(1600) // 签约阶段
@@ -131,7 +131,7 @@ describe('FlowConfigService', () => {
 
     it('节点应包含正确的 transitions', () => {
       const result = service.getMeta()
-      const preAuditNode = result.nodes.find((n: any) => n.code === 1200) as any
+      const preAuditNode = result.nodes.find((n: Record<string, unknown>) => n.code === 1200) as Record<string, unknown>
 
       expect(preAuditNode).toBeDefined()
       expect(preAuditNode.transitions).toEqual(
@@ -143,7 +143,7 @@ describe('FlowConfigService', () => {
 
     it('风控初审节点应有金额限制', () => {
       const result = service.getMeta()
-      const firstReviewNode = result.nodes.find((n: any) => n.code === 1400) as any
+      const firstReviewNode = result.nodes.find((n: Record<string, unknown>) => n.code === 1400) as Record<string, unknown>
 
       expect(firstReviewNode).toBeDefined()
       // amountLimit 在 DEFAULT_FLOW_NODES 上定义，getMeta 输出里不一定直接有

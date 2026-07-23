@@ -16,7 +16,7 @@ const mockProduct = {
 
 describe('ProductService', () => {
   let service: ProductService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {

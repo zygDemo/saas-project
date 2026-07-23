@@ -87,8 +87,8 @@ export class MobileFileService {
     // 1. 如果有 creditOrderId，尝试从订单关联的产品读取 fileChecklist
     if (creditOrderId) {
       try {
-        const application = await findApplication(this.prisma, creditOrderId)
-        const checklist = application.product?.fileChecklist
+        const application = await findApplication(this.prisma, creditOrderId, getRequiredTenantId())
+        const checklist = application?.product?.fileChecklist
         if (Array.isArray(checklist) && checklist.length > 0) {
           return [
             {
@@ -108,7 +108,7 @@ export class MobileFileService {
           ]
         }
       } catch {
-        // 订单不存在或其他错误，降级到默认清单
+        // 订单不存在、无关联产品，或读取 fileChecklist 失败，统一降级到默认清单
       }
     }
 
@@ -236,7 +236,7 @@ export class MobileFileService {
   ) {
     const fileType = body.fileType || body.fileCode || body.categoryCode || 'IMAGE'
     if (body.creditOrderId) {
-      const application = await findApplication(this.prisma, body.creditOrderId)
+      const application = await findApplication(this.prisma, body.creditOrderId, getRequiredTenantId())
       return {
         orgId: application.orgId,
         businessType: 'APPLICATION',
@@ -274,13 +274,13 @@ export class MobileFileService {
     if (query.businessId) where.businessId = Number(query.businessId)
 
     if (query.creditOrderId) {
-      const application = await findApplication(this.prisma, query.creditOrderId)
+      const application = await findApplication(this.prisma, query.creditOrderId, getRequiredTenantId())
       where.businessType = 'APPLICATION'
       where.businessId = application.id
       return where
     }
     if (query.uuid) {
-      const customer = await findCustomerByUuid(this.prisma, query.uuid)
+      const customer = await findCustomerByUuid(this.prisma, query.uuid, getRequiredTenantId())
       if (customer) {
         where.OR = [
           { businessType: 'CUSTOMER', businessId: customer.id },
@@ -338,7 +338,7 @@ export class MobileFileService {
         OR: [
           {
             businessType: 'CUSTOMER',
-            businessId: customer.id,
+            businessId: customer.id as number,
             categoryCode: { in: ['ID_CARD_FRONT', 'ID_CARD_BACK'] }
           },
           {

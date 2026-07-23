@@ -13,7 +13,7 @@ const mockOrder = { id: 1, tenantId: 1, orderNo: 'F20260101001', status: 'PENDIN
 
 describe('FoodService', () => {
   let service: FoodService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {

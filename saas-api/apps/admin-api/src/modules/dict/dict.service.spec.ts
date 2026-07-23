@@ -28,8 +28,8 @@ const mockDictData = {
 
 describe('DictService', () => {
   let service: DictService
-  let mockPrisma: any
-  let mockCache: any
+  let mockPrisma: Record<string, unknown>
+  let mockCache: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {

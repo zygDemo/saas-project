@@ -99,7 +99,8 @@ export class MobileCustomerService {
   }
   async getUserList(query: MobileUserListQueryDto) {
     return guardMobileEntryStorageAsync(async () => {
-      const where: Record<string, unknown> = {}
+      const tenantId = getRequiredTenantId()
+      const where: Record<string, unknown> = { tenantId }
       if (query.personName) where.name = { contains: query.personName, mode: 'insensitive' }
       const customers = await this.prisma.customer.findMany({
         where,

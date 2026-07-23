@@ -10,11 +10,11 @@ jest.mock('../../common/tenant/tenant-context', () => ({
 
 describe('OcrService', () => {
   let service: OcrService
-  let mockPrisma: any
-  let mockConfig: any
+  let mockPrisma: Record<string, unknown>
+  let mockConfig: Record<string, unknown>
 
   beforeEach(async () => {
-    mockPrisma = { $transaction: jest.fn((arr: any) => Promise.all(arr)) }
+    mockPrisma = { $transaction: jest.fn((arr: unknown[]) => Promise.all(arr)) }
     mockConfig = {
       get: jest.fn((key: string) => {
         if (key === 'OCR_URL') return 'https://ocr.example.com'

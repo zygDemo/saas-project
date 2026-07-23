@@ -46,13 +46,15 @@ export async function getCustomerByUuid(prisma: PrismaService, uuid: string, ten
 }
 export async function findApplication(
   prisma: PrismaService,
-  idOrNo: string | number
+  idOrNo: string | number,
+  tenantId?: number
 ) {
   const numericId = Number(idOrNo)
+  const baseWhere = tenantId ? { tenantId } : {}
   const application =
     Number.isInteger(numericId) && numericId > 0
       ? await prisma.application.findFirst({
-          where: { id: numericId },
+          where: { ...baseWhere, id: numericId },
           include: {
             customer: { include: { vehicles: true } },
             product: true,
@@ -61,7 +63,7 @@ export async function findApplication(
           }
         })
       : await prisma.application.findFirst({
-          where: { applicationNo: String(idOrNo) },
+          where: { ...baseWhere, applicationNo: String(idOrNo) },
           include: {
             customer: { include: { vehicles: true } },
             product: true,
@@ -72,10 +74,10 @@ export async function findApplication(
   if (!application) throw new NotFoundException('授信申请不存在')
   return application
 }
-export async function findApplicationByOrderId(prisma: PrismaService, creditOrderId: string) {
+export async function findApplicationByOrderId(prisma: PrismaService, creditOrderId: string, tenantId?: number) {
   if (!creditOrderId) return null
   return prisma.application.findFirst({
-    where: { applicationNo: creditOrderId }
+    where: { ...(tenantId ? { tenantId } : {}), applicationNo: creditOrderId }
   })
 }
 export async function findLatestDraftApplication(prisma: PrismaService, customerId: number) {

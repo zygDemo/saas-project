@@ -26,7 +26,7 @@ describe('DataCenterService', () => {
         groupBy: jest.fn(),
         findMany: jest.fn(),
       },
-      $transaction: jest.fn((queries: any[]) => Promise.all(queries)),
+      $transaction: jest.fn((queries: unknown[]) => Promise.all(queries)),
       $queryRaw: jest.fn(),
     } as unknown as jest.Mocked<PrismaService>
 

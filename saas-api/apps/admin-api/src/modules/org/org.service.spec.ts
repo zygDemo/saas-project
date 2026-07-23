@@ -16,7 +16,7 @@ const mockOrg = {
 
 describe('OrganizationService', () => {
   let service: OrganizationService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {

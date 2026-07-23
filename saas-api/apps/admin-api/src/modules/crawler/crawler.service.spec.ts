@@ -9,10 +9,10 @@ jest.mock('../../common/tenant/tenant-context', () => ({
 
 describe('CrawlerService', () => {
   let service: CrawlerService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
-    mockPrisma = { $transaction: jest.fn((arr: any) => Promise.all(arr)) }
+    mockPrisma = { $transaction: jest.fn((arr: unknown[]) => Promise.all(arr)) }
     const module: TestingModule = await Test.createTestingModule({
       providers: [CrawlerService, { provide: PrismaService, useValue: mockPrisma }],
     }).compile()

@@ -51,3 +51,7 @@ CLAUDE.md
 .pnpm-store/v11/projects
 saas-mobile/test-results
 saas-mobile/tests
+test-results/
+playwright-report/
+build-errors.txt
+*_errors.txt

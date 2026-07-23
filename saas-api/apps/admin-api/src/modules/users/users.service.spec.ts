@@ -16,7 +16,7 @@ const mockUser = {
 
 describe('UsersService', () => {
   let service: UsersService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {

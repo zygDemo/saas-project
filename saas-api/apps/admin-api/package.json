@@ -9,6 +9,7 @@
     "start:sit": "dotenv -e env/.env.sit -- cross-env NODE_ENV=sit nest start --watch",
     "start:prod": "cross-env NODE_ENV=production node dist/main.js",
     "start:prod:local": "dotenv -e env/.env.production -- cross-env NODE_ENV=production nest start --watch",
+    "start:with-migrate": "dotenv -e env/.env.production -- prisma migrate deploy && cross-env NODE_ENV=production node dist/main.js",
     "lint": "eslint \"src/**/*.ts\"",
     "test": "jest --config jest.config.ts --passWithNoTests",
     "test:watch": "jest --config jest.config.ts --watch --passWithNoTests",

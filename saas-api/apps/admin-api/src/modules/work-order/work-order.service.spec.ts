@@ -28,7 +28,7 @@ const mockWorkOrder = {
 
 describe('WorkOrderService', () => {
   let service: WorkOrderService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {

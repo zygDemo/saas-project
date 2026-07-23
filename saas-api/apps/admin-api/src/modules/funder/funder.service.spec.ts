@@ -16,7 +16,7 @@ const mockFunder = {
 
 describe('FunderService', () => {
   let service: FunderService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {

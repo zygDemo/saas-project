@@ -14,7 +14,7 @@ const mockOrg = {
 
 describe('PlatformSupervisionService', () => {
   let service: PlatformSupervisionService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {

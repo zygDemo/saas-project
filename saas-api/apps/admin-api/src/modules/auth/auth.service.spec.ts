@@ -26,7 +26,7 @@ const createMockUser = (overrides: Record<string, unknown> = {}) => ({
 
 describe('AuthService', () => {
   let service: AuthService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
   let mockJwtService: jest.Mocked<JwtService>
   let mockConfigService: jest.Mocked<ConfigService>
   let mockCache: jest.Mocked<CacheService>

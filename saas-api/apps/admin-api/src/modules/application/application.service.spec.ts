@@ -113,7 +113,7 @@ describe('ApplicationService', () => {
       collectionRecord: { create: jest.fn(), findMany: jest.fn() },
       earlyRepayment: { create: jest.fn(), update: jest.fn(), findMany: jest.fn() },
       lead: { update: jest.fn() },
-      $transaction: jest.fn((queries: any[]) => Promise.all(queries)),
+      $transaction: jest.fn((queries: unknown[]) => Promise.all(queries)),
       $queryRaw: jest.fn()
     } as unknown as jest.Mocked<PrismaService>
 
@@ -406,7 +406,7 @@ describe('ApplicationService', () => {
       mockPrisma.user.findFirst!.mockResolvedValue({ id: 1 } as any)
 
       let txRef: ReturnType<typeof mockTx> | undefined
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         txRef = mockTx()
         txRef.application.update.mockResolvedValue({
           ...makeApplication(),
@@ -485,7 +485,7 @@ describe('ApplicationService', () => {
       )
 
       let txRef: ReturnType<typeof mockTx> | undefined
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         txRef = mockTx()
         txRef.application.update.mockResolvedValue({
           ...makeApplication(),
@@ -529,7 +529,7 @@ describe('ApplicationService', () => {
       )
 
       let txRef: ReturnType<typeof mockTx> | undefined
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         txRef = mockTx()
         txRef.application.update.mockResolvedValue({
           ...makeApplication(),
@@ -574,7 +574,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_FUNDER_PRE })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         tx.application.findFirst = jest.fn().mockResolvedValue(
           makeApplication({ status: ApplicationStatus.PENDING_FUNDER_PRE })
@@ -613,7 +613,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_FUNDER_PRE })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         return fn(tx)
       })
@@ -668,7 +668,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_FIRST_REVIEW })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         return fn(tx)
       })
@@ -683,7 +683,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_FINAL_REVIEW })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         return fn(tx)
       })
@@ -708,7 +708,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_FIRST_REVIEW })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         return fn(tx)
       })
@@ -723,7 +723,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_FUNDER_REVIEW })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         return fn(tx)
       })
@@ -743,7 +743,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_FIRST_REVIEW })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         return fn(tx)
       })
@@ -805,7 +805,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_FUNDER_REVIEW })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         return fn(tx)
       })
@@ -822,7 +822,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_FUNDER_REVIEW })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         return fn(tx)
       })
@@ -841,7 +841,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.FINAL_REVIEW_PASSED })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         return fn(tx)
       })
@@ -855,7 +855,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.FUNDER_REVIEW_PASSED })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         return fn(tx)
       })
@@ -879,7 +879,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_SIGN })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         return fn(tx)
       })
@@ -931,7 +931,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.LOAN_REQUEST_REVIEWING })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         return fn(tx)
       })
@@ -948,7 +948,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.LOAN_REQUEST_REVIEWING })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         return fn(tx)
       })
@@ -1010,7 +1010,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.LOAN_REQUEST_APPROVED })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         tx.disbursement.findFirst = jest.fn().mockResolvedValue(null)
         return fn(tx)
@@ -1025,7 +1025,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_DISBURSEMENT })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         tx.disbursement.findFirst = jest.fn().mockResolvedValue({
           id: 1,
@@ -1049,7 +1049,7 @@ describe('ApplicationService', () => {
         sourceLeadId: 10
       })
       mockPrisma.application.findFirst!.mockResolvedValue(application)
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         tx.disbursement.findFirst = jest.fn().mockResolvedValue({
           id: 1,
@@ -1072,7 +1072,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_DISBURSEMENT })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         tx.disbursement.findFirst = jest.fn().mockResolvedValue(null)
         return fn(tx)
@@ -1102,7 +1102,7 @@ describe('ApplicationService', () => {
         paidAt: null
       }
       mockPrisma.user.findFirst!.mockResolvedValue({ id: 1 } as any)
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         tx.repaymentPlan.findFirst = jest.fn().mockResolvedValue(plan)
         tx.repaymentPlan.update = jest.fn().mockResolvedValue({
@@ -1130,7 +1130,7 @@ describe('ApplicationService', () => {
 
     it('还款计划不存在时应抛出异常', async () => {
       mockPrisma.user.findFirst!.mockResolvedValue({ id: 1 } as any)
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         tx.repaymentPlan.findFirst = jest.fn().mockResolvedValue(null)
         return fn(tx)
@@ -1153,7 +1153,7 @@ describe('ApplicationService', () => {
         paidAt: null
       }
       mockPrisma.user.findFirst!.mockResolvedValue({ id: 1 } as any)
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         tx.repaymentPlan.findFirst = jest.fn().mockResolvedValue(plan)
         tx.repaymentPlan.update = jest.fn().mockResolvedValue({
@@ -1183,7 +1183,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.DISBURSED })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         tx.repaymentPlan.count = jest.fn().mockResolvedValue(0) // 无未结清
         return fn(tx)
@@ -1198,7 +1198,7 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.DISBURSED })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         tx.repaymentPlan.count = jest.fn().mockResolvedValue(3) // 3期未结清
         return fn(tx)
@@ -1384,7 +1384,7 @@ describe('ApplicationService', () => {
       )
 
       const result = (await service.getLifecycle(1)) as any
-      const passItem = result.find((r: any) => r.approvalStatus === '通过')
+      const passItem = result.find((r: Record<string, unknown>) => r.approvalStatus === '通过')
 
       expect(passItem).toBeDefined()
       expect(passItem.approvalCost).toBe(80000)
@@ -1410,7 +1410,7 @@ describe('ApplicationService', () => {
       )
 
       const result = (await service.getLifecycle(1)) as any
-      const rejectItem = result.find((r: any) => r.approvalStatus === '拒绝')
+      const rejectItem = result.find((r: Record<string, unknown>) => r.approvalStatus === '拒绝')
 
       expect(rejectItem).toBeDefined()
       expect(rejectItem.rejectReason).toBe('征信不良')
@@ -1429,7 +1429,7 @@ describe('ApplicationService', () => {
 
       // Helper: 模拟事务
       const mockTransaction = () => {
-        mockPrisma.$transaction = jest.fn(async (fn: any) => {
+        mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
           const tx = mockTx()
           tx.application.findFirst = jest.fn().mockImplementation(() => {
             return Promise.resolve(mockPrisma.application.findFirst?.mock.results[0]?.value)
@@ -1520,7 +1520,7 @@ describe('ApplicationService', () => {
       // 14. 确认放款
       jest.clearAllMocks()
       mockStatus(ApplicationStatus.PENDING_DISBURSEMENT)
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         tx.disbursement.findFirst = jest.fn().mockResolvedValue({
           id: 1, status: DisbursementStatus.PENDING_APPROVAL
@@ -1533,7 +1533,7 @@ describe('ApplicationService', () => {
       // 15. 结清
       jest.clearAllMocks()
       mockStatus(ApplicationStatus.DISBURSED)
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = mockTx()
         tx.repaymentPlan.count = jest.fn().mockResolvedValue(0)
         return fn(tx)

@@ -43,7 +43,7 @@ describe('SigningService', () => {
         findFirst: jest.fn(),
         update: jest.fn()
       },
-      $transaction: jest.fn((queries: any[]) => Promise.all(queries))
+      $transaction: jest.fn((queries: unknown[]) => Promise.all(queries))
     } as unknown as jest.Mocked<PrismaService>
 
     const module: TestingModule = await Test.createTestingModule({
@@ -147,7 +147,7 @@ describe('SigningService', () => {
   describe('authorizeSign', () => {
     it('PENDING 状态应成功授权签署', async () => {
       mockPrisma.signRecord.findFirst!.mockResolvedValue(makeSignRecord({ status: 'PENDING' }))
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = {
           signRecord: {
             update: jest.fn().mockResolvedValue({ id: 1, status: 'SIGNED', signedAt: new Date() })
@@ -167,7 +167,7 @@ describe('SigningService', () => {
 
     it('SENT 状态应成功授权签署', async () => {
       mockPrisma.signRecord.findFirst!.mockResolvedValue(makeSignRecord({ status: 'SENT' }))
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = {
           signRecord: {
             update: jest.fn().mockResolvedValue({ id: 1, status: 'SIGNED', signedAt: new Date() })
@@ -203,20 +203,20 @@ describe('SigningService', () => {
     })
 
     it('签署事务应同时更新签署记录和申请状态', async () => {
-      let signUpdateArgs: any
-      let appUpdateArgs: any
+      let signUpdateArgs: Record<string, unknown>
+      let appUpdateArgs: Record<string, unknown>
 
       mockPrisma.signRecord.findFirst!.mockResolvedValue(makeSignRecord({ status: 'SENT' }))
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = {
           signRecord: {
-            update: jest.fn().mockImplementation((args: any) => {
+            update: jest.fn().mockImplementation((args: Record<string, unknown>) => {
               signUpdateArgs = args
               return Promise.resolve({ id: 1, status: 'SIGNED' })
             })
           },
           application: {
-            update: jest.fn().mockImplementation((args: any) => {
+            update: jest.fn().mockImplementation((args: Record<string, unknown>) => {
               appUpdateArgs = args
               return Promise.resolve({ id: 1, status: 'SIGNED' })
             })

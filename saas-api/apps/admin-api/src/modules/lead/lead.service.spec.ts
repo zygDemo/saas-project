@@ -45,7 +45,7 @@ describe('LeadService', () => {
       organization: { findFirst: jest.fn() },
       user: { findFirst: jest.fn() },
       leadFollowUp: { create: jest.fn() },
-      $transaction: jest.fn((queries: any[]) => Promise.all(queries))
+      $transaction: jest.fn((queries: unknown[]) => Promise.all(queries))
     } as unknown as jest.Mocked<PrismaService>
 
     const module: TestingModule = await Test.createTestingModule({
@@ -222,7 +222,7 @@ describe('LeadService', () => {
     it('应该成功添加跟进记录并更新线索状态', async () => {
       mockPrisma.lead.findFirst!.mockResolvedValue(makeLead())
       mockPrisma.user.findFirst!.mockResolvedValue({ id: 1 } as any)
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = {
           leadFollowUp: { create: jest.fn().mockResolvedValue({ id: 1 }) },
           lead: {
@@ -265,12 +265,12 @@ describe('LeadService', () => {
       mockPrisma.lead.findFirst!.mockResolvedValue(makeLead())
       mockPrisma.user.findFirst!.mockResolvedValue({ id: 1 } as any)
 
-      let updatedLead: any
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
+      let updatedLead: Record<string, unknown>
+      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
         const tx = {
           leadFollowUp: { create: jest.fn().mockResolvedValue({ id: 1 }) },
           lead: {
-            update: jest.fn().mockImplementation((args: any) => {
+            update: jest.fn().mockImplementation((args: Record<string, unknown>) => {
               updatedLead = { ...makeLead(), ...args.data }
               return Promise.resolve(updatedLead)
             })

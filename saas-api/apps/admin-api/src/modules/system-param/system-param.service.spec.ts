@@ -12,7 +12,7 @@ jest.mock('../../common/tenant/tenant-context', () => ({
 jest.mock('../../common/utils/helpers', () => ({
   ...jest.requireActual('../../common/utils/helpers'),
   getRequiredTenantId: jest.fn(() => 1),
-  formatDate: jest.fn((d: any) => d?.toISOString?.() || d),
+  formatDate: jest.fn((d: Date | string | null | undefined) => d?.toISOString?.() || d),
 }))
 
 const mockParam = {
@@ -23,8 +23,8 @@ const mockParam = {
 
 describe('SystemParamService', () => {
   let service: SystemParamService
-  let mockPrisma: any
-  let mockCache: any
+  let mockPrisma: Record<string, unknown>
+  let mockCache: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {
@@ -35,10 +35,10 @@ describe('SystemParamService', () => {
         create: jest.fn().mockResolvedValue(mockParam),
         update: jest.fn().mockResolvedValue(mockParam),
       },
-      $transaction: jest.fn((arr: any) => Promise.all(arr)),
+      $transaction: jest.fn((arr: unknown[]) => Promise.all(arr)),
     }
     mockCache = {
-      getOrSet: jest.fn((_key: string, fn: any) => fn()),
+      getOrSet: jest.fn((_key: string, fn: () => Promise<unknown>) => fn()),
       delByPrefix: jest.fn(),
     }
     const module: TestingModule = await Test.createTestingModule({

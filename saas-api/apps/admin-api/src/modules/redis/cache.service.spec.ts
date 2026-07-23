@@ -4,7 +4,7 @@ import { RedisService } from './redis.service'
 
 describe('CacheService', () => {
   let service: CacheService
-  let mockRedis: any
+  let mockRedis: Record<string, unknown>
 
   beforeEach(async () => {
     mockRedis = {

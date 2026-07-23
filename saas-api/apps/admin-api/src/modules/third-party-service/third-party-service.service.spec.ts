@@ -15,7 +15,7 @@ const mockTps = {
 
 describe('ThirdPartyServiceService', () => {
   let service: ThirdPartyServiceService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {
@@ -26,7 +26,7 @@ describe('ThirdPartyServiceService', () => {
         create: jest.fn().mockResolvedValue(mockTps),
         update: jest.fn().mockResolvedValue(mockTps),
       },
-      $transaction: jest.fn((arr: any) => Promise.all(arr)),
+      $transaction: jest.fn((arr: unknown[]) => Promise.all(arr)),
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [ThirdPartyServiceService, { provide: PrismaService, useValue: mockPrisma }],

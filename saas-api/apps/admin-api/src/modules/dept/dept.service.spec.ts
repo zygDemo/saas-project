@@ -20,7 +20,7 @@ const mockManager = {
 
 describe('DeptService', () => {
   let service: DeptService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {
@@ -34,7 +34,7 @@ describe('DeptService', () => {
       user: {
         findMany: jest.fn().mockResolvedValue([mockManager]),
       },
-      $transaction: jest.fn((arr: any) => Promise.all(arr)),
+      $transaction: jest.fn((arr: unknown[]) => Promise.all(arr)),
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [DeptService, { provide: PrismaService, useValue: mockPrisma }],

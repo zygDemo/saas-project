@@ -44,7 +44,7 @@ describe('ApprovalService', () => {
       },
       application: { findFirst: jest.fn() },
       user: { findFirst: jest.fn() },
-      $transaction: jest.fn((queries: any[]) => Promise.all(queries))
+      $transaction: jest.fn((queries: unknown[]) => Promise.all(queries))
     } as unknown as jest.Mocked<PrismaService>
 
     const module: TestingModule = await Test.createTestingModule({

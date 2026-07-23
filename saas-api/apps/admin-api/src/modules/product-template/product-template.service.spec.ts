@@ -16,7 +16,7 @@ const mockTpl = {
 
 describe('ProductTemplateService', () => {
   let service: ProductTemplateService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {
@@ -27,7 +27,7 @@ describe('ProductTemplateService', () => {
         create: jest.fn().mockResolvedValue(mockTpl),
         update: jest.fn().mockResolvedValue(mockTpl),
       },
-      $transaction: jest.fn((arr: any) => Promise.all(arr)),
+      $transaction: jest.fn((arr: unknown[]) => Promise.all(arr)),
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [ProductTemplateService, { provide: PrismaService, useValue: mockPrisma }],

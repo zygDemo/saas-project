@@ -108,9 +108,7 @@ export class MobileCreditService {
     }
   }
   async updateCredit(dto: MobileCreditUpdateDto) {
-    const application = await this.prisma.application.findFirst({
-      where: { applicationNo: dto.creditOrderId }
-    })
+    const application = await findApplication(this.prisma, dto.creditOrderId, getRequiredTenantId())
     if (!application) throw new NotFoundException('授信申请不存在')
     const updated = await this.prisma.application.update({
       where: { id: application.id },
@@ -128,9 +126,7 @@ export class MobileCreditService {
     return mapApplication(updated, apiPrefix)
   }
   async updateSupplementStatus(creditOrderId: string, field: string, value: number) {
-    const application = await this.prisma.application.findFirst({
-      where: { applicationNo: creditOrderId }
-    })
+    const application = await findApplication(this.prisma, creditOrderId, getRequiredTenantId())
     if (!application) throw new NotFoundException('授信申请不存在')
     const validFields = ['isSupplementCustomer', 'isSupplementVehicle', 'isSupplementOrder', 'isSupplementFile']
     if (!validFields.includes(field)) throw new BadRequestException('无效的字段名')
@@ -143,7 +139,7 @@ export class MobileCreditService {
   }
   async getCreditList(query: MobileCreditListQueryDto) {
     const pagination = getPagination(query)
-    const where: Record<string, unknown> = {}
+    const where: Record<string, unknown> = { tenantId: getRequiredTenantId() }
     if (query.salesmanId) where.creatorId = query.salesmanId
     if (query.businessNode) {
       const status = statusFromBusinessNode(query.businessNode)
@@ -191,12 +187,12 @@ export class MobileCreditService {
     }
   }
   async getCreditDetail(id: string | number) {
-    const application = await findApplication(this.prisma, id)
+    const application = await findApplication(this.prisma, id, getRequiredTenantId())
     const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
     return mapApplication(application, apiPrefix, true)
   }
   async getCreditDetailByOrderId(creditOrderId: string) {
-    const application = await findApplication(this.prisma, creditOrderId)
+    const application = await findApplication(this.prisma, creditOrderId, getRequiredTenantId())
     const apiPrefix = this.config.get<string>('API_PREFIX', 'saas/api')
     return mapApplication(application, apiPrefix, true)
   }

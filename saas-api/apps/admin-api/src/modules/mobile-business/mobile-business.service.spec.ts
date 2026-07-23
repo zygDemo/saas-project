@@ -39,7 +39,7 @@ describe('MobileBusinessService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MobileBusinessService,
-        { provide: PrismaService, useValue: { $transaction: jest.fn((arr: any) => Promise.all(arr)) } },
+        { provide: PrismaService, useValue: { $transaction: jest.fn((arr: unknown[]) => Promise.all(arr)) } },
         { provide: ConfigService, useValue: { get: jest.fn() } },
         { provide: OcrService, useValue: mocks.ocr },
         { provide: MobileFileService, useValue: mocks.file },

@@ -4,11 +4,14 @@ import { MobileSigningStartDto } from './dto/mobile-business.dto'
 import { findApplicationByOrderId } from './mobile-business.db-helpers'
 
 @Injectable()
+import { getRequiredTenantId } from '../../common/utils/helpers'
+
 export class MobileSigningService {
   constructor(private readonly prisma: PrismaService) {}
 
   async startFaceSign(dto: MobileSigningStartDto) {
-    const application = await findApplicationByOrderId(this.prisma, dto.creditOrderId || '')
+    const tenantId = getRequiredTenantId()
+    const application = await findApplicationByOrderId(this.prisma, dto.creditOrderId || '', tenantId)
     if (!application) throw new NotFoundException('订单不存在')
 
     await this.prisma.application.update({
@@ -39,7 +42,8 @@ export class MobileSigningService {
   }
 
   async startAuthContractSign(dto: MobileSigningStartDto) {
-    const application = await findApplicationByOrderId(this.prisma, dto.creditOrderId || '')
+    const tenantId = getRequiredTenantId()
+    const application = await findApplicationByOrderId(this.prisma, dto.creditOrderId || '', tenantId)
     if (!application) throw new NotFoundException('订单不存在')
 
     return {
@@ -56,7 +60,8 @@ export class MobileSigningService {
   }
 
   async startContractSign(dto: MobileSigningStartDto) {
-    const application = await findApplicationByOrderId(this.prisma, dto.creditOrderId || '')
+    const tenantId = getRequiredTenantId()
+    const application = await findApplicationByOrderId(this.prisma, dto.creditOrderId || '', tenantId)
     if (!application) throw new NotFoundException('订单不存在')
 
     return {
@@ -73,7 +78,8 @@ export class MobileSigningService {
   }
 
   async getFaceSignDetail(creditOrderId: string) {
-    const application = await findApplicationByOrderId(this.prisma, creditOrderId)
+    const tenantId = getRequiredTenantId()
+    const application = await findApplicationByOrderId(this.prisma, creditOrderId, tenantId)
     if (!application) throw new NotFoundException('订单不存在')
 
     const signRecord = await this.prisma.signRecord.findFirst({
@@ -92,7 +98,8 @@ export class MobileSigningService {
   }
 
   async getAuthContractDetail(creditOrderId: string) {
-    const application = await findApplicationByOrderId(this.prisma, creditOrderId)
+    const tenantId = getRequiredTenantId()
+    const application = await findApplicationByOrderId(this.prisma, creditOrderId, tenantId)
     if (!application) throw new NotFoundException('订单不存在')
 
     const signRecord = await this.prisma.signRecord.findFirst({
@@ -111,7 +118,8 @@ export class MobileSigningService {
   }
 
   async getContractDetail(creditOrderId: string) {
-    const application = await findApplicationByOrderId(this.prisma, creditOrderId)
+    const tenantId = getRequiredTenantId()
+    const application = await findApplicationByOrderId(this.prisma, creditOrderId, tenantId)
     if (!application) throw new NotFoundException('订单不存在')
 
     const signRecord = await this.prisma.signRecord.findFirst({

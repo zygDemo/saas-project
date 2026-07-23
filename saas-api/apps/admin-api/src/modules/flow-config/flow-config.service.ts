@@ -554,7 +554,7 @@ export class FlowConfigService extends BaseBusinessCrudService<
     })
 
     const results = await this.prisma.$transaction(async (tx: PrismaService) => {
-      const items: any[] = []
+      const items: Array<Record<string, unknown>> = []
       for (const node of DEFAULT_FLOW_NODES) {
         const item = await tx.flowConfig.upsert({
           where: {

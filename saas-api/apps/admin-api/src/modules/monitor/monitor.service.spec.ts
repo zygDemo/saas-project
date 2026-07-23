@@ -17,7 +17,7 @@ const mockLog = {
 
 describe('MonitorService', () => {
   let service: MonitorService
-  let mockPrisma: any
+  let mockPrisma: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {
