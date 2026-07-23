@@ -179,6 +179,42 @@ export class NotificationService {
     return toPaginatedResponse(records, total, { page: current, pageSize: size })
   }
 
+  /** 管理端：获取通知日志列表（分页，带筛选） */
+  async getNotificationLogs(query: {
+    current?: number
+    size?: number
+    type?: string
+    userId?: number
+    startTime?: string
+    endTime?: string
+  }) {
+    const current = Math.max(Number(query?.current ?? 1) || 1, 1)
+    const size = Math.min(Math.max(Number(query?.size ?? 20) || 20, 1), 100)
+    const tenantId = getCurrentTenantId()
+    const where: Record<string, unknown> = { tenantId: tenantId! }
+    if (query?.type) where.type = query.type
+    if (query?.userId) where.userId = Number(query.userId)
+    if (query?.startTime || query?.endTime) {
+      const createdAt: Record<string, Date> = {}
+      if (query?.startTime) createdAt.gte = new Date(query.startTime)
+      if (query?.endTime) createdAt.lte = new Date(query.endTime)
+      where.createdAt = createdAt
+    }
+    const [records, total] = await Promise.all([
+      this.prisma.notificationLog.findMany({
+        where,
+        skip: (current - 1) * size,
+        take: size,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: { select: { id: true, userName: true, nickName: true } }
+        }
+      }),
+      this.prisma.notificationLog.count({ where })
+    ])
+    return toPaginatedResponse(records, total, { page: current, pageSize: size })
+  }
+
   /** 标记通知为已读 */
   async markAsRead(id: number, userId: number) {
     const tenantId = getCurrentTenantId()

@@ -59,6 +59,7 @@ import layout from "@/components/layout/layout.vue";
 import { computed, ref, onMounted } from "vue";
 import { useFoodApi, type FoodCartItem } from "@/api/food";
 import { APP_ROUTES } from "@/common/navigation";
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 const foodApi = useFoodApi();
 const cartList = ref<FoodCartItem[]>([]);
@@ -103,20 +104,14 @@ const minusCount = async (item: FoodCartItem) => {
 };
 
 const handleClear = () => {
-  uni.showModal({
-    title: "提示",
-    content: "确定清空购物车吗？",
-    success: async (res) => {
-      if (res.confirm) {
-        try {
-          await foodApi.clearCart();
-          cartList.value = [];
-        } catch (e) {
-          uni.showToast({ title: "操作失败", icon: "error" });
-        }
-      }
-    },
-  });
+  const ok = await showConfirmDialog({ title: '提示', message: '确定清空购物车吗？' });
+  if (!ok) return;
+  try {
+    await foodApi.clearCart();
+    cartList.value = [];
+  } catch (e) {
+    uni.showToast({ title: '操作失败', icon: 'error' });
+  }
 };
 
 const goHome = () => uni.switchTab({ url: APP_ROUTES.food.home });

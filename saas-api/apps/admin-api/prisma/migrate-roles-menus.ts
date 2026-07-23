@@ -126,6 +126,7 @@ async function main() {
     { parentKey: 'OperationCenter', path: 'msg-template', name: 'MsgTemplate', component: bp, title: '消息模板', icon: 'ri:mail-send-line', sort: 453, keepAlive: true },
     { parentKey: 'OperationCenter', path: 'notice', name: 'Notice', component: '/system/announcement', title: '公告管理', icon: 'ri:notification-line', sort: 454, keepAlive: true },
     { parentKey: 'OperationCenter', path: 'work-order', name: 'SystemWorkOrder', component: '/system/work-order', title: '系统工单管理', icon: 'ri:customer-service-2-line', sort: 455, keepAlive: true },
+    { parentKey: 'OperationCenter', path: 'notification-log', name: 'NotificationLog', component: '/operation-center/notification-log', title: '通知日志', icon: 'ri:mail-check-line', sort: 456, keepAlive: true },
 
     // 读书管理
     { path: '/reading', name: 'Reading', component: '/index/index', title: '读书管理', icon: 'ri:book-3-line', sort: 55 },
@@ -137,6 +138,18 @@ async function main() {
     { parentKey: 'Reading', path: 'notes', name: 'ReadingNotes', component: '/reading/notes/index', title: '阅读笔记', icon: 'ri:sticky-note-line', sort: 556, keepAlive: true },
     { parentKey: 'Reading', path: 'dashboard', name: 'ReadingDashboard', component: '/reading/dashboard/index', title: '阅读统计', icon: 'ri:bar-chart-2-line', sort: 557, keepAlive: true },
     { parentKey: 'Reading', path: 'chapters/:bookId', name: 'ReadingChapters', component: '/reading/chapters/index', title: '章节管理', icon: 'ri:file-list-2-line', sort: 558, hidden: true },
+
+    // 点餐管理
+    { path: '/food', name: 'Food', component: '/index/index', title: '点餐管理', icon: 'ri:restaurant-line', sort: 50 },
+    { parentKey: 'Food', path: 'category', name: 'FoodCategory', component: '/food/category/index', title: '菜品分类', icon: 'ri:folder-2-line', sort: 501, keepAlive: true },
+    { parentKey: 'Food', path: 'dishes', name: 'FoodDishes', component: '/food/dishes/index', title: '菜品管理', icon: 'ri:dish-line', sort: 502, keepAlive: true },
+    { parentKey: 'Food', path: 'orders', name: 'FoodOrders', component: '/food/orders/index', title: '订单管理', icon: 'ri:file-list-3-line', sort: 503, keepAlive: true },
+
+    // 文章管理
+    { path: '/article', name: 'Article', component: '/index/index', title: '文章管理', icon: 'ri:book-2-line', sort: 52 },
+    { parentKey: 'Article', path: 'article-list', name: 'ArticleList', component: '/article/list', title: '文章列表', icon: 'ri:article-line', sort: 521, keepAlive: true },
+    { parentKey: 'Article', path: 'comment', name: 'ArticleComment', component: '/article/comment', title: '评论管理', icon: 'ri:mail-line', sort: 522, keepAlive: true },
+    { parentKey: 'Article', path: 'publish', name: 'ArticlePublish', component: '/article/publish', title: '发布文章', icon: 'ri:telegram-2-line', sort: 523, keepAlive: true },
 
     // 车贷业务
     { path: '/business', name: 'Business', component: '/index/index', title: '车贷业务', icon: 'ri:briefcase-line', sort: 60 },
@@ -264,7 +277,7 @@ async function main() {
   const orgConfigIds = filterIds('OrgConfigRoot', 'Org', 'Dept', 'Product', 'Funder', 'FlowConfig')
   const dataCenterIds = filterIds('DataCenter', 'DataStats', 'AuditLog')
   const systemBasicIds = filterIds('System', 'User', 'Role', 'Menus', 'DictMgmt', 'RegionMgmt', 'SysParam', 'UserCenter')
-  const operationCenterIds = filterIds('OperationCenter', 'FileManage', 'FileConfig', 'MsgTemplate', 'Notice', 'SystemWorkOrder')
+  const operationCenterIds = filterIds('OperationCenter', 'FileManage', 'FileConfig', 'MsgTemplate', 'Notice', 'SystemWorkOrder', 'NotificationLog')
   const readingIds = filterIds(
     'Reading',
     'ReadingBookshelf',
@@ -276,6 +289,8 @@ async function main() {
     'ReadingDashboard',
     'ReadingChapters'
   )
+  const foodIds = filterIds('Food', 'FoodCategory', 'FoodDishes', 'FoodOrders')
+  const articleIds = filterIds('Article', 'ArticleList', 'ArticleComment', 'ArticlePublish')
   const bizCoreIds = filterIds(
     'Business',
     'Lead',
@@ -337,7 +352,7 @@ async function main() {
       ...operationCenterIds,
       ...dataCenterIds
     ],
-    R_ADMIN: [...dashIds, ...orgConfigIds, ...systemBasicIds, ...operationCenterIds, ...bizAdminIds, ...readingIds],
+    R_ADMIN: [...dashIds, ...orgConfigIds, ...systemBasicIds, ...operationCenterIds, ...bizAdminIds, ...readingIds, ...foodIds, ...articleIds],
     R_SALES_MANAGER: [...dashIds, ...bizManagerIds],
     R_SALES: [...dashIds, ...bizCoreIds],
     R_APPROVER: [...dashIds, ...bizApprovalIds],
@@ -409,7 +424,14 @@ async function main() {
     'MsgTemplate',
     'Notice',
     'SystemWorkOrder',
-    'SysParam'
+    'SysParam',
+    'FoodCategory',
+    'FoodDishes',
+    'FoodOrders',
+    'ArticleList',
+    'ArticleComment',
+    'ArticlePublish',
+    'NotificationLog'
   ]
 
   let permCount = 0

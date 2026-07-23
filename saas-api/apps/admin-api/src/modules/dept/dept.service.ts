@@ -33,7 +33,7 @@ export class DeptService extends BaseBusinessCrudService<CreateDeptDto, UpdateDe
 
   async getList(query: DeptQueryDto) {
     const page = await super.getList(query)
-    const records = page.records as { managerId?: number; [key: string]: unknown }[]
+    const records = page.list as { managerId?: number; [key: string]: unknown }[]
     const managerIds = [
       ...new Set(
         records
@@ -51,7 +51,7 @@ export class DeptService extends BaseBusinessCrudService<CreateDeptDto, UpdateDe
 
     return {
       ...page,
-      records: records.map((item) => {
+      list: records.map((item) => {
         const manager = item.managerId ? managerMap.get(item.managerId) : undefined
         return {
           ...item,

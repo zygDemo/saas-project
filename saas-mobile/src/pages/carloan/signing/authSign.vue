@@ -20,6 +20,7 @@ import { onLoad, onShow, onBackPress } from "@dcloudio/uni-app";
 import { useSessionStore } from "@/stores";
 import { useCarloanApi } from "@/api/carloan";
 import { closeBrowser } from "@/composables/useCloseBrowser";
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 const sessionStore = useSessionStore();
 const businessApi = useCarloanApi();
@@ -106,13 +107,10 @@ onBackPress(() => {
     return true;
   }
 
-  uni.showModal({
-    title: "提示",
-    content: "授权尚未完成，确定退出吗？",
-    success: (res) => {
-      if (res.confirm) uni.navigateBack();
-    },
+  const ok = await showConfirmDialog({
+    title: '授权尚未完成，确定退出吗？',
   });
+  if (ok) uni.navigateBack();
   return true;
 });
 

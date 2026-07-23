@@ -9,6 +9,7 @@ import { APP_ROUTES } from "@/common/navigation";
 import { useDetailFlow } from "@/composables/carloan/useDetailFlow";
 import { enrichLifecycleRecords } from "@/composables/carloan/useApprovalFlow";
 import {
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
   safeDecode, normalizeRouteQuery, buildRouteFallbackDetail,
   hasDetailPayload, pickDetailUuid, normalizeDetailPayload,
 } from "./applyDetail-helpers";
@@ -153,12 +154,13 @@ async function handleProgress() {
 async function handlePreAuditSubmit() {
   if (!allPreAuditStepsDone.value) return;
   if (!orderNo.value) { uni.showToast({ title: "缺少订单编号", icon: "none" }); return; }
-  const { confirm } = await uni.showModal({
-    title: "确认提交",
-    content: isSupplementDetail.value ? "提交后将进入下一处理环节，确认提交吗？" : "提交后将进入预审流程，确认提交吗？",
-    confirmText: "确认提交", cancelText: "再等等",
+  const ok = await showConfirmDialog({
+    title: '确认提交',
+    message: isSupplementDetail.value ? '提交后将进入下一处理环节，确认提交吗？' : '提交后将进入预审流程，确认提交吗？',
+    confirmText: '确认提交',
+    cancelText: '再等等',
   });
-  if (!confirm) return;
+  if (!ok) return;
   submitting.value = true;
   try {
     await businessApi.submitInitialAudit(orderNo.value);

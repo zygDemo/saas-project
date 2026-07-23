@@ -3,6 +3,7 @@ import { useTheme } from 'uview-pro'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLang } from '@/composables'
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 const { t } = useI18n()
 
@@ -60,22 +61,19 @@ function selectLocale(localeName: string) {
 }
 
 // 清除缓存
-function handleClearCache() {
-  uni.showModal({
+async function handleClearCache() {
+  const ok = await showConfirmDialog({
     title: t('about.settingsPage.clearCacheTitle'),
-    content: t('about.settingsPage.clearCacheContent'),
-    success: (res) => {
-      if (res.confirm) {
-        try {
-          uni.clearStorageSync()
-          showToast(t('about.settingsPage.cacheCleared'))
-        }
-        catch {
-          showToast(t('about.settingsPage.clearCacheFailed'), 'error')
-        }
-      }
-    },
-  })
+    message: t('about.settingsPage.clearCacheContent'),
+  });
+  if (!ok) return;
+  try {
+    uni.clearStorageSync()
+    showToast(t('about.settingsPage.cacheCleared'))
+  }
+  catch {
+    showToast(t('about.settingsPage.clearCacheFailed'), 'error')
+  }
 }
 
 // 导航

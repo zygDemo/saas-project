@@ -81,6 +81,7 @@ import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { normalizeFileRecord, toFilePreviewUrl } from "@/common/file-url";
 import { useLocalStore } from "@/stores";
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 const businessApi = useCarloanApi();
 const localStore = useLocalStore();
@@ -181,18 +182,18 @@ async function doUploadFile(filePath) {
 }
 
 // 删除文件确认
-function confirmDelete(item) {
-  uni.showModal({
-    title: "提示",
-    content: `确定删除 "${item.fileName}" 吗？`,
-    confirmColor: "#ff4d4f",
-    success: async (res) => {
-      if (res.confirm) {
-        await deleteFile(item.id);
-      }
-    },
+async function confirmDelete(item) {
+  const ok = await showConfirmDialog({
+    title: '提示',
+    message: `确定删除 "${item.fileName}" 吗？`,
+    confirmText: '删除',
+    cancelText: '取消',
+    confirmDanger: true,
   });
+  if (!ok) return;
+  await deleteFile(item.id);
 }
+
 
 // 删除文件
 async function deleteFile(id) {
@@ -218,15 +219,8 @@ function previewFile(item) {
     });
   } else {
     // 其他文件下载或跳转浏览器
-    uni.showModal({
-      title: "提示",
-      content: "是否下载该文件？",
-      success: (res) => {
-        if (res.confirm) {
-          downloadFile(item);
-        }
-      },
-    });
+    const ok = await showConfirmDialog({ title: '提示', message: '是否下载该文件？' });
+    if (ok) downloadFile(item);
   }
 }
 

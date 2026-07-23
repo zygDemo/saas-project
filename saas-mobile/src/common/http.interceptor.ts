@@ -8,6 +8,7 @@ import { API_BASE_URL, TENANT_ID, UPLOAD_MAX_SIZE } from './env'
 import { normalizeUploadResponse } from './file-url'
 import { tokenUtil } from './token'
 import { useGlobalLoading } from '@/composables/useGlobalLoading'
+import { useGlobalLoadingToast } from '@/composables/useGlobalLoadingToast'
 import { useLocalStore } from '@/stores/local'
 import { useSessionStore } from '@/stores/session'
 
@@ -40,7 +41,8 @@ export const httpInterceptor: RequestInterceptor = {
     if (meta.loading) {
       const { show } = useGlobalLoading()
       const lock = (meta as Record<string, unknown>).loadingLock !== false
-      ;(meta as Record<string, unknown>)._loadingId = show({ lock })
+      const text = (meta as Record<string, unknown>).loadingText as string | undefined
+      ;(meta as Record<string, unknown>)._loadingId = show({ lock, text })
     }
 
     // 2. 注入 Token
@@ -133,12 +135,12 @@ function handleHttpError(response: ApiResponseLike, meta: RequestMeta) {
     return
   }
   if (response.data?.msg) {
-    uni.showToast({ title: response.data.msg as string, icon: 'none' })
+    showFailToast(response.data.msg as string)
   } else {
     // 其他 HTTP 错误
     const msg = getErrorMessage(response.statusCode)
     if (meta.toast) {
-      uni.showToast({ title: msg, icon: 'none' })
+      showFailToast(msg)
     }
   }
 }
@@ -152,10 +154,7 @@ function handleBusinessError(response: ApiResponseLike, meta: RequestMeta) {
 
   // 其他业务错误
   if (meta.toast) {
-    uni.showToast({
-      title: (response.data.msg as string) || '操作失败',
-      icon: 'none',
-    })
+    showFailToast((response.data.msg as string) || '操作失败')
   }
 }
 
@@ -246,7 +245,7 @@ async function handleUnauthorized(meta: RequestMeta, msg?: string) {
   try {
     await tryRefreshToken()
     if (meta.toast) {
-      uni.showToast({ title: '已刷新登录状态，请重试', icon: 'none' })
+      showToast('已刷新登录状态，请重试')
     }
     return
   } catch {
@@ -258,7 +257,7 @@ async function handleUnauthorized(meta: RequestMeta, msg?: string) {
   localStore.logout()
   uni.reLaunch({ url: '/pages/auth/login' })
   if (meta.toast) {
-    uni.showToast({ title: msg || '登录已过期，请重新登录', icon: 'none' })
+    showFailToast(msg || '登录已过期，请重新登录')
   }
 }
 
@@ -336,7 +335,7 @@ export function uploadFile(
     // 前端文件校验（大小 + 类型）
     const check = validateFileBeforeUpload(filePath)
     if (!check.valid) {
-      uni.showToast({ title: check.msg || '文件校验失败', icon: 'none' })
+      showFailToast(check.msg || '文件校验失败')
       reject(new Error(check.msg || '文件校验失败'))
       return
     }
@@ -376,7 +375,7 @@ export function uploadFileWithData(
     // 前端文件校验（大小 + 类型）
     const check = validateFileBeforeUpload(filePath)
     if (!check.valid) {
-      uni.showToast({ title: check.msg || '文件校验失败', icon: 'none' })
+      showFailToast(check.msg || '文件校验失败')
       reject(new Error(check.msg || '文件校验失败'))
       return
     }

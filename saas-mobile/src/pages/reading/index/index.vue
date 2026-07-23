@@ -455,6 +455,7 @@ import { useReadingApi } from "@/api/reading";
 import { computed, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { CurrentSystem, useLocalStore } from "@/stores/local";
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 interface BookItem {
   id: string;
@@ -718,22 +719,18 @@ const showBookMenu = (book: BookItem) => {
           openBook(book);
           break;
         case 2:
-          uni.showModal({
-            title: "提示",
-            content: `确定将《${book.title}》移出书架？`,
-            success: async (modalRes) => {
-              if (modalRes.confirm) {
-                readingStore.removeFromBookshelf(book.id);
-                // 同步后端
-                try {
-                  await readingApi.removeFromBookshelf(book.id);
-                } catch {
-                  // 即使API失败也保留本地状态
-                }
-                uni.showToast({ title: "已移出书架", icon: "success" });
-              }
-            },
+          const ok = await showConfirmDialog({
+            title: '提示',
+            message: `确定将《${book.title}》移出书架？`,
           });
+          if (!ok) return;
+          readingStore.removeFromBookshelf(book.id);
+          try {
+            await readingApi.removeFromBookshelf(book.id);
+          } catch {
+            // ignore
+          }
+          uni.showToast({ title: '已移出书架', icon: 'success' });
           break;
         case 3:
           readingStore.downloadBook(book.id, book);

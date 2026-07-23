@@ -7,6 +7,7 @@ import {
   getCachedChapter,
 } from "@/pages/reading/reader/reader-helpers";
 import type { Chapter } from "@/pages/reading/reader/reader-helpers";
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 /**
  * 阅读器章节内容加载、翻页导航、进度同步
@@ -99,19 +100,17 @@ export function useReaderChapter(
     if (!chapter.isVip) return true;
     if (readingStore.hasPurchasedChapter(bookId(), chapter.id)) return true;
     return new Promise((resolve) => {
-      uni.showModal({
-        title: "VIP 章节",
-        content: "该章节为 VIP 付费内容，是否前往购买？",
-        confirmText: "去购买",
-        cancelText: "取消",
-        success: (res) => {
-          if (res.confirm) {
-            handlePurchaseChapter(chapter).then(() => resolve(false));
-          } else {
-            resolve(false);
-          }
-        },
+      const ok = await showConfirmDialog({
+        title: 'VIP 章节',
+        message: '该章节为 VIP 付费内容，是否前往购买？',
+        confirmText: '去购买',
+        cancelText: '取消',
       });
+      if (ok) {
+        handlePurchaseChapter(chapter).then(() => resolve(false));
+      } else {
+        resolve(false);
+      }
     });
   }
 

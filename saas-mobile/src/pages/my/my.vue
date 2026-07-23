@@ -128,6 +128,7 @@ import { CurrentSystem } from "@/stores/local";
 import { onShow } from "@dcloudio/uni-app";
 import { storeToRefs } from "pinia";
 import { computed, ref } from "vue";
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 interface StatState {
   totalLeads: number;
@@ -414,66 +415,40 @@ function navigateTo(path: string) {
   });
 }
 
-function handleClearCache() {
-  uni.showModal({
-    title: "清除缓存",
-    content: "将清除本地缓存并返回登录页，是否继续？",
-    success: (res) => {
-      if (!res.confirm) {
-        return;
-      }
-
-      try {
-        uni.clearStorageSync();
-        localStore.logout();
-        sessionStore.clearSession();
-        uni.showToast({
-          title: "缓存已清除",
-          icon: "success",
-        });
-
-        setTimeout(() => {
-          uni.reLaunch({
-            url: "/pages/auth/login",
-          });
-        }, 500);
-      } catch (error) {
-        console.error("handleClearCache failed", error);
-        uni.showToast({
-          title: "清除缓存失败",
-          icon: "none",
-        });
-      }
-    },
+async function handleClearCache() {
+  const ok = await showConfirmDialog({
+    title: '清除缓存',
+    message: '将清除本地缓存并返回登录页，是否继续？',
   });
+  if (!ok) return;
+  try {
+    uni.clearStorageSync();
+    localStore.logout();
+    sessionStore.clearSession();
+    uni.showToast({ title: '缓存已清除', icon: 'success' });
+    setTimeout(() => {
+      uni.reLaunch({ url: '/pages/auth/login' });
+    }, 500);
+  } catch (error) {
+    console.error('handleClearCache failed', error);
+    uni.showToast({ title: '清除缓存失败', icon: 'none' });
+  }
 }
 
-function handleLogout() {
-  uni.showModal({
-    title: "退出登录",
-    content: "退出后需要重新登录，是否确认退出？",
-    success: (res) => {
-      if (!res.confirm) {
-        return;
-      }
-
-      localStore.logout();
-      sessionStore.clearSession();
-      uni.removeStorageSync("local-store");
-      uni.removeStorageSync("session-store");
-
-      uni.showToast({
-        title: "已退出登录",
-        icon: "success",
-      });
-
-      setTimeout(() => {
-        uni.reLaunch({
-          url: "/pages/auth/login",
-        });
-      }, 500);
-    },
+async function handleLogout() {
+  const ok = await showConfirmDialog({
+    title: '退出登录',
+    message: '退出后需要重新登录，是否确认退出？',
   });
+  if (!ok) return;
+  localStore.logout();
+  sessionStore.clearSession();
+  uni.removeStorageSync('local-store');
+  uni.removeStorageSync('session-store');
+  uni.showToast({ title: '已退出登录', icon: 'success' });
+  setTimeout(() => {
+    uni.reLaunch({ url: '/pages/auth/login' });
+  }, 500);
 }
 
 onShow(() => {

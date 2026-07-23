@@ -189,6 +189,7 @@ import { isDev } from "@/common/env";
 import { fetchActiveAnnouncements } from "@/api/announcement";
 import { useWebSocket } from "@/composables/useWebSocket";
 import { APP_ROUTES } from "@/common/navigation";
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 const { currentTheme } = useTheme();
 const themeColor = computed(() => {
@@ -326,15 +327,13 @@ const ORDER_FILTER_STORAGE_KEY = "WORKBENCH_ORDER_FILTER";
 
 const checkAuth = () => {
   if (!localStore.token) {
-    uni.showModal({
-      title: "提示",
-      content: "您尚未登录，是否前往登录？",
-      success: (res) => {
-        if (res.confirm) {
-          uni.reLaunch({ url: APP_ROUTES.auth.login });
-        }
-      },
+    const ok = await showConfirmDialog({
+      title: '提示',
+      message: '您尚未登录，是否前往登录？',
     });
+    if (ok) {
+      uni.reLaunch({ url: APP_ROUTES.auth.login });
+    }
     return false;
   }
   return true;

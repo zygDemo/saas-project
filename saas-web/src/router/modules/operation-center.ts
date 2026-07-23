@@ -53,6 +53,17 @@ export const operationCenterRoutes: AppRouteRecord = {
         keepAlive: true,
         roles: superAdminRoles
       }
+    },
+    {
+      path: 'notification-log',
+      name: 'NotificationLog',
+      component: '/operation-center/notification-log',
+      meta: {
+        title: '通知日志',
+        icon: 'ri:mail-check-line',
+        keepAlive: true,
+        roles
+      }
     }
   ]
 }

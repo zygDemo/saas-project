@@ -1,4 +1,3 @@
-import { BadRequestException } from '@nestjs/common'
 import { ApplicationStatus, Gender, Prisma } from '@prisma/client'
 import { hasValue } from '../../common/utils/helpers'
 import {
@@ -352,16 +351,6 @@ export function mapApplication(application: Record<string, unknown>, apiPrefix: 
   }
 }
 // ==================== Error Guards ====================
-export function guardMobileEntryStorage<T>(action: () => Promise<T>) {
-  try {
-    return action()
-  } catch (error) {
-    if (isMissingMobileEntryStorage(error)) {
-      throw new BadRequestException(MOBILE_ENTRY_STORAGE_ERROR)
-    }
-    throw error
-  }
-}
 export async function guardMobileEntryStorageAsync<T>(action: () => Promise<T>) {
   try {
     return await action()

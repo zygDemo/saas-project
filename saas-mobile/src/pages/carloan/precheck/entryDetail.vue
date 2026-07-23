@@ -78,6 +78,7 @@ import { computed, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { APP_ROUTES } from "@/common/navigation";
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 const businessApi = useCarloanApi();
 
@@ -201,13 +202,13 @@ async function handleSubmit() {
     return;
   }
 
-  const { confirm } = await uni.showModal({
-    title: "确认提交",
-    content: "提交后将进入预审流程，确认提交吗？",
-    confirmText: "确认提交",
-    cancelText: "再等等",
+  const ok = await showConfirmDialog({
+    title: '确认提交',
+    message: '提交后将进入预审流程，确认提交吗？',
+    confirmText: '确认提交',
+    cancelText: '再等等',
   });
-  if (!confirm) return;
+  if (!ok) return;
 
   submitting.value = true;
   try {

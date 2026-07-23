@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Param, ParseIntPipe, Query, UseGuards, Req } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
+import { RolesGuard } from '../../common/guards/roles.guard'
+import { Roles } from '../../common/decorators/roles.decorator'
 import { NotificationService } from './notification.service'
 
 @ApiTags('实时通知')
@@ -25,6 +27,31 @@ export class NotificationController {
     return this.notificationService.getNotifications(req.user.sub, {
       current: query.current ? Number(query.current) : undefined,
       size: query.size ? Number(query.size) : undefined,
+    })
+  }
+
+  @ApiResponse({ status: 200, description: '成功' })
+  @Get('logs')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN', 'R_OPERATION')
+  @ApiOperation({ summary: '管理端：获取通知日志列表' })
+  getLogs(
+    @Query() query: {
+      current?: string
+      size?: string
+      type?: string
+      userId?: string
+      startTime?: string
+      endTime?: string
+    }
+  ) {
+    return this.notificationService.getNotificationLogs({
+      current: query.current ? Number(query.current) : undefined,
+      size: query.size ? Number(query.size) : undefined,
+      type: query.type,
+      userId: query.userId ? Number(query.userId) : undefined,
+      startTime: query.startTime,
+      endTime: query.endTime,
     })
   }
 

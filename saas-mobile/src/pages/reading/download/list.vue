@@ -59,6 +59,7 @@
                   name="pause-circle"
                   color="#909399"
                   size="48"
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
                   @click="pauseDownload(item)"
                 />
                 <u-icon
@@ -161,31 +162,27 @@ const resumeDownload = (item: { id: string }) => {
   readingStore.resumeDownload(item.id);
 };
 
-const cancelDownload = (item: { id: string; title: string }) => {
-  uni.showModal({
-    title: "提示",
-    content: `确定取消下载《${item.title}》？`,
-    success: (res) => {
-      if (res.confirm) {
-        readingStore.removeDownload(item.id);
-        uni.showToast({ title: "已取消下载", icon: "success" });
-      }
-    },
+const cancelDownload = async (item: { id: string; title: string }) => {
+  const ok = await showConfirmDialog({
+    title: '提示',
+    message: `确定取消下载《${item.title}》？`,
   });
+  if (!ok) return;
+  readingStore.removeDownload(item.id);
+  uni.showToast({ title: '已取消下载', icon: 'success' });
 };
 
-const deleteDownload = (item: { id: string; title: string }) => {
-  uni.showModal({
-    title: "提示",
-    content: `确定删除《${item.title}》的下载文件？`,
-    success: (res) => {
-      if (res.confirm) {
-        readingStore.removeDownload(item.id);
-        uni.showToast({ title: "已删除", icon: "success" });
-      }
-    },
+
+const deleteDownload = async (item: { id: string; title: string }) => {
+  const ok = await showConfirmDialog({
+    title: '提示',
+    message: `确定删除《${item.title}》的下载文件？`,
   });
+  if (!ok) return;
+  readingStore.removeDownload(item.id);
+  uni.showToast({ title: '已删除', icon: 'success' });
 };
+
 
 const openBook = (item: { id: string }) => {
   const progress = readingStore.getReadingProgress(item.id);
@@ -202,18 +199,16 @@ const pauseAll = () => {
   uni.showToast({ title: "已全部暂停", icon: "success" });
 };
 
-const clearAll = () => {
-  uni.showModal({
-    title: "提示",
-    content: "确定清空所有已完成的下载？",
-    success: (res) => {
-      if (res.confirm) {
-        readingStore.clearCompletedDownloads();
-        uni.showToast({ title: "已清空", icon: "success" });
-      }
-    },
+const clearAll = async () => {
+  const ok = await showConfirmDialog({
+    title: '提示',
+    message: '确定清空所有已完成的下载？',
   });
+  if (!ok) return;
+  readingStore.clearCompletedDownloads();
+  uni.showToast({ title: '已清空', icon: 'success' });
 };
+
 
 const goBookStore = () => {
   uni.navigateTo({ url: "/pages/reading/store/index" });

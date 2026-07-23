@@ -157,6 +157,7 @@ import { isMobilePhone, isSimpleIdCard, validateRequiredFields } from "@/common/
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildSupplementRouteQuery } from "@/common/carloan-route-query";
 import { useCarloanStore } from "@/stores/carloan";
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 const localStore = useLocalStore()
 const carloanStore = useCarloanStore();
@@ -365,13 +366,12 @@ async function handleDeleteContact(contact) {
     return;
   }
 
-  const confirmed = await new Promise((resolve) => {
-    uni.showModal({
-      title: "确认删除",
-      content: `确定要删除联系人"${contact.contactName}"吗？`,
-      success: (res) => resolve(res.confirm),
-      fail: () => resolve(false),
-    });
+  const confirmed = await showConfirmDialog({
+    title: '确认删除',
+    message: `确定要删除联系人"${contact.contactName}"吗？`,
+    confirmText: '删除',
+    cancelText: '取消',
+    confirmDanger: true,
   });
 
   if (!confirmed) return;

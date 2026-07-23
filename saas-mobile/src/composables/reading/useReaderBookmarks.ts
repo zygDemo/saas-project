@@ -5,6 +5,7 @@ import {
   formatBookmarkTime,
 } from "@/pages/reading/reader/reader-helpers";
 import type { Bookmark } from "@/pages/reading/reader/reader-helpers";
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 /**
  * 阅读器书签相关逻辑
@@ -61,19 +62,16 @@ export function useReaderBookmarks(
   }
 
   function deleteBookmark(bookmark: Bookmark) {
-    uni.showModal({
-      title: "提示",
-      content: "确定删除这个书签？",
-      success: (res) => {
-        if (res.confirm) {
-          const idx = bookmarks.value.findIndex((b) => b.id === bookmark.id);
-          if (idx > -1) bookmarks.value.splice(idx, 1);
-          saveBookmarks();
-          checkBookmarkStatus();
-          uni.showToast({ title: "已删除", icon: "success" });
-        }
-      },
+    const ok = await showConfirmDialog({
+      title: '提示',
+      message: '确定删除这个书签？',
     });
+    if (!ok) return;
+    const idx = bookmarks.value.findIndex((b) => b.id === bookmark.id);
+    if (idx > -1) bookmarks.value.splice(idx, 1);
+    saveBookmarks();
+    checkBookmarkStatus();
+    uni.showToast({ title: '已删除', icon: 'success' });
   }
 
   return {

@@ -21,6 +21,7 @@ import type { TransferInfo } from "@/stores/session";
 import { useAuthApi } from "@/api/auth";
 import { useConfirm } from "@/composables/useConfirm";
 import { isDev } from "@/common/env";
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 type NavigateType = "redirectTo" | "reLaunch";
 type QueryValue = string | undefined;
@@ -212,19 +213,16 @@ function navigate(url: string, type: NavigateType = "redirectTo") {
       return;
     }
 
-    uni.showModal({
-      title: "提示",
-      content: "即将跳转到目标页面，是否继续？",
-      confirmText: "确认",
-      cancelText: "取消",
-      success: (res) => {
-        if (res.confirm) {
-          doNavigate();
-          return;
-        }
-        loadingText.value = "已取消跳转";
-      },
+    const ok = await showConfirmDialog({
+      title: '即将跳转到目标页面，是否继续？',
+      confirmText: '确认',
+      cancelText: '取消',
     });
+    if (ok) {
+      doNavigate();
+      return;
+    }
+    loadingText.value = '已取消跳转';
   });
 }
 

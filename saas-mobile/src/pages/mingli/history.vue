@@ -78,6 +78,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { APP_ROUTES } from '@/common/navigation'
 import { clearMingliHistory, getMingliHistory, removeMingliRecord, exportMingliHistoryAsText, type MingliHistoryRecord, type MingliRecordType } from '@/common/mingli/history'
 import MysticSky from '@/components/mystic-sky/mystic-sky.vue'
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 type FilterValue = 'all' | MingliRecordType
 const records = ref<MingliHistoryRecord[]>([])
@@ -104,21 +105,33 @@ function viewDetail(item: MingliHistoryRecord) {
   const path = item.type === 'bazi' ? APP_ROUTES.mingli.bazi.result : APP_ROUTES.mingli.liuyao.result
   uni.navigateTo({ url: `${path}?historyId=${encodeURIComponent(item.id)}` })
 }
-function removeRecord(item: MingliHistoryRecord) {
-  uni.showModal({ title: '移除此卷？', content: `将删除"${item.title}"，操作不可撤回。`, confirmColor: '#29b6f6', success: ({ confirm }) => {
-    if (!confirm) return
-    removeMingliRecord(item.id)
-    records.value = getMingliHistory()
-    uni.showToast({ title: '已移除', icon: 'none' })
-  } })
+async function removeRecord(item: MingliHistoryRecord) {
+  const ok = await showConfirmDialog({
+    title: '移除此卷？',
+    message: `将删除"${item.title}"，操作不可撤回。`,
+    confirmText: '移除',
+    cancelText: '取消',
+    confirmDanger: true,
+  });
+  if (!ok) return
+  removeMingliRecord(item.id)
+  records.value = getMingliHistory()
+  uni.showToast({ title: '已移除', icon: 'none' })
 }
-function clearAll() {
+
+async function clearAll() {
   if (!records.value.length) return
-  uni.showModal({ title: '清空全部星卷？', content: '所有八字与六爻记录都将被删除，此操作不可撤回。', confirmColor: '#7c5cff', success: ({ confirm }) => {
-    if (!confirm) return
-    clearMingliHistory(); records.value = []
-  } })
+  const ok = await showConfirmDialog({
+    title: '清空全部星卷？',
+    message: '所有八字与六爻记录都将被删除，此操作不可撤回。',
+    confirmText: '清空',
+    cancelText: '取消',
+    confirmDanger: true,
+  });
+  if (!ok) return
+  clearMingliHistory(); records.value = []
 }
+
 
 function exportHistory() {
   const text = exportMingliHistoryAsText()

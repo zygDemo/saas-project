@@ -426,10 +426,10 @@ export function useCarloanApi() {
       http.get(`/m/credit/getCreditDetailByOrderId/${creditOrderId}`),
     /** 资料补充完成，推进到初审（需要传入 application 主键 id） */
     completeSupplement: (applicationId: string | number) =>
-      http.post(`/application/${applicationId}/complete-supplement`),
+      http.post(`/application/${applicationId}/complete-supplement`, undefined, { loadingText: '提交中...' }),
     /** 提交进件/预审（需要传入 application 主键 id） */
     submitApplication: (applicationId: string | number) =>
-      http.post(`/application/${applicationId}/submit`),
+      http.post(`/application/${applicationId}/submit`, undefined, { loadingText: '提交中...' }),
     /** 资料补充完成（通过 creditOrderId 获取 applicationId 后推进状态） */
     completeFileSupplement: async (creditOrderId: string) => {
       const detail = await http.get<ApiResponse<{ id: number }>>(
@@ -444,7 +444,7 @@ export function useCarloanApi() {
         `/m/credit/getCreditDetailByOrderId/${creditOrderId}`
       );
       if (!detail?.data?.id) throw new Error('未找到订单信息');
-      return http.post(`/application/${detail.data.id}/submit`);
+      return http.post(`/application/${detail.data.id}/submit`, undefined, { loadingText: '提交中...' });
     },
     /** 获取文件列表 */
     getFileList: (params?: string | MobileFileQuery) =>
@@ -607,7 +607,7 @@ export function useCarloanApi() {
 
     /** 提交请款资料 */
     submitLoanRequest: (applicationId: string | number) =>
-      http.post(`/application/${applicationId}/submit-loan-request`),
+      http.post(`/application/${applicationId}/submit-loan-request`, undefined, { loadingText: '提交中...' }),
 
     /** 获取客户银行卡列表 */
     getBankCards: (customerId: number | string) =>
@@ -628,7 +628,7 @@ export function useCarloanApi() {
         approvedAmount: data.approvedAmount,
         term: data.term,
         rate: data.rate,
-      }),
+      }, { loadingText: '保存中...' }),
 
     /** 获取还款计划 */
     getRepaymentPlans: (applicationId: number | string) =>

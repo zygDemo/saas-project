@@ -2,14 +2,13 @@
 import { onUnmounted } from "vue";
 import { onLoad, onShow } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
-import { useConfirm } from "@/composables/useConfirm";
 import { useSessionStore } from "@/stores";
 import { closeBrowser } from "@/composables/useCloseBrowser";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { getBaseUrl, getHashQuery, safeDecode } from "./signing-url";
 import { useSignSteps } from "@/composables/carloan/useSignSteps";
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
-const { confirmRef, confirm } = useConfirm();
 const sessionStore = useSessionStore();
 const businessApi = useCarloanApi();
 
@@ -25,36 +24,35 @@ const {
 const pageTitle = isCreditMode ? "授信认证" : "合同签署";
 
 // ---- 人脸认证 ----
-async function handleStartFaceSign() {
+function handleStartFaceSign() {
   if (!customerInfo.creditOrderId) { uni.showToast({ title: "缺少订单编号", icon: "none" }); return; }
-  const { confirm: ok } = await confirm({ title: "开始人脸认证", content: "请确认是本人操作" });
+  const ok = await showConfirmDialog({ title: '开始人脸认证', message: '请确认是本人操作' });
   if (!ok) return;
   signingLoading.value = true;
-  try {
-    const res = await businessApi.startFaceSign(customerInfo.creditOrderId);
-    if (res?.code === 200 && res.data?.faceUrl) {
-      // #ifdef H5
-      window.location.href = res.data.faceUrl;
-      // #endif
-      // #ifdef APP-PLUS
-      uni.navigateTo({ url: `/pages/common/webview?url=${encodeURIComponent(res.data.faceUrl)}` });
-      // #endif
-    } else {
+    try {
+      const res = await businessApi.startFaceSign(customerInfo.creditOrderId);
+      if (res?.code === 200 && res.data?.faceUrl) {
+        // #ifdef H5
+        window.location.href = res.data.faceUrl;
+        // #endif
+        // #ifdef APP-PLUS
+        uni.navigateTo({ url: `/pages/common/webview?url=${encodeURIComponent(res.data.faceUrl)}` });
+        // #endif
+      } else {
+        uni.showToast({ title: "发起人脸失败", icon: "none" });
+      }
+    } catch (err) {
+      console.error("startFaceSign error:", err);
       uni.showToast({ title: "发起人脸失败", icon: "none" });
+    } finally {
+      signingLoading.value = false;
     }
-  } catch (err) {
-    console.error("startFaceSign error:", err);
-    uni.showToast({ title: "发起人脸失败", icon: "none" });
-  } finally {
-    signingLoading.value = false;
-  }
+  });
 }
 
 function handleCancel() {
-  uni.showModal({
-    title: "取消认证", content: "确定取消本次认证？",
-    success: (res) => { if (res.confirm) uni.navigateBack(); },
-  });
+  const ok = await showConfirmDialog({ title: '取消认证', message: '确定取消本次认证？' });
+  if (ok) uni.navigateBack();
 }
 
 async function handleFaceResult() {
@@ -450,8 +448,6 @@ onUnmounted(() => { closeBrowser(); });
       </view>
     </view>
 
-    <!-- 跳转确认弹窗 -->
-    <app-confirm ref="confirmRef" />
   </app-page>
 </template>
 

@@ -95,6 +95,7 @@ import { useCarloanApi } from "@/api/carloan";
 import { $u } from "uview-pro";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { buildSupplementRouteQuery } from "@/common/carloan-route-query";
+import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 // 页面参数
 const businessApi = useCarloanApi();
@@ -223,13 +224,13 @@ async function handleSubmitAudit() {
     return;
   }
 
-  const { confirm } = await uni.showModal({
-    title: "确认提交",
-    content: "提交后将进入审批流程，确认提交吗？",
-    confirmText: "确认提交",
-    cancelText: "再等等",
+  const ok = await showConfirmDialog({
+    title: '确认提交',
+    message: '提交后将进入审批流程，确认提交吗？',
+    confirmText: '确认提交',
+    cancelText: '再等等',
   });
-  if (!confirm) return;
+  if (!ok) return;
 
   submitting.value = true;
   try {
