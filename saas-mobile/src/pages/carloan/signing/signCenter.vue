@@ -113,7 +113,7 @@
   </app-page>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { onLoad, onShow } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";

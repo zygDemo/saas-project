@@ -16,12 +16,16 @@ import {
   RepaymentStatus,
 } from '@prisma/client'
 
-jest.mock('../../common/utils/application-no')
+jest.mock('../../common/utils/application-no', () => ({
+  ...jest.requireActual('../../common/utils/application-no'),
+  createApplicationWithUniqueNo: jest.fn(async (create) => create('APP-001')),
+}))
 jest.mock('../../common/tenant/tenant-context', () => ({
-  getCurrentTenantId: jest.fn(() => 1)
+  getCurrentTenantId: jest.fn(() => 1),
+  getCurrentTenantIdOrThrow: jest.fn(() => 1),
 }))
 
-import { getCurrentTenantId } from '../../common/tenant/tenant-context'
+import { getCurrentTenantId, getCurrentTenantIdOrThrow } from '../../common/tenant/tenant-context'
 
 describe('ApplicationService', () => {
   let service: ApplicationService
@@ -32,6 +36,7 @@ describe('ApplicationService', () => {
   const mockTx = () => ({
     application: {
       update: jest.fn().mockResolvedValue({ id: 1 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       findFirst: jest.fn()
     },
     approvalRecord: { create: jest.fn().mockResolvedValue({ id: 1 }) },
@@ -115,9 +120,9 @@ describe('ApplicationService', () => {
       approvalRecord: { findFirst: jest.fn(), count: jest.fn(), create: jest.fn() },
       signRecord: { findFirst: jest.fn(), upsert: jest.fn(), update: jest.fn() },
       disbursement: { findFirst: jest.fn(), upsert: jest.fn() },
-      repaymentPlan: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn(), updateMany: jest.fn(), createMany: jest.fn() },
+      repaymentPlan: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn().mockResolvedValue({ id: 1 }), updateMany: jest.fn().mockResolvedValue({ count: 1 }), createMany: jest.fn() },
       repaymentRecord: { create: jest.fn() },
-      collectionRecord: { create: jest.fn(), findMany: jest.fn() },
+      collectionRecord: { create: jest.fn(), findMany: jest.fn(), count: jest.fn().mockResolvedValue(0) },
       earlyRepayment: { create: jest.fn(), update: jest.fn(), findMany: jest.fn() },
       lead: { update: jest.fn() },
       flowConfig: { findMany: jest.fn().mockResolvedValue([]) },
@@ -160,7 +165,7 @@ describe('ApplicationService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: FlowConfigService, useValue: mockFlowConfig },
         { provide: DataScopeService, useValue: { buildDataScopeFilter: jest.fn().mockResolvedValue({}) } },
-        { provide: ApplicationNotificationService, useValue: { send: jest.fn().mockResolvedValue(undefined) } },
+        { provide: ApplicationNotificationService, useValue: { send: jest.fn().mockResolvedValue(undefined), sendOnSigningStarted: jest.fn().mockResolvedValue(undefined), sendOnLoanDisbursed: jest.fn().mockResolvedValue(undefined), sendOnLoanSettled: jest.fn().mockResolvedValue(undefined), sendOnApprovalRejected: jest.fn().mockResolvedValue(undefined) } },
         { provide: DisbursementService, useValue: {} },
       ]
     }).compile()
@@ -375,16 +380,16 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.DRAFT })
       )
-      mockPrisma.application.update!.mockResolvedValue({
-        ...makeApplication(),
-        status: ApplicationStatus.PENDING_RISK_PRE
-      })
+      mockPrisma.application.updateMany!.mockResolvedValue({ count: 1 })
+      mockPrisma.application.findFirst!.mockResolvedValue(
+        makeApplication({ status: ApplicationStatus.PENDING_RISK_PRE })
+      )
 
       await service.submit(1)
 
-      expect(mockPrisma.application.update).toHaveBeenCalledWith(
+      expect(mockPrisma.application.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 1 },
+          where: { id: 1, status: ApplicationStatus.DRAFT },
           data: expect.objectContaining({
             status: ApplicationStatus.PENDING_RISK_PRE,
             currentNode: 1200,
@@ -398,17 +403,21 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_SUPPLEMENT })
       )
-      mockPrisma.application.update!.mockResolvedValue({ id: 1 })
+      mockPrisma.application.updateMany!.mockResolvedValue({ count: 1 })
+      mockPrisma.application.findFirst!.mockResolvedValue(
+        makeApplication({ status: ApplicationStatus.PENDING_RISK_PRE })
+      )
 
       await service.submit(1)
 
-      expect(mockPrisma.application.update).toHaveBeenCalled()
+      expect(mockPrisma.application.updateMany).toHaveBeenCalled()
     })
 
     it('非草稿/待补充状态应该抛出 BadRequestException', async () => {
       mockPrisma.application.findFirst!.mockResolvedValue(null)
       mockPrisma.application.findFirst!.mockResolvedValueOnce(null) // 不存在匹配状态的记录
         .mockResolvedValueOnce(makeApplication({ status: ApplicationStatus.PENDING_RISK_PRE })) // 存在记录但状态不对
+      mockPrisma.application.updateMany!.mockResolvedValue({ count: 0 })
 
       await expect(service.submit(1)).rejects.toThrow(BadRequestException)
     })
@@ -1355,27 +1364,21 @@ describe('ApplicationService', () => {
           status: ApplicationStatus.PENDING_RISK_PRE,
           currentNode: 1200,
           currentStatus: 10,
-          approvals: [
-            {
-              id: 1,
-              stage: 'RISK_PRE',
-              action: ApprovalAction.PASS,
-              createdAt: new Date('2026-01-01'),
-              approver: { id: 1, userName: 'admin', nickName: '管理员' },
-              opinion: '同意',
-              amount: null
-            }
-          ]
+          approvals: []
         })
       )
+      mockPrisma.flowConfig.findMany!.mockResolvedValue([
+        { nodeCode: '1100', nodeName: '提交申请', ruleConfig: { sort: 1100 } },
+        { nodeCode: '1200', nodeName: '预审', ruleConfig: { sort: 1200 } },
+      ])
 
       const result = (await service.getLifecycle(1)) as any
 
       expect(Array.isArray(result)).toBe(true)
-      // 应包含待处理节点 + 审批记录
       expect(result.length).toBeGreaterThanOrEqual(2)
-      // 第一个应该是待处理节点（因为 currentStatus === 10）
-      expect(result[0].approvalStatus).toBe('待处理')
+      const current = result.find((r: Record<string, unknown>) => Number(r.currentNode) === 1200)
+      expect(current).toBeDefined()
+      expect((current as Record<string, unknown>).approvalStatus).toBe('待处理')
     })
 
     it('订单不存在时应该抛出 NotFoundException', async () => {
@@ -1401,6 +1404,9 @@ describe('ApplicationService', () => {
           ]
         })
       )
+      mockPrisma.flowConfig.findMany!.mockResolvedValue([
+        { nodeCode: '1400', nodeName: '初审', ruleConfig: { sort: 1400 } },
+      ])
 
       const result = (await service.getLifecycle(1)) as any
       const passItem = result.find((r: Record<string, unknown>) => r.approvalStatus === '通过')
@@ -1427,6 +1433,9 @@ describe('ApplicationService', () => {
           ]
         })
       )
+      mockPrisma.flowConfig.findMany!.mockResolvedValue([
+        { nodeCode: '1200', nodeName: '预审', ruleConfig: { sort: 1200 } },
+      ])
 
       const result = (await service.getLifecycle(1)) as any
       const rejectItem = result.find((r: Record<string, unknown>) => r.approvalStatus === '拒绝')
@@ -1461,9 +1470,12 @@ describe('ApplicationService', () => {
 
       // 2. 提交
       mockStatus(ApplicationStatus.DRAFT)
-      mockPrisma.application.update!.mockResolvedValue({ id: 1, status: ApplicationStatus.PENDING_RISK_PRE })
+      mockPrisma.application.updateMany!.mockResolvedValue({ count: 1 })
+      mockPrisma.application.findFirst!.mockResolvedValue(
+        makeApplication({ status: ApplicationStatus.PENDING_RISK_PRE })
+      )
       await service.submit(1)
-      expect(mockPrisma.application.update).toHaveBeenCalled()
+      expect(mockPrisma.application.updateMany).toHaveBeenCalled()
 
       // 3. 风控预审通过
       jest.clearAllMocks()

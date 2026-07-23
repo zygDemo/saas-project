@@ -1,5 +1,5 @@
 
-import { Body, Controller, Get, Param, Post, Query, UseGuards, Public } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { RolesGuard } from '../../common/guards/roles.guard'
@@ -11,6 +11,7 @@ import {
   UpdateFlowConfigDto
 } from './dto/flow-config.dto'
 import { FlowConfigService } from './flow-config.service'
+import { Public } from '../../common/decorators/public.decorator'
 
 @ApiTags('流程与规则')
 @Controller('flow-config')

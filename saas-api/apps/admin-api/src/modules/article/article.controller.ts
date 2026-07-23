@@ -13,6 +13,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { RolesGuard } from '../../common/guards/roles.guard'
 import { Roles } from '../../common/decorators/roles.decorator'
+import { Public } from '../../common/decorators/public.decorator'
 import { ArticleService } from './article.service'
 import {
   CreateArticleDto,

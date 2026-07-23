@@ -7,7 +7,7 @@ import {
   getCachedChapter,
 } from "@/pages/reading/reader/reader-helpers";
 import type { Chapter } from "@/pages/reading/reader/reader-helpers";
-import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
+import { showConfirmDialog, showLoadingToast, showSuccessToast, showFailToast } from '@/composables/useGlobalLoadingToast'
 
 /**
  * 阅读器章节内容加载、翻页导航、进度同步
@@ -99,35 +99,31 @@ export function useReaderChapter(
   async function validateChapterAccess(chapter: Chapter): Promise<boolean> {
     if (!chapter.isVip) return true;
     if (readingStore.hasPurchasedChapter(bookId(), chapter.id)) return true;
-    return new Promise((resolve) => {
-      const ok = await showConfirmDialog({
-        title: 'VIP 章节',
-        message: '该章节为 VIP 付费内容，是否前往购买？',
-        confirmText: '去购买',
-        cancelText: '取消',
-      });
-      if (ok) {
-        handlePurchaseChapter(chapter).then(() => resolve(false));
-      } else {
-        resolve(false);
-      }
+    const ok = await showConfirmDialog({
+      title: 'VIP 章节',
+      message: '该章节为 VIP 付费内容，是否前往购买？',
+      confirmText: '去购买',
+      cancelText: '取消',
     });
+    if (!ok) return false;
+    await handlePurchaseChapter(chapter);
+    return true;
   }
 
   async function handlePurchaseChapter(chapter: Chapter) {
+    const loading = showLoadingToast("处理中...");
     try {
-      uni.showLoading({ title: "处理中..." });
       await readingApi.purchaseChapter(chapter.id);
       readingStore.markChapterPurchased(
         bookId(),
         chapter.id,
         chapter.title,
       );
-      uni.hideLoading();
-      uni.showToast({ title: "购买成功，已解锁章节", icon: "success" });
+      showSuccessToast("购买成功，已解锁章节");
     } catch {
-      uni.hideLoading();
-      uni.showToast({ title: "购买失败，请重试", icon: "none" });
+      showFailToast("购买失败，请重试");
+    } finally {
+      loading.close();
     }
   }
 

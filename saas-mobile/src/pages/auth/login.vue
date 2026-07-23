@@ -128,7 +128,7 @@
   </app-page>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { $u } from "uview-pro";
 import { computed, ref } from "vue";
 // import { useUserStore } from "@/stores/user";

@@ -1,10 +1,11 @@
-﻿import { Body, Controller, Get, Param, Post, Query, UseGuards, Public } from '@nestjs/common'
+﻿import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { RolesGuard } from '../../common/guards/roles.guard'
 import { Roles } from '../../common/decorators/roles.decorator'
 import { SigningService } from './signing.service'
 import { SigningQueryDto, CreateSigningDto, UpdateSigningDto } from './dto/signing.dto'
+import { Public } from '../../common/decorators/public.decorator'
 
 @ApiTags('签约管理')
 @Controller('signing')

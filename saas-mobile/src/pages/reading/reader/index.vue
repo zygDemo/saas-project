@@ -9,6 +9,7 @@ import { useReaderNotes } from "@/composables/reading/useReaderNotes";
 import { useReaderSettings } from "@/composables/reading/useReaderSettings";
 import { useReaderBookmarks } from "@/composables/reading/useReaderBookmarks";
 import { useReaderChapter } from "@/composables/reading/useReaderChapter";
+import { showFailToast } from '@/composables/useGlobalLoadingToast'
 
 const readingApi = useReadingApi();
 const readingStore = useReadingStore();
@@ -86,7 +87,7 @@ const goBack = () => {
 };
 
 const shareBook = () => {
-  uni.showToast({ title: "请点击右上角分享", icon: "none" });
+  showFailToast("请点击右上角分享");
 };
 
 onShareAppMessage(() => ({
@@ -297,7 +298,7 @@ detectOrientation();
 uni.onWindowResize(() => { detectOrientation(); });
 
 const showNoteEditor = () => {
-  uni.showToast({ title: "笔记功能开发中", icon: "none" });
+  showFailToast("笔记功能开发中");
 };
 </script>
 

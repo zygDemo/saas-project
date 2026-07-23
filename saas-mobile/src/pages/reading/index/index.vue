@@ -460,7 +460,7 @@ import { useReadingApi } from "@/api/reading";
 import { computed, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { CurrentSystem, useLocalStore } from "@/stores/local";
-import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
+import { showConfirmDialog, showSuccessToast, showFailToast } from '@/composables/useGlobalLoadingToast'
 
 interface BookItem {
   id: string;
@@ -667,9 +667,9 @@ const onRefresh = async () => {
   refreshing.value = true;
   try {
     await Promise.all([fetchStats(), fetchBookshelf()]);
-    uni.showToast({ title: "已刷新", icon: "success" });
+    showSuccessToast("已刷新");
   } catch {
-    uni.showToast({ title: "已刷新", icon: "success" });
+    showSuccessToast("已刷新");
   } finally {
     refreshing.value = false;
   }
@@ -677,11 +677,11 @@ const onRefresh = async () => {
 
 const handleSign = () => {
   if (hasSigned.value) {
-    uni.showToast({ title: "今日已签到，明日再来", icon: "none" });
+    showFailToast("今日已签到，明日再来");
     return;
   }
   hasSigned.value = true;
-  uni.showToast({ title: "签到成功 +10阅读积分", icon: "success" });
+  showSuccessToast("签到成功 +10阅读积分");
 };
 
 const formatTime = (timestamp?: number) => {
@@ -749,14 +749,14 @@ const onBookActionClick = async (index: number) => {
       } catch {
         // ignore
       }
-      uni.showToast({ title: '已移出书架', icon: 'success' });
+      showSuccessToast('已移出书架');
       break;
     case 3:
       readingStore.downloadBook(book.id, book);
-      uni.showToast({ title: "开始下载", icon: "success" });
+      showSuccessToast("开始下载");
       break;
     case 4:
-      uni.showToast({ title: "已置顶", icon: "success" });
+      showSuccessToast("已置顶");
       break;
   }
 };
@@ -766,7 +766,7 @@ const goBookStore = () => {
 };
 
 const goReadingHistory = () => {
-  uni.showToast({ title: "阅读历史功能开发中", icon: "none" });
+  showFailToast("阅读历史功能开发中");
 };
 
 const goDownload = () => {
@@ -783,7 +783,7 @@ const goPortal = () => {
 };
 
 const refreshRecommend = () => {
-  uni.showToast({ title: "换一批推荐", icon: "success" });
+  showSuccessToast("换一批推荐");
 };
 </script>
 

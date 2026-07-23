@@ -103,7 +103,7 @@ const minusCount = async (item: FoodCartItem) => {
   }
 };
 
-const handleClear = () => {
+const handleClear = async () => {
   const ok = await showConfirmDialog({ title: '提示', message: '确定清空购物车吗？' });
   if (!ok) return;
   try {

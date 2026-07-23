@@ -290,6 +290,7 @@ import { toFilePreviewUrl } from "@/common/file-url";
 import { APP_ROUTES, buildHashRoute, buildRoute } from "@/common/navigation";
 import { buildNavTitleQuery, buildSignRouteQuery } from "@/common/carloan-route-query";
 import { getBaseUrl, getExtraParams, getHashQuery, getNowTime, safeDecode } from "./signing-url";
+import { showConfirmDialog, showFailToast, showLoadingToast } from '@/composables/useGlobalLoadingToast'
 
 // ========== 常量 ==========
 
@@ -825,11 +826,11 @@ async function handleContractSign() {
         window.location.href = signUrl;
       }
     } else {
-      uni.showToast({ title: "获取签署链接失败", icon: "none" });
+      showFailToast("获取签署链接失败");
     }
   } catch (err) {
     console.error("合同签署发起失败:", err);
-    uni.showToast({ title: "发起合同签署失败", icon: "none" });
+    showFailToast("发起合同签署失败");
   } finally {
     signingLoading.value = false;
   }
@@ -901,11 +902,11 @@ async function handleSignContract() {
         window.location.href = signUrl;
       }
     } else {
-      uni.showToast({ title: "发起签署失败，请稍后重试", icon: "none" });
+      showFailToast("发起签署失败，请稍后重试");
     }
   } catch (err) {
     console.error("签署授权书发起失败:", err);
-    uni.showToast({ title: "发起签署失败", icon: "none" });
+    showFailToast("发起签署失败");
   } finally {
     signingLoading.value = false;
   }
@@ -939,7 +940,7 @@ function retryCredit() {
 
 function previewContractFile(file: ContractFile) {
   if (!file.fileUrl) {
-    uni.showToast({ title: "暂无可预览文件", icon: "none" });
+    showFailToast("暂无可预览文件");
     return;
   }
 
@@ -960,7 +961,7 @@ function previewContractFile(file: ContractFile) {
   // #endif
 
   // #ifndef H5
-  uni.showLoading({ title: "文件打开中..." });
+  const fileLoading = showLoadingToast("文件打开中...");
   uni.downloadFile({
     url: fileUrl,
     success: (res) => {
@@ -969,18 +970,18 @@ function previewContractFile(file: ContractFile) {
           filePath: res.tempFilePath,
           showMenu: true,
           fail: () => {
-            uni.showToast({ title: "文件预览失败", icon: "none" });
+            showFailToast("文件预览失败");
           },
         });
       } else {
-        uni.showToast({ title: "文件下载失败", icon: "none" });
+        showFailToast("文件下载失败");
       }
     },
     fail: () => {
-      uni.showToast({ title: "文件下载失败", icon: "none" });
+      showFailToast("文件下载失败");
     },
     complete: () => {
-      uni.hideLoading();
+      fileLoading.close();
     },
   });
   // #endif

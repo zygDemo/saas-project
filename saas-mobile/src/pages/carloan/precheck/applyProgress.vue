@@ -151,6 +151,7 @@ import { ref, computed } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
+import { showFailToast } from "@/composables/useGlobalLoadingToast";
 import {
   buildSignRouteQuery,
   buildSupplementRouteQuery,
@@ -451,7 +452,7 @@ async function loadDetail() {
     }
   } catch (e) {
     console.warn("获取申请详情失败:", e);
-    uni.showToast({ title: "获取详情失败", icon: "none" });
+    showFailToast("获取详情失败");
   } finally {
     loading.value = false;
   }

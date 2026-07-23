@@ -98,7 +98,8 @@ export default defineConfig(({ mode }) => {
     createVersionFilePlugin(),
   ],
   server: {
-    host: true,
+    host: '127.0.0.1',
+    port: 5274,
     proxy: {
       '/saas/api': {
         target: apiProxyUrl,

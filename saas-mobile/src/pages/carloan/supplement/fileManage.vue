@@ -79,14 +79,14 @@
   </app-page>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { $u, useTheme } from "uview-pro";
 import { computed, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { normalizeFileRecord, toFilePreviewUrl } from "@/common/file-url";
 import { useLocalStore } from "@/stores";
-import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
+import { showConfirmDialog, showLoadingToast } from '@/composables/useGlobalLoadingToast'
 
 const businessApi = useCarloanApi();
 const localStore = useLocalStore();
@@ -177,7 +177,7 @@ function chooseDocument() {
 
 // 上传文件 - 统一走 /m/file/upload
 async function doUploadFile(filePath) {
-  uni.showLoading({ title: "上传中...", mask: true });
+  const uploadLoading = showLoadingToast("上传中...");
   try {
     const res = await businessApi.uploadFile(filePath);
     if (res?.code === 200) {
@@ -187,7 +187,7 @@ async function doUploadFile(filePath) {
   } catch {
     // 错误已由拦截器处理
   } finally {
-    uni.hideLoading();
+    uploadLoading.close();
   }
 }
 
@@ -219,7 +219,7 @@ async function deleteFile(id) {
 }
 
 // 预览文件
-function previewFile(item) {
+async function previewFile(item) {
   const isImage = /\.(?:jpg|jpeg|png|gif|webp)$/i.test(item.fileName);
   const fileUrl = item.previewUrl || toFilePreviewUrl(item.fileUrl);
   if (isImage) {

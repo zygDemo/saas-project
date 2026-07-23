@@ -7,7 +7,7 @@ import { closeBrowser } from "@/composables/useCloseBrowser";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
 import { getBaseUrl, getHashQuery, safeDecode } from "./signing-url";
 import { useSignSteps } from "@/composables/carloan/useSignSteps";
-import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
+import { showConfirmDialog, showSuccessToast, showFailToast } from '@/composables/useGlobalLoadingToast'
 
 const sessionStore = useSessionStore();
 const businessApi = useCarloanApi();
@@ -24,33 +24,32 @@ const {
 const pageTitle = isCreditMode ? "授信认证" : "合同签署";
 
 // ---- 人脸认证 ----
-function handleStartFaceSign() {
-  if (!customerInfo.creditOrderId) { uni.showToast({ title: "缺少订单编号", icon: "none" }); return; }
+async function handleStartFaceSign() {
+  if (!customerInfo.creditOrderId) { showFailToast("缺少订单编号"); return; }
   const ok = await showConfirmDialog({ title: '开始人脸认证', message: '请确认是本人操作' });
   if (!ok) return;
   signingLoading.value = true;
-    try {
-      const res = await businessApi.startFaceSign(customerInfo.creditOrderId);
-      if (res?.code === 200 && res.data?.faceUrl) {
-        // #ifdef H5
-        window.location.href = res.data.faceUrl;
-        // #endif
-        // #ifdef APP-PLUS
-        uni.navigateTo({ url: `/pages/common/webview?url=${encodeURIComponent(res.data.faceUrl)}` });
-        // #endif
-      } else {
-        uni.showToast({ title: "发起人脸失败", icon: "none" });
-      }
-    } catch (err) {
-      console.error("startFaceSign error:", err);
-      uni.showToast({ title: "发起人脸失败", icon: "none" });
-    } finally {
-      signingLoading.value = false;
+  try {
+    const res = await businessApi.startFaceSign(customerInfo.creditOrderId);
+    if (res?.code === 200 && res.data?.faceUrl) {
+      // #ifdef H5
+      window.location.href = res.data.faceUrl;
+      // #endif
+      // #ifdef APP-PLUS
+      uni.navigateTo({ url: `/pages/common/webview?url=${encodeURIComponent(res.data.faceUrl)}` });
+      // #endif
+    } else {
+      showFailToast("发起人脸失败");
     }
-  });
+  } catch (err) {
+    console.error("startFaceSign error:", err);
+    showFailToast("发起人脸失败");
+  } finally {
+    signingLoading.value = false;
+  }
 }
 
-function handleCancel() {
+async function handleCancel() {
   const ok = await showConfirmDialog({ title: '取消认证', message: '确定取消本次认证？' });
   if (ok) uni.navigateBack();
 }
@@ -64,7 +63,7 @@ async function handleFaceResult() {
 
 // ---- 签约授权 ----
 async function handleAuthorizeSign() {
-  if (!customerInfo.creditOrderId) { uni.showToast({ title: "缺少订单编号", icon: "none" }); return; }
+  if (!customerInfo.creditOrderId) { showFailToast("缺少订单编号"); return; }
   authorizeSignLoading.value = true;
   try {
     const res = await businessApi.authorizeSign(customerInfo.creditOrderId);
@@ -74,13 +73,13 @@ async function handleAuthorizeSign() {
       saveSignProgress("SIGNING_PROGRESS");
       saveEntryProgress("AUTH_SIGN");
       setFaceSignSteps("BINDING_CARD");
-      uni.showToast({ title: "授权成功", icon: "success" });
+      showSuccessToast("授权成功");
     } else {
-      uni.showToast({ title: res?.msg || "授权失败", icon: "none" });
+      showFailToast(res?.msg || "授权失败");
     }
   } catch (err) {
     console.error("authorizeSign error:", err);
-    uni.showToast({ title: "授权失败", icon: "none" });
+    showFailToast("授权失败");
   } finally {
     authorizeSignLoading.value = false;
   }
@@ -88,7 +87,7 @@ async function handleAuthorizeSign() {
 
 // ---- 合同签署 ----
 async function handleSignContract() {
-  if (!customerInfo.creditOrderId) { uni.showToast({ title: "缺少订单编号", icon: "none" }); return; }
+  if (!customerInfo.creditOrderId) { showFailToast("缺少订单编号"); return; }
   signingLoading.value = true;
   try {
     const res = await businessApi.signContract(customerInfo.creditOrderId);
@@ -102,11 +101,11 @@ async function handleSignContract() {
       uni.navigateTo({ url: `/pages/common/webview?url=${encodeURIComponent(res.data.signUrl)}` });
       // #endif
     } else {
-      uni.showToast({ title: "签署发起失败", icon: "none" });
+      showFailToast("签署发起失败");
     }
   } catch (err) {
     console.error("signContract error:", err);
-    uni.showToast({ title: "签署失败", icon: "none" });
+    showFailToast("签署失败");
   } finally {
     signingLoading.value = false;
   }

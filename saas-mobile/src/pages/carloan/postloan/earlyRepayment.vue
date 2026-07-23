@@ -39,6 +39,7 @@
 import { ref, reactive } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useCarloanApi } from '@/api/carloan'
+import { showFailToast, showSuccessToast } from '@/composables/useGlobalLoadingToast'
 
 const businessApi = useCarloanApi()
 const applicationId = ref('')
@@ -59,11 +60,11 @@ onLoad((options?: Record<string, string | undefined>) => {
 
 async function handleSubmit() {
   if (!form.amount || Number(form.amount) <= 0) {
-    uni.showToast({ title: '请输入还款金额', icon: 'none' })
+    showFailToast('请输入还款金额')
     return
   }
   if (!form.principal || Number(form.principal) <= 0) {
-    uni.showToast({ title: '请输入本金', icon: 'none' })
+    showFailToast('请输入本金')
     return
   }
   submitting.value = true
@@ -77,10 +78,10 @@ async function handleSubmit() {
       penalty: Number(form.penalty || 0),
       reason: form.reason,
     })
-    uni.showToast({ title: '申请提交成功', icon: 'success' })
+    showSuccessToast('申请提交成功')
     setTimeout(() => uni.navigateBack(), 1000)
   } catch (e) {
-    uni.showToast({ title: '提交失败，请重试', icon: 'none' })
+    showFailToast('提交失败，请重试')
   } finally {
     submitting.value = false
   }

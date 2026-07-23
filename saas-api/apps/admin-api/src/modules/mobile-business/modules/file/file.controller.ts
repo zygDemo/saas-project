@@ -1,19 +1,7 @@
 
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Headers,
-  Param,
-  Post,
-  Query,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
-  Public
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, Headers, Param, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common'
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { Roles } from '../../../../common/decorators/roles.decorator'
 import { CurrentUser } from '../../../../common/decorators/current-user.decorator'
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard'
 import { RolesGuard } from '../../../../common/guards/roles.guard'
@@ -21,6 +9,7 @@ import { RequestUser } from '../../../../common/types/request-user'
 import { UploadedImageFile } from '../../../file/file.service'
 import { imageUploadInterceptor } from '../../common/mobile-upload.interceptor'
 import { MobileFileService } from '../../mobile-file.service'
+import { Public } from '../../../../common/decorators/public.decorator'
 
 @ApiTags('移动端文件')
 @Controller('m/file')

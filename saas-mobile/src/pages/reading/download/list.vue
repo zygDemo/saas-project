@@ -59,7 +59,6 @@
                   name="pause-circle"
                   color="#909399"
                   size="48"
-import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
                   @click="pauseDownload(item)"
                 />
                 <u-icon
@@ -132,6 +131,7 @@ import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 import layout from "@/components/layout/layout.vue";
 import { useReadingStore } from "@/stores/reading";
 import { computed } from "vue";
+import { showConfirmDialog, showSuccessToast } from "@/composables/useGlobalLoadingToast";
 
 const readingStore = useReadingStore();
 
@@ -169,7 +169,7 @@ const cancelDownload = async (item: { id: string; title: string }) => {
   });
   if (!ok) return;
   readingStore.removeDownload(item.id);
-  uni.showToast({ title: '已取消下载', icon: 'success' });
+  showSuccessToast('已取消下载');
 };
 
 
@@ -180,7 +180,7 @@ const deleteDownload = async (item: { id: string; title: string }) => {
   });
   if (!ok) return;
   readingStore.removeDownload(item.id);
-  uni.showToast({ title: '已删除', icon: 'success' });
+  showSuccessToast('已删除');
 };
 
 
@@ -196,7 +196,7 @@ const pauseAll = () => {
   downloadingList.value.forEach((item) => {
     readingStore.pauseDownload(item.id);
   });
-  uni.showToast({ title: "已全部暂停", icon: "success" });
+  showSuccessToast("已全部暂停");
 };
 
 const clearAll = async () => {
@@ -206,7 +206,7 @@ const clearAll = async () => {
   });
   if (!ok) return;
   readingStore.clearCompletedDownloads();
-  uni.showToast({ title: '已清空', icon: 'success' });
+  showSuccessToast('已清空');
 };
 
 

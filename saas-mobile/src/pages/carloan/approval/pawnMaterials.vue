@@ -62,7 +62,7 @@
   </app-page>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { $u } from "uview-pro";

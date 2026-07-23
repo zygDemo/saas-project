@@ -61,7 +61,7 @@ export function useReaderBookmarks(
     }
   }
 
-  function deleteBookmark(bookmark: Bookmark) {
+  async function deleteBookmark(bookmark: Bookmark) {
     const ok = await showConfirmDialog({
       title: '提示',
       message: '确定删除这个书签？',

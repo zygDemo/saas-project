@@ -140,6 +140,7 @@ import { ref, computed, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useCarloanApi } from '@/api/carloan'
 import type { ApiResponse } from '@/api/carloan'
+import { showFailToast, showSuccessToast } from '@/composables/useGlobalLoadingToast'
 
 const businessApi = useCarloanApi()
 
@@ -231,11 +232,11 @@ function openRepayForm(item: RepaymentPlanItem) {
 
 async function submitRepay() {
   if (!repayForm.value.amount || Number(repayForm.value.amount) <= 0) {
-    uni.showToast({ title: '请输入还款金额', icon: 'none' })
+    showFailToast('请输入还款金额')
     return
   }
   if (!repayForm.value.paymentMethod) {
-    uni.showToast({ title: '请选择还款方式', icon: 'none' })
+    showFailToast('请选择还款方式')
     return
   }
   submitting.value = true
@@ -251,12 +252,12 @@ async function submitRepay() {
       transactionNo: repayForm.value.transactionNo || undefined,
       remark: repayForm.value.remark || undefined
     })
-    uni.showToast({ title: '还款成功', icon: 'success' })
+    showSuccessToast('还款成功')
     showRepayForm.value = false
     // 刷新列表
     await loadPlans()
   } catch (e) {
-    uni.showToast({ title: '还款失败，请重试', icon: 'none' })
+    showFailToast('还款失败，请重试')
   } finally {
     submitting.value = false
   }

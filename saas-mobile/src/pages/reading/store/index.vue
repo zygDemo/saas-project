@@ -4,6 +4,7 @@ import { computed, ref, onMounted, onUnmounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useStoreBooks } from "@/composables/reading/useStoreBooks";
 import type { BookItem, SubTabItem } from "@/composables/reading/useStoreBooks";
+import { showFailToast } from '@/composables/useGlobalLoadingToast'
 
 interface BannerItem {
   id: string;
@@ -100,13 +101,13 @@ const switchRankTab = (idx: number) => { currentRankTab.value = idx; };
 
 const onBannerClick = (banner: BannerItem) => { if (banner.link) uni.navigateTo({ url: banner.link }); };
 const goDetail = (book: BookItem) => { uni.navigateTo({ url: `/pages/reading/store/detail?id=${book.id}` }); };
-const goRanking = () => { uni.showToast({ title: "排行榜功能开发中", icon: "none" }); };
-const goFreeBooks = () => { uni.showToast({ title: "限免专区开发中", icon: "none" }); };
-const goBookList = () => { uni.showToast({ title: "书单功能开发中", icon: "none" }); };
+const goRanking = () => { showFailToast("排行榜功能开发中"); };
+const goFreeBooks = () => { showFailToast("限免专区开发中"); };
+const goBookList = () => { showFailToast("书单功能开发中"); };
 const goFinish = () => { currentFilter.value = "finish"; };
-const goAuthor = () => { uni.showToast({ title: "作者专区开发中", icon: "none" }); };
-const goBookListDetail = (list: BookList) => { uni.showToast({ title: `查看书单：${list.title}`, icon: "none" }); };
-const viewMore = (_type: string) => { uni.showToast({ title: "更多功能开发中", icon: "none" }); };
+const goAuthor = () => { showFailToast("作者专区开发中"); };
+const goBookListDetail = (list: BookList) => { showFailToast(`查看书单：${list.title}`); };
+const viewMore = (_type: string) => { showFailToast("更多功能开发中"); };
 
 onLoad(() => {
   fetchCategories();

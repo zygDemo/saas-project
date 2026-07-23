@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Get, Param, Post, Query, UseGuards, Public } from '@nestjs/common'
+﻿import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { NotificationService } from '../notification/notification.service'
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
@@ -11,6 +11,7 @@ import {
   OrderListQueryDto,
   UpdateApplicationDto
 } from './dto/application.dto'
+import { Public } from '../../common/decorators/public.decorator'
 import {
   ApprovalActionDto,
   CompleteSigningDto,

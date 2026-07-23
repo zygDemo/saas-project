@@ -174,7 +174,7 @@
   </view>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
 import provinceData from "uview-pro/libs/util/province";
 import cityData from "uview-pro/libs/util/city";

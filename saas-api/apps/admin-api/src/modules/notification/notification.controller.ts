@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Param, ParseIntPipe, Query, UseGuards, Req, Public } from '@nestjs/common'
+import { Controller, Get, Post, Param, ParseIntPipe, Query, UseGuards, Req } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { RolesGuard } from '../../common/guards/roles.guard'
 import { Roles } from '../../common/decorators/roles.decorator'
 import { NotificationService } from './notification.service'
+import { Public } from '../../common/decorators/public.decorator'
 
 @ApiTags('实时通知')
 @Controller('notification')

@@ -61,7 +61,7 @@
   </app-page>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { $u } from "uview-pro";
 import { computed, reactive, ref, onMounted } from "vue";
 import { onLoad } from "@dcloudio/uni-app";

@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards, Public } from '@nestjs/common'
+﻿import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
@@ -9,6 +9,7 @@ import { CreateUserDto } from './dto/create-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
 import { UserQueryDto } from './dto/user-query.dto'
 import { UsersService } from './users.service'
+import { Public } from '../../common/decorators/public.decorator'
 
 @ApiTags('用户管理')
 @Controller('user')

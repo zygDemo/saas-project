@@ -1,11 +1,12 @@
 
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards, Public } from '@nestjs/common'
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { RolesGuard } from '../../common/guards/roles.guard'
 import { Roles } from '../../common/decorators/roles.decorator'
 import { CreateMsgTemplateDto, MsgTemplateQueryDto, UpdateMsgTemplateDto } from './dto/msg-template.dto'
 import { MsgTemplateService } from './msg-template.service'
+import { Public } from '../../common/decorators/public.decorator'
 
 @ApiTags('消息模板')
 @Controller('msg-template')

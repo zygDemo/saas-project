@@ -1,5 +1,5 @@
 
-import { Body, Controller, Get, Param, Post, Query, UseGuards, Public } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { CurrentUser } from '../../../../common/decorators/current-user.decorator'
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard'
@@ -12,6 +12,7 @@ import {
   MobileCreditUpdateDto
 } from '../../dto/mobile-business.dto'
 import { MobileCreditService } from '../../mobile-credit.service'
+import { Public } from '../../../../common/decorators/public.decorator'
 
 @ApiTags('移动端授信')
 @Controller('m/credit')

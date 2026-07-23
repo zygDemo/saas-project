@@ -117,6 +117,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useCarloanApi } from '@/api/carloan'
+import { showFailToast, showSuccessToast } from '@/composables/useGlobalLoadingToast'
 
 const businessApi = useCarloanApi()
 
@@ -202,7 +203,7 @@ onMounted(async () => {
     detail.value = (data || {}) as Record<string, any>
   } catch (e) {
     console.error('获取详情失败', e)
-    uni.showToast({ title: '获取订单信息失败', icon: 'none' })
+    showFailToast('获取订单信息失败')
   }
 })
 
@@ -210,13 +211,13 @@ async function handleSubmit() {
   submitting.value = true
   try {
     await businessApi.submitLoanRequest(applicationId.value)
-    uni.showToast({ title: '请款提交成功', icon: 'success' })
+    showSuccessToast('请款提交成功')
     // 刷新状态
     const res = await businessApi.getApplicationDetail(applicationId.value)
     const data = ((res as unknown) as Record<string, unknown>)?.data ?? res ?? {}
     detail.value = (data || {}) as Record<string, any>
   } catch (e) {
-    uni.showToast({ title: '提交失败，请重试', icon: 'none' })
+    showFailToast('提交失败，请重试')
   } finally {
     submitting.value = false
   }

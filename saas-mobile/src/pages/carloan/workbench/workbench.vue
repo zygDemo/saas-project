@@ -189,7 +189,7 @@ import { isDev } from "@/common/env";
 import { fetchActiveAnnouncements } from "@/api/announcement";
 import { useWebSocket } from "@/composables/useWebSocket";
 import { APP_ROUTES } from "@/common/navigation";
-import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
+import { showConfirmDialog, showFailToast } from '@/composables/useGlobalLoadingToast'
 
 const { currentTheme } = useTheme();
 const themeColor = computed(() => {
@@ -325,7 +325,7 @@ onMounted(() => {
 
 const ORDER_FILTER_STORAGE_KEY = "WORKBENCH_ORDER_FILTER";
 
-const checkAuth = () => {
+const checkAuth = async () => {
   if (!localStore.token) {
     const ok = await showConfirmDialog({
       title: '提示',
@@ -339,13 +339,13 @@ const checkAuth = () => {
   return true;
 };
 
-const goTo = (url) => {
-  if (!checkAuth()) return;
+const goTo = async (url) => {
+  if (!(await checkAuth())) return;
   uni.navigateTo({ url });
 };
 
-const goToOrderNode = (nodeCode) => {
-  if (!checkAuth()) return;
+const goToOrderNode = async (nodeCode) => {
+  if (!(await checkAuth())) return;
   uni.setStorageSync(ORDER_FILTER_STORAGE_KEY, {
     nodeCode: String(nodeCode || ""),
     updatedAt: Date.now(),
@@ -353,8 +353,8 @@ const goToOrderNode = (nodeCode) => {
   uni.navigateTo({ url: APP_ROUTES.carloan.precheck.orderList });
 };
 
-const handleItem = (item) => {
-  if (!checkAuth()) return;
+const handleItem = async (item) => {
+  if (!(await checkAuth())) return;
   if (item.orderNode) {
     goToOrderNode(item.orderNode);
     return;
@@ -445,10 +445,7 @@ const showQr = (type) => {
   const salesmanId = localStore.userInfo?.userId;
 
   if (!salesmanId) {
-    uni.showToast({
-      title: "缺少业务员ID，无法生成二维码",
-      icon: "none",
-    });
+    showFailToast("缺少业务员ID，无法生成二维码");
     return;
   }
 

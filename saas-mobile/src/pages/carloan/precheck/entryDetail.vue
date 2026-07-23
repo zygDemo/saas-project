@@ -78,7 +78,7 @@ import { computed, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { APP_ROUTES } from "@/common/navigation";
-import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
+import { showConfirmDialog, showSuccessToast, showFailToast } from '@/composables/useGlobalLoadingToast'
 
 const businessApi = useCarloanApi();
 
@@ -176,7 +176,7 @@ function getEntryStatusTag(item) {
 
 function goEntry(item) {
   if (!uuidVal.value) {
-    uni.showToast({ title: "客户信息缺失", icon: "none" });
+    showFailToast("客户信息缺失");
     return;
   }
 
@@ -198,7 +198,7 @@ function goEntry(item) {
 
 async function handleSubmit() {
   if (!orderNo.value) {
-    uni.showToast({ title: "请先完善申请信息", icon: "none" });
+    showFailToast("请先完善申请信息");
     return;
   }
 
@@ -213,13 +213,13 @@ async function handleSubmit() {
   submitting.value = true;
   try {
     await businessApi.submitInitialAudit(orderNo.value);
-    uni.showToast({ title: "提交成功", icon: "success" });
+    showSuccessToast("提交成功");
     setTimeout(() => {
       uni.navigateBack();
     }, 1200);
   } catch (err) {
     console.error("提交预审失败:", err);
-    uni.showToast({ title: "提交失败，请重试", icon: "none" });
+    showFailToast("提交失败，请重试");
   } finally {
     submitting.value = false;
   }

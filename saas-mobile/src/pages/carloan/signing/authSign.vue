@@ -101,7 +101,7 @@ function saveSignProgress(status: string) {
   uni.setStorageSync(SIGN_PROGRESS_STORAGE_KEY, progressMap);
 }
 
-onBackPress(() => {
+onBackPress(async () => {
   if (isCustomerRole.value) {
     closeBrowser();
     return true;

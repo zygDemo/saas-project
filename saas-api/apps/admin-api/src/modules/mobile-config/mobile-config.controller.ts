@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Put, UseGuards, Public } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -7,6 +7,7 @@ import { RequestUser } from '../../common/types/request-user';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { SaveEntityMobileConfigDto, UpdateMobileConfigDto } from './dto/mobile-config.dto';
 import { MobileConfigService } from './mobile-config.service';
+import { Public } from '../../common/decorators/public.decorator'
 
 @ApiTags('移动端模块配置')
 @Controller('mobile-config')

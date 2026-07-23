@@ -8,8 +8,8 @@ import { flowTabList, resolveFlowTabByNode, resolvePageTitle, businessNodeText }
 import { APP_ROUTES } from "@/common/navigation";
 import { useDetailFlow } from "@/composables/carloan/useDetailFlow";
 import { enrichLifecycleRecords } from "@/composables/carloan/useApprovalFlow";
+import { showConfirmDialog, showSuccessToast, showFailToast } from '@/composables/useGlobalLoadingToast'
 import {
-import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
   safeDecode, normalizeRouteQuery, buildRouteFallbackDetail,
   hasDetailPayload, pickDetailUuid, normalizeDetailPayload,
 } from "./applyDetail-helpers";
@@ -62,7 +62,7 @@ async function loadDetail() {
   } catch (err) {
     console.warn("获取订单详情失败:", err);
     detail.value = hasDetailPayload(fallback) ? fallback : null;
-    uni.showToast({ title: "获取详情失败，已显示基础信息", icon: "none" });
+    showFailToast("获取详情失败，已显示基础信息");
   } finally {
     loading.value = false;
   }
@@ -131,7 +131,7 @@ const {
 // ---- flow record ----
 async function handleProgress() {
   const lifecycleId = detailId || detail.value?.id || detail.value?.applicationId || orderNo.value;
-  if (!lifecycleId) { uni.showToast({ title: "缺少订单编号", icon: "none" }); return; }
+  if (!lifecycleId) { showFailToast("缺少订单编号"); return; }
   flowRecordVisible.value = true;
   flowRecordLoading.value = true;
   flowRecordList.value = [];
@@ -144,7 +144,7 @@ async function handleProgress() {
     throw new Error("接口返回异常");
   } catch (err) {
     console.warn("获取流程进展失败:", err);
-    uni.showToast({ title: "加载进展失败", icon: "none" });
+    showFailToast("加载进展失败");
   } finally {
     flowRecordLoading.value = false;
   }
@@ -153,7 +153,7 @@ async function handleProgress() {
 // ---- submit ----
 async function handlePreAuditSubmit() {
   if (!allPreAuditStepsDone.value) return;
-  if (!orderNo.value) { uni.showToast({ title: "缺少订单编号", icon: "none" }); return; }
+  if (!orderNo.value) { showFailToast("缺少订单编号"); return; }
   const ok = await showConfirmDialog({
     title: '确认提交',
     message: isSupplementDetail.value ? '提交后将进入下一处理环节，确认提交吗？' : '提交后将进入预审流程，确认提交吗？',
@@ -164,11 +164,11 @@ async function handlePreAuditSubmit() {
   submitting.value = true;
   try {
     await businessApi.submitInitialAudit(orderNo.value);
-    uni.showToast({ title: isSupplementDetail.value ? "补件提交成功" : "提交成功", icon: "success" });
+    showSuccessToast(isSupplementDetail.value ? "补件提交成功" : "提交成功");
     setTimeout(() => uni.navigateBack(), 1200);
   } catch (err) {
     console.error("提交预审失败:", err);
-    uni.showToast({ title: "提交失败，请重试", icon: "none" });
+    showFailToast("提交失败，请重试");
   } finally {
     submitting.value = false;
   }

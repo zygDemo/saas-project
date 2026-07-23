@@ -1,18 +1,7 @@
 
-import {
-  Body,
-  Controller,
-  Get,
-  Headers,
-  Param,
-  Post,
-  Query,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
-  Public
-} from '@nestjs/common'
+import { Body, Controller, Get, Headers, Param, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common'
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { Roles } from '../../../../common/decorators/roles.decorator'
 import { CurrentUser } from '../../../../common/decorators/current-user.decorator'
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard'
 import { RolesGuard } from '../../../../common/guards/roles.guard'
@@ -27,6 +16,7 @@ import {
   OcrObjectKeyDto
 } from '../../dto/mobile-business.dto'
 import { MobileCustomerService } from '../../mobile-customer.service'
+import { Public } from '../../../../common/decorators/public.decorator'
 
 @ApiTags('移动端客户')
 @Controller('m/user')

@@ -271,6 +271,7 @@ import { useReadingStore } from "@/stores/reading";
 import { computed, ref } from "vue";
 import { useReadingApi, type ReviewItem, type ChapterItem } from "@/api/reading";
 import { onLoad, onShareAppMessage } from "@dcloudio/uni-app";
+import { showFailToast, showSuccessToast } from '@/composables/useGlobalLoadingToast'
 
 interface Chapter {
   id: string;
@@ -415,7 +416,7 @@ const fetchReviews = async (reset = false) => {
 
 const submitReview = async () => {
   if (reviewRating.value === 0) {
-    uni.showToast({ title: "请先评分", icon: "none" });
+    showFailToast("请先评分");
     return;
   }
   submittingReview.value = true;
@@ -425,14 +426,14 @@ const submitReview = async () => {
       rating: reviewRating.value,
       content: reviewContent.value,
     });
-    uni.showToast({ title: "评价提交成功", icon: "success" });
+    showSuccessToast("评价提交成功");
     showReviewForm.value = false;
     reviewRating.value = 0;
     reviewContent.value = "";
     // 重新加载评价列表
     fetchReviews(true);
   } catch {
-    uni.showToast({ title: "提交失败，请重试", icon: "none" });
+    showFailToast("提交失败，请重试");
   } finally {
     submittingReview.value = false;
   }
@@ -551,7 +552,7 @@ const toggleBookshelf = async () => {
     try {
       await readingApi.removeFromBookshelf(bookId.value);
     } catch { /* ignore */ }
-    uni.showToast({ title: "已移出书架", icon: "success" });
+    showSuccessToast("已移出书架");
   } else {
     readingStore.addToBookshelf({
       id: book.value.id,
@@ -568,7 +569,7 @@ const toggleBookshelf = async () => {
     try {
       await readingApi.addToBookshelf(bookId.value);
     } catch { /* ignore */ }
-    uni.showToast({ title: "已加入书架", icon: "success" });
+    showSuccessToast("已加入书架");
   }
 };
 
@@ -585,11 +586,11 @@ const downloadBook = () => {
     author: book.value.author,
     cover: book.value.cover,
   });
-  uni.showToast({ title: "开始下载", icon: "success" });
+  showSuccessToast("开始下载");
 };
 
 const shareBook = () => {
-  uni.showToast({ title: "请点击右上角分享", icon: "none" });
+  showFailToast("请点击右上角分享");
 };
 
 onShareAppMessage(() => {
@@ -607,11 +608,11 @@ const readChapter = (chapter: Chapter) => {
 
 
 const goAuthor = () => {
-  uni.showToast({ title: "作者主页开发中", icon: "none" });
+  showFailToast("作者主页开发中");
 };
 
 const viewAllReviews = () => {
-  uni.showToast({ title: "全部评价功能开发中", icon: "none" });
+  showFailToast("全部评价功能开发中");
 };
 
 const showWriteReview = () => {

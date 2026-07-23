@@ -1,11 +1,12 @@
 
-import { Body, Controller, Get, Param, Post, Query, UseGuards, Public } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { RolesGuard } from '../../common/guards/roles.guard'
 import { Roles } from '../../common/decorators/roles.decorator'
 import { DeptService } from './dept.service'
 import { DeptQueryDto, CreateDeptDto, UpdateDeptDto } from './dto/dept.dto'
+import { Public } from '../../common/decorators/public.decorator'
 
 @ApiTags('部门管理')
 @Controller('dept')
