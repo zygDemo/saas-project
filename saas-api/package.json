@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @saas/admin-api start:dev",
+    "dev": "pnpm --filter @saas/shared build && pnpm --filter @saas/admin-api start:dev",
     "dev:sit": "pnpm --filter @saas/admin-api start:sit",
     "build": "pnpm --filter @saas/shared build && pnpm --filter @saas/admin-api build",
     "start": "pnpm --filter @saas/admin-api start",

@@ -14,11 +14,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
-    "paths": {
-      "@saas/shared": [
-        "packages/shared/src"
-      ]
-    },
     "strictPropertyInitialization": false
   }
 }
