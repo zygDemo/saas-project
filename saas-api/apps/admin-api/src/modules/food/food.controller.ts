@@ -28,8 +28,7 @@ import {
 import { GetCurrentUserId } from '../../common/decorators/auth.decorator'
 
 @ApiTags('点餐管理')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('R_SUPER', 'R_ADMIN')
+@UseGuards(JwtAuthGuard)
 @Controller('food')
 export class FoodController {
   constructor(private readonly foodService: FoodService) {}
@@ -43,18 +42,24 @@ export class FoodController {
   }
 
   @Post('category')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '创建分类' })
   async createCategory(@Body() dto: CreateFoodCategoryDto) {
     return this.foodService.createCategory(dto)
   }
 
   @Put('category/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '更新分类' })
   async updateCategory(@Param('id') id: string, @Body() dto: UpdateFoodCategoryDto) {
     return this.foodService.updateCategory(+id, dto)
   }
 
   @Delete('category/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '删除分类' })
   async deleteCategory(@Param('id') id: string) {
     return this.foodService.deleteCategory(+id)
@@ -75,18 +80,24 @@ export class FoodController {
   }
 
   @Post('dish')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '创建菜品' })
   async createDish(@Body() dto: CreateFoodDishDto) {
     return this.foodService.createDish(dto)
   }
 
   @Put('dish/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '更新菜品' })
   async updateDish(@Param('id') id: string, @Body() dto: UpdateFoodDishDto) {
     return this.foodService.updateDish(+id, dto)
   }
 
   @Delete('dish/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '删除菜品' })
   async deleteDish(@Param('id') id: string) {
     return this.foodService.deleteDish(+id)
@@ -101,6 +112,8 @@ export class FoodController {
   }
 
   @Put('order/:id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '更新订单状态' })
   async updateOrderStatus(@Param('id') id: string, @Body('status') status: number) {
     return this.foodService.updateOrderStatus(+id, status)

@@ -33,12 +33,14 @@ export class ArticleController {
   // ==================== 文章管理 ====================
 
   @Get('list')
+  @Public()
   @ApiOperation({ summary: '获取文章列表' })
   async getList(@Query() query: ArticleQueryDto) {
     return this.articleService.getList(query)
   }
 
   @Get(':id')
+  @Public()
   @ApiOperation({ summary: '获取文章详情' })
   async getById(@Param('id') id: string) {
     return this.articleService.getById(+id)
@@ -79,12 +81,14 @@ export class ArticleController {
   // ==================== 文章分类 ====================
 
   @Get('type/list')
+  @Public()
   @ApiOperation({ summary: '获取文章分类列表' })
   async getTypeList(@Query() query: ArticleTypeQueryDto) {
     return this.articleService.getTypeList(query)
   }
 
   @Get('type/all')
+  @Public()
   @ApiOperation({ summary: '获取所有文章分类' })
   async getAllTypes() {
     return this.articleService.getAllTypes()
@@ -118,12 +122,14 @@ export class ArticleController {
   // ==================== 评论管理 ====================
 
   @Get('comment/list')
+  @Public()
   @ApiOperation({ summary: '获取评论列表（分页）' })
   async getComments(@Query() query: CommentQueryDto) {
     return this.articleService.getComments(query)
   }
 
   @Get(':id/comments')
+  @Public()
   @ApiOperation({ summary: '获取文章评论列表' })
   async getCommentsByArticle(@Param('id') id: string) {
     return this.articleService.getCommentsByArticleId(+id)
