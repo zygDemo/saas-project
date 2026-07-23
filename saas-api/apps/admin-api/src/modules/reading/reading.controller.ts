@@ -19,6 +19,8 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { ReadingService } from './reading.service';
 import {
   CreateBookCategoryDto,
@@ -66,24 +68,32 @@ export class ReadingController {
   }
 
   @Post('categories')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '创建书籍分类' })
   async createCategory(@Request() req: RequestUser, @Body() dto: CreateBookCategoryDto) {
     return this.readingService.createCategory(req.tenantId, dto);
   }
 
   @Put('categories/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '更新书籍分类' })
   async updateCategory(@Param('id') id: number, @Request() req: RequestUser, @Body() dto: UpdateBookCategoryDto) {
     return this.readingService.updateCategory(+id, req.tenantId, dto);
   }
 
   @Delete('categories/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '删除书籍分类' })
   async deleteCategory(@Param('id') id: number, @Request() req: RequestUser) {
     return this.readingService.deleteCategory(+id, req.tenantId);
   }
 
   @Post('categories/batch-status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '批量启用/禁用分类' })
   async batchUpdateCategoryStatus(@Request() req: RequestUser, @Body() dto: BatchCategoryStatusDto) {
     return this.readingService.batchUpdateCategoryStatus(req.tenantId, dto);
@@ -104,12 +114,16 @@ export class ReadingController {
   }
 
   @Post('books')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '创建书籍' })
   async createBook(@Request() req: RequestUser, @Body() dto: CreateBookDto) {
     return this.readingService.createBook(req.tenantId, dto);
   }
 
   @Post('books/upload-txt')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '上传 TXT 文件创建图书（自动分章）' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
@@ -151,12 +165,16 @@ export class ReadingController {
   }
 
   @Put('books/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '更新书籍' })
   async updateBook(@Param('id') id: number, @Request() req: RequestUser, @Body() dto: UpdateBookDto) {
     return this.readingService.updateBook(+id, req.tenantId, dto);
   }
 
   @Delete('books/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '删除书籍' })
   async deleteBook(@Param('id') id: number, @Request() req: RequestUser) {
     return this.readingService.deleteBook(+id, req.tenantId);
@@ -183,18 +201,24 @@ export class ReadingController {
   }
 
   @Post('chapters')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '创建章节' })
   async createChapter(@Request() req: RequestUser, @Body() dto: CreateChapterDto) {
     return this.readingService.createChapter(req.tenantId, dto);
   }
 
   @Put('chapters/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '更新章节' })
   async updateChapter(@Param('id') id: number, @Request() req: RequestUser, @Body() dto: UpdateChapterDto) {
     return this.readingService.updateChapter(+id, req.tenantId, dto);
   }
 
   @Delete('chapters/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '删除章节' })
   async deleteChapter(@Param('id') id: number, @Request() req: RequestUser) {
     return this.readingService.deleteChapter(+id, req.tenantId);
@@ -249,12 +273,16 @@ export class ReadingController {
   }
 
   @Put('reviews/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '审核评价（通过/驳回）' })
   async updateReviewStatus(@Request() req: RequestUser, @Body() dto: UpdateReviewStatusDto) {
     return this.readingService.updateReviewStatus(req.tenantId, dto);
   }
 
   @Delete('reviews/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('R_SUPER', 'R_ADMIN')
   @ApiOperation({ summary: '删除评价（管理员）' })
   async deleteReview(@Param('id') id: number, @Request() req: RequestUser) {
     return this.readingService.deleteReview(req.tenantId, +id);
