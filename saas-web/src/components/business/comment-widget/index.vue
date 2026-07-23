@@ -41,102 +41,113 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
-  import CommentItem from './widget/CommentItem.vue'
   import { ref, onMounted } from 'vue'
-import { fetchCommentsByArticle, fetchCreateComment } from '@/api/article'
-import type { ArticleComment } from '@/api/article'
+  import CommentItem from './widget/CommentItem.vue'
+  import { fetchCommentsByArticle, fetchCreateComment } from '@/api/article'
+  import type { ArticleComment } from '@/api/article'
 
-type Comment = ArticleComment & { replies?: ArticleComment[] }
+  const props = defineProps<{
+    articleId: number
+  }>()
+
+  interface Comment {
+    id: number
+    author: string
+    content: string
+    timestamp: string
+    replies: Comment[]
+  }
+
   const comments = ref<Comment[]>([])
 
-async function loadComments(articleId?: number) {
-  if (!articleId) return
-  try {
-    const res = await fetchCommentsByArticle(articleId)
-    const list = res.data || res || []
-    // 构建评论树
-    const map = new Map<number, Comment>()
-    const roots: Comment[] = []
-    for (const item of list) {
-      map.set(item.id, { ...item, replies: [] })
+  function toLocalComment(item: ArticleComment): Comment {
+    return {
+      id: item.id,
+      author: item.userName,
+      content: item.content,
+      timestamp: item.createdAt,
+      replies: []
     }
-    for (const item of list) {
-      const node = map.get(item.id)!
-      if (item.parentId && map.has(item.parentId)) {
-        map.get(item.parentId)!.replies!.push(node)
-      } else {
-        roots.push(node)
-      }
-    }
-    comments.value = roots
-  } catch (e) {
-    console.warn('加载评论失败:', e)
   }
-}
 
-onMounted(() => loadComments(props.articleId))
+  async function loadComments(articleId?: number) {
+    if (!articleId) return
+    try {
+      const res = await fetchCommentsByArticle(articleId)
+      const list: ArticleComment[] = res?.data || res || []
+      const map = new Map<number, Comment>()
+      const roots: Comment[] = []
+      for (const item of list) {
+        map.set(item.id, toLocalComment(item))
+      }
+      for (const item of list) {
+        const node = map.get(item.id)!
+        if (item.parentId && map.has(item.parentId)) {
+          map.get(item.parentId)!.replies.push(node)
+        } else {
+          roots.push(node)
+        }
+      }
+      comments.value = roots
+    } catch (e) {
+      console.warn('加载评论失败:', e)
+    }
+  }
 
-  const newComment = ref<Partial<Comment>>({
+  onMounted(() => loadComments(props.articleId))
+
+  const newComment = ref({
     author: '',
     content: ''
   })
 
   const showReplyForm = ref<number | null>(null)
 
-  const addComment = () => {
-    if (!newComment.value.author?.trim() || !newComment.value.content?.trim()) {
+  const addComment = async () => {
+    if (!newComment.value.author.trim() || !newComment.value.content.trim()) {
       ElMessage.warning('请填写完整的评论信息')
       return
     }
 
-    comments.value.push({
-      id: Date.now(),
-      author: newComment.value.author.trim(),
-      content: newComment.value.content.trim(),
-      timestamp: new Date().toISOString(),
-      replies: []
-    })
-
-    newComment.value.author = ''
-    newComment.value.content = ''
-    ElMessage.success('评论发布成功')
+    try {
+      await fetchCreateComment({
+        articleId: props.articleId,
+        content: newComment.value.content.trim(),
+        userName: newComment.value.author.trim()
+      })
+      newComment.value.author = ''
+      newComment.value.content = ''
+      ElMessage.success('评论发布成功')
+      await loadComments(props.articleId)
+    } catch (e) {
+      console.warn('发布评论失败:', e)
+      ElMessage.error('评论发布失败')
+    }
   }
 
-  const addReply = (commentId: number, replyAuthor: string, replyContent: string) => {
-    if (!replyAuthor?.trim() || !replyContent?.trim()) {
+  const addReply = async (commentId: number, replyAuthor: string, replyContent: string) => {
+    if (!replyAuthor.trim() || !replyContent.trim()) {
       ElMessage.warning('请填写完整的回复信息')
       return
     }
 
-    const comment = findComment(comments.value, commentId)
-    if (comment) {
-      comment.replies.push({
-        id: Date.now(),
-        author: replyAuthor.trim(),
+    try {
+      await fetchCreateComment({
+        articleId: props.articleId,
         content: replyContent.trim(),
-        timestamp: new Date().toISOString(),
-        replies: []
+        userName: replyAuthor.trim(),
+        parentId: commentId
       })
       showReplyForm.value = null
       ElMessage.success('回复发布成功')
+      await loadComments(props.articleId)
+    } catch (e) {
+      console.warn('发布回复失败:', e)
+      ElMessage.error('回复发布失败')
     }
   }
 
   const toggleReply = (commentId: number) => {
     showReplyForm.value = showReplyForm.value === commentId ? null : commentId
-  }
-
-  const findComment = (comments: Comment[], commentId: number): Comment | undefined => {
-    for (const comment of comments) {
-      if (comment.id === commentId) {
-        return comment
-      }
-      const found = findComment(comment.replies, commentId)
-      if (found) {
-        return found
-      }
-    }
-    return undefined
   }
 </script>

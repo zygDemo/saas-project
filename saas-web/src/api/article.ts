@@ -141,7 +141,6 @@ export function fetchDeleteArticleType(id: number) {
   })
 }
 
-
 // ==================== 文章评论 ====================
 
 export interface ArticleComment {
@@ -173,7 +172,12 @@ export function fetchCommentsByArticle(articleId: number) {
 }
 
 /** 获取评论列表（分页） */
-export function fetchCommentList(params: { articleId?: number; status?: string; page?: number; size?: number }) {
+export function fetchCommentList(params: {
+  articleId?: number
+  status?: string
+  page?: number
+  size?: number
+}) {
   return request.get<{ list: ArticleComment[]; total: number }>({
     url: '/article/comment/list',
     params
