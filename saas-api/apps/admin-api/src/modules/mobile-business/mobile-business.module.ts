@@ -1,60 +1,30 @@
 ﻿import { Module } from '@nestjs/common'
 import { OcrModule } from '../ocr/ocr.module'
-import { ProductModule } from '../product/product.module'
-import { DictModule } from '../dict/dict.module'
-import {
-  MobileCreditController,
-  MobileEnumController,
-  MobileFileController,
-  MobileStatisticsController,
-  MobileUserController,
-  MobileVehicleController,
-  MobileContactController,
-  MobileSalesLeadController,
-  MobileFollowUpController,
-  MobileSigningController,
-  MobileBankCardController,
-  MobilePostLoanController
-} from './mobile-business.controller'
+import { MobileBankCardModule } from './modules/bank-card/bank-card.module'
+import { MobileContactModule } from './modules/contact/contact.module'
+import { MobileCreditModule } from './modules/credit/credit.module'
+import { MobileFileModule } from './modules/file/file.module'
+import { MobileLeadModule } from './modules/lead/lead.module'
+import { MobilePostLoanModule } from './modules/post-loan/post-loan.module'
+import { MobileSigningModule } from './modules/signing/signing.module'
+import { MobileUserModule } from './modules/user/user.module'
+import { MobileVehicleModule } from './modules/vehicle/vehicle.module'
 import { MobileBusinessService } from './mobile-business.service'
-import { MobileFileService } from './mobile-file.service'
-import { MobileCustomerService } from './mobile-customer.service'
-import { MobileVehicleService } from './mobile-vehicle.service'
-import { MobileCreditService } from './mobile-credit.service'
-import { MobileContactService } from './mobile-contact.service'
-import { MobileLeadService } from './mobile-lead.service'
-import { MobileSigningService } from './mobile-signing.service'
-import { MobileBankCardService } from './mobile-bank-card.service'
-import { MobilePostLoanService } from './mobile-post-loan.service'
 
 @Module({
-  imports: [OcrModule, ProductModule, DictModule],
-  controllers: [
-    MobileFileController,
-    MobileUserController,
-    MobileVehicleController,
-    MobileCreditController,
-    MobileEnumController,
-    MobileStatisticsController,
-    MobileContactController,
-    MobileSalesLeadController,
-    MobileFollowUpController,
-    MobileSigningController,
-    MobileBankCardController,
-    MobilePostLoanController
+  imports: [
+    OcrModule,
+    MobileFileModule,
+    MobileUserModule,
+    MobileVehicleModule,
+    MobileCreditModule,
+    MobileContactModule,
+    MobileLeadModule,
+    MobileSigningModule,
+    MobileBankCardModule,
+    MobilePostLoanModule
   ],
-  providers: [
-    MobileFileService,
-    MobileCustomerService,
-    MobileVehicleService,
-    MobileCreditService,
-    MobileContactService,
-    MobileLeadService,
-    MobileSigningService,
-    MobileBankCardService,
-    MobilePostLoanService,
-    MobileBusinessService
-  ],
+  providers: [MobileBusinessService],
   exports: [MobileBusinessService]
 })
 export class MobileBusinessModule {}

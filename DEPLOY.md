@@ -1,5 +1,7 @@
 # SaaS Deployment
 
+> 架构总览见 [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+
 This setup keeps the existing H5 site at `/` and mounts the new SaaS app under `/saas`.
 
 ```text

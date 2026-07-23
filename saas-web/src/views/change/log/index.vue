@@ -47,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-  import { upgradeLogList } from '@/mock/upgrade/changeLog'
+  import { upgradeLogList } from '@/data/upgrade/changeLog'
 
   defineOptions({ name: 'ChangeLog' })
 </script>
