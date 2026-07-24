@@ -1,46 +1,77 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page, type APIRequestContext } from '@playwright/test'
 
 const BASE = 'http://localhost:3006'
 const API = 'http://localhost:3001/saas/api'
 
-test.describe('车贷SaaS后台管理 - 浏览器自动化测试', () => {
+interface LoginResult {
+  token: string
+  refreshToken: string
+}
 
-  test('1. 登录并进入后台', async ({ page }) => {
-    await page.goto(BASE)
-    await page.waitForLoadState('networkidle')
+async function loginViaApi(page: Page, request: APIRequestContext): Promise<LoginResult> {
+  const loginRes = await request.post(`${API}/auth/login`, {
+    headers: { 'Content-Type': 'application/json', 'X-Tenant-ID': '1' },
+    data: { userName: 'Super', password: '123456' },
+  })
+  expect(loginRes.status()).toBe(200)
+  const loginData = await loginRes.json()
+  const { token, refreshToken } = loginData.data as LoginResult
+  expect(token).toBeTruthy()
 
-    // 等待页面加载
-    await page.waitForTimeout(2000)
+  // 先进入应用以共享同源，再注入登录态
+  await page.goto(BASE)
+  await page.waitForLoadState('domcontentloaded')
 
-    // 检查是否有登录表单
-    const usernameInput = page.locator('input[placeholder*="用户名"], input[placeholder*="账号"], input[name="userName"]').first()
-    const passwordInput = page.locator('input[placeholder*="密码"], input[type="password"]').first()
-
-    if (await usernameInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await usernameInput.fill('Super')
-      await passwordInput.fill('123456')
-      const loginBtn = page.locator('button:has-text("登录"), button:has-text("Login"), button[type="submit"]').first()
-      await loginBtn.click()
-      await page.waitForTimeout(3000)
+  await page.evaluate(({ token, refreshToken }) => {
+    // 匹配所有版本化的 user store key，例如 sys-v3.0.2-user
+    const keys: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && /^sys-v[^-]+-user$/.test(key)) {
+        keys.push(key)
+      }
     }
 
-    // 截图
+    // 若没有已存在的 key，则使用当前默认版本构造
+    if (keys.length === 0) {
+      keys.push('sys-v3.0.2-user')
+    }
+
+    keys.forEach((key) => {
+      const state = JSON.parse(localStorage.getItem(key) || '{}')
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          ...state,
+          accessToken: token,
+          refreshToken: refreshToken,
+          isLogin: true,
+        })
+      )
+    })
+  }, { token, refreshToken })
+
+  // 刷新页面使 Pinia 从 localStorage 恢复登录态
+  await page.reload()
+  await page.waitForLoadState('networkidle')
+
+  return { token, refreshToken }
+}
+
+test.describe('车贷SaaS后台管理 - 浏览器自动化测试', () => {
+
+  test('1. 登录并进入后台', async ({ page, request }) => {
+    await loginViaApi(page, request)
+
+    // 验证已进入后台（URL 不再是登录页）
+    await expect(page).not.toHaveURL(/\/auth\/login/)
+
     await page.screenshot({ path: 'e2e/screenshots/01-login.png', fullPage: true })
     console.log('当前URL:', page.url())
   })
 
-  test('2. 导航到数据中心', async ({ page }) => {
-    await page.goto(BASE)
-    await page.waitForTimeout(2000)
-
-    // 尝试登录
-    const usernameInput = page.locator('input[placeholder*="用户名"], input[placeholder*="账号"], input[name="userName"]').first()
-    if (await usernameInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await usernameInput.fill('Super')
-      await page.locator('input[type="password"]').first().fill('123456')
-      await page.locator('button:has-text("登录"), button[type="submit"]').first().click()
-      await page.waitForTimeout(3000)
-    }
+  test('2. 导航到数据中心', async ({ page, request }) => {
+    await loginViaApi(page, request)
 
     // 点击数据中心菜单
     const dataCenterMenu = page.locator('text=数据中心, .el-menu-item:has-text("数据中心")').first()
@@ -59,18 +90,8 @@ test.describe('车贷SaaS后台管理 - 浏览器自动化测试', () => {
     await page.screenshot({ path: 'e2e/screenshots/02-stats.png', fullPage: true })
   })
 
-  test('3. 日志审计页面', async ({ page }) => {
-    await page.goto(BASE)
-    await page.waitForTimeout(2000)
-
-    // 登录
-    const usernameInput = page.locator('input[placeholder*="用户名"], input[placeholder*="账号"], input[name="userName"]').first()
-    if (await usernameInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await usernameInput.fill('Super')
-      await page.locator('input[type="password"]').first().fill('123456')
-      await page.locator('button:has-text("登录"), button[type="submit"]').first().click()
-      await page.waitForTimeout(3000)
-    }
+  test('3. 日志审计页面', async ({ page, request }) => {
+    await loginViaApi(page, request)
 
     // 导航到日志审计
     const auditMenu = page.locator('text=日志审计, .el-menu-item:has-text("日志审计")').first()
@@ -90,18 +111,8 @@ test.describe('车贷SaaS后台管理 - 浏览器自动化测试', () => {
     await page.screenshot({ path: 'e2e/screenshots/03-audit-log.png', fullPage: true })
   })
 
-  test('4. 业务管理 - 订单列表', async ({ page }) => {
-    await page.goto(BASE)
-    await page.waitForTimeout(2000)
-
-    // 登录
-    const usernameInput = page.locator('input[placeholder*="用户名"], input[placeholder*="账号"], input[name="userName"]').first()
-    if (await usernameInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await usernameInput.fill('Super')
-      await page.locator('input[type="password"]').first().fill('123456')
-      await page.locator('button:has-text("登录"), button[type="submit"]').first().click()
-      await page.waitForTimeout(3000)
-    }
+  test('4. 业务管理 - 订单列表', async ({ page, request }) => {
+    await loginViaApi(page, request)
 
     // 导航到订单管理
     const orderMenu = page.locator('text=订单管理, .el-menu-item:has-text("订单管理")').first()
@@ -113,18 +124,8 @@ test.describe('车贷SaaS后台管理 - 浏览器自动化测试', () => {
     await page.screenshot({ path: 'e2e/screenshots/04-order-list.png', fullPage: true })
   })
 
-  test('5. 平台管理页面', async ({ page }) => {
-    await page.goto(BASE)
-    await page.waitForTimeout(2000)
-
-    // 登录
-    const usernameInput = page.locator('input[placeholder*="用户名"], input[placeholder*="账号"], input[name="userName"]').first()
-    if (await usernameInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await usernameInput.fill('Super')
-      await page.locator('input[type="password"]').first().fill('123456')
-      await page.locator('button:has-text("登录"), button[type="submit"]').first().click()
-      await page.waitForTimeout(3000)
-    }
+  test('5. 平台管理页面', async ({ page, request }) => {
+    await loginViaApi(page, request)
 
     // 点击平台管理菜单
     const platformMenu = page.locator('text=平台管理, .el-sub-menu__title:has-text("平台管理")').first()
