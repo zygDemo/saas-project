@@ -1,4 +1,4 @@
-<!-- 切换权限页面 -->
+﻿<!-- 切换权限页面 -->
 <template>
   <div class="py-2">
     <!-- 页面头部 -->
@@ -190,6 +190,7 @@
 
       // 存储token和用户信息
       userStore.setToken(token, refreshToken)
+      userStore.setLoginStatus(true)
       const userInfo = await fetchGetUserInfo()
       userStore.setUserInfo(userInfo)
 

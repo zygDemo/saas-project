@@ -1,4 +1,4 @@
-import request from '@/utils/http'
+﻿import request from '@/utils/http'
 
 /**
  * 登录
@@ -47,4 +47,12 @@ export function sendEmailCode(params: { email: string; type?: string }) {
 /** 邮箱验证码登录 */
 export function emailLogin(params: { email: string; code: string }) {
   return request.post({ url: '/auth/email/login', data: params })
+}
+
+/** 用 refresh token 换发新 token */
+export function refreshToken(params: { refreshToken: string }) {
+  return request.post<{ token: string; refreshToken: string }>({
+    url: '/auth/refresh-token',
+    data: params,
+  })
 }

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 用户状态管理模块
  *
  * 提供用户相关的状态管理
@@ -135,6 +135,14 @@ export const useUserStore = defineStore(
       }
     }
 
+    const setAccessToken = (newAccessToken: string) => {
+      accessToken.value = newAccessToken
+    }
+
+    const setRefreshToken = (newRefreshToken: string) => {
+      refreshToken.value = newRefreshToken
+    }
+
     /**
      * 退出登录
      * 清空所有用户相关状态并跳转到登录页
@@ -222,6 +230,8 @@ export const useUserStore = defineStore(
       setLockStatus,
       setLockPassword,
       setToken,
+      setAccessToken,
+      setRefreshToken,
       logOut,
       checkAndClearWorktabs
     }

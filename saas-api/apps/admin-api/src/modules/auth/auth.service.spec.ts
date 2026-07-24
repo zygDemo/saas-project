@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
-import { BadRequestException } from '@nestjs/common'
+import { BadRequestException, UnauthorizedException } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
 import { AuthService } from './auth.service'
 import { PrismaService } from '../prisma/prisma.service'
@@ -83,20 +83,20 @@ describe('AuthService', () => {
   })
 
   describe('login', () => {
-    it('should throw BadRequestException when user not found', async () => {
+    it('should throw UnauthorizedException when user not found', async () => {
       mockPrisma.user.findFirst = jest.fn().mockResolvedValue(null)
       await expect(
         service.login({ userName: 'nonexistent', password: 'password' }),
-      ).rejects.toThrow(BadRequestException)
+      ).rejects.toThrow(UnauthorizedException)
     })
 
-    it('should throw BadRequestException when password does not match', async () => {
+    it('should throw UnauthorizedException when password does not match', async () => {
       mockPrisma.user.findFirst = jest
         .fn()
         .mockResolvedValue(createMockUser({ passwordHash: bcrypt.hashSync('password', 10) }))
       await expect(
         service.login({ userName: 'testuser', password: 'wrongpassword' }),
-      ).rejects.toThrow(BadRequestException)
+      ).rejects.toThrow(UnauthorizedException)
     })
 
     it('should return token when credentials are valid', async () => {

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common'
+﻿import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcryptjs'
@@ -44,8 +44,8 @@ export class AuthService {
 
     const token = `Bearer ${await this.jwt.signAsync(payload)}`
     const refreshToken = `Bearer ${await this.jwt.signAsync(payload, {
-      secret: this.config.get<string>('JWT_REFRESH_SECRET', 'change-me-refresh-secret'),
-      expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN', '7d'),
+      secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN'),
     })}`
 
     return { token, refreshToken }
@@ -99,6 +99,51 @@ export class AuthService {
     })
 
     return { id: user.id, userName: user.userName, nickName: user.nickName }
+  }
+
+  /** 用 refresh token 换发新的 access/refresh token */
+  async refreshToken(refreshToken: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('缺少 refresh token')
+    }
+
+    let payload: Record<string, unknown>
+    try {
+      payload = this.jwt.verify(refreshToken.replace(/^Bearer\s+/i, ''), {
+        secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+      }) as Record<string, unknown>
+    } catch {
+      throw new UnauthorizedException('refresh token 无效或已过期')
+    }
+
+    const tenantId = Number(payload.tenantId)
+    const userId = Number(payload.userId ?? payload.sub ?? payload.id)
+    if (!tenantId || !userId) {
+      throw new UnauthorizedException('refresh token 缺少必要字段')
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, tenantId },
+      select: { id: true, tenantId: true, userName: true, dept: { select: { orgId: true } } },
+    })
+    if (!user) throw new UnauthorizedException('用户不存在或已注销')
+
+    const roles = await this.prisma.userRole.findMany({
+      where: { userId: user.id },
+      include: { role: { select: { code: true, id: true } } },
+    })
+    const roleCodes = roles.map((r) => r.role.code)
+    const roleIds = roles.map((r) => r.role.id)
+    const orgId = user.dept?.orgId ?? null
+    const newPayload = { userId: user.id, userName: user.userName, tenantId, orgId, roles: roleCodes, roleIds }
+
+    const token = `Bearer ${await this.jwt.signAsync(newPayload)}`
+    const newRefreshToken = `Bearer ${await this.jwt.signAsync(newPayload, {
+      secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN'),
+    })}`
+
+    return { token, refreshToken: newRefreshToken }
   }
 
   /** 发送邮箱验证码 */
@@ -173,8 +218,8 @@ export class AuthService {
 
     const token = `Bearer ${await this.jwt.signAsync(payload)}`
     const refreshToken = `Bearer ${await this.jwt.signAsync(payload, {
-      secret: this.config.get<string>('JWT_REFRESH_SECRET', 'change-me-refresh-secret'),
-      expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN', '7d'),
+      secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN'),
     })}`
 
     return { token, refreshToken }

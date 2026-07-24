@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common'
+﻿import { Body, Controller, HttpCode, Post } from '@nestjs/common'
 import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger'
 import { Public } from '../../common/decorators/public.decorator'
 import { ApiTenantHeader } from '../../common/decorators/tenant-header.decorator'
@@ -7,6 +7,7 @@ import { LoginDto } from './dto/login.dto'
 import { RegisterDto } from './dto/register.dto'
 import { SendEmailCodeDto } from './dto/send-code.dto'
 import { EmailLoginDto } from './dto/email-login.dto'
+import { RefreshTokenDto } from './dto/refresh-token.dto'
 
 @ApiTags('认证管理')
 @Controller('auth')
@@ -50,5 +51,14 @@ export class AuthController {
   @ApiOperation({ summary: '邮箱验证码登录', description: '未注册用户自动创建' })
   emailLogin(@Body() dto: EmailLoginDto) {
     return this.authService.emailLogin(dto.email, dto.code)
+  }
+
+  @Public()
+  @ApiResponse({ status: 200, description: '成功' })
+  @Post('refresh-token')
+  @HttpCode(200)
+  @ApiOperation({ summary: '用 refresh token 换发新 token' })
+  refreshToken(@Body() dto: RefreshTokenDto) {
+    return this.authService.refreshToken(dto.refreshToken)
   }
 }

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HTTP 请求封装模块
  * 基于 Axios 封装的 HTTP 请求工具，提供统一的请求/响应处理
  *
@@ -88,7 +88,7 @@ axiosInstance.interceptors.request.use(
 
     return request
   },
-  (error) => {
+  async (error) => {
     showError(createHttpError($t('httpMsg.requestConfigError'), ApiStatus.error))
     return Promise.reject(error)
   }
@@ -118,11 +118,24 @@ axiosInstance.interceptors.response.use(
       }
       return response
     }
-    if (code === ApiStatus.unauthorized) handleUnauthorizedError(msg)
-    throw createHttpError(msg || $t('httpMsg.requestFailed'), code)
+    if (code === ApiStatus.unauthorized) {
+      throw createHttpError(msg || $t('httpMsg.requestFailed'), ApiStatus.unauthorized)
+    }
   },
-  (error) => {
-    if (error.response?.status === ApiStatus.unauthorized) handleUnauthorizedError()
+  async (error) => {
+    if (error.response?.status === ApiStatus.unauthorized) {
+      const refreshed = await tryHandleRefresh()
+      if (refreshed) {
+        const userStore = useUserStore()
+        const token = userStore.accessToken
+        if (token) {
+          error.config.headers = error.config.headers || {}
+          error.config.headers.set('Authorization', token)
+        }
+        return axiosInstance.request(error.config)
+      }
+      handleUnauthorizedError()
+    }
     const startTime = (error.config as ExtendedAxiosRequestConfig & { __monitorStart?: number })
       .__monitorStart
     const requestUrl =
@@ -155,6 +168,39 @@ function createHttpError(message: string, code: number) {
 }
 
 /** 处理401错误（带防抖） */
+let isRefreshing = false
+let refreshPromise: Promise<{ token: string; refreshToken: string }> | null = null
+
+async function tryRefreshToken(): Promise<{ token: string; refreshToken: string }> {
+  const userStore = useUserStore()
+  const token = userStore.refreshToken
+  if (!token) throw new Error('missing refresh token')
+
+  isRefreshing = true
+  try {
+    refreshPromise = refreshToken({ refreshToken: token })
+    const result = await refreshPromise
+    userStore.setToken(result.token, result.refreshToken)
+    return result
+  } finally {
+    isRefreshing = false
+    refreshPromise = null
+  }
+}
+
+async function tryHandleRefresh(): Promise<boolean> {
+  if (isRefreshing) return false
+  const userStore = useUserStore()
+  if (!userStore.refreshToken) return false
+
+  try {
+    await tryRefreshToken()
+    return true
+  } catch {
+    return false
+  }
+}
+
 function handleUnauthorizedError(message?: string): never {
   const error = createHttpError(message || $t('httpMsg.unauthorized'), ApiStatus.unauthorized)
 
