@@ -31,10 +31,13 @@ describe('RolesService', () => {
       roleDepartment: { createMany: jest.fn(), deleteMany: jest.fn() },
       roleMenu: { deleteMany: jest.fn(), createMany: jest.fn() },
       rolePermission: { deleteMany: jest.fn(), createMany: jest.fn() },
-      menu: { findMany: jest.fn().mockResolvedValue([{ id: 1 }]) },
-      permission: { findMany: jest.fn().mockResolvedValue([{ id: 1 }]) },
-      department: { findMany: jest.fn().mockResolvedValue([{ id: 1 }]) },
-      $transaction: jest.fn((fn) => fn(mockPrisma)),
+      menu: { findMany: jest.fn().mockResolvedValue([{ id: 1 }, { id: 2 }]) },
+      permission: { findMany: jest.fn().mockResolvedValue([{ id: 1 }, { id: 2 }]) },
+      department: { findMany: jest.fn().mockResolvedValue([{ id: 1 }, { id: 2 }]) },
+      $transaction: jest.fn((arg) => {
+        if (Array.isArray(arg)) return Promise.all(arg)
+        return arg(mockPrisma)
+      }),
     }
     mockCache = {
       get: jest.fn().mockResolvedValue(null),
@@ -57,18 +60,19 @@ describe('RolesService', () => {
     it('应返回分页角色列表', async () => {
       const result = await service.getRoleList({} as any)
       expect(mockPrisma.role.findMany).toHaveBeenCalled()
-      expect(result).toBeDefined()
+      expect(result.list).toHaveLength(1)
+      expect(result.meta.total).toBe(1)
     })
     it('应支持角色名搜索', async () => {
       await service.getRoleList({ roleName: '管理' } as any)
       const call = mockPrisma.role.findMany.mock.calls[0][0]
-      expect(call.where.name).toBeDefined()
+      expect(call.where.name).toEqual({ contains: '管理', mode: 'insensitive' })
     })
   })
 
   describe('createRole', () => {
     it('应创建角色', async () => {
-      mockPrisma.role.findFirst.mockResolvedValue(null) // 编码不存在
+      mockPrisma.role.findFirst = jest.fn().mockResolvedValue(null) // 编码不存在
       await service.createRole({ roleName: '新角色', roleCode: 'new_role' } as any)
       expect(mockPrisma.role.create).toHaveBeenCalled()
     })
@@ -76,7 +80,7 @@ describe('RolesService', () => {
       await expect(service.createRole({ roleName: 'X', roleCode: 'admin' } as any)).rejects.toThrow(ConflictException)
     })
     it('CUSTOM 数据范围应创建部门关联', async () => {
-      mockPrisma.role.findFirst.mockResolvedValue(null)
+      mockPrisma.role.findFirst = jest.fn().mockResolvedValue(null)
       await service.createRole({ roleName: 'X', roleCode: 'custom', dataScope: 'CUSTOM', departmentIds: [1, 2] } as any)
       expect(mockPrisma.roleDepartment.createMany).toHaveBeenCalled()
     })
@@ -88,8 +92,14 @@ describe('RolesService', () => {
       expect(mockPrisma.role.update).toHaveBeenCalled()
     })
     it('角色不存在时应抛出异常', async () => {
-      mockPrisma.role.findFirst.mockResolvedValue(null)
+      mockPrisma.role.findFirst = jest.fn().mockResolvedValue(null)
       await expect(service.updateRole(999, {} as any)).rejects.toThrow()
+    })
+    it('应更新数据范围', async () => {
+      await service.updateRole(1, { dataScope: 'DEPT' } as any)
+      expect(mockPrisma.role.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ dataScope: 'DEPT' }) })
+      )
     })
   })
 
@@ -102,16 +112,12 @@ describe('RolesService', () => {
 
   describe('saveRolePermission', () => {
     it('应保存角色权限', async () => {
-      await service.saveRolePermission(1, { permissionIds: [1, 2] } as any)
+      ;(service as any).getRolePermission = jest.fn().mockResolvedValue({ menus: [], permissions: [] })
+      await service.saveRolePermission(1, { menuIds: [1, 2], permissionIds: [1, 2] } as any)
+      expect(mockPrisma.roleMenu.deleteMany).toHaveBeenCalled()
       expect(mockPrisma.rolePermission.deleteMany).toHaveBeenCalled()
+      expect(mockPrisma.roleMenu.createMany).toHaveBeenCalled()
       expect(mockPrisma.rolePermission.createMany).toHaveBeenCalled()
-    })
-  })
-
-  describe('saveRoleDataScope', () => {
-    it('应保存数据范围', async () => {
-      await service.saveRoleDataScope(1, { dataScope: 'DEPT' } as any)
-      expect(mockPrisma.role.update).toHaveBeenCalled()
     })
   })
 })

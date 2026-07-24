@@ -53,17 +53,19 @@ describe('ProductService', () => {
     it('应返回分页产品列表', async () => {
       const result = await service.getList({} as any)
       expect(mockPrisma.product.findMany).toHaveBeenCalled()
-      expect(result).toBeDefined()
+      expect(result.list).toHaveLength(1)
+      expect(result.meta.total).toBe(1)
     })
-    it('应支持名称搜索', async () => {
-      await service.getList({ keyword: '车抵贷' } as any)
+    it('应支持名称模糊搜索', async () => {
+      await service.getList({ name: '车抵贷' } as any)
       const call = mockPrisma.product.findMany.mock.calls[0][0]
-      expect(call.where.OR).toBeDefined()
+      expect(call.where.name).toEqual({ contains: '车抵贷', mode: 'insensitive' })
     })
     it('应支持精确字段过滤', async () => {
       await service.getList({ orgId: 1, productType: 'MORTGAGE' } as any)
       const call = mockPrisma.product.findMany.mock.calls[0][0]
       expect(call.where.orgId).toBe(1)
+      expect(call.where.productType).toBe('MORTGAGE')
     })
   })
 

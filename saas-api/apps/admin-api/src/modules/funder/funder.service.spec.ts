@@ -53,12 +53,17 @@ describe('FunderService', () => {
     it('应返回分页资方列表', async () => {
       const result = await service.getList({} as any)
       expect(mockPrisma.funder.findMany).toHaveBeenCalled()
-      expect(result).toBeDefined()
+      expect(result.list).toHaveLength(1)
+      expect(result.meta.total).toBe(1)
     })
-    it('应支持名称/编码搜索', async () => {
-      await service.getList({ keyword: '银行' } as any)
-      const call = mockPrisma.funder.findMany.mock.calls[0][0]
-      expect(call.where.OR).toBeDefined()
+    it('应支持名称/编码模糊搜索', async () => {
+      await service.getList({ name: '银行' } as any)
+      const nameCall = mockPrisma.funder.findMany.mock.calls[0][0]
+      expect(nameCall.where.name).toEqual({ contains: '银行', mode: 'insensitive' })
+
+      await service.getList({ code: 'BANK' } as any)
+      const codeCall = mockPrisma.funder.findMany.mock.calls[1][0]
+      expect(codeCall.where.code).toEqual({ contains: 'BANK', mode: 'insensitive' })
     })
   })
 
@@ -75,15 +80,17 @@ describe('FunderService', () => {
 
   describe('create', () => {
     it('应创建资方', async () => {
+      mockPrisma.funder.findFirst = jest.fn().mockResolvedValue(null)
       await service.create({ orgId: 1, name: '新资方', code: 'NEW', funderType: 'BANK' } as any)
       expect(mockPrisma.funder.create).toHaveBeenCalled()
     })
     it('机构不存在时应抛出异常', async () => {
-      mockPrisma.organization.findFirst.mockResolvedValue(null)
+      mockPrisma.funder.findFirst = jest.fn().mockResolvedValue(null)
+      mockPrisma.organization.findFirst = jest.fn().mockResolvedValue(null)
       await expect(service.create({ orgId: 999, name: 'X', code: 'X', funderType: 'BANK' } as any)).rejects.toThrow()
     })
     it('同一机构下编码重复时应抛出异常', async () => {
-      mockPrisma.funder.findFirst.mockResolvedValue({ id: 2, orgId: 1, code: 'BANK_A' })
+      mockPrisma.funder.findFirst = jest.fn().mockResolvedValue({ id: 2, orgId: 1, code: 'BANK_A' })
       await expect(service.create({ orgId: 1, name: 'X', code: 'BANK_A', funderType: 'BANK' } as any)).rejects.toThrow(BadRequestException)
     })
   })

@@ -114,8 +114,8 @@ describe('LeadService', () => {
 
       const result = await service.getList({ current: 1, size: 10 }) as any
 
-      expect(result.records).toHaveLength(1)
-      expect(result.total).toBe(1)
+      expect(result.list).toHaveLength(1)
+      expect(result.meta.total).toBe(1)
     })
 
     it('应该支持按姓名模糊搜索', async () => {
