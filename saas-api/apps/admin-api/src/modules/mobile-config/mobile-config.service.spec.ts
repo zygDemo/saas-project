@@ -29,7 +29,12 @@ describe('MobileConfigService', () => {
       },
       user: {
         findFirst: jest.fn().mockResolvedValue(mockUser),
+        findUnique: jest.fn().mockResolvedValue(mockUser),
         update: jest.fn().mockResolvedValue(mockUser),
+      },
+      role: {
+        findFirst: jest.fn().mockResolvedValue({ id: 2, mobileModules: ['food'], mobileMultiModule: true }),
+        update: jest.fn(),
       },
     }
     const module: TestingModule = await Test.createTestingModule({
@@ -62,7 +67,7 @@ describe('MobileConfigService', () => {
 
     it('无效模块 key 应抛出异常', async () => {
       await expect(service.updateConfig({ mobileModules: ['invalid_module'] } as any))
-        .rejects.toThrow(ConflictException)
+        .rejects.toThrow('无效的模块 key')
     })
   })
 

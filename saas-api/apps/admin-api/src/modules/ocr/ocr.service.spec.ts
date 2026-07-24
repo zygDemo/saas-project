@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { OcrService } from './ocr.service'
-import { PrismaService } from '../prisma/prisma.service'
 import { ConfigService } from '@nestjs/config'
 
 jest.mock('../../common/tenant/tenant-context', () => ({
@@ -14,6 +13,12 @@ describe('OcrService', () => {
   let mockConfig: Record<string, unknown>
 
   beforeEach(async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ success: true }),
+      json: async () => ({ success: true }),
+    } as any)
+
     mockPrisma = { $transaction: jest.fn((arr: unknown[]) => Promise.all(arr)) }
     mockConfig = {
       get: jest.fn((key: string) => {
@@ -24,7 +29,7 @@ describe('OcrService', () => {
       }),
     }
     const module: TestingModule = await Test.createTestingModule({
-      providers: [OcrService, { provide: PrismaService, useValue: mockPrisma }, { provide: ConfigService, useValue: mockConfig }],
+      providers: [OcrService, { provide: ConfigService, useValue: mockConfig }],
     }).compile()
     service = module.get<OcrService>(OcrService)
   })
@@ -38,10 +43,12 @@ describe('OcrService', () => {
 
   describe('配置读取', () => {
     it('应从 ConfigService 读取 OCR_URL', async () => {
+      await service.health()
       expect(mockConfig.get).toHaveBeenCalledWith('OCR_URL')
     })
 
     it('应从 ConfigService 读取 OCR_API_KEY', async () => {
+      await service.health()
       expect(mockConfig.get).toHaveBeenCalledWith('OCR_API_KEY')
     })
   })

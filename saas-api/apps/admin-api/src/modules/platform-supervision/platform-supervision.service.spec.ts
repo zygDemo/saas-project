@@ -24,6 +24,7 @@ describe('PlatformSupervisionService', () => {
       },
       application: {
         groupBy: jest.fn().mockResolvedValue([{ orgId: 1, _count: { id: 10 } }]),
+        count: jest.fn().mockResolvedValue(100),
       },
       lead: {
         groupBy: jest.fn().mockResolvedValue([{ orgId: 1, _count: { id: 5 } }]),
@@ -47,15 +48,15 @@ describe('PlatformSupervisionService', () => {
     it('应返回平台监管统计列表', async () => {
       const result = await service.getStats({} as any)
       expect(mockPrisma.organization.findMany).toHaveBeenCalled()
-      expect(result.records).toBeDefined()
-      expect(result.records[0].orgName).toBe('测试机构')
+      expect(result.list).toBeDefined()
+      expect(result.list[0].orgName).toBe('测试机构')
     })
 
     it('应包含申请数/线索数/放款金额', async () => {
       const result = await service.getStats({} as any)
-      expect(result.records[0].totalApplications).toBe(10)
-      expect(result.records[0].leadCount).toBe(5)
-      expect(result.records[0].disbursedAmount).toBe(100000)
+      expect(result.list[0].totalApplications).toBe(10)
+      expect(result.list[0].leadCount).toBe(5)
+      expect(result.list[0].disbursedAmount).toBe(100000)
     })
 
     it('应支持分页', async () => {

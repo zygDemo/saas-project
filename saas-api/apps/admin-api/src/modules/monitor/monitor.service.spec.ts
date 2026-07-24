@@ -26,7 +26,9 @@ describe('MonitorService', () => {
         findFirst: jest.fn().mockResolvedValue(mockLog),
         count: jest.fn().mockResolvedValue(1),
         create: jest.fn().mockResolvedValue(mockLog),
+        groupBy: jest.fn().mockResolvedValue([{ action: 'click', _count: { action: 5 } }]),
       },
+      $transaction: jest.fn((arg: any) => Array.isArray(arg) ? Promise.all(arg) : arg(mockPrisma)),
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [MonitorService, { provide: PrismaService, useValue: mockPrisma }],
@@ -38,7 +40,7 @@ describe('MonitorService', () => {
     it('应返回分页监控日志', async () => {
       const result = await service.getLogs({} as any)
       expect(mockPrisma.operationLog.findMany).toHaveBeenCalled()
-      expect(result.records).toBeDefined()
+      expect(result.list).toBeDefined()
     })
 
     it('应支持 module 过滤', async () => {
@@ -55,8 +57,8 @@ describe('MonitorService', () => {
 
     it('应映射日志字段', async () => {
       const result = await service.getLogs({} as any)
-      expect(result.records[0].type).toBeDefined()
-      expect(result.records[0].route).toBe('/api/test')
+      expect(result.list[0].type).toBeDefined()
+      expect(result.list[0].route).toBe('/api/test')
     })
   })
 
@@ -83,7 +85,8 @@ describe('MonitorService', () => {
   describe('getStats', () => {
     it('应返回监控统计', async () => {
       const result = await service.getStats({} as any)
-      expect(mockPrisma.operationLog.findMany).toHaveBeenCalled()
+      expect(mockPrisma.operationLog.count).toHaveBeenCalled()
+      expect(mockPrisma.operationLog.groupBy).toHaveBeenCalled()
       expect(result).toBeDefined()
     })
   })

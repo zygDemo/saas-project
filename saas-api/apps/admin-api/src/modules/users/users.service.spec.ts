@@ -71,7 +71,7 @@ describe('UsersService', () => {
   describe('createUser', () => {
     it('应创建用户并加密密码', async () => {
       mockPrisma.user.findFirst.mockResolvedValue(null) // 用户名不存在
-      await service.createUser({ userName: 'newuser', password: 'pass123', nickName: '新用户' } as any)
+      await service.createUser({ userName: 'newuser', password: 'pass123', nickName: '新用户', email: 'newuser@example.com', roleCodes: ['admin'] } as any)
       expect(mockPrisma.user.create).toHaveBeenCalled()
       const call = mockPrisma.user.create.mock.calls[0][0]
       expect(call.data.passwordHash).toBeDefined()

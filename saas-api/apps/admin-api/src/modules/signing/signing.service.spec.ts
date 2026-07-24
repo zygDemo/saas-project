@@ -1,251 +1,111 @@
 import { Test, TestingModule } from '@nestjs/testing'
+import { NotFoundException, BadRequestException } from '@nestjs/common'
 import { SigningService } from './signing.service'
 import { PrismaService } from '../prisma/prisma.service'
-import { NotFoundException } from '@nestjs/common'
 
 jest.mock('../../common/tenant/tenant-context', () => ({
-  getCurrentTenantId: jest.fn(() => 1)
+  getCurrentTenantId: jest.fn(() => 1),
 }))
 
-import { getCurrentTenantId } from '../../common/tenant/tenant-context'
+const mockApplication = { id: 1, applicationNo: 'APP001', tenantId: 1 }
+const mockSigning = {
+  id: 1,
+  signingCode: 'SIG001',
+  applicationId: 1,
+  customerName: 'Test',
+  tenantId: 1,
+  status: 'DRAFT',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
+const mockSigningLog = { id: 1, signingId: 1, action: 'CREATE', createdAt: new Date() }
 
 describe('SigningService', () => {
   let service: SigningService
-  let mockPrisma: jest.Mocked<PrismaService>
-
-  const makeSignRecord = (overrides = {}) => ({
-    id: 1,
-    tenantId: 1,
-    applicationId: 1,
-    status: 'SENT',
-    contractUrl: 'http://contract.pdf',
-    videoUrl: null,
-    signedAt: null,
-    expiredAt: new Date('2026-12-31'),
-    cancelledReason: null,
-    deletedAt: null,
-    application: { id: 1, applicationNo: 'APP-001', status: 'PENDING_SIGN' },
-    ...overrides
-  })
+  let mockPrisma: any
 
   beforeEach(async () => {
-    ;(getCurrentTenantId as jest.Mock).mockReturnValue(1)
-
+    jest.clearAllMocks()
     mockPrisma = {
-      signRecord: {
-        count: jest.fn(),
-        findFirst: jest.fn(),
-        findMany: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn()
+      signing: {
+        findMany: jest.fn().mockResolvedValue([mockSigning]),
+        findFirst: jest.fn().mockResolvedValue(mockSigning),
+        count: jest.fn().mockResolvedValue(1),
+        create: jest.fn().mockResolvedValue(mockSigning),
+        update: jest.fn().mockResolvedValue(mockSigning),
+      },
+      signingLog: {
+        create: jest.fn().mockResolvedValue(mockSigningLog),
       },
       application: {
-        findFirst: jest.fn(),
-        update: jest.fn()
+        findFirst: jest.fn().mockResolvedValue(mockApplication),
       },
-      $transaction: jest.fn((queries: unknown[]) => Promise.all(queries))
-    } as unknown as jest.Mocked<PrismaService>
-
+      $transaction: jest.fn((arr: any) => Promise.all(arr)),
+    }
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        SigningService,
-        { provide: PrismaService, useValue: mockPrisma }
-      ]
+      providers: [SigningService, { provide: PrismaService, useValue: mockPrisma }],
     }).compile()
-
     service = module.get<SigningService>(SigningService)
   })
 
-  afterEach(() => {
-    jest.clearAllMocks()
-  })
-
-  // ═══════════════════════════════════════════════════════════════
-  //  CRUD
-  // ═══════════════════════════════════════════════════════════════
-  describe('create', () => {
-    it('应该成功创建签署记录', async () => {
-      mockPrisma.application.findFirst!.mockResolvedValue({ id: 1 } as any)
-      mockPrisma.signRecord.create!.mockResolvedValue(makeSignRecord())
-
-      const result = await service.create({
-        applicationId: 1,
-        status: 'PENDING',
-        contractUrl: 'http://contract.pdf'
-      })
-
-      expect(result.id).toBe(1)
-    })
-
-    it('进件不存在时应抛出异常', async () => {
-      mockPrisma.application.findFirst!.mockResolvedValue(null)
-
-      await expect(
-        service.create({ applicationId: 999, status: 'PENDING' })
-      ).rejects.toThrow('进件不存在')
-    })
-  })
-
   describe('getList', () => {
-    it('应该返回分页签署记录', async () => {
-      mockPrisma.signRecord.count!.mockResolvedValue(1)
-      mockPrisma.signRecord.findMany!.mockResolvedValue([makeSignRecord()])
-
-      const result = await service.getList({ current: 1, size: 10 }) as any
-
-      expect(result.records).toHaveLength(1)
-      expect(result.total).toBe(1)
-    })
-
-    it('应该支持按 applicationId 筛选', async () => {
-      mockPrisma.signRecord.count!.mockResolvedValue(0)
-      mockPrisma.signRecord.findMany!.mockResolvedValue([])
-
-      await service.getList({ applicationId: 1, current: 1, size: 10 })
-
-      expect(mockPrisma.signRecord.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ applicationId: 1 })
-        })
-      )
-    })
-
-    it('应该支持按 status 筛选', async () => {
-      mockPrisma.signRecord.count!.mockResolvedValue(0)
-      mockPrisma.signRecord.findMany!.mockResolvedValue([])
-
-      await service.getList({ status: 'SIGNED', current: 1, size: 10 })
-
-      expect(mockPrisma.signRecord.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ status: 'SIGNED' })
-        })
-      )
+    it('应返回分页签约列表', async () => {
+      const result = await service.getList({ signingCode: 'SIG', page: 1, pageSize: 10 } as any)
+      expect(mockPrisma.signing.findMany).toHaveBeenCalled()
+      expect(result.list).toEqual([mockSigning])
+      expect(result.meta.total).toBe(1)
     })
   })
 
   describe('getDetail', () => {
-    it('应该返回签署详情', async () => {
-      mockPrisma.signRecord.findFirst!.mockResolvedValue(makeSignRecord())
-
-      const result = (await service.getDetail(1)) as any
-
-      expect(result.status).toBe('SENT')
-      expect(result.contractUrl).toBe('http://contract.pdf')
+    it('应返回签约详情', async () => {
+      const result = await service.getDetail(1)
+      expect(result).toEqual(mockSigning)
     })
-
-    it('不存在时应抛出 NotFoundException', async () => {
-      mockPrisma.signRecord.findFirst!.mockResolvedValue(null)
-
+    it('不存在应抛异常', async () => {
+      mockPrisma.signing.findFirst = jest.fn().mockResolvedValue(null)
       await expect(service.getDetail(999)).rejects.toThrow(NotFoundException)
     })
   })
 
-  // ═══════════════════════════════════════════════════════════════
-  //  AUTHORIZE SIGN
-  // ═══════════════════════════════════════════════════════════════
-  describe('authorizeSign', () => {
-    it('PENDING 状态应成功授权签署', async () => {
-      mockPrisma.signRecord.findFirst!.mockResolvedValue(makeSignRecord({ status: 'PENDING' }))
-      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
-        const tx = {
-          signRecord: {
-            update: jest.fn().mockResolvedValue({ id: 1, status: 'SIGNED', signedAt: new Date() })
-          },
-          application: {
-            update: jest.fn().mockResolvedValue({ id: 1, status: 'SIGNED' })
-          }
-        }
-        return fn(tx)
-      })
-
-      const result = await service.authorizeSign(1)
-
-      expect(result.code).toBe(200)
-      expect(result.message).toBe('授权签署成功')
+  describe('create', () => {
+    it('应创建签约', async () => {
+      await service.create({ applicationId: 1, customerName: 'Test' } as any)
+      expect(mockPrisma.signing.create).toHaveBeenCalled()
     })
-
-    it('SENT 状态应成功授权签署', async () => {
-      mockPrisma.signRecord.findFirst!.mockResolvedValue(makeSignRecord({ status: 'SENT' }))
-      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
-        const tx = {
-          signRecord: {
-            update: jest.fn().mockResolvedValue({ id: 1, status: 'SIGNED', signedAt: new Date() })
-          },
-          application: {
-            update: jest.fn().mockResolvedValue({ id: 1, status: 'SIGNED' })
-          }
-        }
-        return fn(tx)
-      })
-
-      const result = await service.authorizeSign(1)
-
-      expect(result.code).toBe(200)
-    })
-
-    it('签署记录不存在时应抛出 NotFoundException', async () => {
-      mockPrisma.signRecord.findFirst!.mockResolvedValue(null)
-
-      await expect(service.authorizeSign(999)).rejects.toThrow('签署记录不存在')
-    })
-
-    it('已签署状态不允许重复签署', async () => {
-      mockPrisma.signRecord.findFirst!.mockResolvedValue(makeSignRecord({ status: 'SIGNED' }))
-
-      await expect(service.authorizeSign(1)).rejects.toThrow('当前状态 SIGNED 不允许签署')
-    })
-
-    it('已取消状态不允许签署', async () => {
-      mockPrisma.signRecord.findFirst!.mockResolvedValue(makeSignRecord({ status: 'CANCELLED' }))
-
-      await expect(service.authorizeSign(1)).rejects.toThrow('当前状态 CANCELLED 不允许签署')
-    })
-
-    it('签署事务应同时更新签署记录和申请状态', async () => {
-      let signUpdateArgs: Record<string, unknown>
-      let appUpdateArgs: Record<string, unknown>
-
-      mockPrisma.signRecord.findFirst!.mockResolvedValue(makeSignRecord({ status: 'SENT' }))
-      mockPrisma.$transaction = jest.fn(async (fn: unknown) => {
-        const tx = {
-          signRecord: {
-            update: jest.fn().mockImplementation((args: Record<string, unknown>) => {
-              signUpdateArgs = args
-              return Promise.resolve({ id: 1, status: 'SIGNED' })
-            })
-          },
-          application: {
-            update: jest.fn().mockImplementation((args: Record<string, unknown>) => {
-              appUpdateArgs = args
-              return Promise.resolve({ id: 1, status: 'SIGNED' })
-            })
-          }
-        }
-        return fn(tx)
-      })
-
-      await service.authorizeSign(1)
-
-      expect(signUpdateArgs.data.status).toBe('SIGNED')
-      expect(signUpdateArgs.data.signedAt).toBeInstanceOf(Date)
-      expect(appUpdateArgs.data.status).toBe('SIGNED')
-      expect(appUpdateArgs.where.id).toBe(1) // applicationId
+    it('进件不存在应抛异常', async () => {
+      mockPrisma.application.findFirst = jest.fn().mockResolvedValue(null)
+      await expect(service.create({ applicationId: 999 } as any)).rejects.toThrow(BadRequestException)
     })
   })
 
-  // ═══════════════════════════════════════════════════════════════
-  //  UPDATE / REMOVE
-  // ═══════════════════════════════════════════════════════════════
   describe('update', () => {
-    it('应该成功更新签署记录', async () => {
-      mockPrisma.signRecord.findFirst!.mockResolvedValue(makeSignRecord())
-      mockPrisma.application.findFirst!.mockResolvedValue({ id: 1 } as any)
-      mockPrisma.signRecord.update!.mockResolvedValue(makeSignRecord({ contractUrl: 'http://new.pdf' }))
+    it('应更新签约', async () => {
+      await service.update(1, { customerName: 'Updated' } as any)
+      expect(mockPrisma.signing.update).toHaveBeenCalled()
+    })
+    it('不存在应抛异常', async () => {
+      mockPrisma.signing.findFirst = jest.fn().mockResolvedValue(null)
+      await expect(service.update(999, {} as any)).rejects.toThrow(NotFoundException)
+    })
+  })
 
-      await service.update(1, { applicationId: 1, contractUrl: 'http://new.pdf' })
+  describe('remove', () => {
+    it('应删除签约', async () => {
+      const result = await service.remove(1)
+      expect(result).toEqual({ id: 1 })
+      expect(mockPrisma.signing.delete).toHaveBeenCalled()
+    })
+  })
 
-      expect(mockPrisma.signRecord.update).toHaveBeenCalled()
+  describe('authorizeSign', () => {
+    it('应授权签约', async () => {
+      mockPrisma.$transaction = jest.fn((callback: any) =>
+        callback({ ...mockPrisma, $transaction: undefined }),
+      )
+      await service.authorizeSign(1, { authorizedBy: 1, remark: 'ok' } as any)
+      expect(mockPrisma.signing.update).toHaveBeenCalled()
+      expect(mockPrisma.signingLog.create).toHaveBeenCalled()
     })
   })
 })

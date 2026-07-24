@@ -38,7 +38,8 @@ describe('ThirdPartyServiceService', () => {
     it('应返回分页第三方服务列表', async () => {
       const result = await service.getList({} as any)
       expect(mockPrisma.thirdPartyService.findMany).toHaveBeenCalled()
-      expect(result.records).toBeDefined()
+      expect(result.list).toBeDefined()
+      expect(result.meta.total).toBe(1)
     })
 
     it('应支持 keyword 搜索', async () => {
@@ -56,6 +57,7 @@ describe('ThirdPartyServiceService', () => {
 
   describe('create', () => {
     it('应创建第三方服务', async () => {
+      mockPrisma.thirdPartyService.findFirst.mockResolvedValue(null)
       const result = await service.create({ name: '新服务', code: 'NEW_SVC', serviceType: 'PAYMENT' } as any)
       expect(mockPrisma.thirdPartyService.create).toHaveBeenCalled()
       expect(result).toBeDefined()

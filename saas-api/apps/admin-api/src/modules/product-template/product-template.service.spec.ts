@@ -39,7 +39,7 @@ describe('ProductTemplateService', () => {
     it('应返回分页模板列表', async () => {
       const result = await service.getList({} as any)
       expect(mockPrisma.productTemplate.findMany).toHaveBeenCalled()
-      expect(result.records).toBeDefined()
+      expect(result.list).toBeDefined()
     })
 
     it('应支持 keyword 搜索', async () => {

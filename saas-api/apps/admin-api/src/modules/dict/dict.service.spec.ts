@@ -51,7 +51,7 @@ describe('DictService', () => {
     }
     mockCache = {
       getOrSet: jest.fn((_key, fn) => fn()),
-      invalidate: jest.fn(),
+      delByPrefix: jest.fn(),
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [

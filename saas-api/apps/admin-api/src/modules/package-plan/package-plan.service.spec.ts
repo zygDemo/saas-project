@@ -21,12 +21,15 @@ describe('PackagePlanService', () => {
     mockPrisma = {
       packagePlan: {
         findMany: jest.fn().mockResolvedValue([mockPkgPlan]),
-        findFirst: jest.fn().mockResolvedValue(mockPkgPlan),
+        findFirst: jest.fn(({ where }: any) => {
+          if (where?.id === 1 || where?.code === 'BASIC') return Promise.resolve(mockPkgPlan)
+          return Promise.resolve(null)
+        }),
         count: jest.fn().mockResolvedValue(1),
         create: jest.fn().mockResolvedValue(mockPkgPlan),
         update: jest.fn().mockResolvedValue(mockPkgPlan),
       },
-      $transaction: jest.fn((arr: unknown[]) => Promise.all(arr)),
+      $transaction: jest.fn((arg: any) => Array.isArray(arg) ? Promise.all(arg) : arg(mockPrisma)),
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [PackagePlanService, { provide: PrismaService, useValue: mockPrisma }],
@@ -38,7 +41,7 @@ describe('PackagePlanService', () => {
     it('应返回分页套餐列表', async () => {
       const result = await service.getList({} as any)
       expect(mockPrisma.packagePlan.findMany).toHaveBeenCalled()
-      expect(result.records).toBeDefined()
+      expect(result.list).toBeDefined()
     })
 
     it('应支持 keyword 搜索', async () => {

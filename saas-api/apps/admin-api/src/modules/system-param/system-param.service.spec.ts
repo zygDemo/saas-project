@@ -30,14 +30,19 @@ describe('SystemParamService', () => {
     mockPrisma = {
       systemParam: {
         findMany: jest.fn().mockResolvedValue([mockParam]),
-        findFirst: jest.fn().mockResolvedValue(mockParam),
+        findFirst: jest.fn(({ where }: any) => {
+          if (where?.id === 1 || where?.key === 'system.name') return Promise.resolve(mockParam)
+          return Promise.resolve(null)
+        }),
         count: jest.fn().mockResolvedValue(1),
         create: jest.fn().mockResolvedValue(mockParam),
         update: jest.fn().mockResolvedValue(mockParam),
       },
-      $transaction: jest.fn((arr: unknown[]) => Promise.all(arr)),
+      $transaction: jest.fn((arg: any) => Array.isArray(arg) ? Promise.all(arg) : arg(mockPrisma)),
     }
     mockCache = {
+      get: jest.fn().mockResolvedValue(null),
+      set: jest.fn(),
       getOrSet: jest.fn((_key: string, fn: () => Promise<unknown>) => fn()),
       delByPrefix: jest.fn(),
     }
@@ -55,7 +60,7 @@ describe('SystemParamService', () => {
     it('应返回分页系统参数列表', async () => {
       const result = await service.getList({} as any)
       expect(mockPrisma.systemParam.findMany).toHaveBeenCalled()
-      expect(result.records).toBeDefined()
+      expect(result.list).toBeDefined()
     })
 
     it('应支持 group 过滤', async () => {

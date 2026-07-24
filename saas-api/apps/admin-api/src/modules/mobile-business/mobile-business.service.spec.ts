@@ -24,7 +24,7 @@ describe('MobileBusinessService', () => {
   const createMock = () => ({
     file: { upload: jest.fn(), uploadWithType: jest.fn(), getFileList: jest.fn(), deleteFile: jest.fn(), getProductFileList: jest.fn() },
     ocr: { recognizeIdCard: jest.fn(), recognizeIdCardByObjectKey: jest.fn(), recognizeVehicle: jest.fn(), recognizeVehicleByObjectKey: jest.fn() },
-    customer: { getList: jest.fn(), getDetail: jest.fn(), create: jest.fn(), update: jest.fn() },
+    customer: { getList: jest.fn(), getUserList: jest.fn(), getDetail: jest.fn(), create: jest.fn(), update: jest.fn() },
     vehicle: { getList: jest.fn(), getDetail: jest.fn(), create: jest.fn(), update: jest.fn() },
     credit: { getList: jest.fn(), getDetail: jest.fn(), create: jest.fn(), update: jest.fn() },
     contact: { getList: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
@@ -63,11 +63,11 @@ describe('MobileBusinessService', () => {
 
   it('应将 OCR 委托给 OcrService', async () => {
     await service.getIdCardOcr({} as any)
-    expect(service['ocrService'].recognizeIdCard).toHaveBeenCalled()
+    expect(service['ocrService'].recognizeIdCardByObjectKey).toHaveBeenCalled()
   })
 
   it('应将客户操作委托给 MobileCustomerService', async () => {
-    await service.getCustomerList({} as any, {} as any)
-    expect(service['customerService'].getList).toHaveBeenCalled()
+    await service.getUserList({} as any)
+    expect(service['customerService'].getUserList).toHaveBeenCalled()
   })
 })

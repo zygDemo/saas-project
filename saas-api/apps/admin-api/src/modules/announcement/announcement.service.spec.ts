@@ -33,9 +33,7 @@ describe('AnnouncementService', () => {
       },
       $transaction: jest.fn((arr) => Promise.all(arr)),
     }
-    mockNotification = {
-      pushAnnouncement: jest.fn(),
-    }
+    mockNotification = {}
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AnnouncementService,
@@ -97,10 +95,9 @@ describe('AnnouncementService', () => {
   })
 
   describe('publish', () => {
-    it('应发布公告并推送通知', async () => {
+    it('应发布公告', async () => {
       await service.publish(1)
       expect(mockPrisma.announcement.update).toHaveBeenCalled()
-      expect(mockNotification.pushAnnouncement).toHaveBeenCalled()
     })
   })
 

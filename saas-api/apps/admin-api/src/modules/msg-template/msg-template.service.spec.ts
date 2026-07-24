@@ -39,7 +39,8 @@ describe('MsgTemplateService', () => {
     it('应返回分页消息模板列表', async () => {
       const result = await service.getList({} as any)
       expect(mockPrisma.messageTemplate.findMany).toHaveBeenCalled()
-      expect(result.records).toBeDefined()
+      expect(result.list).toBeDefined()
+      expect(result.meta.total).toBe(1)
     })
 
     it('应支持 keyword 搜索', async () => {
@@ -70,6 +71,7 @@ describe('MsgTemplateService', () => {
 
   describe('create', () => {
     it('应创建模板', async () => {
+      mockPrisma.messageTemplate.findFirst.mockResolvedValue(null)
       const result = await service.create({ name: '新模板', code: 'NEW_TPL', channel: 'SMS', content: '内容' } as any)
       expect(mockPrisma.messageTemplate.create).toHaveBeenCalled()
       expect(result).toBeDefined()
@@ -101,7 +103,7 @@ describe('MsgTemplateService', () => {
     it('应禁用模板', async () => {
       await service.disable(1)
       const call = mockPrisma.messageTemplate.update.mock.calls[0][0]
-      expect(call.data.status).toBe('DISABLED')
+      expect(call.data.status).toBe('INACTIVE')
     })
   })
 

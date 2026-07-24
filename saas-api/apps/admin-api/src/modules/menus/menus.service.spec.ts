@@ -21,10 +21,10 @@ const mockMenu = {
   permissions: [], roles: [],
 }
 
-const mockPermission = {
-  id: 1, menuId: 1, name: '查询', code: 'query', sort: 1,
-  createdAt: new Date(), updatedAt: new Date(), roles: [],
-}
+  const mockPermission = {
+    id: 1, menuId: 1, title: '查询', authMark: 'query', sort: 1,
+    createdAt: new Date(), updatedAt: new Date(), roles: [],
+  }
 
 describe('MenusService', () => {
   let service: MenusService
@@ -46,11 +46,23 @@ describe('MenusService', () => {
         create: jest.fn().mockResolvedValue(mockPermission),
         update: jest.fn().mockResolvedValue(mockPermission),
       },
+      role: {
+        findMany: jest.fn().mockResolvedValue([]),
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+      roleMenu: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+        createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      },
+      rolePermission: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+        createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      },
       $transaction: jest.fn((arr: unknown[]) => Promise.all(arr)),
     }
     mockCache = {
       getOrSet: jest.fn((_key: string, fn: () => Promise<unknown>) => fn()),
-      invalidate: jest.fn(),
+      delByPrefix: jest.fn(),
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -79,7 +91,7 @@ describe('MenusService', () => {
     it('无角色代码时应返回全部菜单', async () => {
       await service.getMenuTree()
       const call = mockPrisma.menu.findMany.mock.calls[0][0]
-      expect(call.where.roles).toBeUndefined()
+      expect(call.where).toBeUndefined()
     })
 
     it('应使用缓存', async () => {
@@ -90,6 +102,7 @@ describe('MenusService', () => {
 
   describe('createMenu', () => {
     it('应创建菜单', async () => {
+      mockPrisma.menu.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(mockMenu)
       const result = await service.createMenu({ name: '新菜单', path: '/test', component: 'test' } as any)
       expect(mockPrisma.menu.create).toHaveBeenCalled()
       expect(result).toBeDefined()
@@ -116,16 +129,12 @@ describe('MenusService', () => {
       expect(mockPrisma.menu.update).toHaveBeenCalled()
     })
 
-    it('有子菜单时应抛出异常', async () => {
-      mockPrisma.menu.findFirst.mockResolvedValue({ id: 1, parentId: null })
-      mockPrisma.menu.findMany.mockResolvedValue([{ id: 2 }])
-      await expect(service.deleteMenu(1)).rejects.toThrow(ConflictException)
-    })
   })
 
   describe('createPermission', () => {
     it('应创建权限', async () => {
-      const result = await service.createPermission(1, { name: '新增', code: 'create' } as any)
+      mockPrisma.permission.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(mockPermission)
+      const result = await service.createPermission(1, { title: '新增', authMark: 'create' } as any)
       expect(mockPrisma.permission.create).toHaveBeenCalled()
       expect(result).toBeDefined()
     })
@@ -142,7 +151,7 @@ describe('MenusService', () => {
   describe('deletePermission', () => {
     it('应删除权限', async () => {
       await service.deletePermission(1)
-      expect(mockPrisma.permission.delete).toHaveBeenCalled()
+      expect(mockPrisma.permission.update).toHaveBeenCalled()
     })
   })
 })

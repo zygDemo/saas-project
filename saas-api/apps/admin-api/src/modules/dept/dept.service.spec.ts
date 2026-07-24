@@ -34,6 +34,9 @@ describe('DeptService', () => {
       user: {
         findMany: jest.fn().mockResolvedValue([mockManager]),
       },
+      organization: {
+        findFirst: jest.fn().mockResolvedValue({ id: 1 }),
+      },
       $transaction: jest.fn((arr: unknown[]) => Promise.all(arr)),
     }
     const module: TestingModule = await Test.createTestingModule({
@@ -47,17 +50,17 @@ describe('DeptService', () => {
       const result = await service.getList({} as any)
       expect(mockPrisma.department.findMany).toHaveBeenCalled()
       expect(result).toBeDefined()
-      expect(result.records).toBeDefined()
+      expect(result.list).toBeDefined()
     })
 
     it('应填充负责人信息', async () => {
       const result = await service.getList({} as any)
       expect(mockPrisma.user.findMany).toHaveBeenCalled()
-      expect(result.records[0].managerName).toBe('张三')
+      expect(result.list[0].managerName).toBe('张三')
     })
 
     it('应支持 orgId 过滤', async () => {
-      await service.getList({ orgId: '1' } as any)
+      await service.getList({ orgId: 1 } as any)
       const call = mockPrisma.department.findMany.mock.calls[0][0]
       expect(call.where.orgId).toBe(1)
     })
