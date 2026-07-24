@@ -292,8 +292,8 @@ describe('FlowConfigService', () => {
 
       const result = await service.getList({ current: 1, size: 10 }) as any
 
-      expect(result.records).toHaveLength(1)
-      expect(result.total).toBe(1)
+      expect(result.list).toHaveLength(1)
+      expect(result.meta.total).toBe(1)
     })
 
     it('应该支持按机构筛选', async () => {
