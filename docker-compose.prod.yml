@@ -1,8 +1,8 @@
 services:
   web:
     build:
-      context: ./saas-web
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: saas-web/Dockerfile
       args:
         VITE_BASE_URL: /saas/
         VITE_API_URL: /saas

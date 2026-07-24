@@ -1,0 +1,29 @@
+# 依赖和构建产物
+**/node_modules
+**/dist
+**/coverage
+**/*.log
+.DS_Store
+
+# 敏感文件
+**/.env
+**/.env.*
+**/env/.env.production
+
+# 测试
+**/test
+**/*.test.ts
+**/*.spec.ts
+
+# 开发工具
+.git
+.github
+.vscode
+.idea
+**/*.md
+
+# 其他
+.pnpm-store
+e2e
+playwright-report
+test-results
