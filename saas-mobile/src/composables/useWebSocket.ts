@@ -18,10 +18,12 @@ let socketTask: UniApp.SocketTask | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 let pingTimer: ReturnType<typeof setInterval> | null = null
 let reconnectAttempts = 0
+let refCount = 0
+let manualDisconnect = false
 const MAX_RECONNECT = 10
 
 /**
- * 移动端 WebSocket 通知客户端
+ * 移动端 WebSocket 通知客户端（应用级单例）
  *
  * 使用方式:
  *   const { connect, disconnect, onNotification } = useWebSocket()
@@ -29,6 +31,7 @@ const MAX_RECONNECT = 10
  */
 export function useWebSocket() {
   const localStore = useLocalStore()
+  const instanceHandlers = new Set<NotificationHandler>()
 
   function getWsUrl(): string {
     // 优先使用独立的 WS 地址
@@ -56,6 +59,7 @@ export function useWebSocket() {
       return
     }
 
+    manualDisconnect = false
     const url = getWsUrl()
     console.info('[WS] 正在连接', url)
 
@@ -106,6 +110,9 @@ export function useWebSocket() {
       socketTask = null
       stopPing()
 
+      // 主动断开时不自动重连
+      if (manualDisconnect) return
+
       // 自动重连
       if (reconnectAttempts < MAX_RECONNECT) {
         const delay = Math.min(3000 * Math.pow(1.5, reconnectAttempts), 30000)
@@ -122,6 +129,7 @@ export function useWebSocket() {
   }
 
   function disconnect() {
+    manualDisconnect = true
     if (reconnectTimer) {
       clearTimeout(reconnectTimer)
       reconnectTimer = null
@@ -134,7 +142,11 @@ export function useWebSocket() {
 
   function onNotification(handler: NotificationHandler) {
     handlers.add(handler)
-    return () => handlers.delete(handler)
+    instanceHandlers.add(handler)
+    return () => {
+      handlers.delete(handler)
+      instanceHandlers.delete(handler)
+    }
   }
 
   function markRead(notificationId: number) {
@@ -156,10 +168,21 @@ export function useWebSocket() {
     }
   }
 
-  // 页面卸载时自动断开
+  // 引用计数：多页面共享同一连接，最后一个使用者离开才断开
+  onMounted(() => {
+    refCount++
+  })
+
   onUnmounted(() => {
-    disconnect()
-    handlers.clear()
+    instanceHandlers.forEach((handler) => handlers.delete(handler))
+    instanceHandlers.clear()
+
+    refCount--
+    if (refCount <= 0) {
+      refCount = 0
+      disconnect()
+      handlers.clear()
+    }
   })
 
   return {
