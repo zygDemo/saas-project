@@ -37,7 +37,7 @@ export class AuthService {
     if (!matched) throw new UnauthorizedException('用户名或密码错误')
 
     const roles = user.roles.map(({ role }: { role: { code: string } }) => role.code)
-    const roleIds = user.roles.map(({ role: { id } }) => id)
+    const roleIds = user.roles.map(({ role: { id } }: { role: { id: number } }) => id)
     // 通过部门推导所属机构，用于审计日志的 org 维度
     const orgId = user.dept?.orgId ?? null
     const payload = { userId: user.id, userName: user.userName, tenantId, orgId, roles, roleIds }
@@ -132,8 +132,8 @@ export class AuthService {
       where: { userId: user.id },
       include: { role: { select: { code: true, id: true } } },
     })
-    const roleCodes = roles.map((r) => r.role.code)
-    const roleIds = roles.map((r) => r.role.id)
+    const roleCodes = roles.map((r: { role: { code: string } }) => r.role.code)
+    const roleIds = roles.map((r: { role: { id: number } }) => r.role.id)
     const orgId = user.dept?.orgId ?? null
     const newPayload = { userId: user.id, userName: user.userName, tenantId, orgId, roles: roleCodes, roleIds }
 
@@ -211,7 +211,7 @@ export class AuthService {
     }
 
     const roles = user.roles.map(({ role }: { role: { code: string } }) => role.code)
-    const roleIds = user.roles.map(({ role: { id } }) => id)
+    const roleIds = user.roles.map(({ role: { id } }: { role: { id: number } }) => id)
     // 通过部门推导所属机构，用于审计日志的 org 维度（自动注册用户无部门，orgId 为 null）
     const orgId = user.dept?.orgId ?? null
     const payload = { userId: user.id, userName: user.userName, tenantId, orgId, roles, roleIds }

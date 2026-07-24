@@ -68,4 +68,4 @@ cd saas-api
 pnpm --filter @saas/admin-api test
 ```
 
-当所有 spec 修复后，应从 `apps/admin-api/jest.config.ts` 中移除 `testPathIgnorePatterns`。
+当所有 spec 修复后，`apps/admin-api/jest.config.ts` 的 `testPathIgnorePatterns` 中应只保留 `/node_modules/`，不再包含任何临时跳过的 spec 路径。

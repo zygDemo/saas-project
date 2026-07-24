@@ -35,7 +35,6 @@
     </ul>
 
     <ElDrawer
-      lDrawer
       v-model="showDrawer"
       :lock-scroll="false"
       :size="360"

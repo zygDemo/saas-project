@@ -14,11 +14,11 @@ type NotificationHandler = (notification: WsNotification) => void
 
 const isConnected = ref(false)
 const handlers = new Set<NotificationHandler>()
-  let ws: WebSocket | null = null
-  let pingTimer: ReturnType<typeof setInterval> | null = null
-  let manualClose = false
-  let reconnectTimer: ReturnType<typeof setTimeout> | null = null
-  let isRefreshing = false
+let ws: WebSocket | null = null
+let pingTimer: ReturnType<typeof setInterval> | null = null
+let manualClose = false
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+let isRefreshing = false
 
 export function useWebSocket() {
   const userStore = useUserStore()
