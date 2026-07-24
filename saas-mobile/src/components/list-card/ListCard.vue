@@ -34,7 +34,7 @@
       </view>
       <view class="footer-actions">
         <slot name="actions" :item="item"></slot>
-        <view v-if="!$slots.default" class="footer-right">
+        <view v-if="$slots.default" class="footer-right">
           <slot></slot>
         </view>
       </view>
