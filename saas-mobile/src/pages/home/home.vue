@@ -561,7 +561,7 @@ function navigateToFeature(url: string, _title: string) {
   background: #ffffff;
   border-radius: 20rpx;
   overflow: hidden;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .section-header {
@@ -607,7 +607,7 @@ function navigateToFeature(url: string, _title: string) {
 }
 
 .section-body {
-  padding: 0 28rpx 28rpx;
+  padding: 24rpx;
 }
 
 // 公告栏
@@ -615,11 +615,11 @@ function navigateToFeature(url: string, _title: string) {
   display: flex;
   align-items: center;
   gap: 16rpx;
-  padding: 20rpx 24rpx;
+  padding: 24rpx;
   background: linear-gradient(90deg, #fff8f0, #fffaf5);
-  border-radius: 12rpx;
+  border-radius: 20rpx;
   border: 1rpx solid #ffe8d6;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
 
   .announcement-text-wrap {
     flex: 1;

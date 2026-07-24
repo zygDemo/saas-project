@@ -312,8 +312,8 @@ const handleSubmit = async () => {
 .quota-card {
   margin: -40rpx 28rpx 28rpx;
   background: #fff;
-  border-radius: 32rpx;
-  padding: 44rpx 32rpx 28rpx;
+  border-radius: 20rpx;
+  padding: 24rpx 32rpx 28rpx;
   box-shadow: 0 12rpx 48rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.12);
   position: relative;
   z-index: 2;
@@ -366,7 +366,7 @@ const handleSubmit = async () => {
   text-align: center;
   font-size: 24rpx;
   color: #aaa;
-  padding: 20rpx 0 0;
+  padding: 24rpx 0 0;
   margin-top: 4rpx;
   border-top: 1rpx solid #f2f2f2;
 }
@@ -379,7 +379,7 @@ const handleSubmit = async () => {
   padding: 32rpx 8rpx;
   background: #fff;
   border-radius: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .feature-item {
@@ -422,7 +422,7 @@ const handleSubmit = async () => {
 
 .form-section-header {
   text-align: center;
-  margin-bottom: 28rpx;
+  margin-bottom: 24rpx;
 }
 
 .form-section-title {
@@ -430,7 +430,7 @@ const handleSubmit = async () => {
   font-size: 36rpx;
   font-weight: 700;
   color: #1a1a1a;
-  margin-bottom: 10rpx;
+  margin-bottom: 24rpx;
 }
 
 .form-section-sub {

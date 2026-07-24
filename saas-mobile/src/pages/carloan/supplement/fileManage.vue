@@ -307,7 +307,7 @@ onLoad(() => {
 //   width: 6rpx;
 //   height: 28rpx;
 //   background: linear-gradient(180deg, var(--u-type-primary), #6bd3ff);
-//   border-radius: 4rpx;
+//   border-radius: 20rpx;
 // }
 
 .upload-box {
@@ -338,7 +338,7 @@ onLoad(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80rpx 0;
+  padding: 24rpx 0;
   gap: 16rpx;
 }
 
@@ -350,7 +350,7 @@ onLoad(() => {
 
 .file-list {
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   overflow: hidden;
 }
 
@@ -436,6 +436,6 @@ onLoad(() => {
   .footer { background-color: #1e1e1e; }
   .modal { background-color: #1e1e1e; }
   .popup { background-color: #1e1e1e; }
-  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
+  .shadow { box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05); }
 }
 </style>

@@ -384,9 +384,9 @@ function finishSign() {
 .customer-card {
   background: #fff;
   border-radius: 20rpx;
-  padding: 28rpx;
+  padding: 24rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .customer-header {
@@ -452,7 +452,7 @@ function finishSign() {
   border-radius: 20rpx;
   padding: 28rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .progress-header {
@@ -482,7 +482,7 @@ function finishSign() {
 .step-item {
   display: flex;
   gap: 20rpx;
-  padding: 16rpx 0;
+  padding: 24rpx 0;
   position: relative;
 }
 
@@ -562,7 +562,7 @@ function finishSign() {
   gap: 16rpx;
   background: linear-gradient(135deg, #eff6ff, #ecfeff);
   border: 1rpx solid #dbeafe;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   padding: 24rpx;
   margin-bottom: 24rpx;
 }
@@ -583,7 +583,7 @@ function finishSign() {
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 /* 深色模式适配 */
@@ -615,6 +615,6 @@ function finishSign() {
   .footer { background-color: #1e1e1e; }
   .modal { background-color: #1e1e1e; }
   .popup { background-color: #1e1e1e; }
-  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
+  .shadow { box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05); }
 }
 </style>

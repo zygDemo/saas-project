@@ -356,7 +356,7 @@ async function handleSubmit() {
   background: linear-gradient(135deg, #ede9fe, #f3e8ff);
   border: 1rpx solid #d8b4fe;
   border-radius: 20rpx;
-  padding: 28rpx;
+  padding: 24rpx;
   margin-bottom: 24rpx;
 }
 
@@ -385,13 +385,13 @@ async function handleSubmit() {
 .type-card {
   background: #fff;
   border-radius: 20rpx;
-  padding: 28rpx;
+  padding: 24rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .section-title {
-  margin-bottom: 20rpx;
+  
 }
 
 .title-text {
@@ -419,7 +419,7 @@ async function handleSubmit() {
   align-items: center;
   gap: 20rpx;
   padding: 24rpx;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   border: 2rpx solid #e5e7eb;
   transition: all 0.25s;
 
@@ -485,9 +485,9 @@ async function handleSubmit() {
 .form-card {
   background: #fff;
   border-radius: 20rpx;
-  padding: 28rpx;
+  padding: 24rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 /* ===== 上传卡片 ===== */
@@ -496,7 +496,7 @@ async function handleSubmit() {
   border-radius: 20rpx;
   padding: 28rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .upload-grid {
@@ -541,7 +541,7 @@ async function handleSubmit() {
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 
   :deep(.u-btn) {
     flex: 1;

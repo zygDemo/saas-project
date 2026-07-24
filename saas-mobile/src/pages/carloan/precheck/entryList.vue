@@ -234,7 +234,7 @@ onLoad(() => {
   background: #fff;
   border-radius: 24rpx;
   padding: 16rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 // ===== 列表 =====
@@ -247,8 +247,8 @@ onLoad(() => {
 .entry-card {
   background: #fff;
   border-radius: 20rpx;
-  padding: 28rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+  padding: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   animation: slideUp 0.4s ease-out both;
   transition: all 0.2s ease;
 
@@ -272,7 +272,7 @@ onLoad(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
 }
 
 .entry-name {
@@ -317,7 +317,7 @@ onLoad(() => {
   flex-direction: column;
   gap: 12rpx;
   padding-left: 80rpx;
-  margin-bottom: 12rpx;
+  margin-bottom: 24rpx;
 }
 
 .info-row {
@@ -380,6 +380,6 @@ onLoad(() => {
   .footer { background-color: #1e1e1e; }
   .modal { background-color: #1e1e1e; }
   .popup { background-color: #1e1e1e; }
-  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
+  .shadow { box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05); }
 }
 </style>

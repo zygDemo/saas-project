@@ -211,7 +211,7 @@ fetchList(true);
   align-items: center;
   font-size: 26rpx;
   line-height: 1.5;
-  padding: 4rpx 0;
+  padding: 24rpx 0;
 }
 
 .info-icon {
@@ -263,7 +263,7 @@ fetchList(true);
   padding: 8rpx 20rpx;
   border-radius: 32rpx;
   background: linear-gradient(135deg, #f59e0b, #fbbf24);
-  box-shadow: 0 4rpx 12rpx rgba(245, 158, 11, 0.35);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   transition: all 0.2s ease;
 
   .credit-btn-text {
@@ -275,7 +275,7 @@ fetchList(true);
 
   &:active {
     transform: scale(0.95);
-    box-shadow: 0 2rpx 8rpx rgba(245, 158, 11, 0.3);
+    box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   }
 }
 

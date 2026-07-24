@@ -96,9 +96,9 @@ async function handleSubmit() {
 }
 .form-section {
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   padding: 24rpx;
-  margin-bottom: 32rpx;
+  margin-bottom: 24rpx;
 }
 .btn-wrap {
   padding: 0 24rpx;

@@ -453,10 +453,7 @@ function normalizeRoles(roles) {
   border-radius: 40rpx;
   overflow: hidden;
   margin-bottom: 32rpx;
-  box-shadow:
-    0 20rpx 40rpx rgba(79, 124, 255, 0.15),
-    0 0 0 8rpx rgba(255, 255, 255, 0.8),
-    inset 0 2rpx 8rpx rgba(79, 124, 255, 0.06);
+  box-shadow: 0 20rpx 40rpx rgba(79, 124, 255, 0.15), 0 0 0 8rpx rgba(255, 255, 255, 0.8), inset 0 2rpx 8rpx rgba(79, 124, 255, 0.06);
   background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
   display: flex;
   align-items: center;
@@ -490,8 +487,7 @@ function normalizeRoles(roles) {
   backdrop-filter: blur(20rpx);
   border-radius: 32rpx;
   padding: 40rpx 36rpx 36rpx;
-  box-shadow:
-    0 24rpx 64rpx rgba(79, 124, 255, 0.08),
+  box-shadow: 0 24rpx 64rpx rgba(79, 124, 255, 0.08),
     0 4rpx 16rpx rgba(79, 124, 255, 0.04),
     0 0 0 1rpx rgba(255, 255, 255, 0.6);
   border: 1rpx solid rgba(255, 255, 255, 0.8);
@@ -519,15 +515,15 @@ function normalizeRoles(roles) {
   display: flex;
   margin-bottom: 28rpx;
   background: rgba(243, 244, 249, 0.8);
-  border-radius: 16rpx;
-  padding: 6rpx;
-  box-shadow: inset 0 2rpx 4rpx rgba(0, 0, 0, 0.04);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 .mode-tab {
   flex: 1;
   text-align: center;
   padding: 16rpx 0;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   font-size: 28rpx;
   color: #6b7280;
   transition: all 0.3s ease;
@@ -537,8 +533,7 @@ function normalizeRoles(roles) {
   background: #fff;
   color: #4f7cff;
   font-weight: 600;
-  box-shadow:
-    0 4rpx 16rpx rgba(79, 124, 255, 0.12),
+  box-shadow: 0 4rpx 16rpx rgba(79, 124, 255, 0.12),
     0 0 0 1rpx rgba(79, 124, 255, 0.08);
 }
 
@@ -558,8 +553,7 @@ function normalizeRoles(roles) {
 .form-item:focus-within {
   background: #fff;
   border-color: rgba(79, 124, 255, 0.3);
-  box-shadow:
-    0 8rpx 24rpx rgba(79, 124, 255, 0.1),
+  box-shadow: 0 8rpx 24rpx rgba(79, 124, 255, 0.1),
     0 0 0 4rpx rgba(79, 124, 255, 0.08);
 }
 .form-item--code {
@@ -587,8 +581,7 @@ function normalizeRoles(roles) {
   color: #fff;
   margin-left: 20rpx;
   font-weight: 500;
-  box-shadow:
-    0 8rpx 20rpx rgba(79, 124, 255, 0.3),
+  box-shadow: 0 8rpx 20rpx rgba(79, 124, 255, 0.3),
     0 0 0 1rpx rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
 }
@@ -611,8 +604,7 @@ function normalizeRoles(roles) {
   font-weight: 600;
   letter-spacing: 6rpx;
   background: linear-gradient(135deg, #4f7cff 0%, #5b8aff 50%, #6366f1 100%);
-  box-shadow:
-    0 16rpx 32rpx rgba(79, 124, 255, 0.35),
+  box-shadow: 0 16rpx 32rpx rgba(79, 124, 255, 0.35),
     0 4rpx 12rpx rgba(79, 124, 255, 0.2),
     inset 0 1rpx 0 rgba(255, 255, 255, 0.2);
   color: #fff;
@@ -620,8 +612,7 @@ function normalizeRoles(roles) {
 }
 .login-btn:active {
   transform: translateY(2rpx);
-  box-shadow:
-    0 8rpx 20rpx rgba(79, 124, 255, 0.3),
+  box-shadow: 0 8rpx 20rpx rgba(79, 124, 255, 0.3),
     0 2rpx 8rpx rgba(79, 124, 255, 0.15),
     inset 0 1rpx 0 rgba(255, 255, 255, 0.2);
 }

@@ -316,7 +316,7 @@ onShow(() => { if (initialLoaded) loadDetail(); });
 <style lang="scss" scoped>
 .pre-audit-detail-page {
   min-height: 100vh;
-  padding: 28rpx 24rpx 64rpx;
+  padding: 24rpx 24rpx 64rpx;
   background:
     linear-gradient(
       180deg,
@@ -337,9 +337,9 @@ onShow(() => { if (initialLoaded) loadDetail(); });
   );
   border: 1rpx solid rgba(223, 232, 242, 0.9);
   border-radius: 20rpx;
-  padding: 32rpx 30rpx 28rpx;
-  box-shadow: 0 12rpx 30rpx rgba(31, 45, 61, 0.06);
-  margin-bottom: 30rpx;
+  padding: 24rpx 30rpx 28rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
+  margin-bottom: 24rpx;
 }
 
 .pre-customer-header {
@@ -387,7 +387,7 @@ onShow(() => { if (initialLoaded) loadDetail(); });
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 12rpx 24rpx rgba(47, 140, 255, 0.18);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .pre-customer-info {
@@ -423,9 +423,9 @@ onShow(() => { if (initialLoaded) loadDetail(); });
   align-items: center;
   gap: 16rpx;
   margin-top: 26rpx;
-  padding: 20rpx 22rpx;
+  padding: 24rpx 22rpx;
   background: rgba(245, 248, 252, 0.86);
-  border-radius: 14rpx;
+  border-radius: 20rpx;
 }
 
 .pre-order-label {
@@ -451,10 +451,10 @@ onShow(() => { if (initialLoaded) loadDetail(); });
   justify-content: space-between;
   gap: 16rpx;
   margin-top: 14rpx;
-  padding: 18rpx 22rpx;
+  padding: 24rpx 22rpx;
   background: rgba(64, 150, 255, 0.08);
   border: 1rpx solid rgba(64, 150, 255, 0.16);
-  border-radius: 14rpx;
+  border-radius: 20rpx;
 }
 
 .pre-node-label {
@@ -484,8 +484,8 @@ onShow(() => { if (initialLoaded) loadDetail(); });
 
 .pre-node-code {
   flex-shrink: 0;
-  padding: 4rpx 10rpx;
-  border-radius: 999rpx;
+  padding: 24rpx 10rpx;
+  border-radius: 20rpx;
   background: rgba(64, 150, 255, 0.12);
   font-size: 22rpx;
   color: #4a78b8;
@@ -525,7 +525,7 @@ onShow(() => { if (initialLoaded) loadDetail(); });
   width: 100%;
   margin: 0 0 24rpx;
   background: var(--app-page-bg-soft);
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   box-sizing: border-box;
 }
 
@@ -568,7 +568,7 @@ onShow(() => { if (initialLoaded) loadDetail(); });
 
 .pre-flow-tab--active {
   background: linear-gradient(135deg, var(--u-type-primary) 0%, var(--u-type-primary-dark) 100%);
-  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .pre-flow-tab--active .pre-flow-tab__label {
@@ -611,8 +611,8 @@ onShow(() => { if (initialLoaded) loadDetail(); });
   padding: 24rpx 22rpx;
   background: rgba(255, 255, 255, 0.96);
   border: 1rpx solid rgba(226, 233, 242, 0.9);
-  border-radius: 16rpx;
-  box-shadow: 0 8rpx 20rpx rgba(31, 45, 61, 0.045);
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   transition:
     transform 0.16s ease,
     background-color 0.16s ease,
@@ -792,6 +792,6 @@ onShow(() => { if (initialLoaded) loadDetail(); });
 .empty-wrap {
   display: flex;
   justify-content: center;
-  padding: 160rpx 0;
+  padding: 24rpx 0;
 }
 </style>

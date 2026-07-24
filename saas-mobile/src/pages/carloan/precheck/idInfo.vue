@@ -616,7 +616,7 @@ const handleNext = async () => {
 
 <style lang="scss" scoped>
 .idinfo-page {
-  padding: 28rpx 24rpx 140rpx;
+  padding: 24rpx 24rpx 140rpx;
   background: linear-gradient(180deg, #f7f8f9 0%, #ffffff 100%);
 }
 
@@ -679,22 +679,22 @@ const handleNext = async () => {
 }
 
 .info-card {
-  border-radius: 22rpx;
+  
   background: $u-bg-white;
   margin: 32rpx 0;
-  padding: 6rpx 8rpx;
-  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.06);
+  padding: 24rpx 8rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .info-list {
-  padding: 8rpx 12rpx;
+  padding: 24rpx 12rpx;
 }
 
 .info-row {
   display: flex;
   border-bottom: 1rpx solid rgba(0, 0, 0, 0.04);
   align-items: center;
-  padding: 14rpx 6rpx;
+  padding: 24rpx 6rpx;
 
   &:last-child {
     border-bottom: 0;

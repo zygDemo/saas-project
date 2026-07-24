@@ -644,7 +644,7 @@ onShow(() => {
   background: #ffffff;
   border: 1rpx solid #edf2f7;
   border-radius: 18rpx;
-  box-shadow: 0 4rpx 14rpx rgba(15, 23, 42, 0.03);
+box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .stat-item__icon,

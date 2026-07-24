@@ -374,7 +374,7 @@ async function handleNext() {
 
 <style lang="scss" scoped>
 .order-supplement-page {
-  padding: 28rpx 24rpx 140rpx;
+  padding: 24rpx 24rpx 140rpx;
   background: linear-gradient(180deg, #f7f8f9 0%, #ffffff 100%);
 }
 
@@ -388,7 +388,7 @@ async function handleNext() {
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #ffffff;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 
   :deep(.u-btn) {
     flex: 1;

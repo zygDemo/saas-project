@@ -615,25 +615,25 @@ async function handleNext() {
 
 <style lang="scss" scoped>
 .carinfo-supplement-page {
-  padding: 28rpx 24rpx 140rpx;
+  padding: 24rpx 24rpx 140rpx;
   background: linear-gradient(180deg, #f7f8f9 0%, #ffffff 100%);
 }
 
 .section-title {
-  margin-bottom: 20rpx;
+  
 }
 
 // 信息展示卡片
 .info-display {
   background: #f8f9fa;
-  border-radius: 12rpx;
-  padding: 20rpx 24rpx;
-  margin-bottom: 28rpx;
+  border-radius: 20rpx;
+  padding: 24rpx 24rpx;
+  margin-bottom: 24rpx;
 
   .info-item {
     display: flex;
     align-items: center;
-    margin-bottom: 12rpx;
+    margin-bottom: 24rpx;
 
     &:last-child {
       margin-bottom: 0;
@@ -660,7 +660,7 @@ async function handleNext() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
 
   .section-title {
     margin-bottom: 0;
@@ -689,7 +689,7 @@ async function handleNext() {
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #ffffff;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 
   :deep(.u-btn) {
     flex: 1;

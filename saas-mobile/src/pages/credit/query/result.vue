@@ -127,7 +127,7 @@ const goHome = () => {
   background: #fff;
   border-radius: 20rpx;
   padding: 40rpx 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .result-header {
@@ -158,7 +158,7 @@ const goHome = () => {
   margin-bottom: 40rpx;
   padding: 24rpx;
   background: #f8f9fb;
-  border-radius: 12rpx;
+  border-radius: 20rpx;
 }
 
 .info-row {
@@ -265,7 +265,7 @@ const goHome = () => {
   justify-content: space-around;
   padding: 24rpx;
   background: #f8f9fb;
-  border-radius: 12rpx;
+  border-radius: 20rpx;
 }
 
 .range-item {

@@ -238,7 +238,7 @@ function goToDisbursement() {
 }
 .info-card {
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   padding: 24rpx;
   margin-bottom: 24rpx;
 }
@@ -246,7 +246,7 @@ function goToDisbursement() {
   font-size: 30rpx;
   font-weight: 600;
   color: #333;
-  margin-bottom: 16rpx;
+  margin-bottom: 24rpx;
   padding-bottom: 16rpx;
   border-bottom: 1rpx solid #f0f0f0;
 }
@@ -254,7 +254,7 @@ function goToDisbursement() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8rpx 0;
+  padding: 24rpx 0;
 }
 .info-label {
   font-size: 28rpx;

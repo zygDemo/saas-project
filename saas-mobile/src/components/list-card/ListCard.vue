@@ -75,10 +75,7 @@ const handleClick = () => {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 24rpx;
   padding: 0;
-  box-shadow:
-    0 2rpx 8rpx rgba(0, 0, 0, 0.04),
-    0 8rpx 24rpx rgba(0, 0, 0, 0.03),
-    0 0 0 1rpx rgba(0, 0, 0, 0.02);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04), 0 8rpx 24rpx rgba(0, 0, 0, 0.03), 0 0 0 1rpx rgba(0, 0, 0, 0.02);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   animation: slideUp 0.5s ease-out both;
@@ -113,9 +110,8 @@ const handleClick = () => {
 
   &:active {
     transform: scale(0.985) translateY(2rpx);
-    box-shadow:
-      0 1rpx 4rpx rgba(0, 0, 0, 0.05),
-      0 4rpx 12rpx rgba(0, 0, 0, 0.03);
+    box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.05),
+    0 4rpx 12rpx rgba(0, 0, 0, 0.03);
   }
 }
 

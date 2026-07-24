@@ -788,19 +788,19 @@ async function handleSubmit() {
 
 <style lang="scss" scoped>
 .file-supplement-page {
-  padding: 28rpx 24rpx 140rpx;
+  padding: 24rpx 24rpx 140rpx;
   background: linear-gradient(180deg, #f7f8f9 0%, #ffffff 100%);
 }
 
 .file-section {
-  margin-bottom: 28rpx;
+  margin-bottom: 24rpx;
 }
 
 .section-title {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
 }
 
 .section-title-text {
@@ -836,9 +836,9 @@ async function handleSubmit() {
   display: flex;
   align-items: center;
   gap: 16rpx;
-  padding: 20rpx 24rpx;
+  padding: 24rpx 24rpx;
   background: #fff;
-  border-radius: 12rpx;
+  border-radius: 20rpx;
   border: 1rpx solid #eee;
 }
 
@@ -870,7 +870,7 @@ async function handleSubmit() {
 }
 
 .empty-wrap {
-  padding: 80rpx 0;
+  padding: 24rpx 0;
 }
 
 .upload-popup {
@@ -884,7 +884,7 @@ async function handleSubmit() {
   font-weight: 700;
   color: #333;
   text-align: center;
-  margin-bottom: 16rpx;
+  margin-bottom: 24rpx;
 }
 
 .popup-tip {
@@ -904,7 +904,7 @@ async function handleSubmit() {
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 
   :deep(.u-btn) {
     flex: 1;

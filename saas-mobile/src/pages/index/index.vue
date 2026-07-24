@@ -626,11 +626,9 @@ const goProfile = () => {
   gap: 12rpx;
   background: rgba(255, 255, 255, 0.96);
   border: 1rpx solid rgba(226, 232, 240, 0.9);
-  border-radius: 16rpx;
-  padding: 16rpx 24rpx;
-  box-shadow:
-    4rpx 4rpx 12rpx rgba(30, 41, 59, 0.06),
-    -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.9);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05), 4rpx 4rpx 12rpx rgba(30, 41, 59, 0.06), -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.9);
 }
 
 .notice-text {
@@ -804,9 +802,7 @@ const goProfile = () => {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  box-shadow:
-    4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06),
-    -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease;
@@ -938,9 +934,7 @@ const goProfile = () => {
   border: 1rpx solid #e8edf5;
   border-radius: 22rpx;
   padding: 26rpx 24rpx 24rpx;
-  box-shadow:
-    4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06),
-    -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
 }
 
 .shortcut-grid {
@@ -994,8 +988,8 @@ const goProfile = () => {
   gap: 12rpx;
   background: rgba(var(--u-type-primary-rgb, 79, 124, 255), 0.06);
   border: 1rpx solid rgba(var(--u-type-primary-rgb, 79, 124, 255), 0.16);
-  border-radius: 16rpx;
-  padding: 16rpx 24rpx;
+  border-radius: 20rpx;
+  padding: 24rpx;
   transition: opacity 0.2s;
 
   &:active {

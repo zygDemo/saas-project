@@ -1023,10 +1023,10 @@ function previewContractFile(file: ContractFile) {
 // ===== 信息卡片 =====
 .info-card {
   background: #fff;
-  border-radius: 24rpx;
-  padding: 32rpx;
+  border-radius: 20rpx;
+  padding: 24rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .card-title {
@@ -1088,9 +1088,9 @@ function previewContractFile(file: ContractFile) {
   display: flex;
   align-items: center;
   gap: 16rpx;
-  padding: 20rpx;
+  padding: 24rpx;
   background: #f8f9fb;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
 }
 
 .file-info {
@@ -1112,7 +1112,7 @@ function previewContractFile(file: ContractFile) {
 }
 
 .empty-files {
-  padding: 40rpx 0;
+  padding: 24rpx 0;
 }
 
 // ===== 底部操作 =====

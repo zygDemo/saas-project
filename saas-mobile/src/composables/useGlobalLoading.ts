@@ -119,7 +119,7 @@ export function useGlobalLoading() {
     loadingMap.value = next
   }
 
-  function confirm(options: {
+  function confirm(options?: {
     text?: string
     lock?: boolean
     position?: LoadingItem['position']

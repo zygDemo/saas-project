@@ -123,7 +123,7 @@ onShow(loadList);
   padding: 8rpx 16rpx;
   border-radius: 12rpx;
   background: #fff;
-  box-shadow: 0 4rpx 18rpx rgba(15, 23, 42, 0.06);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .approval-list {
@@ -133,10 +133,10 @@ onShow(loadList);
 }
 
 .approval-card {
-  padding: 28rpx;
-  border-radius: 12rpx;
+  padding: 24rpx;
+  border-radius: 20rpx;
   background: #fff;
-  box-shadow: 0 4rpx 18rpx rgba(15, 23, 42, 0.06);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .card-head,
@@ -253,6 +253,6 @@ onShow(loadList);
   .footer { background-color: #1e1e1e; }
   .modal { background-color: #1e1e1e; }
   .popup { background-color: #1e1e1e; }
-  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
+  .shadow { box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05); }
 }
 </style>

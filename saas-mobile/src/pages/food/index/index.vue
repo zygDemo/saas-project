@@ -318,7 +318,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   transition: all 0.2s;
 }
 
@@ -378,7 +378,7 @@ onMounted(() => {
   background: #fff;
   border-radius: 20rpx;
   overflow: hidden;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 
   &__img {
     height: 140rpx;

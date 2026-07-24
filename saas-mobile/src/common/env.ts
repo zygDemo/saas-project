@@ -117,3 +117,8 @@ export const UPLOAD_MAX_SIZE = getEnvNumber("VITE_UPLOAD_MAX_SIZE", 10);
  * 请求超时时间 (ms)
  */
 export const REQUEST_TIMEOUT = getEnvNumber("VITE_REQUEST_TIMEOUT", 30000);
+/** WebSocket 基础地址 */
+export const WS_BASE_URL = getFirstEnv(
+  ["VITE_WS_URL", "VITE_WS_BASE_URL"],
+  "",
+);

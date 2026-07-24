@@ -566,7 +566,7 @@ async function handleNext() {
 
 <style lang="scss" scoped>
 .carinfo-page {
-  padding: 28rpx 24rpx 140rpx;
+  padding: 24rpx 24rpx 140rpx;
   background: linear-gradient(180deg, #f7f8f9 0%, #ffffff 100%);
 }
 

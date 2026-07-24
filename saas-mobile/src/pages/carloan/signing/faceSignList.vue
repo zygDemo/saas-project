@@ -287,7 +287,7 @@ function handleFaceSign(item) {
   background: #fff;
   border-radius: 24rpx;
   padding: 8rpx 16rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 // ===== 列表区域 =====
@@ -311,9 +311,9 @@ function handleFaceSign(item) {
 .face-sign-card {
   position: relative;
   background: #fff;
-  border-radius: 24rpx;
-  padding: 28rpx 28rpx 28rpx 36rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 
@@ -336,7 +336,7 @@ function handleFaceSign(item) {
 
   &:active {
     transform: scale(0.98);
-    box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   }
 }
 
@@ -345,7 +345,7 @@ function handleFaceSign(item) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
   padding-bottom: 20rpx;
   border-bottom: 1rpx solid #f0f0f0;
 }
@@ -369,7 +369,7 @@ function handleFaceSign(item) {
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 
   &--warning { background: linear-gradient(135deg, #faad14, #ffc53d); }
   &--success { background: linear-gradient(135deg, #52c41a, #73d13d); }
@@ -404,7 +404,7 @@ function handleFaceSign(item) {
   display: flex;
   flex-direction: column;
   gap: 14rpx;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
 }
 
 .info-row {
@@ -482,6 +482,6 @@ function handleFaceSign(item) {
   .footer { background-color: #1e1e1e; }
   .modal { background-color: #1e1e1e; }
   .popup { background-color: #1e1e1e; }
-  .shadow { box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.2); }
+  .shadow { box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05); }
 }
 </style>

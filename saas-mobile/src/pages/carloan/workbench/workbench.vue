@@ -746,7 +746,7 @@ const sections = computed(() => {
 
 .overview-panel {
   margin-bottom: 24rpx;
-  padding: 26rpx;
+  padding: 24rpx;
   background: var(--app-surface, #fff);
   border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
@@ -850,8 +850,8 @@ const sections = computed(() => {
   position: relative;
   overflow: hidden;
   background: linear-gradient(135deg, var(--u-type-primary-dark), #06b6d4);
-  border-radius: 22rpx;
-  box-shadow: 0 10rpx 24rpx rgba(79, 124, 255, 0.16);
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &:active {
@@ -1060,9 +1060,9 @@ const sections = computed(() => {
   overflow: hidden;
   background: #ffffff;
   border: 1rpx solid #e5ecf6;
-  border-radius: 18rpx;
+  border-radius: 20rpx;
   animation: slideUp 0.4s ease-out both;
-  box-shadow: 0 6rpx 18rpx rgba(15, 23, 42, 0.035);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 
   &:active {
@@ -1175,7 +1175,7 @@ const sections = computed(() => {
   border: 1rpx solid #d6e4ff;
   border-radius: 16rpx;
   padding: 20rpx 24rpx;
-  margin: 0 24rpx 24rpx;
+  margin-bottom: 24rpx;
   transition: opacity 0.2s ease, transform 0.2s ease;
 
   &:active {
@@ -1212,8 +1212,8 @@ const sections = computed(() => {
   background: #fff;
   border-radius: 16rpx;
   padding: 24rpx;
-  margin: 0 24rpx 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.04);
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   border-left: 6rpx solid var(--u-type-primary);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 

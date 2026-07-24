@@ -634,7 +634,7 @@ onReachBottom(() => {
 .search-bar {
   padding: 16rpx 24rpx;
   background: #fff;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .filter-card {
@@ -642,7 +642,7 @@ onReachBottom(() => {
   padding: 24rpx;
   background: #fff;
   border-radius: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 
   &__header {
     display: flex;
@@ -754,6 +754,6 @@ onReachBottom(() => {
   justify-content: center;
   background: rgba(76, 123, 253, 0.9);
   border-radius: 50%;
-  box-shadow: 0 4rpx 16rpx rgba(76, 123, 253, 0.4);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 </style>

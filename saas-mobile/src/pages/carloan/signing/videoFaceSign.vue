@@ -459,10 +459,10 @@ onUnmounted(() => { closeBrowser(); });
 
 .customer-card {
   background: #fff;
-  border-radius: 24rpx;
-  padding: 32rpx;
+  border-radius: 20rpx;
+  padding: 24rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .customer-header {
@@ -530,10 +530,10 @@ onUnmounted(() => { closeBrowser(); });
 /* ===== 流程步骤卡片 ===== */
 .flow-card {
   background: #fff;
-  border-radius: 24rpx;
-  padding: 32rpx;
+  border-radius: 20rpx;
+  padding: 24rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .card-title {
@@ -627,10 +627,10 @@ onUnmounted(() => { closeBrowser(); });
 /* ===== 结果卡片 ===== */
 .result-card {
   background: #fff;
-  border-radius: 24rpx;
-  padding: 32rpx;
+  border-radius: 20rpx;
+  padding: 24rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .result-hero {
@@ -719,9 +719,9 @@ onUnmounted(() => { closeBrowser(); });
   display: flex;
   align-items: center;
   gap: 16rpx;
-  padding: 20rpx;
+  padding: 24rpx;
   background: #f8f9fb;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
 }
 
 .file-info {
@@ -767,7 +767,7 @@ onUnmounted(() => { closeBrowser(); });
   flex-direction: column;
   gap: 12rpx;
   width: 100%;
-  margin-bottom: 16rpx;
+  margin-bottom: 24rpx;
 }
 
 .status-tag {
@@ -793,7 +793,7 @@ onUnmounted(() => { closeBrowser(); });
   .flow-card,
   .result-card {
     background: #1e1e1e;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   }
   .customer-name,
   .card-title,

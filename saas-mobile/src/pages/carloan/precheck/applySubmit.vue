@@ -256,9 +256,9 @@ async function handleSubmit() {
 
 .product-card {
   background: $u-bg-white;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   padding: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   border: 2rpx solid transparent;
   transition: all 0.3s;
 
@@ -309,7 +309,7 @@ async function handleSubmit() {
   background: $u-bg-white;
   border-radius: 16rpx;
   padding: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .group-title {

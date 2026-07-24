@@ -507,10 +507,10 @@ onLoad((options) => {
 .timeline-card,
 .info-card {
   background: #fff;
-  border-radius: 16rpx;
-  padding: 28rpx;
+  border-radius: 20rpx;
+  padding: 24rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 // ── 客户信息 ──
@@ -556,7 +556,7 @@ onLoad((options) => {
 .order-row {
   display: flex;
   justify-content: space-between;
-  padding: 8rpx 0;
+  padding: 24rpx 0;
   border-top: 1rpx solid #f5f5f5;
 }
 
@@ -719,7 +719,7 @@ onLoad((options) => {
   font-size: 32rpx;
   font-weight: 600;
   color: #1a1a1a;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
 }
 
 .info-grid {
@@ -765,6 +765,6 @@ onLoad((options) => {
 .loading-wrap {
   display: flex;
   justify-content: center;
-  padding: 80rpx 0;
+  padding: 24rpx 0;
 }
 </style>

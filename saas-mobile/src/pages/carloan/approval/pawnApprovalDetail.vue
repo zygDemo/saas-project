@@ -338,10 +338,10 @@ function submitApproval() {
 
 .customer-card {
   padding: 24rpx;
-  margin-bottom: 40rpx;
-  border-radius: 24rpx;
+  margin-bottom: 24rpx;
+  border-radius: 20rpx;
   background: #fff;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .customer-header {
@@ -401,8 +401,8 @@ function submitApproval() {
 }
 
 .summary-item {
-  padding: 14rpx 16rpx;
-  border-radius: 16rpx;
+  padding: 24rpx 16rpx;
+  border-radius: 20rpx;
   background: #f8fafc;
 }
 
@@ -457,10 +457,10 @@ function submitApproval() {
   display: flex;
   align-items: center;
   gap: 20rpx;
-  padding: 28rpx 24rpx;
+  padding: 24rpx 24rpx;
   border-radius: 20rpx;
   background: #fff;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 
   &:active {
     background: #f8fafc;
@@ -538,7 +538,7 @@ function submitApproval() {
   padding: 24rpx;
   border-radius: 20rpx;
   background: #fff;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .approve-tip-text {
@@ -549,10 +549,10 @@ function submitApproval() {
 
 .info-card,
 .plan-card {
-  padding: 12rpx 24rpx;
+  padding: 24rpx 24rpx;
   border-radius: 20rpx;
   background: #fff;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .info-row,
@@ -606,7 +606,7 @@ function submitApproval() {
 }
 
 .approval-popup {
-  padding: 28rpx 24rpx calc(32rpx + env(safe-area-inset-bottom));
+  padding: 24rpx 24rpx calc(32rpx + env(safe-area-inset-bottom));
   background: #fff;
 }
 
@@ -614,7 +614,7 @@ function submitApproval() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12rpx;
+  margin-bottom: 24rpx;
 }
 
 .popup-title {

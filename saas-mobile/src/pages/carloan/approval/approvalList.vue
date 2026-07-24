@@ -177,7 +177,7 @@ onShow(loadList);
   background: #fff;
   border-radius: 24rpx;
   padding: 8rpx 16rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .approval-list {
@@ -189,9 +189,9 @@ onShow(loadList);
 .approval-card {
   position: relative;
   background: #fff;
-  border-radius: 24rpx;
-  padding: 28rpx 28rpx 28rpx 36rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 
@@ -222,7 +222,7 @@ onShow(loadList);
 
   &:active {
     transform: scale(0.98);
-    box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   }
 }
 
@@ -254,7 +254,7 @@ onShow(loadList);
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 
   &--warning { background: linear-gradient(135deg, #faad14, #ffc53d); }
   &--primary { background: linear-gradient(135deg, #4096ff, #69b1ff); }

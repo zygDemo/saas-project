@@ -166,7 +166,7 @@ fetchList(true);
   align-items: center;
   font-size: 26rpx;
   line-height: 1.5;
-  padding: 4rpx 0;
+  padding: 24rpx 0;
 }
 
 .info-icon {

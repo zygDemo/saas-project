@@ -403,10 +403,10 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-around;
   background: #fff;
-  padding: 28rpx 16rpx;
-  margin: 24rpx;
-  border-radius: 16rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  padding: 24rpx;
+  margin: 0 24rpx 24rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .stat-item {
@@ -495,10 +495,10 @@ onMounted(async () => {
   align-items: flex-start;
   gap: 20rpx;
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   padding: 24rpx;
-  margin-bottom: 16rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   animation: fadeInUp 0.3s ease forwards;
   opacity: 0;
 

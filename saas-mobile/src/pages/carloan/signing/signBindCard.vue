@@ -298,7 +298,7 @@ async function handleSave() {
 .bank-card {
   background: linear-gradient(135deg, #1e3a8a, var(--u-type-primary));
   border-radius: 20rpx;
-  padding: 32rpx;
+  padding: 24rpx;
   color: #fff;
   position: relative;
   overflow: hidden;
@@ -307,7 +307,7 @@ async function handleSave() {
 
   &.selected {
     border-color: #10b981;
-    box-shadow: 0 0 0 4rpx rgba(16, 185, 129, 0.2);
+    box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   }
 
   &:active {
@@ -368,12 +368,12 @@ async function handleSave() {
 .add-card-section {
   background: #fff;
   border-radius: 20rpx;
-  padding: 28rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+  padding: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .section-title {
-  margin-bottom: 20rpx;
+  
 }
 
 .title-text {
@@ -418,7 +418,7 @@ async function handleSave() {
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 
   :deep(.u-btn) {
     flex: 1;

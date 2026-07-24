@@ -392,10 +392,10 @@ onMounted(loadAll);
 
 .section-card {
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   margin-bottom: 24rpx;
   overflow: hidden;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .section-header {

@@ -22,6 +22,8 @@ interface ImportMetaEnv {
   readonly VITE_UPLOAD_MAX_SIZE: string
   /** 请求超时时间 */
   readonly VITE_REQUEST_TIMEOUT: string
+  /** WebSocket 地址 */
+  readonly VITE_WS_URL: string
 }
 
 interface ImportMeta {

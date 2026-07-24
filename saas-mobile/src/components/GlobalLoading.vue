@@ -3,7 +3,7 @@
     <view
       v-if="visible"
       class="global-loading-wrapper"
-      :class="'global-loading-wrapper--' + toastPosition"
+      :class="`global-loading-wrapper--${toastPosition}`"
     >
       <!-- 卡片区域局部遮罩 -->
       <view v-if="locked" class="global-loading-card-lock" @touchmove.stop.prevent></view>
@@ -127,10 +127,7 @@ function handleCancel() {
   min-height: 120rpx;
   background: rgba(255, 255, 255, 0.92);
   border-radius: 28rpx;
-  box-shadow:
-    0 24rpx 64rpx rgba(0, 0, 0, 0.12),
-    0 4rpx 16rpx rgba(0, 0, 0, 0.06),
-    inset 0 1rpx 0 rgba(255, 255, 255, 0.6);
+  box-shadow: 0 24rpx 64rpx rgba(0, 0, 0, 0.12), 0 4rpx 16rpx rgba(0, 0, 0, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.6);
   gap: 24rpx;
   padding: 24rpx 32rpx;
 }

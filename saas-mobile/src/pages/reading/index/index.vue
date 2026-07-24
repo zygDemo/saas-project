@@ -1098,9 +1098,7 @@ const refreshRecommend = () => {
   border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
   padding: 30rpx 20rpx;
-  box-shadow:
-    4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06),
-    -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
   position: relative;
   z-index: 2;
 }
@@ -1225,9 +1223,7 @@ const refreshRecommend = () => {
   border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
   padding: 24rpx;
-  box-shadow:
-    4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06),
-    -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
 }
 
 .recommend-cover-wrap {
@@ -1345,9 +1341,7 @@ const refreshRecommend = () => {
   border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
   padding: 24rpx;
-  box-shadow:
-    4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06),
-    -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
+  box-shadow: 4rpx 4rpx 12rpx rgba(26, 29, 41, 0.06), -2rpx -2rpx 8rpx rgba(255, 255, 255, 0.8);
 }
 
 /* 搜索栏 */
@@ -1795,8 +1789,7 @@ const refreshRecommend = () => {
 
 .recent-cover,
 .book-cover {
-  box-shadow:
-    4rpx 4rpx 12rpx rgba(17, 24, 39, 0.12),
+  box-shadow: 4rpx 4rpx 12rpx rgba(17, 24, 39, 0.12),
     -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.6);
 }
 

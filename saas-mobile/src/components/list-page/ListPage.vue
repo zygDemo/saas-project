@@ -97,9 +97,7 @@ const backToTop = () => emit("backToTop");
   background: rgba(255, 255, 255, 0.85);
   border-radius: 20rpx;
   padding: 12rpx 16rpx;
-  box-shadow:
-    0 2rpx 12rpx rgba(0, 0, 0, 0.04),
-    0 0 0 1rpx rgba(0, 0, 0, 0.02);
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04), 0 0 0 1rpx rgba(0, 0, 0, 0.02);
   backdrop-filter: blur(12px);
   flex-shrink: 0;
 }
@@ -173,8 +171,7 @@ const backToTop = () => emit("backToTop");
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow:
-    0 6rpx 24rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.4),
+  box-shadow: 0 6rpx 24rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.4),
     0 0 0 2rpx rgba(255, 255, 255, 0.3) inset;
   z-index: 999;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

@@ -225,17 +225,17 @@ async function handleSubmit() {
 
 <style lang="scss" scoped>
 .entry-detail-page {
-  padding: 24rpx;
+  
   background: linear-gradient(180deg, #f0f4f8 0%, #f8fafc 50%, #f1f5f9 100%);
   min-height: 100vh;
 }
 
 .customer-card {
   background: #fff;
-  border-radius: 24rpx;
-  padding: 32rpx;
-  margin-bottom: 32rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 
 .customer-header {
@@ -300,7 +300,7 @@ async function handleSubmit() {
   font-size: 30rpx;
   font-weight: 700;
   color: #1e293b;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
   padding-left: 22rpx;
 
   &::before {
@@ -327,8 +327,8 @@ async function handleSubmit() {
   align-items: center;
   background: #fff;
   border-radius: 20rpx;
-  padding: 28rpx 24rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+  padding: 24rpx 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   transition: all 0.2s ease;
   gap: 20rpx;
 

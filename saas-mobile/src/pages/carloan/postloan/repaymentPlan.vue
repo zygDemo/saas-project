@@ -296,7 +296,7 @@ onMounted(async () => {
 }
 .summary-card {
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   padding: 24rpx;
   margin-bottom: 24rpx;
 }
@@ -304,7 +304,7 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8rpx 0;
+  padding: 24rpx 0;
 }
 .summary-label {
   font-size: 28rpx;
@@ -325,12 +325,12 @@ onMounted(async () => {
 }
 .plan-card {
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   padding: 24rpx;
   border-left: 6rpx solid transparent;
   &--current {
     border-left-color: var(--u-type-primary, #3c9cff);
-    box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
   }
   &--paid {
     opacity: 0.65;
@@ -344,7 +344,7 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16rpx;
+  margin-bottom: 24rpx;
   padding-bottom: 16rpx;
   border-bottom: 1rpx solid #f0f0f0;
 }
@@ -408,7 +408,7 @@ onMounted(async () => {
 
 // 还款弹窗
 .repay-popup {
-  padding: 32rpx;
+  padding: 24rpx;
   &__header {
     display: flex;
     justify-content: space-between;
@@ -429,9 +429,9 @@ onMounted(async () => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20rpx 24rpx;
+    padding: 24rpx 24rpx;
     background: #f5f7fa;
-    border-radius: 12rpx;
+    border-radius: 20rpx;
     margin-bottom: 24rpx;
   }
   &__info-label {
@@ -482,9 +482,9 @@ onMounted(async () => {
   gap: 16rpx;
 }
 .method-item {
-  padding: 12rpx 24rpx;
+  padding: 24rpx 24rpx;
   border: 1rpx solid #e0e0e0;
-  border-radius: 8rpx;
+  border-radius: 20rpx;
   font-size: 26rpx;
   color: #666;
   &--active {

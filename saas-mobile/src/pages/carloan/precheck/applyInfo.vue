@@ -244,9 +244,9 @@ async function handleSave() {
     var(--u-type-primary)
   );
   border-radius: 20rpx;
-  padding: 36rpx 32rpx 28rpx;
+  padding: 24rpx 32rpx 28rpx;
   color: #fff;
-  margin-bottom: 28rpx;
+  margin-bottom: 24rpx;
   box-shadow: 0 8rpx 32rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.3);
 }
 
@@ -280,7 +280,7 @@ async function handleSave() {
   display: flex;
   align-items: center;
   gap: 10rpx;
-  margin-bottom: 16rpx;
+  margin-bottom: 24rpx;
 }
 
 .title-dot {

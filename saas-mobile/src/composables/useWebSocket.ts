@@ -1,5 +1,6 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useLocalStore } from '@/stores'
+import { WS_BASE_URL, API_BASE_URL } from '@/common/env'
 
 export interface WsNotification {
   type: 'announcement' | 'approval' | 'supplement' | 'signing' | 'loan' | 'order' | 'system'
@@ -30,19 +31,33 @@ export function useWebSocket() {
   const localStore = useLocalStore()
 
   function getWsUrl(): string {
-    // 从环境配置获取 API 基础地址
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
-    // 将 http(s) 转为 ws(s)
-    return baseUrl.replace(/^http/, 'ws') + '/ws'
+    // 优先使用独立的 WS 地址
+    const explicit = WS_BASE_URL
+    if (explicit) {
+      return explicit.replace(/\/$/, '') + '/ws'
+    }
+
+    // 从 API 地址推导：只保留 origin，避免把 /saas/api 拼进 WS 路径
+    const apiBase = API_BASE_URL || 'http://localhost:3001'
+    try {
+      const origin = new URL(apiBase).origin
+      return origin.replace(/^http/, 'ws') + '/ws'
+    } catch {
+      return 'ws://localhost:3001/ws'
+    }
   }
 
   function connect() {
     if (socketTask) return
 
     const token = localStore.token
-    if (!token) return
+    if (!token) {
+      console.warn('[WS] 未登录，跳过连接')
+      return
+    }
 
     const url = getWsUrl()
+    console.info('[WS] 正在连接', url)
 
     socketTask = uni.connectSocket({
       url,
@@ -53,7 +68,7 @@ export function useWebSocket() {
     socketTask.onOpen(() => {
       isConnected.value = true
       reconnectAttempts = 0
-      console.debug('[WS] 已连接')
+      console.debug('[WS] 已连接', url)
 
       // 发送认证
       socketTask!.send({
@@ -74,7 +89,7 @@ export function useWebSocket() {
           const notification = data.data || data
           handlers.forEach((fn) => fn(notification))
 
-          // 显示 uni.showToast 提示
+          // 显示提示
           uni.showToast({
             title: notification.title || '新通知',
             icon: 'none',
@@ -155,3 +170,4 @@ export function useWebSocket() {
     markRead,
   }
 }
+

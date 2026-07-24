@@ -771,7 +771,7 @@ const readonlyContactFormItems = computed(() =>
 
 <style lang="scss" scoped>
 .idinfo-supplement-page {
-  padding: 28rpx 24rpx 140rpx;
+  padding: 24rpx 24rpx 140rpx;
   background: linear-gradient(180deg, #f7f8f9 0%, #ffffff 100%);
 }
 
@@ -779,7 +779,7 @@ const readonlyContactFormItems = computed(() =>
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
 
   .title-left {
     display: flex;
@@ -808,10 +808,10 @@ const readonlyContactFormItems = computed(() =>
 }
 
 .contact-card {
-  border-radius: 22rpx;
+  border-radius: 20rpx;
   background: #ffffff;
   padding: 24rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 
   &-header {
     display: flex;
@@ -860,7 +860,7 @@ const readonlyContactFormItems = computed(() =>
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #ffffff;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 
   :deep(.u-btn) {
     flex: 1;
@@ -869,7 +869,7 @@ const readonlyContactFormItems = computed(() =>
 
 // ========== 联系人弹窗 ==========
 .contact-form-popup {
-  padding: 32rpx 24rpx;
+  padding: 24rpx 24rpx;
   padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
   max-height: 80vh;
   overflow-y: auto;

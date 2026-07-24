@@ -84,9 +84,9 @@ function goToApplyList() {
 .result-card {
   width: 100%;
   background: #ffffff;
-  border-radius: 24rpx;
-  padding: 48rpx 32rpx;
-  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.06);
+  border-radius: 20rpx;
+  padding: 24rpx 32rpx;
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.05);
 }
 .result-center {
   display: flex;
