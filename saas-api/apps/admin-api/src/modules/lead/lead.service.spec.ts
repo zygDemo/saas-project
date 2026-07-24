@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { LeadService } from './lead.service'
 import { PrismaService } from '../prisma/prisma.service'
+import { DataScopeService } from '../../common/auth/data-scope.service'
 import { NotFoundException } from '@nestjs/common'
 import { LeadStatus } from '@prisma/client'
 
@@ -48,10 +49,15 @@ describe('LeadService', () => {
       $transaction: jest.fn((queries: unknown[]) => Promise.all(queries))
     } as unknown as jest.Mocked<PrismaService>
 
+    const mockDataScope = {
+      buildDataScopeFilter: jest.fn().mockReturnValue({})
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LeadService,
-        { provide: PrismaService, useValue: mockPrisma }
+        { provide: PrismaService, useValue: mockPrisma },
+        { provide: DataScopeService, useValue: mockDataScope }
       ]
     }).compile()
 

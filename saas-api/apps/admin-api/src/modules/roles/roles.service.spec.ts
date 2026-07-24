@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common'
 import { RolesService } from './roles.service'
 import { PrismaService } from '../prisma/prisma.service'
+import { CacheService } from '../redis/cache.service'
 
 jest.mock('../../common/tenant/tenant-context', () => ({
   getCurrentTenantId: jest.fn(() => 1),
@@ -16,6 +17,7 @@ const mockRole = {
 describe('RolesService', () => {
   let service: RolesService
   let mockPrisma: Record<string, unknown>
+  let mockCache: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {
@@ -34,8 +36,19 @@ describe('RolesService', () => {
       department: { findMany: jest.fn().mockResolvedValue([{ id: 1 }]) },
       $transaction: jest.fn((fn) => fn(mockPrisma)),
     }
+    mockCache = {
+      get: jest.fn().mockResolvedValue(null),
+      set: jest.fn(),
+      del: jest.fn(),
+      delByPrefix: jest.fn(),
+      getOrSet: jest.fn((_key, factory) => factory()),
+    }
     const module: TestingModule = await Test.createTestingModule({
-      providers: [RolesService, { provide: PrismaService, useValue: mockPrisma }],
+      providers: [
+        RolesService,
+        { provide: PrismaService, useValue: mockPrisma },
+        { provide: CacheService, useValue: mockCache },
+      ],
     }).compile()
     service = module.get<RolesService>(RolesService)
   })

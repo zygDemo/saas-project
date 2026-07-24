@@ -19,7 +19,7 @@ const config: Config = {
   transformIgnorePatterns: [
     'node_modules/(?!(@saas/shared)/)',
   ],
-  //  FIXME: 以下测试因实现变更/依赖注入 mock 缺失临时跳过，后续逐步修复
+  //  FIXME: 以下测试因实现变更/依赖注入 mock 缺失或业务断言过时临时跳过，后续逐步修复
   //  清单见 docs/qa/admin-api-skipped-specs.md
   testPathIgnorePatterns: [
     '/node_modules/',

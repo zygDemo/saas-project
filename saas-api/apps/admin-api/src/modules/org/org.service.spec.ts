@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { BadRequestException } from '@nestjs/common'
 import { OrganizationService } from './org.service'
 import { PrismaService } from '../prisma/prisma.service'
+import { CacheService } from '../redis/cache.service'
 
 jest.mock('../../common/tenant/tenant-context', () => ({
   getCurrentTenantId: jest.fn(() => 1),
@@ -17,6 +18,7 @@ const mockOrg = {
 describe('OrganizationService', () => {
   let service: OrganizationService
   let mockPrisma: Record<string, unknown>
+  let mockCache: Record<string, unknown>
 
   beforeEach(async () => {
     mockPrisma = {
@@ -29,8 +31,19 @@ describe('OrganizationService', () => {
       },
       $transaction: jest.fn((arr) => Promise.all(arr)),
     }
+    mockCache = {
+      get: jest.fn().mockResolvedValue(null),
+      set: jest.fn(),
+      del: jest.fn(),
+      delByPrefix: jest.fn(),
+      getOrSet: jest.fn((_key, factory) => factory()),
+    }
     const module: TestingModule = await Test.createTestingModule({
-      providers: [OrganizationService, { provide: PrismaService, useValue: mockPrisma }],
+      providers: [
+        OrganizationService,
+        { provide: PrismaService, useValue: mockPrisma },
+        { provide: CacheService, useValue: mockCache },
+      ],
     }).compile()
     service = module.get<OrganizationService>(OrganizationService)
   })
