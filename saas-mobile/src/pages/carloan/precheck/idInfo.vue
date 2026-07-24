@@ -98,6 +98,7 @@ import { storeToRefs } from "pinia";
 import { useCarloanApi } from "@/api/carloan";
 import NationConst, { nationLabelToValue } from "@/enums/nation";
 import { recognizeIdCard } from "@/common/ocr";
+import type { IdCardFrontResult, IdCardBackResult } from "@/common/ocr";
 import { toFilePreviewUrl } from "@/common/file-url";
 import { compressImageForOcr } from "@/common/image-compress";
 import { APP_ROUTES, buildRoute } from "@/common/navigation";
@@ -141,7 +142,7 @@ const idInfo = reactive({
   personName: "",
   telephone: "",
   personIdcard: "",
-  gender: undefined,
+  gender: undefined as number | undefined,
   race: "", // 民族
   personAddress: "",
   personIssuingAuthority: "",
@@ -161,7 +162,7 @@ const fetchUserBasic = async (uuid = carloanStore.pageContext.uuid) => {
         telephone: data.telephone || "",
         personIdcard: data.personIdcard || "",
         gender: data.gender,
-        race: nationLabelToValue(data.nation) || data.race || "",
+        race: nationLabelToValue(data.race as string) || data.race || "",
         personAddress: data.personAddress || "",
         personIssuingAuthority: data.personIssuingAuthority || "",
         personValidDateStart: data.personValidDateStart || "",
@@ -176,18 +177,19 @@ const fetchUserBasic = async (uuid = carloanStore.pageContext.uuid) => {
 };
 
 onLoad((query) => {
+  const q = query || {};
   const previousContext = { ...carloanStore.pageContext };
-  carloanStore.syncFromRouteQuery(query);
-  carloanStore.pageContext.uuid = query.uuid || previousContext.uuid || "";
-  isPawnMode.value = query.businessType === "pawn";
+  carloanStore.syncFromRouteQuery(q);
+  carloanStore.pageContext.uuid = q.uuid || previousContext.uuid || "";
+  isPawnMode.value = q.businessType === "pawn";
   isEditMode.value = !!carloanStore.pageContext.uuid;
-  fromEntry.value = query.fromEntry === "1";
+  fromEntry.value = q.fromEntry === "1";
   carloanStore.pageContext.creditOrderId =
-    query.creditOrderId || previousContext.creditOrderId || "";
+    q.creditOrderId || previousContext.creditOrderId || "";
   carloanStore.pageContext.customerName =
-    query.name || previousContext.customerName || "";
+    q.name || previousContext.customerName || "";
   carloanStore.pageContext.customerPhone =
-    query.phone || previousContext.customerPhone || "";
+    q.phone || previousContext.customerPhone || "";
 });
 
 onMounted(() => {
@@ -262,11 +264,11 @@ const formItems = [
   },
 ];
 
-function isBlank(value) {
+function isBlank(value: unknown) {
   return value === undefined || value === null || String(value).trim() === "";
 }
 
-function parseDateText(value) {
+function parseDateText(value: unknown) {
   const match = String(value || "")
     .trim()
     .match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
@@ -283,15 +285,15 @@ function parseDateText(value) {
   return date;
 }
 
-function isValidName(value) {
+function isValidName(value: unknown) {
   return /^[\p{Script=Han}A-Za-z·.\s]{2,30}$/u.test(String(value).trim());
 }
 
-function isValidPhone(value) {
+function isValidPhone(value: unknown) {
   return /^1[3-9]\d{9}$/.test(String(value).trim());
 }
 
-function isValidIdCard(value) {
+function isValidIdCard(value: unknown) {
   const card = String(value).trim().toUpperCase();
   if (
     !/^[1-9]\d{5}(?:18|19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}[\dX]$/.test(
@@ -338,7 +340,7 @@ function validateIdInfo() {
   ];
 
   for (const field of requiredFields) {
-    if (isBlank(idInfo[field.key])) {
+    if (isBlank(idInfo[field.key as keyof typeof idInfo])) {
       $u.toast(`${field.action || "请输入"}${field.label}`, "error");
       return false;
     }
@@ -383,7 +385,7 @@ function validateIdInfo() {
   return true;
 }
 
-function pickImage(side) {
+function pickImage(side: "front" | "back") {
   const setLoading = side === "front" ? frontLoading : backLoading;
   if (setLoading.value) {
     return;
@@ -422,14 +424,7 @@ function pickImage(side) {
             uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url,
           );
           const objectKey =
-            uploadData.objectKey || uploadData.fileKey || uploadRes?.objectKey;
-          console.log("[idInfo] image src before render:", {
-            side,
-            raw:
-              uploadData.previewUrl || uploadRes?.previewUrl || uploadRes?.url,
-            normalized: imageUrl,
-          });
-
+            uploadData.objectKey || uploadData.fileKey || uploadRes?.objectKey || "";
           if (side === "front") {
             frontImage.value = imageUrl;
             frontImageObjectKey.value = objectKey;
@@ -449,7 +444,7 @@ function pickImage(side) {
 }
 
 /** 后端 OCR 识别并自动填表 */
-async function doIdCardOcr(imagePath, side) {
+async function doIdCardOcr(imagePath: string, side: "front" | "back") {
   try {
     const result = await recognizeIdCard(
       imagePath,
@@ -459,21 +454,22 @@ async function doIdCardOcr(imagePath, side) {
     if (!result) return;
 
     if (side === "front") {
-      const data = result;
+      const data = result as IdCardFrontResult;
       if (data.name) idInfo.personName = data.name;
       if (data.idNum) idInfo.personIdcard = data.idNum;
       if (data.gender === "男") idInfo.gender = 1;
       else if (data.gender === "女") idInfo.gender = 2;
-      if (data.race || data.nation)
+      if (data.race || data.nation) {
         idInfo.race =
           data.race || nationLabelToValue(data.nation) || data.nation;
+      }
       if (data.address) idInfo.personAddress = data.address;
       if (data.birth) {
         // birth 格式: yyyy-MM-dd，暂存到 session 供有效期计算参考
         sessionStore.setOrderInfo({ birth: data.birth });
       }
     } else {
-      const data = result;
+      const data = result as IdCardBackResult;
       if (data.authority) idInfo.personIssuingAuthority = data.authority;
       if (data.validDateStart || data.validDateEnd) {
         if (data.validDateStart)
@@ -516,7 +512,7 @@ const doSubmit = async () => {
   }
 
   // 从身份证号计算年龄
-  const calcAge = (idCard) => {
+  const calcAge = (idCard: string) => {
     if (!idCard || idCard.length !== 18) return undefined;
     const birthYear = Number.parseInt(idCard.substring(6, 10), 10);
     const currentYear = new Date().getFullYear();

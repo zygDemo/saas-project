@@ -28,7 +28,7 @@ export class MobileFileService {
     const createdFile = await this.createFileAsset({
       orgId: org.id,
       businessType: 'MOBILE',
-      businessId: user.sub,
+      businessId: Number(user.userId),
       categoryCode: 'IMAGE',
       categoryName: '图片',
       upload: result,
@@ -165,7 +165,7 @@ export class MobileFileService {
       fileExt: extension.slice(1),
       fileSize: file.size,
       storageType: 'LOCAL',
-      uploadedBy: user.sub
+      uploadedBy: Number(user.userId)
     }
   }
 
@@ -203,7 +203,7 @@ export class MobileFileService {
           fileSize: params.upload?.fileSize,
           storageType: 'LOCAL',
           status: 'ACTIVE',
-          uploadedBy: params.user.sub
+          uploadedBy: params.Number(user.userId)
         }
       })
 
@@ -260,7 +260,7 @@ export class MobileFileService {
     return {
       orgId: org.id,
       businessType: 'MOBILE',
-      businessId: user.sub,
+      businessId: Number(user.userId),
       categoryCode: fileType,
       categoryName: resolveCategoryName(fileType)
     }
@@ -297,7 +297,7 @@ export class MobileFileService {
       }
     }
 
-    where.OR = [{ businessType: 'MOBILE', businessId: user.sub }, { uploadedBy: user.sub }]
+    where.OR = [{ businessType: 'MOBILE', businessId: Number(user.userId) }, { uploadedBy: Number(user.userId) }]
     return where
   }
 

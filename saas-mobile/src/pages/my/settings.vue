@@ -3,7 +3,6 @@ import { useTheme } from 'uview-pro'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLang } from '@/composables'
-import { showConfirmDialog } from '@/composables/useGlobalLoadingToast'
 
 const { t } = useI18n()
 
@@ -62,10 +61,10 @@ function selectLocale(localeName: string) {
 
 // 清除缓存
 async function handleClearCache() {
-  const ok = await showConfirmDialog({
-    title: t('about.settingsPage.clearCacheTitle'),
-    message: t('about.settingsPage.clearCacheContent'),
-  });
+  const res = await new Promise<{ confirm: boolean }>((resolve) => {
+      uni.showModal({ title: t('about.settingsPage.clearCacheTitle'), content: t('about.settingsPage.clearCacheContent'), confirmText: '确认', cancelText: '取消', confirmColor: '#576b95', success: (r) => resolve({ confirm: r.confirm }), fail: () => resolve({ confirm: false }) });
+    });
+    const ok = res.confirm;
   if (!ok) return;
   try {
     uni.clearStorageSync()

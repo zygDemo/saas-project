@@ -18,7 +18,7 @@ export class MobileConfigController {
   @Public()
   @ApiOperation({ summary: '获取当前用户的移动端模块配置（三级优先级解析）' })
   getResolvedConfig(@CurrentUser() user: RequestUser) {
-    return this.service.getResolvedConfig(user.sub, user.tenantId);
+    return this.service.getResolvedConfig(Number(user.userId), user.tenantId);
   }
 
   @Get()

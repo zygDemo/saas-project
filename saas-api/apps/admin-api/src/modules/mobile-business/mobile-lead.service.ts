@@ -56,7 +56,7 @@ export class MobileLeadService {
         remark: dto.remark,
         status: 'PENDING_ASSIGN',
         assigneeId: dto.salesmanId,
-        createdBy: user.sub
+        createdBy: Number(user.userId)
       }
     })
 
@@ -89,7 +89,7 @@ export class MobileLeadService {
         followType: dto.followType || 'OTHER',
         content,
         nextFollowAt: nextFollowAt ? new Date(nextFollowAt) : undefined,
-        createdBy: user.sub
+        createdBy: Number(user.userId)
       }
     })
 

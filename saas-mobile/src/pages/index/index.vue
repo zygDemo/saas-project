@@ -130,14 +130,11 @@
       <view
         v-if="!hasLogin"
         class="login-hint"
-        role="button"
-        tabindex="0"
         @click="goLogin"
-        @keyup.enter="goLogin"
       >
-        <u-icon name="account-fill" color="var(--u-type-primary)" size="32" />
-        <text class="login-hint-text">登录后查看进件、订单、征信等</text>
-        <u-icon name="arrow-right" color="var(--u-tips-color)" size="24" />
+        <u-icon name="account-fill" color="var(--u-type-primary)" size="32" @click="goLogin" />
+        <text class="login-hint-text" @click="goLogin">登录后查看进件、订单、征信等</text>
+        <u-icon name="arrow-right" color="var(--u-tips-color)" size="24" @click="goLogin" />
       </view>
 
       <!-- 底部安全区 -->

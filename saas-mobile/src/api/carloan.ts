@@ -374,19 +374,19 @@ export function useCarloanApi() {
   return {
     /** 身份证信息保存 */
     addOrUpdateUserBasic: (data: IdCardInfo) =>
-      http.post<ApiResponse<IdCardInfo>>("/m/user/addOrUpdateUserBasic", data, { loadingText: "保存中..." }),
+      http.post<ApiResponse<IdCardInfo>>("/m/user/addOrUpdateUserBasic", data, { meta: { loadingText: "保存中..." } }),
     /** 联系人信息保存（uuid 通过 URL 参数传递） */
     addOrUpdateContact: (data: ContactInfo) =>
-      http.post<ApiResponse<ContactInfo>>(`/m/contact/addOrUpdateContact`, data, { loadingText: "保存中..." }),
+      http.post<ApiResponse<ContactInfo>>(`/m/contact/addOrUpdateContact`, data, { meta: { loadingText: "保存中..." } }),
     /** 获取联系人列表 */
     getContacts: (userUuid: string) =>
       http.get<ApiResponse<ContactInfo[]>>("/m/contact/getContacts", { userUuid }),
     /** 删除联系人 */
     deleteContact: (id: number) =>
-      http.delete<ApiResponse<{ id: number }>>(`/m/contact/deleteContact/${id}`, undefined, { loadingText: "删除中..." }),
+      http.delete<ApiResponse<{ id: number }>>(`/m/contact/deleteContact/${id}`, undefined, { meta: { loadingText: "删除中..." } }),
     /** 创建/更新身份证信息 */
     addOrUpdateIdCardInfo: (data: IdCardInfo) =>
-      http.post<ApiResponse<IdCardInfo>>("/m/user/addOrUpdateIdCardInfo", data, { loadingText: "保存中..." }),
+      http.post<ApiResponse<IdCardInfo>>("/m/user/addOrUpdateIdCardInfo", data, { meta: { loadingText: "保存中..." } }),
     /** 获取身份证信息 */
     getIdCardInfo: () => http.post<ApiResponse<IdCardInfo | null>>("/m/user/getIdCardInfo"),
     /** 创建/更新车辆信息 */
@@ -394,7 +394,7 @@ export function useCarloanApi() {
       http.post<ApiResponse<VehicleInfo>>(
         "/m/vehicle/addOrUpdateVehicle",
         data,
-        { loadingText: "保存中..." },
+        { meta: { loadingText: "保存中..." } },
       ),
     /** 文件上传（支持文件路径） */
     uploadFile: (filePath: string) => uploadByUni(filePath, "/m/file/upload") as unknown as Promise<ApiResponse<MobileUploadResult> & MobileUploadResult>,
@@ -427,17 +427,17 @@ export function useCarloanApi() {
       http.get(`/m/credit/getCreditDetailByOrderId/${creditOrderId}`),
     /** 资料补充完成，推进到初审（需要传入 application 主键 id） */
     completeSupplement: (applicationId: string | number) =>
-      http.post(`/application/${applicationId}/complete-supplement`, undefined, { loadingText: '提交中...' }),
+      http.post(`/application/${applicationId}/complete-supplement`, undefined, { meta: { loadingText: '提交中...' } }),
     /** 提交进件/预审（需要传入 application 主键 id） */
     submitApplication: (applicationId: string | number) =>
-      http.post(`/application/${applicationId}/submit`, undefined, { loadingText: '提交中...' }),
+      http.post(`/application/${applicationId}/submit`, undefined, { meta: { loadingText: '提交中...' } }),
     /** 资料补充完成（通过 creditOrderId 获取 applicationId 后推进状态） */
     completeFileSupplement: async (creditOrderId: string) => {
       const detail = await http.get<ApiResponse<{ id: number }>>(
         `/m/credit/getCreditDetailByOrderId/${creditOrderId}`
       );
       if (!detail?.data?.id) throw new Error('未找到订单信息');
-      return http.post(`/application/${detail.data.id}/complete-supplement`, undefined, { loadingText: "提交中..." });
+      return http.post(`/application/${detail.data.id}/complete-supplement`, undefined, { meta: { loadingText: "提交中..." } });
     },
     /** 提交预审（通过 creditOrderId 获取 applicationId 后推进状态） */
     submitPreAudit: async (creditOrderId: string) => {
@@ -445,7 +445,7 @@ export function useCarloanApi() {
         `/m/credit/getCreditDetailByOrderId/${creditOrderId}`
       );
       if (!detail?.data?.id) throw new Error('未找到订单信息');
-      return http.post(`/application/${detail.data.id}/submit`, undefined, { loadingText: '提交中...' });
+      return http.post(`/application/${detail.data.id}/submit`, undefined, { meta: { loadingText: '提交中...' } });
     },
     /** 获取文件列表 */
     getFileList: (params?: string | MobileFileQuery) =>
@@ -457,7 +457,7 @@ export function useCarloanApi() {
     getFileListByType: (params: MobileFileQuery & { fileType: string }) =>
       http.get<ApiResponse<MobileUploadResult[]>>("/m/file/getFileListByType", params),
     /** 删除文件 */
-    deleteFile: (id: number) => http.delete<ApiResponse<{ id: number }>>(`/m/file/deleteFile/${id}`, undefined, { loadingText: "删除中..." }),
+    deleteFile: (id: number) => http.delete<ApiResponse<{ id: number }>>(`/m/file/deleteFile/${id}`, undefined, { meta: { loadingText: "删除中..." } }),
     /** 获取产品文件清单 */
     getProductFileList: (params?: Record<string, unknown>) =>
       http.get<ApiResponse<unknown[]>>("/m/file/getProductFileList", params),
@@ -481,13 +481,13 @@ export function useCarloanApi() {
       http.get<ApiResponse<CreditListItem>>(`/m/credit/getCreditDetailByOrderId/${creditOrderId}`),
     /** 提交授信申请 */
     creditApply: (data: CreditApplyData) =>
-      http.post<ApiResponse<CreditListItem>>("/m/credit/apply", data, { loadingText: "提交中..." }),
+      http.post<ApiResponse<CreditListItem>>("/m/credit/apply", data, { meta: { loadingText: "提交中..." } }),
     /** 修改授信申请 */
     updateCredit: (data: Record<string, unknown>) =>
-      http.post<ApiResponse<CreditListItem>>("/m/credit/update", data, { loadingText: "保存中..." }),
+      http.post<ApiResponse<CreditListItem>>("/m/credit/update", data, { meta: { loadingText: "保存中..." } }),
     /** 更新补件子节点状态 */
     updateSupplementStatus: (data: { creditOrderId: string; field: string; value: number }) =>
-      http.post<ApiResponse<CreditListItem>>("/m/credit/updateSupplementStatus", data, { loadingText: "处理中..." }),
+      http.post<ApiResponse<CreditListItem>>("/m/credit/updateSupplementStatus", data, { meta: { loadingText: "处理中..." } }),
     /** 获取产品列表 */
     getProductList: () =>
       http.get<ApiResponse<Record<string, unknown>[]>>("/product/list"),
@@ -499,16 +499,16 @@ export function useCarloanApi() {
       http.get<ApiResponse<VehicleInfo>>("/m/vehicle/getVehicleInfo", { uuid }),
     /** 身份证OCR识别 */
     getIdCardOcr: (objectKey: string, side?: "front" | "back") =>
-      http.post("/m/user/getIdCardOcr", { objectKey, side }, { loadingText: "识别中..." }),
+      http.post("/m/user/getIdCardOcr", { objectKey, side }, { meta: { loadingText: "识别中..." } }),
     /** 车辆行驶证OCR识别 */
     getVehicleOcr: (objectKey: string) =>
-      http.post<ApiResponse<null>>("/m/vehicle/getVehicleOcr", { objectKey }, { loadingText: "识别中..." }),
+      http.post<ApiResponse<null>>("/m/vehicle/getVehicleOcr", { objectKey }, { meta: { loadingText: "识别中..." } }),
     /** 根据车架号(VIN)获取车型详细信息 */
     requestVehicleModel: (vin: string) =>
       http.post<ApiResponse<Record<string, unknown>>>(
         "/m/vehicleModel/requestVehicleModel",
         { vin },
-        { loadingText: "查询中..." },
+        { meta: { loadingText: "查询中..." } },
       ),
 
     /** 查询车辆评估价格 */
@@ -516,7 +516,7 @@ export function useCarloanApi() {
       http.post<ApiResponse<Record<string, unknown>>>(
         "/m/vehicle300/Vehicle300",
         params,
-        { loadingText: "查询中..." },
+        { meta: { loadingText: "查询中..." } },
       ),
 
     /** 字典数据列表查询 */
@@ -542,13 +542,13 @@ export function useCarloanApi() {
       http.get<ApiResponse<IdCardInfo[]>>("/m/user/getUserList", params),
 
     /** 新增销售线索 */
-    addSalesLead: (data: SalesLeadData) => http.post("/m/salesLead/add", data, { loadingText: "提交中..." }),
+    addSalesLead: (data: SalesLeadData) => http.post("/m/salesLead/add", data, { meta: { loadingText: "提交中..." } }),
 
     // ========== 线索跟进 ==========
 
     /** 新增跟进记录 */
     addClueFollowUp: (data: ClueFollowUpData) =>
-      http.post("/m/clueFollowUp/add", data, { loadingText: "提交中..." }),
+      http.post("/m/clueFollowUp/add", data, { meta: { loadingText: "提交中..." } }),
 
     /** 获取跟进列表 */
     getClueFollowUpList: (uuid: string) =>
@@ -558,7 +558,7 @@ export function useCarloanApi() {
 
     /** 发起人脸识别 */
     startFaceSign: (data: { uuid: string; redirectUrl?: string }) =>
-      http.post("/m/signing/face/start", data, { loadingText: "提交中..." }),
+      http.post("/m/signing/face/start", data, { meta: { loadingText: "提交中..." } }),
     /** 发起授权书签署 */
     startAuthContractSign: (data: {
       uuid: string;
@@ -568,7 +568,7 @@ export function useCarloanApi() {
       http.post<ApiResponse<ContractSignStartResult>>(
         "/m/signing/contract/start",
         data,
-        { loadingText: "提交中..." }
+        { meta: { loadingText: "提交中..." } }
       ),
 
     /** 发起合同签署 */
@@ -581,7 +581,7 @@ export function useCarloanApi() {
         // "/m/signing/contract/start",//旧接口
         "/m/signing/loan/start",
         data,
-        { loadingText: "提交中..." }
+        { meta: { loadingText: "提交中..." } }
       ),
 
     /** 获取人脸识别结果 */
@@ -601,20 +601,20 @@ export function useCarloanApi() {
       http.post<ApiResponse<{ signRecordId: number; status: string }>>(
         `/signing/${signRecordId}/authorize-sign`,
         undefined,
-        { loadingText: "提交中..." }
+        { meta: { loadingText: "提交中..." } }
       ),
 
     /** GPS安装完成 */
     completeGpsInstall: (applicationId: string | number, data?: { gpsDeviceNo?: string; gpsInstallImg?: string }) =>
-      http.post(`/application/${applicationId}/gps-installed`, data, { loadingText: "提交中..." }),
+      http.post(`/application/${applicationId}/gps-installed`, data, { meta: { loadingText: "提交中..." } }),
 
     /** 抵押完成 */
     completeMortgage: (applicationId: string | number, data?: { mortgageStatus?: string; mortgageImg?: string }) =>
-      http.post(`/application/${applicationId}/mortgage-done`, data, { loadingText: "提交中..." }),
+      http.post(`/application/${applicationId}/mortgage-done`, data, { meta: { loadingText: "提交中..." } }),
 
     /** 提交请款资料 */
     submitLoanRequest: (applicationId: string | number) =>
-      http.post(`/application/${applicationId}/submit-loan-request`, undefined, { loadingText: '提交中...' }),
+      http.post(`/application/${applicationId}/submit-loan-request`, undefined, { meta: { loadingText: '提交中...' } }),
 
     /** 获取客户银行卡列表 */
     getBankCards: (customerId: number | string) =>
@@ -622,11 +622,11 @@ export function useCarloanApi() {
 
     /** 添加银行卡 */
     addBankCard: (data: { customerId: number; bankName: string; cardNo: string; cardType?: string; isDefault?: boolean }) =>
-      http.post(`/m/bank-card/add`, data, { loadingText: "保存中..." }),
+      http.post(`/m/bank-card/add`, data, { meta: { loadingText: "保存中..." } }),
 
     /** 删除银行卡 */
     deleteBankCard: (id: number) =>
-      http.post(`/m/bank-card/delete/${id}`, undefined, { loadingText: "删除中..." }),
+      http.post(`/m/bank-card/delete/${id}`, undefined, { meta: { loadingText: "删除中..." } }),
 
     /** 额度确认 */
     confirmAmount: (data: { applicationId: number; approverId: number; approvedAmount: number; term?: number; rate?: number }) =>
@@ -635,7 +635,7 @@ export function useCarloanApi() {
         approvedAmount: data.approvedAmount,
         term: data.term,
         rate: data.rate,
-      }, { loadingText: '保存中...' }),
+      }, { meta: { loadingText: '保存中...' } }),
 
     /** 获取还款计划 */
     getRepaymentPlans: (applicationId: number | string) =>
@@ -643,11 +643,11 @@ export function useCarloanApi() {
 
     /** 申请提前还款 */
     applyEarlyRepayment: (data: { applicationId: number; repayType?: string; amount: number; principal: number; interest: number; penalty?: number; reason?: string }) =>
-      http.post('/m/post-loan/early-repayment', data, { loadingText: "提交中..." }),
+      http.post('/m/post-loan/early-repayment', data, { meta: { loadingText: "提交中..." } }),
 
     /** 登记还款 */
     registerRepayment: (data: { applicationId: number; amount: number; principal?: number; interest?: number; penalty?: number; paymentMethod: string; transactionNo?: string; remark?: string }) =>
-      http.post('/m/post-loan/register-repayment', data, { loadingText: "提交中..." }),
+      http.post('/m/post-loan/register-repayment', data, { meta: { loadingText: "提交中..." } }),
 
     /** 获取订单详情（用于请款确认） */
     getApplicationDetail: (id: number | string) =>

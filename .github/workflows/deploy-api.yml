@@ -56,6 +56,8 @@ jobs:
             docker compose pull api
             docker compose up -d postgres redis
             echo "===== 执行 Prisma migration ====="
+            # 标记之前失败的 20260723200000_add_food_tenant_cascade 迁移为已回滚，避免阻塞后续 deploy
+            docker compose run --rm --no-deps api sh -c "cd /app/apps/admin-api && npx prisma migrate resolve --rolled-back 20260723200000_add_food_tenant_cascade --schema prisma/schema.prisma" || true
             docker compose run --rm --no-deps api sh -c "cd /app/apps/admin-api && npx prisma migrate deploy --schema prisma/schema.prisma"
             echo "===== 同步生产菜单/角色菜单/按钮权限 ====="
             docker compose run --rm --no-deps api sh -c "cd /app/apps/admin-api && npx tsx prisma/migrate-roles-menus.ts"

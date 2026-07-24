@@ -82,7 +82,7 @@ export class FileService {
       fileExt: extension.slice(1),
       fileSize: file.size,
       storageType: 'LOCAL',
-      uploadedBy: user.sub
+      uploadedBy: Number(user.userId)
     }
   }
 
@@ -134,7 +134,7 @@ export class FileService {
     this.validateBusinessBinding(dto)
     await this.validateOrg(dto.orgId)
     try {
-      return await fileAsset.create({ data: { ...dto, uploadedBy: dto.uploadedBy ?? user.sub } })
+      return await fileAsset.create({ data: { ...dto, uploadedBy: dto.uploadedBy ?? Number(user.userId) } })
     } catch (error) {
       this.throwIfMissingFileAssetStorage(error)
       throw error

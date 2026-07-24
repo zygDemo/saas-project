@@ -40,7 +40,7 @@ export class AuthService {
     const roleIds = user.roles.map(({ role: { id } }) => id)
     // 通过部门推导所属机构，用于审计日志的 org 维度
     const orgId = user.dept?.orgId ?? null
-    const payload = { sub: user.id, userName: user.userName, tenantId, orgId, roles, roleIds }
+    const payload = { userId: user.id, userName: user.userName, tenantId, orgId, roles, roleIds }
 
     const token = `Bearer ${await this.jwt.signAsync(payload)}`
     const refreshToken = `Bearer ${await this.jwt.signAsync(payload, {
@@ -169,7 +169,7 @@ export class AuthService {
     const roleIds = user.roles.map(({ role: { id } }) => id)
     // 通过部门推导所属机构，用于审计日志的 org 维度（自动注册用户无部门，orgId 为 null）
     const orgId = user.dept?.orgId ?? null
-    const payload = { sub: user.id, userName: user.userName, tenantId, orgId, roles, roleIds }
+    const payload = { userId: user.id, userName: user.userName, tenantId, orgId, roles, roleIds }
 
     const token = `Bearer ${await this.jwt.signAsync(payload)}`
     const refreshToken = `Bearer ${await this.jwt.signAsync(payload, {

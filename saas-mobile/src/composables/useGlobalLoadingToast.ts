@@ -13,6 +13,8 @@
  * - 确认框支持自定义按钮文案和主按钮风险色
  */
 
+import { useGlobalLoading } from '@/composables/useGlobalLoading'
+
 type ToastPosition = 'top' | 'middle' | 'bottom'
 type ToastType = 'text' | 'loading' | 'success' | 'fail'
 
@@ -60,6 +62,7 @@ function normalize(options: ToastOptions | string): Required<ToastOptions> {
 }
 
 function closeToast(closeAllFlag?: boolean | ToastWrapper) {
+  const { hide } = useGlobalLoading()
   if (closeAllFlag === true) {
     hide()
   } else if (closeAllFlag && typeof closeAllFlag === 'object' && 'close' in closeAllFlag) {
@@ -70,6 +73,7 @@ function closeToast(closeAllFlag?: boolean | ToastWrapper) {
 }
 
 function closeAll() {
+  const { hide } = useGlobalLoading()
   hide()
 }
 
@@ -107,11 +111,11 @@ function resetToastDefaultOptions(type?: ToastType) {
 
 function showToast(options: ToastOptions | string): ToastWrapper {
   const opts = normalize(options)
+  const { show: glShow, hide: glHide, update: glUpdate } = useGlobalLoading()
   if (!multipleMode) {
-    hide()
+    glHide()
   }
   const effectiveType = opts.type || 'text'
-  const { show: glShow, hide: glHide, update: glUpdate } = useGlobalLoading()
   const id = glShow({
     lock: opts.lock ?? (effectiveType === 'loading'),
     text: opts.message,

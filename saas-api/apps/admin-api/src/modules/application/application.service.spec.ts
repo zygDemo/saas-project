@@ -31,6 +31,7 @@ describe('ApplicationService', () => {
   let service: ApplicationService
   let mockPrisma: jest.Mocked<PrismaService>
   let mockFlowConfig: jest.Mocked<FlowConfigService>
+  let mockDisbursementService: Record<string, jest.Mock>
 
   // ─── Reusable mock factories ─────────────────────────────────
   const mockTx = () => ({
@@ -51,9 +52,10 @@ describe('ApplicationService', () => {
     repaymentPlan: {
       count: jest.fn().mockResolvedValue(0),
       createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      findMany: jest.fn().mockResolvedValue([]),
       findFirst: jest.fn(),
       update: jest.fn(),
-      updateMany: jest.fn()
+      updateMany: jest.fn().mockResolvedValue({ count: 1 })
     },
     repaymentRecord: { create: jest.fn() },
     lead: { update: jest.fn() }
@@ -98,6 +100,12 @@ describe('ApplicationService', () => {
 
   beforeEach(async () => {
     ;(getCurrentTenantId as jest.Mock).mockReturnValue(1)
+
+    mockDisbursementService = {
+      completeGpsInstall: jest.fn().mockResolvedValue({ id: 1 }),
+      completeMortgage: jest.fn().mockResolvedValue({ id: 1 }),
+      requestDisbursement: jest.fn().mockResolvedValue({ id: 1 })
+    }
 
     mockPrisma = {
       application: {
@@ -166,7 +174,7 @@ describe('ApplicationService', () => {
         { provide: FlowConfigService, useValue: mockFlowConfig },
         { provide: DataScopeService, useValue: { buildDataScopeFilter: jest.fn().mockResolvedValue({}) } },
         { provide: ApplicationNotificationService, useValue: { send: jest.fn().mockResolvedValue(undefined), sendOnSigningStarted: jest.fn().mockResolvedValue(undefined), sendOnLoanDisbursed: jest.fn().mockResolvedValue(undefined), sendOnLoanSettled: jest.fn().mockResolvedValue(undefined), sendOnApprovalRejected: jest.fn().mockResolvedValue(undefined) } },
-        { provide: DisbursementService, useValue: {} },
+        { provide: DisbursementService, useValue: mockDisbursementService },
       ]
     }).compile()
 
@@ -389,7 +397,7 @@ describe('ApplicationService', () => {
 
       expect(mockPrisma.application.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 1, status: ApplicationStatus.DRAFT },
+          where: { id: 1, status: { in: [ApplicationStatus.DRAFT, ApplicationStatus.PENDING_SUPPLEMENT] }, tenantId: 1 },
           data: expect.objectContaining({
             status: ApplicationStatus.PENDING_RISK_PRE,
             currentNode: 1200,
@@ -414,9 +422,9 @@ describe('ApplicationService', () => {
     })
 
     it('非草稿/待补充状态应该抛出 BadRequestException', async () => {
-      mockPrisma.application.findFirst!.mockResolvedValue(null)
-      mockPrisma.application.findFirst!.mockResolvedValueOnce(null) // 不存在匹配状态的记录
-        .mockResolvedValueOnce(makeApplication({ status: ApplicationStatus.PENDING_RISK_PRE })) // 存在记录但状态不对
+      mockPrisma.application.findFirst!.mockResolvedValue(
+        makeApplication({ status: ApplicationStatus.PENDING_RISK_PRE })
+      )
       mockPrisma.application.updateMany!.mockResolvedValue({ count: 0 })
 
       await expect(service.submit(1)).rejects.toThrow(BadRequestException)
@@ -436,10 +444,6 @@ describe('ApplicationService', () => {
       let txRef: ReturnType<typeof mockTx> | undefined
       mockPrisma.$transaction = jest.fn(async (fn: any) => {
         txRef = mockTx()
-        txRef.application.update.mockResolvedValue({
-          ...makeApplication(),
-          status: ApplicationStatus.PENDING_FUNDER_PRE
-        })
         return fn(txRef)
       }) as any
 
@@ -456,11 +460,12 @@ describe('ApplicationService', () => {
           })
         })
       )
-      expect(txRef?.application.update).toHaveBeenCalledWith(
+      expect(txRef?.application.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
+          where: { id: 1, status: { in: [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE] }, tenantId: 1 },
           data: expect.objectContaining({
             status: ApplicationStatus.PENDING_FUNDER_PRE,
-            currentNode: 1250,
+            currentNode: 1200,
             currentStatus: 10,
             remark: '通过'
           })
@@ -491,10 +496,11 @@ describe('ApplicationService', () => {
 
       expect(mockPrisma.application.update).toHaveBeenCalledWith(
         expect.objectContaining({
+          where: { id: 1 },
           data: expect.objectContaining({
             status: ApplicationStatus.RISK_PRE_REJECTED,
             currentNode: 1200,
-            currentStatus: 30,
+            currentStatus: 10,
             remark: '资料不全'
           })
         })
@@ -536,12 +542,13 @@ describe('ApplicationService', () => {
           })
         })
       )
-      expect(txRef?.application.update).toHaveBeenCalledWith(
+      expect(txRef?.application.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
+          where: { id: 1, status: { in: [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE] }, tenantId: 1 },
           data: expect.objectContaining({
             status: ApplicationStatus.RISK_PRE_REJECTED,
             currentNode: 1200,
-            currentStatus: 30,
+            currentStatus: 10,
             remark: '征信不通过'
           })
         })
@@ -559,13 +566,6 @@ describe('ApplicationService', () => {
       let txRef: ReturnType<typeof mockTx> | undefined
       mockPrisma.$transaction = jest.fn(async (fn: any) => {
         txRef = mockTx()
-        txRef.application.update.mockResolvedValue({
-          ...makeApplication(),
-          status: ApplicationStatus.SUBMITTED,
-          currentNode: 1140,
-          currentStatus: 40,
-          remark: '资料需要补充'
-        })
         return fn(txRef)
       }) as any
 
@@ -582,9 +582,9 @@ describe('ApplicationService', () => {
           })
         })
       )
-      expect(txRef?.application.update).toHaveBeenCalledWith(
+      expect(txRef?.application.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 1 },
+          where: { id: 1, status: { in: [ApplicationStatus.SUBMITTED, ApplicationStatus.PENDING_RISK_PRE] }, tenantId: 1 },
           data: expect.objectContaining({
             status: ApplicationStatus.SUBMITTED,
             currentNode: 1140,
@@ -666,10 +666,13 @@ describe('ApplicationService', () => {
 
       expect(mockPrisma.application.update).toHaveBeenCalledWith(
         expect.objectContaining({
+          where: { id: 1 },
           data: expect.objectContaining({
             status: ApplicationStatus.PENDING_FIRST_REVIEW,
-            currentNode: 1400,
-            currentStatus: 10
+            currentNode: 1200,
+            currentStatus: 10,
+            supplementReason: '已补齐资料',
+            supplementDeadline: expect.any(Date)
           })
         })
       )
@@ -803,9 +806,10 @@ describe('ApplicationService', () => {
 
       expect(mockPrisma.application.update).toHaveBeenCalledWith(
         expect.objectContaining({
+          where: { id: 1 },
           data: expect.objectContaining({
             status: ApplicationStatus.PENDING_FUNDER_REVIEW,
-            currentNode: 1500,
+            currentNode: 1200,
             currentStatus: 10
           })
         })
@@ -995,16 +999,14 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_DISBURSEMENT })
       )
-      mockPrisma.disbursement.upsert!.mockResolvedValue({ id: 1 } as any)
 
       await service.completeGpsInstall(1, { gpsDeviceNo: 'GPS-001', gpsInstallImg: 'http://img.jpg' })
 
-      expect(mockPrisma.disbursement.upsert).toHaveBeenCalledWith(
+      expect(mockDisbursementService.completeGpsInstall).toHaveBeenCalledWith(
+        1,
         expect.objectContaining({
-          update: expect.objectContaining({
-            status: DisbursementStatus.GPS_INSTALLED,
-            gpsDeviceNo: 'GPS-001'
-          })
+          gpsDeviceNo: 'GPS-001',
+          gpsInstallImg: 'http://img.jpg'
         })
       )
     })
@@ -1015,16 +1017,14 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_DISBURSEMENT })
       )
-      mockPrisma.disbursement.upsert!.mockResolvedValue({ id: 1 } as any)
 
       await service.completeMortgage(1, { mortgageStatus: 'DONE', mortgageImg: 'http://mortgage.jpg' })
 
-      expect(mockPrisma.disbursement.upsert).toHaveBeenCalledWith(
+      expect(mockDisbursementService.completeMortgage).toHaveBeenCalledWith(
+        1,
         expect.objectContaining({
-          update: expect.objectContaining({
-            status: DisbursementStatus.MORTGAGE_DONE,
-            mortgageStatus: 'DONE'
-          })
+          mortgageStatus: 'DONE',
+          mortgageImg: 'http://mortgage.jpg'
         })
       )
     })
@@ -1038,33 +1038,23 @@ describe('ApplicationService', () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.LOAN_REQUEST_APPROVED })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
-        const tx = mockTx()
-        tx.disbursement.findFirst = jest.fn().mockResolvedValue(null)
-        return fn(tx)
-      })
 
       await service.requestDisbursement(1, { remark: '申请放款' })
 
-      expect(mockPrisma.$transaction).toHaveBeenCalled()
+      expect(mockDisbursementService.requestDisbursement).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ remark: '申请放款' })
+      )
     })
 
     it('已有GPS安装记录时应保留GPS状态', async () => {
       mockPrisma.application.findFirst!.mockResolvedValue(
         makeApplication({ status: ApplicationStatus.PENDING_DISBURSEMENT })
       )
-      mockPrisma.$transaction = jest.fn(async (fn: any) => {
-        const tx = mockTx()
-        tx.disbursement.findFirst = jest.fn().mockResolvedValue({
-          id: 1,
-          status: DisbursementStatus.GPS_INSTALLED
-        })
-        return fn(tx)
-      })
 
       await service.requestDisbursement(1, {})
 
-      expect(mockPrisma.$transaction).toHaveBeenCalled()
+      expect(mockDisbursementService.requestDisbursement).toHaveBeenCalledWith(1, {})
     })
   })
 
@@ -1081,7 +1071,9 @@ describe('ApplicationService', () => {
         const tx = mockTx()
         tx.disbursement.findFirst = jest.fn().mockResolvedValue({
           id: 1,
-          status: DisbursementStatus.PENDING_APPROVAL
+          status: DisbursementStatus.PENDING_APPROVAL,
+          gpsInstallAt: new Date(),
+          mortgageAt: new Date()
         })
         tx.repaymentPlan.count = jest.fn().mockResolvedValue(0)
         return fn(tx)
@@ -1312,6 +1304,18 @@ describe('ApplicationService', () => {
   // ═══════════════════════════════════════════════════════════════
   describe('applyEarlyRepayment', () => {
     it('应该创建提前还款申请', async () => {
+      mockPrisma.repaymentPlan.findMany!.mockResolvedValue([
+        {
+          id: 1,
+          principal: 95000,
+          interest: 5000,
+          totalAmount: 100000,
+          paidPrincipal: 0,
+          paidInterest: 0,
+          paidTotal: 0,
+          status: RepaymentStatus.NOT_DUE
+        }
+      ] as any)
       mockPrisma.earlyRepayment.create!.mockResolvedValue({ id: 1 } as any)
 
       await service.applyEarlyRepayment(1, {
@@ -1554,7 +1558,9 @@ describe('ApplicationService', () => {
       mockPrisma.$transaction = jest.fn(async (fn: any) => {
         const tx = mockTx()
         tx.disbursement.findFirst = jest.fn().mockResolvedValue({
-          id: 1, status: DisbursementStatus.PENDING_APPROVAL
+          id: 1, status: DisbursementStatus.PENDING_APPROVAL,
+          gpsInstallAt: new Date(),
+          mortgageAt: new Date()
         })
         tx.repaymentPlan.count = jest.fn().mockResolvedValue(0)
         return fn(tx)

@@ -83,7 +83,7 @@ export class MobileCreditService {
           businessType: dto.businessType === 'pawn' ? 'PAWN' : 'CAR_LOAN',
           currentNode: 1200,
           currentStatus: 10,
-          creatorId: user.sub,
+          creatorId: Number(user.userId),
         }
     const application = isUpdate
       ? await this.prisma.application.update({

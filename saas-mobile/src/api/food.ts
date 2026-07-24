@@ -15,19 +15,19 @@ export function useFoodApi() {
 
     /** 添加到购物车 */
     addToCart: (data: { dishId: number; quantity?: number }) =>
-      http.post<ApiResponse<FoodCartItem>>("/food/m/cart", data, { loadingText: "添加中..." }),
+      http.post<ApiResponse<FoodCartItem>>("/food/m/cart", data, { meta: { loadingText: "添加中..." } }),
 
     /** 更新购物车数量 */
     updateCartQuantity: (dishId: number, quantity: number) =>
-      http.put<ApiResponse<null>>(`/food/m/cart/${dishId}`, { quantity }, { loadingText: "更新中..." }),
+      http.put<ApiResponse<null>>(`/food/m/cart/${dishId}`, { quantity }, { meta: { loadingText: "更新中..." } }),
 
     /** 清空购物车 */
     clearCart: () =>
-      http.delete<ApiResponse<null>>("/food/m/cart", undefined, { loadingText: "清空中..." }),
+      http.delete<ApiResponse<null>>("/food/m/cart", undefined, { meta: { loadingText: "清空中..." } }),
 
     /** 创建订单 */
     createOrder: (data?: { remark?: string }) =>
-      http.post<ApiResponse<FoodOrder>>("/food/m/order", data, { loadingText: "提交中..." }),
+      http.post<ApiResponse<FoodOrder>>("/food/m/order", data, { meta: { loadingText: "提交中..." } }),
 
     /** 我的订单列表 */
     getMyOrders: (params?: { status?: number }) =>

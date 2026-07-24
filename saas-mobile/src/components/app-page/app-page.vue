@@ -9,7 +9,7 @@
       v-if="!hideNav"
       :is-back="showNavBack && !showTabbar"
       :title="navTitle"
-      :background="background"
+      :background="(background as any)"
       :is-fixed="true"
       :immersive="false"
       back-icon-name="arrow-leftward"

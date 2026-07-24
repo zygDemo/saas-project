@@ -78,7 +78,6 @@ import { computed, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useCarloanApi } from "@/api/carloan";
 import { APP_ROUTES } from "@/common/navigation";
-import { showConfirmDialog, showSuccessToast, showFailToast } from '@/composables/useGlobalLoadingToast'
 
 const businessApi = useCarloanApi();
 
@@ -202,12 +201,10 @@ async function handleSubmit() {
     return;
   }
 
-  const ok = await showConfirmDialog({
-    title: '确认提交',
-    message: '提交后将进入预审流程，确认提交吗？',
-    confirmText: '确认提交',
-    cancelText: '再等等',
-  });
+  const res = await new Promise<{ confirm: boolean }>((resolve) => {
+      uni.showModal({ title: '确认提交', content: '提交后将进入预审流程，确认提交吗？', confirmText: '确认提交', cancelText: '再等等', confirmColor: false === 'true' ? '#ef4444' : '#576b95', success: (r) => resolve({ confirm: r.confirm }), fail: () => resolve({ confirm: false }) });
+    });
+    const ok = res.confirm;
   if (!ok) return;
 
   submitting.value = true;

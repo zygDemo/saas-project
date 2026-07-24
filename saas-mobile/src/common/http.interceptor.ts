@@ -8,7 +8,7 @@ import { API_BASE_URL, TENANT_ID, UPLOAD_MAX_SIZE } from './env'
 import { normalizeUploadResponse } from './file-url'
 import { tokenUtil } from './token'
 import { useGlobalLoading } from '@/composables/useGlobalLoading'
-import { useGlobalLoadingToast } from '@/composables/useGlobalLoadingToast'
+import { showFailToast, showToast } from '@/composables/useGlobalLoadingToast'
 import { useLocalStore } from '@/stores/local'
 import { useSessionStore } from '@/stores/session'
 

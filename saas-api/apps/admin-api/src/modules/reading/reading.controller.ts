@@ -238,21 +238,21 @@ export class ReadingController {
   @Public()
   @ApiOperation({ summary: '获取用户书架' })
   async getBookshelf(@Request() req: RequestUser) {
-    return this.readingService.getBookshelf(req.sub, req.tenantId);
+    return this.readingService.getBookshelf(Number(req.user.userId), req.tenantId);
   }
 
   @Post('bookshelf')
   @Public()
   @ApiOperation({ summary: '加入书架' })
   async addToBookshelf(@Request() req: RequestUser, @Body() dto: AddBookshelfDto) {
-    return this.readingService.addToBookshelf(req.sub, req.tenantId, dto);
+    return this.readingService.addToBookshelf(Number(req.user.userId), req.tenantId, dto);
   }
 
   @Delete('bookshelf/:bookId')
   @Public()
   @ApiOperation({ summary: '移出书架' })
   async removeFromBookshelf(@Param('bookId') bookId: number, @Request() req: RequestUser) {
-    return this.readingService.removeFromBookshelf(req.sub, req.tenantId, +bookId);
+    return this.readingService.removeFromBookshelf(Number(req.user.userId), req.tenantId, +bookId);
   }
 
   // ==================== 阅读进度 ====================
@@ -261,14 +261,14 @@ export class ReadingController {
   @Public()
   @ApiOperation({ summary: '获取阅读进度' })
   async getReadingProgress(@Param('bookId') bookId: number, @Request() req: RequestUser) {
-    return this.readingService.getReadingProgress(req.sub, req.tenantId, +bookId);
+    return this.readingService.getReadingProgress(Number(req.user.userId), req.tenantId, +bookId);
   }
 
   @Post('progress')
   @Public()
   @ApiOperation({ summary: '保存阅读进度' })
   async saveReadingProgress(@Request() req: RequestUser, @Body() dto: SaveReadingProgressDto) {
-    return this.readingService.saveReadingProgress(req.sub, req.tenantId, dto);
+    return this.readingService.saveReadingProgress(Number(req.user.userId), req.tenantId, dto);
   }
 
   // ==================== 书籍评价 ====================
@@ -284,7 +284,7 @@ export class ReadingController {
   @Public()
   @ApiOperation({ summary: '创建书籍评价' })
   async createReview(@Request() req: RequestUser, @Body() dto: CreateReviewDto) {
-    return this.readingService.createReview(req.sub, req.tenantId, dto);
+    return this.readingService.createReview(Number(req.user.userId), req.tenantId, dto);
   }
 
   @Put('reviews/status')
@@ -309,7 +309,7 @@ export class ReadingController {
   @Public()
   @ApiOperation({ summary: '获取读书统计（传入 personal=1 查询用户个人统计）' })
   async getStatistics(@Request() req: RequestUser, @Query('personal') personal?: string) {
-    const userId = personal === '1' ? req.sub : undefined;
+    const userId = personal === '1' ? Number(req.user.userId) : undefined;
     return this.readingService.getStatistics(req.tenantId, userId);
   }
 
@@ -334,7 +334,7 @@ export class ReadingController {
   @Public()
   @ApiOperation({ summary: '获取当前用户的笔记列表' })
   async getNotes(@Request() req: RequestUser, @Query() query: NoteQueryDto) {
-    return this.readingService.getNotes(req.tenantId, req.sub, query);
+    return this.readingService.getNotes(req.tenantId, Number(req.user.userId), query);
   }
 
   @Get('notes/chapter/:bookId/:chapterId')
@@ -345,14 +345,14 @@ export class ReadingController {
     @Param('bookId') bookId: number,
     @Param('chapterId') chapterId: number,
   ) {
-    return this.readingService.getNotesByChapter(req.tenantId, req.sub, +bookId, +chapterId);
+    return this.readingService.getNotesByChapter(req.tenantId, Number(req.user.userId), +bookId, +chapterId);
   }
 
   @Post('notes')
   @Public()
   @ApiOperation({ summary: '创建笔记/高亮' })
   async createNote(@Request() req: RequestUser, @Body() dto: CreateReadingNoteDto) {
-    return this.readingService.createNote(req.tenantId, req.sub, dto);
+    return this.readingService.createNote(req.tenantId, Number(req.user.userId), dto);
   }
 
   @Put('notes/:id')
@@ -363,14 +363,14 @@ export class ReadingController {
     @Request() req: RequestUser,
     @Body() dto: UpdateReadingNoteDto,
   ) {
-    return this.readingService.updateNote(+id, req.tenantId, req.sub, dto);
+    return this.readingService.updateNote(+id, req.tenantId, Number(req.user.userId), dto);
   }
 
   @Delete('notes/:id')
   @Public()
   @ApiOperation({ summary: '删除笔记' })
   async deleteNote(@Param('id') id: number, @Request() req: RequestUser) {
-    return this.readingService.deleteNote(+id, req.tenantId, req.sub);
+    return this.readingService.deleteNote(+id, req.tenantId, Number(req.user.userId));
   }
 
 
@@ -383,6 +383,6 @@ export class ReadingController {
     @Param('id') id: string,
     @CurrentUser() user: RequestUser
   ) {
-    return this.readingService.likeReview(user.sub, +id)
+    return this.readingService.likeReview(Number(user.userId), +id)
   }
 }

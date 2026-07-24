@@ -73,8 +73,7 @@
   async function loadComments(articleId?: number) {
     if (!articleId) return
     try {
-      const res = await fetchCommentsByArticle(articleId)
-      const list: ArticleComment[] = res?.data || res || []
+      const list: ArticleComment[] = (await fetchCommentsByArticle(articleId)) || []
       const map = new Map<number, Comment>()
       const roots: Comment[] = []
       for (const item of list) {

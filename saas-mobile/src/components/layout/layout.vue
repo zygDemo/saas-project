@@ -2,7 +2,7 @@
   <view class="layout">
     <u-navbar
       :title="navTitle || currentNavTitle"
-      :background="navBackground"
+      :background="(navBackground as any)"
       title-color="#ffffff"
       title-bold
       :is-back="showBack"

@@ -17,10 +17,11 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('info')
-  @Public()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: '获取当前用户信息', description: '根据 JWT Token 获取当前登录用户的详细信息' })
   info(@CurrentUser() user: RequestUser) {
-    return this.usersService.getUserInfo(user.sub)
+    return this.usersService.getUserInfo(Number(user.userId))
   }
 
   @Get('list')

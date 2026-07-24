@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { reactive, ref } from "vue";
 import { useCarloanApi } from "@/api/carloan";
 

@@ -76,7 +76,7 @@ export class NotificationGateway
         secret: this.configService.get<string>('JWT_SECRET'),
       })
 
-      client.userId = payload.sub || payload.id
+      client.userId = Number(payload.userId ?? payload.sub ?? payload.id)
       client.tenantId = payload.tenantId
 
       // 加入租户房间

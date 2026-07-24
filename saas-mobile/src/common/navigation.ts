@@ -178,14 +178,6 @@ export function getInitialMobileEntry(config?: MobileModuleConfigLike | null): {
 } {
   const enabledModules = getEnabledMobileModules(config);
 
-  if (canSwitchMobileModule(config)) {
-    return {
-      route: APP_ROUTES.portal.home,
-      system: "portal",
-      moduleKey: null,
-    };
-  }
-
   const preferredModule =
     isMobileModuleKey(config?.defaultModule) &&
     enabledModules.includes(config.defaultModule)

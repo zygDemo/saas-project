@@ -137,7 +137,7 @@ export async function ensureCustomerDraftApplication(
         businessType: options.businessType === 'pawn' ? 'PAWN' : 'CAR_LOAN',
         currentNode: 1100,
         currentStatus: 10,
-        creatorId: user.sub,
+        creatorId: Number(user.userId),
         remark: '移动端身份证信息提交自动创建订单草稿'
       }
     })

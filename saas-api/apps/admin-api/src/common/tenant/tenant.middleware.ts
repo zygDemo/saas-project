@@ -59,11 +59,12 @@ export class TenantMiddleware implements NestMiddleware {
         throw new UnauthorizedException('token 中的 tenantId 无效')
       }
 
-      // 从 JWT 中提取用户信息
+      // 从 JWT 中提取用户信息，JWT payload 仍以 sub 承载用户 ID
       let userId: number | undefined
       let userRoles: number[] | undefined
       if (jwtPayload) {
         if (jwtPayload.sub) userId = Number(jwtPayload.sub)
+        if (jwtPayload.userId) userId = Number(jwtPayload.userId)
         if (Array.isArray(jwtPayload.roleIds)) userRoles = jwtPayload.roleIds as number[]
       }
 

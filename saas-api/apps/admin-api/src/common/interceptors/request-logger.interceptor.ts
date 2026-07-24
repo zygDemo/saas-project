@@ -92,7 +92,7 @@ export class RequestLoggerInterceptor implements NestInterceptor {
     const url = request.originalUrl || request.url
     if (SKIP_AUDIT_PATHS.some((path) => url.includes(path))) return
 
-    const user = (request as unknown as { user?: { sub?: number; userName?: string; orgId?: number } }).user
+    const user = (request as unknown as { user?: { userId?: number; userName?: string; orgId?: number } }).user
     const moduleName = this.resolveModuleName(url)
     const action = request.method
     const requestData = this.maskSensitiveData({
@@ -107,7 +107,7 @@ export class RequestLoggerInterceptor implements NestInterceptor {
         data: {
           tenantId: getCurrentTenantId(),
           orgId: user?.orgId ?? null,
-          userId: user?.sub,
+          userId: user?.userId ? Number(user.userId) : undefined,
           userName: user?.userName,
           module: moduleName,
           action,

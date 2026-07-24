@@ -2,6 +2,7 @@
   <layout :active-tab="0" navTitle="首页" show-tabbar tabbar-scope="carloan">
     <scroll-view class="workbench-scroll" scroll-y>
       <view class="workbench">
+        <!-- 顶部欢迎区 -->
         <view class="home-header">
           <view class="home-title-block">
             <text class="home-date">{{ todayText }}</text>
@@ -10,11 +11,13 @@
           </view>
           <view class="home-status">
             <view class="msg-badge" role="button" tabindex="0" @click.stop="goTo(APP_ROUTES.carloan.portal.messageCenter)">
-              <u-icon name="bell" size="36" color="#1a1a1a" />
+              <u-icon name="bell" size="36" color="#fff" />
               <view v-if="unreadCount > 0" class="badge-dot">{{ unreadCount > 99 ? '99+' : unreadCount }}</view>
             </view>
-            <u-icon name="checkmark-circle" size="26" color="#16a34a" />
-            <text>在线</text>
+            <view class="status-pill">
+              <u-icon name="checkmark-circle" size="24" color="#86efac" />
+              <text>在线</text>
+            </view>
           </view>
         </view>
 
@@ -26,11 +29,14 @@
           tabindex="0"
           @click="goTo(APP_ROUTES.carloan.portal.messageCenter)"
         >
-          <u-icon name="volume-up" size="32" color="var(--u-type-primary)" />
+          <view class="announcement-icon">
+            <u-icon name="volume-up" size="28" color="var(--u-type-primary)" />
+          </view>
           <text class="announcement-text">{{ latestAnnouncement.title }}</text>
-          <u-icon name="arrow-right" size="24" color="#c0c4cc" />
+          <u-icon name="arrow-right" size="22" color="#94a3b8" />
         </view>
 
+        <!-- 快捷入口 -->
         <view class="block-head">
           <text class="block-title">快捷入口</text>
           <text class="block-tip">扫码或直接发起业务</text>
@@ -42,45 +48,59 @@
           >
             <view class="quick-left">
               <view class="quick-title-row">
-                <u-icon name="plus-circle" size="44" color="#fff" />
+                <view class="quick-icon">
+                  <u-icon name="plus-circle" size="40" color="#fff" />
+                </view>
                 <text class="quick-text">新增线索</text>
               </view>
               <text class="quick-sub">快速获客，扫码录入</text>
             </view>
             <view class="qr-icon" role="button" tabindex="0" @click.stop="showQr('lead')">
-              <u-icon
-                name="erweima"
-                custom-prefix="custom-icon"
-                size="65"
-                color="#fff"
-              />
+              <view class="qr-bg">
+                <u-icon
+                  name="erweima"
+                  custom-prefix="custom-icon"
+                  size="60"
+                  color="#fff"
+                />
+              </view>
             </view>
           </view>
 
           <view class="quick-card quick-card--credit" role="button" tabindex="0" @click="goTo(APP_ROUTES.carloan.precheck.idInfo)">
             <view class="quick-left">
               <view class="quick-title-row">
-                <u-icon name="file-text" size="44" color="#fff" />
+                <view class="quick-icon">
+                  <u-icon name="file-text" size="40" color="#fff" />
+                </view>
               <text class="quick-text">进件</text>
             </view>
             <text class="quick-sub">快速发起贷款申请</text>
           </view>
           <view class="qr-icon" role="button" tabindex="0" @click.stop="showQr('credit')">
-            <u-icon
-              name="erweima"
-              custom-prefix="custom-icon"
-              size="65"
-              color="#fff"
-            />
+            <view class="qr-bg">
+              <u-icon
+                name="erweima"
+                custom-prefix="custom-icon"
+                size="60"
+                color="#fff"
+              />
+            </view>
           </view>
         </view>
 
       </view>
 
+      <!-- 今日概览 -->
       <view class="overview-panel">
         <view class="overview-head">
-          <text class="overview-title">今日概览</text>
-          <text class="overview-sub">SaaS业务看板</text>
+          <view>
+            <text class="overview-title">今日概览</text>
+            <text class="overview-sub">SaaS业务看板</text>
+          </view>
+          <view class="overview-refresh" @click="loadOverview">
+            <u-icon name="reload" size="26" color="var(--u-type-primary)" />
+          </view>
         </view>
         <view class="overview-grid">
           <view
@@ -97,52 +117,58 @@
       <!-- 待办入口 -->
       <view class="todo-entry" role="button" tabindex="0" @click="goTo(APP_ROUTES.carloan.portal.todoCenter)">
         <view class="todo-entry__left">
-          <u-icon name="list" size="36" color="var(--u-type-primary)" />
-          <text class="todo-entry__text">待办中心</text>
+          <view class="todo-icon">
+            <u-icon name="list" size="32" color="#fff" />
+          </view>
+          <view class="todo-info">
+            <text class="todo-entry__text">待办中心</text>
+            <text class="todo-entry__tip">补件、签约、审批</text>
+          </view>
         </view>
         <view class="todo-entry__right">
-          <text class="todo-entry__tip">补件、签约、审批</text>
-          <u-icon name="arrow-right" size="28" color="#c0c4cc" />
+          <u-icon name="arrow-right" size="30" color="#94a3b8" />
         </view>
       </view>
 
-
-
+      <!-- 二维码弹窗 -->
       <u-popup
         v-model="qrShow"
         mode="center"
-        border-radius="16"
+        border-radius="24"
         :closeable="true"
         width="560rpx"
         @close="qrShow = false"
       >
         <view class="qr-popup">
           <text class="qr-title">{{ qrTitle }}</text>
-          <u-image
-            class="qr-img"
-            :src="qrImgUrl"
-            width="400rpx"
-            height="400rpx"
-            mode="aspectFit"
-            border-radius="12"
-          >
-            <template #loading>
-              <view class="qr-loading">
-                <u-loading mode="circle" size="48" color="var(--u-type-primary)" />
-                <text class="qr-loading-text">二维码生成中</text>
-              </view>
-            </template>
-            <template #error>
-              <view class="qr-error">
-                <u-icon name="error-circle" size="48" color="#999" />
-                <text class="qr-error-text">二维码生成失败</text>
-              </view>
-            </template>
-          </u-image>
+          <view class="qr-image-wrap">
+            <u-image
+              class="qr-img"
+              :src="qrImgUrl"
+              width="380rpx"
+              height="380rpx"
+              mode="aspectFit"
+              border-radius="16"
+            >
+              <template #loading>
+                <view class="qr-loading">
+                  <u-loading mode="circle" size="48" color="var(--u-type-primary)" />
+                  <text class="qr-loading-text">二维码生成中</text>
+                </view>
+              </template>
+              <template #error>
+                <view class="qr-error">
+                  <u-icon name="error-circle" size="48" color="#94a3b8" />
+                  <text class="qr-error-text">二维码生成失败</text>
+                </view>
+              </template>
+            </u-image>
+          </view>
           <text class="qr-tip">{{ qrTipText }}</text>
         </view>
       </u-popup>
 
+      <!-- 业务流程 -->
       <view
         v-for="(group, gi) in sections"
         :key="gi"
@@ -151,7 +177,9 @@
       >
         <view class="section-head">
           <text class="section-title">{{ group.title }}</text>
-          <text class="section-count">{{ group.items.length }} 项</text>
+          <view class="section-badge">
+            <text class="section-count">{{ group.items.length }} 项</text>
+          </view>
         </view>
         <view class="grid">
           <view
@@ -163,7 +191,7 @@
           >
             <view class="grid-topline">
               <view class="icon-wrap">
-                <u-icon :name="iconOf(item.icon)" size="38" :color="themeColor" />
+                <u-icon :name="iconOf(item.icon)" size="36" :color="themeColor" />
                 <u-badge v-if="item.badge" :value="item.badge" type="error" />
               </view>
               <text v-if="item.orderNode" class="node-code">{{ item.orderNode }}</text>
@@ -189,7 +217,6 @@ import { isDev } from "@/common/env";
 import { fetchActiveAnnouncements } from "@/api/announcement";
 import { useWebSocket } from "@/composables/useWebSocket";
 import { APP_ROUTES } from "@/common/navigation";
-import { showConfirmDialog, showFailToast } from '@/composables/useGlobalLoadingToast'
 
 const { currentTheme } = useTheme();
 const themeColor = computed(() => {
@@ -327,10 +354,10 @@ const ORDER_FILTER_STORAGE_KEY = "WORKBENCH_ORDER_FILTER";
 
 const checkAuth = async () => {
   if (!localStore.token) {
-    const ok = await showConfirmDialog({
-      title: '提示',
-      message: '您尚未登录，是否前往登录？',
+    const res = await new Promise<{ confirm: boolean }>((resolve) => {
+      uni.showModal({ title: '提示', content: '您尚未登录，是否前往登录？', confirmText: '确认', cancelText: '取消', confirmColor: '#576b95', success: (r) => resolve({ confirm: r.confirm }), fail: () => resolve({ confirm: false }) });
     });
+    const ok = res.confirm;
     if (ok) {
       uni.reLaunch({ url: APP_ROUTES.auth.login });
     }
@@ -606,6 +633,20 @@ const sections = computed(() => {
   background: linear-gradient(135deg, #3f6ff3 0%, #4f7cff 58%, #35b6c8 100%);
   border-radius: 24rpx;
   box-shadow: 0 14rpx 34rpx rgba(79, 124, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -40rpx;
+    right: -40rpx;
+    width: 180rpx;
+    height: 180rpx;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+  }
 }
 
 .home-title-block {
@@ -619,12 +660,14 @@ const sections = computed(() => {
   margin-bottom: 12rpx;
   font-size: 22rpx;
   opacity: 0.82;
+  letter-spacing: 0.06em;
 }
 
 .home-title {
   font-size: 36rpx;
   font-weight: 800;
   line-height: 1.25;
+  letter-spacing: 0.02em;
 }
 
 .home-desc {
@@ -645,6 +688,12 @@ const sections = computed(() => {
   background: rgba(255, 255, 255, 0.16);
   border: 1rpx solid rgba(255, 255, 255, 0.22);
   border-radius: 18rpx;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
 }
 
 .msg-badge {
@@ -706,9 +755,24 @@ const sections = computed(() => {
 
 .overview-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   margin-bottom: 22rpx;
+}
+
+.overview-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 14rpx;
+  background: rgba(82, 64, 254, 0.06);
+  transition: opacity 0.2s ease;
+
+  &:active {
+    opacity: 0.7;
+  }
 }
 
 .overview-title {
@@ -739,6 +803,13 @@ const sections = computed(() => {
   border: 1rpx solid #edf2f7;
   border-radius: 16rpx;
   text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+
+  &:active {
+    transform: scale(0.985);
+    background: #f6f9ff;
+    box-shadow: 0 4rpx 12rpx rgba(82, 64, 254, 0.08);
+  }
 }
 
 .overview-value {
@@ -781,9 +852,11 @@ const sections = computed(() => {
   background: linear-gradient(135deg, var(--u-type-primary-dark), #06b6d4);
   border-radius: 22rpx;
   box-shadow: 0 10rpx 24rpx rgba(79, 124, 255, 0.16);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &:active {
-    transform: translateY(2rpx);
+    transform: translateY(3rpx) scale(0.985);
+    box-shadow: 0 6rpx 14rpx rgba(79, 124, 255, 0.18);
   }
 
   &--lead {
@@ -807,35 +880,55 @@ const sections = computed(() => {
 .quick-title-row {
   display: flex;
   align-items: center;
-  gap: 10rpx;
+  justify-content: center;
+  gap: 12rpx;
+}
+
+.quick-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 14rpx;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1rpx solid rgba(255, 255, 255, 0.22);
 }
 
 .quick-text {
   font-size: 30rpx;
   font-weight: 800;
   line-height: 1.2;
+  letter-spacing: 0.02em;
 }
 
 .quick-sub {
   font-size: 22rpx;
   line-height: 1.35;
-  opacity: 0.85;
+  opacity: 0.82;
+  letter-spacing: 0.02em;
 }
 
 .qr-icon {
-  width: 74rpx;
-  height: 74rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1rpx solid rgba(255, 255, 255, 0.22);
-  border-radius: 12rpx;
-  background: rgba(255, 255, 255, 0.2);
-  transition: all 0.2s ease;
   flex-shrink: 0;
+}
+
+.qr-bg {
+  width: 68rpx;
+  height: 68rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1rpx solid rgba(255, 255, 255, 0.24);
+  border-radius: 14rpx;
+  background: rgba(255, 255, 255, 0.14);
+  transition: all 0.2s ease;
 
   &:active {
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.3);
     transform: scale(0.92);
   }
 }
@@ -848,10 +941,21 @@ const sections = computed(() => {
   gap: 24rpx;
 }
 
+.qr-image-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx;
+  border-radius: 20rpx;
+  background: #f8fafc;
+  border: 1rpx solid #e5ecf6;
+}
+
 .qr-title {
   font-size: 32rpx;
   font-weight: 700;
   color: #1f1f1f;
+  letter-spacing: 0.02em;
 }
 
 .qr-loading,
@@ -883,10 +987,35 @@ const sections = computed(() => {
   border: 1rpx solid var(--app-border, #e8edf5);
   border-radius: 24rpx;
   box-shadow: var(--app-shadow-card, 0 4rpx 20rpx rgba(26, 29, 41, 0.05));
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 24rpx;
+    right: 24rpx;
+    height: 2rpx;
+    background: linear-gradient(90deg, rgba(82, 64, 254, 0.12), rgba(53, 182, 200, 0.12));
+    border-radius: 2rpx;
+  }
 }
 
 .section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 18rpx;
+}
+
+.section-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rpx 14rpx;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 14rpx;
 }
 
 .section-title {
@@ -934,11 +1063,11 @@ const sections = computed(() => {
   border-radius: 18rpx;
   animation: slideUp 0.4s ease-out both;
   box-shadow: 0 6rpx 18rpx rgba(15, 23, 42, 0.035);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 
   &:active {
     background: #f6f9ff;
-    box-shadow: 0 4rpx 12rpx rgba(var(--u-type-primary-rgb, 82, 64, 254), 0.08);
+    box-shadow: 0 8rpx 22rpx rgba(82, 64, 254, 0.1);
     transform: scale(0.985);
   }
 }
@@ -961,7 +1090,7 @@ const sections = computed(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12rpx;
-  margin-bottom: 18rpx;
+  margin-bottom: 14rpx;
 }
 
 .icon-wrap {
@@ -969,12 +1098,13 @@ const sections = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64rpx;
-  height: 64rpx;
+  width: 56rpx;
+  height: 56rpx;
   background: #f0f4ff;
   border: 1rpx solid #dbeafe;
-  border-radius: 18rpx;
+  border-radius: 16rpx;
   box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .node-code {
@@ -993,14 +1123,15 @@ const sections = computed(() => {
   font-weight: 800;
   line-height: 1.25;
   color: #1e293b;
+  letter-spacing: 0.02em;
 }
 
 .grid-hint {
   position: relative;
   z-index: 1;
-  margin-top: 8rpx;
+  margin-top: 6rpx;
   font-size: 22rpx;
-  line-height: 1.3;
+  line-height: 1.35;
   color: #64748b;
 }
 
@@ -1042,9 +1173,26 @@ const sections = computed(() => {
   gap: 12rpx;
   background: #f0f5ff;
   border: 1rpx solid #d6e4ff;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   padding: 20rpx 24rpx;
   margin: 0 24rpx 24rpx;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+
+  &:active {
+    opacity: 0.85;
+    transform: scale(0.995);
+  }
+}
+
+.announcement-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 12rpx;
+  background: rgba(82, 64, 254, 0.08);
+  flex-shrink: 0;
 }
 
 .announcement-text {
@@ -1054,6 +1202,7 @@ const sections = computed(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 
 .todo-entry {
@@ -1061,10 +1210,36 @@ const sections = computed(() => {
   align-items: center;
   justify-content: space-between;
   background: #fff;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   padding: 24rpx;
   margin: 0 24rpx 24rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.04);
+  border-left: 6rpx solid var(--u-type-primary);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:active {
+    transform: scale(0.995);
+    box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.04);
+  }
+}
+
+.todo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 14rpx;
+  background: rgba(82, 64, 254, 0.08);
+  margin-right: 16rpx;
+  flex-shrink: 0;
+}
+
+.todo-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2rpx;
 }
 
 .todo-entry__left {
@@ -1075,18 +1250,21 @@ const sections = computed(() => {
 
 .todo-entry__text {
   font-size: 30rpx;
-  font-weight: 600;
+  font-weight: 700;
   color: #1a1a1a;
+  letter-spacing: 0.02em;
 }
 
 .todo-entry__right {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8rpx;
 }
 
 .todo-entry__tip {
   font-size: 24rpx;
   color: #8c8c8c;
+  letter-spacing: 0.02em;
 }
 </style>
