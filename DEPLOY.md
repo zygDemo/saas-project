@@ -1,4 +1,4 @@
-# SaaS Deployment
+﻿# SaaS Deployment
 
 > 架构总览见 [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
 
@@ -10,7 +10,23 @@ https://www.yugui.store/saas       -> SaaS web
 https://www.yugui.store/saas/api/* -> SaaS API
 ```
 
-## 1. Server Prerequisites
+## 1. 环境要求
+
+| 工具 | 推荐版本 | 说明 |
+|------|----------|------|
+| Node.js | `>=20.19.0` | 前端构建与本地调试兼容基线 |
+| pnpm | `9.x` | 根 workspace 统一管理依赖 |
+| Docker / Docker Compose | 最新稳定版 | 本地数据库、服务编排与发布验证 |
+| Git | 最新稳定版 | 建议开启 `core.autocrlf=false` |
+
+### Windows 排障提示
+
+- 如 `pnpm` 触发 shell 兼容错误，先执行：
+  - `pnpm config set shell-emulator false`
+- 本地优先使用 `127.0.0.1`，避免 `localhost` 的 IPv6/代理映射问题
+- 遇到端口占用时先清理占用的 `3001` / `5173` / `8080` 等端口
+
+## 2. Server Prerequisites
 
 Install Docker and Docker Compose on the cloud server. Keep ports `80` and `443` open for the existing host Nginx.
 
@@ -54,8 +70,8 @@ Run migrations, seed data, and menu sync inside the API container:
 
 ```bash
 docker compose -f docker-compose.prod.yml exec admin-api pnpm exec prisma migrate deploy --schema prisma/schema.prisma
-docker compose -f docker-compose.prod.yml exec admin-api pnpm exec tsx prisma/seed.ts
-docker compose -f docker-compose.prod.yml exec admin-api pnpm exec tsx prisma/seed-reading.ts
+docker compose -f docker-compose.prod.yml exec admin-api pnpm exec tsx prisma/scripts/seed.ts
+docker compose -f docker-compose.prod.yml exec admin-api pnpm exec tsx prisma/scripts/seed-reading.ts
 docker compose -f docker-compose.prod.yml exec admin-api pnpm run db:sync-roles:prod
 ```
 

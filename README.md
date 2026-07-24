@@ -1,4 +1,4 @@
-# saas-project
+﻿# saas-project
 
 > 予艺助手 — 车抵贷 SaaS 平台 Monorepo
 
@@ -24,7 +24,7 @@ saas-project/
 - **数据库**: PostgreSQL 16
 - **缓存**: Redis 7 + ioredis
 - **队列**: BullMQ
-- **实时**: Socket.IO WebSocket
+- **实时**: 原生 WebSocket (`ws`)
 - **认证**: JWT + Passport
 - **安全**: Helmet + Throttler
 - **文档**: Swagger 8
@@ -35,7 +35,7 @@ saas-project/
 - **状态**: Pinia
 - **路由**: Vue Router
 - **国际化**: Vue I18n
-- **WebSocket**: Socket.IO Client
+- **WebSocket**: 原生 WebSocket Client
 
 ### 移动端 (saas-mobile)
 - **框架**: uni-app 3.0 + Vue 3.4
@@ -120,6 +120,25 @@ pnpm test:cov
 - 所有 Service 必须有单元测试
 - API 文档使用 Swagger 装饰器
 - 代码提交遵循 Conventional Commits
+
+## 环境要求
+
+| 工具 | 推荐版本 | 说明 |
+|------|----------|------|
+| Node.js | `>=20.19.0` | 前端构建与 Vite 兼容基线 |
+| pnpm | `9.x` | 根 workspace 统一管理依赖 |
+| Docker / Docker Compose | 最新稳定版 | 本地数据库与发布验证 |
+| Git | 最新稳定版 | 建议开启 `core.autocrlf=false` |
+
+### Windows 开发提示
+
+- 优先使用根目录命令，例如：
+  - `pnpm -w --filter art-design-pro run build`
+  - `pnpm --filter @saas/admin-api start:dev`
+- 如 `pnpm` 触发 shell 兼容错误，先执行：
+  - `pnpm config set shell-emulator false`
+- 本地 H5 调试优先使用 `127.0.0.1`，避免 `localhost` 的 IPv6/代理映射问题
+- 遇到端口占用时先清理再重启服务
 
 ## 贡献
 

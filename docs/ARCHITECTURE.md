@@ -1,4 +1,4 @@
-# 项目架构文档
+﻿# 项目架构文档
 
 > 本文档整合后端模块说明、部署架构和业务流程设计。
 > 最后更新：2026-07-24
@@ -36,7 +36,7 @@ saas-project/
 | PostgreSQL 16 | 主数据库 |
 | Redis 7 | 缓存/会话 |
 | BullMQ | 任务队列 |
-| Socket.IO | WebSocket 实时推送 |
+| 原生 WebSocket (`ws`) | WebSocket 实时推送 |
 | Passport + JWT | 认证 |
 | Helmet + Throttler | 安全/限流 |
 | Swagger 8 | API 文档 |
@@ -50,7 +50,7 @@ saas-project/
 | Tailwind CSS 4 | 工具类样式 |
 | Pinia | 状态管理 |
 | Vue Router | 路由 |
-| Socket.IO Client | WebSocket |
+| 原生 WebSocket Client | WebSocket |
 | Vue I18n | 国际化 |
 
 ### 2.3 移动端 (saas-mobile)
@@ -61,7 +61,7 @@ saas-project/
 | Vue 3.4 | 框架 |
 | Pinia | 状态管理 |
 | uView Pro | UI 组件 |
-| Socket.IO Client | WebSocket |
+| 原生 WebSocket Client | WebSocket |
 
 ---
 
@@ -240,9 +240,9 @@ Application (申请)
 
 ## 8. 测试策略
 
-- **单元测试**: 所有 Service 模块 (41/41, 100%)
+- **单元测试**: 已恢复并修复多份 Service 单测，持续补齐 auth、flow-config、用户/角色等核心链路
 - **E2E 测试**: Playwright (saas-web)
-- **接口测试**: Swagger 文档覆盖全部控制器
+- **接口测试**: Swagger 文档覆盖主要控制器与刷新令牌接口
 
 ---
 
