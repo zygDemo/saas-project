@@ -1,7 +1,5 @@
-import { ref, onMounted, onUnmounted } from 'vue'
-import { io, Socket } from 'socket.io-client'
+import { ref, onUnmounted } from 'vue'
 import { useUserStore } from '@/store/modules/user'
-import { ElNotification } from 'element-plus'
 
 export interface WsNotification {
   type: 'announcement' | 'approval' | 'supplement' | 'signing' | 'loan' | 'order' | 'system'
@@ -13,75 +11,102 @@ export interface WsNotification {
 
 type NotificationHandler = (notification: WsNotification) => void
 
-const socket = ref<Socket | null>(null)
 const isConnected = ref(false)
 const handlers = new Set<NotificationHandler>()
+let ws: WebSocket | null = null
+let pingTimer: ReturnType<typeof setInterval> | null = null
+let manualClose = false
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
-/**
- * WebSocket 通知客户端
- *
- * 使用方式:
- *   const { connect, disconnect, onNotification } = useWebSocket()
- *   onNotification((msg) => { console.log(msg) })
- */
 export function useWebSocket() {
   const userStore = useUserStore()
 
-  function connect() {
-    if (socket.value?.connected) return
-
+  function buildWsUrl(): string {
     const token = userStore.token
-    if (!token) return
+    if (!token) return ''
 
-    const wsUrl = import.meta.env.VITE_API_URL || window.location.origin
+    const apiBase = (import.meta.env.VITE_API_URL || window.location.origin) as string
+    let origin: string
+    try {
+      origin = new URL(apiBase).origin
+    } catch {
+      origin = window.location.origin
+    }
 
-    socket.value = io(`${wsUrl}/ws`, {
-      auth: { token: `Bearer ${token}` },
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 3000,
-    })
+    return `${origin}/ws?token=${encodeURIComponent(token)}`
+  }
 
-    socket.value.on('connect', () => {
+  function connect() {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer)
+      reconnectTimer = null
+    }
+
+    if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
+      return
+    }
+
+    const url = buildWsUrl()
+    if (!url) return
+
+    manualClose = false
+    ws = new WebSocket(url)
+
+    ws.onopen = () => {
       isConnected.value = true
-      console.debug('[WS] 已连接', socket.value?.id)
-    })
+      console.debug('[WS] 已连接')
+      startPing()
+    }
 
-    socket.value.on('disconnect', (reason) => {
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data)
+        const eventName = message.event as string
+        const data = (message.data || message) as Record<string, unknown>
+        const notification = data as WsNotification
+
+        if (eventName === 'notification' || eventName === 'announcement') {
+          handlers.forEach((fn) => fn(notification))
+          showBrowserNotification(notification)
+        } else if (eventName === 'connected') {
+          console.debug('[WS] 认证成功:', data)
+        } else if (eventName === 'pong') {
+          // heartbeat response
+        } else {
+          console.debug('[WS] 未处理事件:', eventName, data)
+        }
+      } catch (e) {
+        console.warn('[WS] 消息解析失败:', e)
+      }
+    }
+
+    ws.onclose = () => {
       isConnected.value = false
-      console.debug('[WS] 已断开:', reason)
-    })
+      stopPing()
+      ws = null
 
-    socket.value.on('connected', (data) => {
-      console.debug('[WS] 认证成功:', data)
-    })
+      if (!manualClose) {
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null
+          connect()
+        }, 3000)
+      }
+    }
 
-    // 通用通知
-    socket.value.on('notification', (data: WsNotification) => {
-      console.debug('[WS] 收到通知:', data)
-
-      // 触发所有注册的 handler
-      handlers.forEach((fn) => fn(data))
-
-      // 弹出桌面通知
-      showBrowserNotification(data)
-    })
-
-    // 公告推送
-    socket.value.on('announcement', (data: WsNotification) => {
-      handlers.forEach((fn) => fn({ ...data, type: 'announcement' }))
-      showBrowserNotification({ ...data, type: 'announcement' })
-    })
-
-    socket.value.on('pong', () => {
-      // 心跳响应
-    })
+    ws.onerror = (err) => {
+      console.warn('[WS] 连接错误:', err)
+    }
   }
 
   function disconnect() {
-    socket.value?.disconnect()
-    socket.value = null
+    manualClose = true
+    stopPing()
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer)
+      reconnectTimer = null
+    }
+    ws?.close()
+    ws = null
     isConnected.value = false
   }
 
@@ -91,30 +116,33 @@ export function useWebSocket() {
   }
 
   function markRead(notificationId: number) {
-    socket.value?.emit('mark_read', { notificationId })
+    if (ws?.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ event: 'mark_read', data: { notificationId } }))
+    }
   }
 
-  // 心跳保活
-  let pingTimer: ReturnType<typeof setInterval> | null = null
   function startPing() {
+    stopPing()
     pingTimer = setInterval(() => {
-      socket.value?.emit('ping')
+      if (ws?.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ event: 'ping', data: {} }))
+      }
     }, 30000)
   }
 
   function stopPing() {
-    if (pingTimer) clearInterval(pingTimer)
+    if (pingTimer) {
+      clearInterval(pingTimer)
+      pingTimer = null
+    }
   }
 
-  // 组件卸载时自动断开
   onUnmounted(() => {
     disconnect()
-    stopPing()
     handlers.clear()
   })
 
   return {
-    socket,
     isConnected,
     connect,
     disconnect,
@@ -126,7 +154,6 @@ export function useWebSocket() {
 }
 
 function showBrowserNotification(data: WsNotification) {
-  // Element Plus 桌面通知
   const typeMap: Record<string, 'success' | 'warning' | 'info' | 'error'> = {
     announcement: 'info',
     approval: 'warning',
@@ -137,11 +164,13 @@ function showBrowserNotification(data: WsNotification) {
     system: 'info',
   }
 
-  ElNotification({
-    title: data.title || '新通知',
-    message: data.content,
-    type: typeMap[data.type] || 'info',
-    duration: 5000,
-    position: 'top-right',
+  import('element-plus').then(({ ElNotification }) => {
+    ElNotification({
+      title: data.title || '新通知',
+      message: data.content,
+      type: typeMap[data.type] || 'info',
+      duration: 5000,
+      position: 'top-right',
+    })
   })
 }
