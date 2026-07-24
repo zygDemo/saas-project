@@ -9,6 +9,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { join, dirname } from 'path'
 import * as fs from 'fs'
 import { AppModule } from './app.module'
+import { WebSocketServer } from './modules/notification/websocket.server'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { RequestLoggerInterceptor } from './common/interceptors/request-logger.interceptor'
 import { ResponseInterceptor } from './common/interceptors/response.interceptor'
@@ -65,7 +66,10 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter())
   app.useGlobalGuards(new JwtAuthGuard(app.get(Reflector)))
 
-  const swaggerConfig = new DocumentBuilder()
+  // 挂载原生 WebSocket 服务
+const wsServer = app.get(WebSocketServer)
+
+const swaggerConfig = new DocumentBuilder()
     .setTitle('SaaS API')
     .setDescription('NestJS API for saas-web')
     .setVersion('0.1.0')
@@ -82,7 +86,8 @@ async function bootstrap() {
   })
 
 
-  await app.listen(config.get<number>('PORT', 3001), '0.0.0.0')
+  const server = await app.listen(config.get<number>('PORT', 3001), '0.0.0.0')
+  wsServer.setup(server as import('http').Server, '/ws')
 }
 
 bootstrap()

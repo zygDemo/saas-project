@@ -5,5 +5,14 @@
   "packageManager": "pnpm@9.15.0",
   "devDependencies": {
     "@playwright/test": "^1.61.1"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @saas/admin-api start:dev",
+    "dev:web": "pnpm --filter art-design-pro dev",
+    "dev:mobile": "pnpm --filter uview-pro-starter dev:h5",
+    "build": "pnpm --filter @saas/shared build && pnpm --filter @saas/admin-api build && pnpm --filter art-design-pro build",
+    "test": "pnpm --filter @saas/admin-api test && pnpm --filter art-design-pro test",
+    "lint": "pnpm --filter @saas/admin-api lint && pnpm --filter art-design-pro lint",
+    "clean": "pnpm -r --parallel exec rm -rf node_modules dist .cache"
   }
 }

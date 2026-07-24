@@ -36,14 +36,14 @@ export class DbOpsService {
    * 执行种子数据 (prisma/seed.ts)
    */
   async runSeed(): Promise<string> {
-    return this.execCommand('seed', 'npx tsx prisma/seed.ts')
+    return this.execCommand('seed', 'npx tsx prisma/scripts/seed.ts')
   }
 
   /**
    * 同步角色菜单权限 (prisma/migrate-roles-menus.ts)
    */
   async runSyncRoles(): Promise<string> {
-    return this.execCommand('sync-roles', 'npx tsx prisma/migrate-roles-menus.ts')
+    return this.execCommand('sync-roles', 'npx tsx prisma/scripts/migrate-roles-menus.ts')
   }
 
   /**
@@ -69,7 +69,7 @@ export class DbOpsService {
 
     try {
       this.logger.log('[2/3] 执行 seed...')
-      results.seed = this.runSync('npx tsx prisma/seed.ts')
+      results.seed = this.runSync('npx tsx prisma/scripts/seed.ts')
     } catch (e: unknown) {
       this.running = false
       throw new InternalServerErrorException('seed 失败: ' + (e instanceof Error ? e.message : String(e)))
@@ -77,7 +77,7 @@ export class DbOpsService {
 
     try {
       this.logger.log('[3/3] 同步角色菜单...')
-      results.syncRoles = this.runSync('npx tsx prisma/migrate-roles-menus.ts')
+      results.syncRoles = this.runSync('npx tsx prisma/scripts/migrate-roles-menus.ts')
     } catch (e: unknown) {
       this.running = false
       throw new InternalServerErrorException('角色菜单同步失败: ' + (e instanceof Error ? e.message : String(e)))

@@ -19,14 +19,14 @@
     "prisma:migrate:deploy:dev": "dotenv -e env/.env.development -- prisma migrate deploy",
     "prisma:migrate:sit": "dotenv -e env/.env.sit -- prisma migrate deploy",
     "prisma:migrate:prod": "dotenv -e env/.env.production -- prisma migrate deploy",
-    "prisma:seed": "dotenv -e env/.env.development -- tsx prisma/seed.ts",
-    "prisma:seed:sit": "dotenv -e env/.env.sit -- tsx prisma/seed.ts",
-    "prisma:seed:prod": "dotenv -e env/.env.production -- tsx prisma/seed.ts",
-    "prisma:seed:reading:local": "dotenv -e env/.env.development -- tsx prisma/seed-reading.ts",
-    "prisma:seed:reading:prod": "dotenv -e env/.env.production -- tsx prisma/seed-reading.ts",
-    "db:sync-roles": "dotenv -e env/.env.development -- tsx prisma/migrate-roles-menus.ts",
-    "db:sync-roles:sit": "dotenv -e env/.env.sit -- tsx prisma/migrate-roles-menus.ts",
-    "db:sync-roles:prod": "dotenv -e env/.env.production -- tsx prisma/migrate-roles-menus.ts",
+    "prisma:seed": "dotenv -e env/.env.development -- tsx prisma/scripts/seed.ts",
+    "prisma:seed:sit": "dotenv -e env/.env.sit -- tsx prisma/scripts/seed.ts",
+    "prisma:seed:prod": "dotenv -e env/.env.production -- tsx prisma/scripts/seed.ts",
+    "prisma:seed:reading:local": "dotenv -e env/.env.development -- tsx prisma/scripts/seed-reading.ts",
+    "prisma:seed:reading:prod": "dotenv -e env/.env.production -- tsx prisma/scripts/seed-reading.ts",
+    "db:sync-roles": "dotenv -e env/.env.development -- tsx prisma/scripts/migrate-roles-menus.ts",
+    "db:sync-roles:sit": "dotenv -e env/.env.sit -- tsx prisma/scripts/migrate-roles-menus.ts",
+    "db:sync-roles:prod": "dotenv -e env/.env.production -- tsx prisma/scripts/migrate-roles-menus.ts",
     "db:studio": "dotenv -e env/.env.development -- prisma studio"
   },
   "dependencies": {
@@ -38,7 +38,6 @@
     "@nestjs/mapped-types": "^2.1.0",
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.4.15",
-    "@nestjs/platform-socket.io": "^10.4.15",
     "@nestjs/swagger": "^8.1.1",
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/websockets": "^10.4.15",
@@ -59,7 +58,8 @@
     "passport-jwt": "^4.0.1",
     "playwright": "^1.61.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "ws": "^8.21.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
@@ -94,6 +94,6 @@
     "typescript-eslint": "^8.20.0"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/scripts/seed.ts"
   }
 }

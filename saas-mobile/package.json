@@ -142,12 +142,5 @@
   "workspaces": [
     "."
   ],
-  "packageManager": "pnpm@9.15.0",
-  "pnpm": {
-    "overrides": {
-      "vue": "3.4.21",
-      "@vue/runtime-core": "3.4.21",
-      "vite": "5.2.8"
-    }
-  }
+  "packageManager": "pnpm@9.15.0"
 }
