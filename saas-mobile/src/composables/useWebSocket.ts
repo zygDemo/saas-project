@@ -1,5 +1,6 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useLocalStore } from '@/stores'
+import { useAuthApi } from '@/api/auth'
 import { WS_BASE_URL, API_BASE_URL } from '@/common/env'
 
 export interface WsNotification {
@@ -50,8 +51,34 @@ export function useWebSocket() {
     }
   }
 
-  function connect() {
+  let isRefreshing = false
+
+  async function doRefresh(): Promise<boolean> {
+    if (!localStore.refreshToken || isRefreshing) return false
+    try {
+      isRefreshing = true
+      const authApi = useAuthApi()
+      const res = await authApi.refreshToken(localStore.refreshToken)
+      localStore.setToken(res.token)
+      localStore.setRefreshToken(res.refreshToken)
+      localStore.setAuthContext({ expireTime: Date.now() + (res.expires || 7200) * 1000 })
+      return true
+    } catch (err) {
+      console.error('[WS] refresh token 失败', err)
+      localStore.logout()
+      return false
+    } finally {
+      isRefreshing = false
+    }
+  }
+
+  async function connect() {
     if (socketTask) return
+
+    if (localStore.isExpired && localStore.refreshToken) {
+      const ok = await doRefresh()
+      if (!ok) return
+    }
 
     const token = localStore.token
     if (!token) {
@@ -104,7 +131,7 @@ export function useWebSocket() {
       }
     })
 
-    socketTask.onClose(() => {
+    socketTask.onClose(async (res) => {
       isConnected.value = false
       socketTask = null
       stopPing()
@@ -112,7 +139,18 @@ export function useWebSocket() {
       // 主动断开时不自动重连
       if (manualDisconnect) return
 
-      // 自动重连
+      // 认证失败时先刷新 token 再重连
+      if ((res as unknown as { code?: number }).code === 1008 && localStore.refreshToken) {
+        const ok = await doRefresh()
+        if (ok) {
+          connect()
+          return
+        }
+        // 刷新失败已 logout，不再重连
+        return
+      }
+
+      // 普通断开时自动重连
       if (reconnectAttempts < MAX_RECONNECT) {
         const delay = Math.min(3000 * Math.pow(1.5, reconnectAttempts), 30000)
         reconnectTimer = setTimeout(() => {

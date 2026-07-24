@@ -121,6 +121,9 @@ axiosInstance.interceptors.response.use(
     if (code === ApiStatus.unauthorized) {
       throw createHttpError(msg || $t('httpMsg.requestFailed'), ApiStatus.unauthorized)
     }
+
+    // 业务非成功状态码统一抛出业务错误
+    throw createHttpError(msg || $t('httpMsg.requestFailed'), code)
   },
   async (error) => {
     if (error.response?.status === ApiStatus.unauthorized) {

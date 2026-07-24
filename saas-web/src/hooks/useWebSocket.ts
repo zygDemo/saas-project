@@ -1,4 +1,5 @@
-import { ref, onUnmounted } from 'vue'
+﻿import { ref, onUnmounted } from 'vue'
+import { refreshToken } from '@/api/auth'
 import { useUserStore } from '@/store/modules/user'
 
 export interface WsNotification {
@@ -13,16 +14,17 @@ type NotificationHandler = (notification: WsNotification) => void
 
 const isConnected = ref(false)
 const handlers = new Set<NotificationHandler>()
-let ws: WebSocket | null = null
-let pingTimer: ReturnType<typeof setInterval> | null = null
-let manualClose = false
-let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  let ws: WebSocket | null = null
+  let pingTimer: ReturnType<typeof setInterval> | null = null
+  let manualClose = false
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  let isRefreshing = false
 
 export function useWebSocket() {
   const userStore = useUserStore()
 
   function buildWsUrl(): string {
-    const token = userStore.token
+    const token = userStore.accessToken
     if (!token) return ''
 
     const apiBase = (import.meta.env.VITE_API_URL || window.location.origin) as string
@@ -80,17 +82,34 @@ export function useWebSocket() {
       }
     }
 
-    ws.onclose = () => {
+    ws.onclose = async (event) => {
       isConnected.value = false
       stopPing()
       ws = null
 
-      if (!manualClose) {
-        reconnectTimer = setTimeout(() => {
-          reconnectTimer = null
+      if (manualClose) return
+
+      if (event.code === 1008 && userStore.refreshToken && !isRefreshing) {
+        try {
+          isRefreshing = true
+          const res = await refreshToken({ refreshToken: userStore.refreshToken })
+          userStore.setToken(res.token, res.refreshToken)
+          disconnect()
           connect()
-        }, 3000)
+          return
+        } catch (err) {
+          console.error('[WS] refresh token 失败，停止重连', err)
+          userStore.logOut()
+          return
+        } finally {
+          isRefreshing = false
+        }
       }
+
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null
+        connect()
+      }, 3000)
     }
 
     ws.onerror = (err) => {

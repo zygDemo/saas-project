@@ -23,11 +23,6 @@ const config: Config = {
   //  清单见 docs/qa/admin-api-skipped-specs.md
   testPathIgnorePatterns: [
     '/node_modules/',
-    '/src/modules/customer/customer.service.spec.ts$',
-    '/src/modules/file/file.service.spec.ts$',
-    '/src/modules/data-center/data-center.service.spec.ts$',
-    '/src/modules/signing/signing.service.spec.ts$',
-    '/src/modules/food/food.service.spec.ts$',
   ],
 };
 

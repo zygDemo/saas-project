@@ -40,13 +40,6 @@ export class ArticleController {
     return this.articleService.getList(query)
   }
 
-  @Get(':id')
-  @Public()
-  @ApiOperation({ summary: '获取文章详情' })
-  async getById(@Param('id') id: string) {
-    return this.articleService.getById(+id)
-  }
-
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('R_SUPER', 'R_ADMIN')
@@ -150,6 +143,13 @@ export class ArticleController {
   @ApiOperation({ summary: '删除评论' })
   async deleteComment(@Param('id') id: string) {
     return this.articleService.deleteComment(id)
+  }
+
+  @Get(':id')
+  @Public()
+  @ApiOperation({ summary: '获取文章详情' })
+  async getById(@Param('id') id: string) {
+    return this.articleService.getById(+id)
   }
 
 }

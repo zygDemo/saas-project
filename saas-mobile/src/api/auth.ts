@@ -19,6 +19,9 @@ export function useAuthApi() {
     // 邮箱验证码登录
     emailLogin: (email: string, code: string) =>
       http.post<LoginResult>('/auth/email/login', { email, code }, { meta: { loadingText: '登录中...' } }),
+    // 用 refresh token 换发新 token
+    refreshToken: (refreshToken: string) =>
+      http.post<LoginResult>('/auth/refresh-token', { refreshToken }),
   };
 }
 

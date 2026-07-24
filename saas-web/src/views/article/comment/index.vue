@@ -90,6 +90,8 @@
   const COLOR_LIST = ['#D8F8FF', '#FDDFD9', '#FCE6F0', '#D3F8F0', '#FFEABC', '#F5E1FF', '#E1E6FE']
 
   const showDrawer = ref(false)
+  const commentList = ref<CommentItem[]>([])
+  const loading = ref(false)
   const clickItem = ref<CommentItem>({
     id: 1,
     date: '2024-9-3',
@@ -106,7 +108,7 @@
   const commentsWithColors = computed(() => {
     let lastColorIndex = -1
 
-    return commentList.map((item) => {
+    return commentList.value.map((item) => {
       let newIndex: number
 
       do {

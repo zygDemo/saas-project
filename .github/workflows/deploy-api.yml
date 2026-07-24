@@ -60,7 +60,7 @@ jobs:
             docker compose run --rm --no-deps api sh -c "cd /app/apps/admin-api && npx prisma migrate resolve --rolled-back 20260723200000_add_food_tenant_cascade --schema prisma/schema.prisma" || true
             docker compose run --rm --no-deps api sh -c "cd /app/apps/admin-api && npx prisma migrate deploy --schema prisma/schema.prisma"
             echo "===== 同步生产菜单/角色菜单/按钮权限 ====="
-            docker compose run --rm --no-deps api sh -c "cd /app/apps/admin-api && npx tsx prisma/migrate-roles-menus.ts"
+            docker compose run --rm --no-deps api sh -c "cd /app/apps/admin-api && npx tsx prisma/scripts/migrate-roles-menus.ts"
             docker compose up -d api
             echo "===== 容器状态 ====="
             docker ps | grep saas

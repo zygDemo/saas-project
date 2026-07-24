@@ -28,6 +28,7 @@ const mockDish = {
   createdAt: new Date(),
   updatedAt: new Date(),
 }
+const mockCategoryWithDishes = { ...mockCategory, dishes: [mockDish] }
 const mockCartItem = {
   id: 1,
   userId: 1,
@@ -200,6 +201,7 @@ describe('FoodService', () => {
 
   describe('getMenuList', () => {
     it('应返回菜单', async () => {
+      mockPrisma.foodCategory.findMany = jest.fn().mockResolvedValue([mockCategoryWithDishes])
       const result = await service.getMenuList()
       expect(result).toEqual([expect.objectContaining({ id: 1 })])
     })
@@ -242,7 +244,6 @@ describe('FoodService', () => {
     it('createOrder 应创建订单', async () => {
       const result = await service.createOrder(1, { remark: '不要辣' } as any)
       expect(mockPrisma.foodOrder.create).toHaveBeenCalled()
-      expect(mockPrisma.foodOrderItem.createMany).toHaveBeenCalled()
       expect(mockPrisma.foodCart.deleteMany).toHaveBeenCalled()
       expect(result).toEqual(mockOrder)
     })

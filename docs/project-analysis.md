@@ -44,7 +44,7 @@ saas-project/
 | ORM | Prisma | ^6.2.1，59+ 模型 |
 | 数据库 | PostgreSQL | 16 |
 | 缓存/队列 | Redis + BullMQ | Redis 7 |
-| 实时 | Socket.IO | WebSocket 通知 |
+| 实时 | 原生 WebSocket | WebSocket 通知 |
 | 认证 | JWT + Passport | 双 Token |
 | 前端 | Vue 3.5 + Vite 7 | Element Plus + Tailwind 4 |
 | 移动端 | uni-app 3.0 + Vue 3.4 | uView Pro 0.6.1 |

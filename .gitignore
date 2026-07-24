@@ -53,6 +53,9 @@ saas-mobile/test-results
 saas-mobile/tests
 test-results/
 playwright-report/
+e2e/screenshots/
 build-errors.txt
 *_errors.txt
 *.log
+query.js
+
