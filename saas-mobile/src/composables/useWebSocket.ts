@@ -61,10 +61,11 @@ export function useWebSocket() {
 
     manualDisconnect = false
     const url = getWsUrl()
-    console.info('[WS] 正在连接', url)
+    const wsUrl = `${url}?token=${encodeURIComponent(token)}`
+    console.info('[WS] 正在连接', wsUrl)
 
     socketTask = uni.connectSocket({
-      url,
+      url: wsUrl,
       header: {},
       complete() {},
     }) as unknown as UniApp.SocketTask
@@ -72,33 +73,31 @@ export function useWebSocket() {
     socketTask.onOpen(() => {
       isConnected.value = true
       reconnectAttempts = 0
-      console.debug('[WS] 已连接', url)
-
-      // 发送认证
-      socketTask!.send({
-        data: JSON.stringify({
-          type: 'auth',
-          auth: { token: `Bearer ${token}` },
-        }),
-      })
-
+      console.debug('[WS] 已连接', wsUrl)
       startPing()
     })
 
     socketTask.onMessage((res) => {
       try {
-        const data = JSON.parse(res.data as string)
+        const message = JSON.parse(res.data as string)
+        const event = message.event as string
+        const data = (message.data || message) as Record<string, unknown>
+        const notification = data as WsNotification
 
-        if (data.event === 'notification' || data.event === 'announcement') {
-          const notification = data.data || data
+        if (event === 'notification' || event === 'announcement') {
           handlers.forEach((fn) => fn(notification))
 
-          // 显示提示
           uni.showToast({
             title: notification.title || '新通知',
             icon: 'none',
             duration: 3000,
           })
+        } else if (event === 'connected') {
+          console.debug('[WS] 服务端确认连接', data)
+        } else if (event === 'pong') {
+          console.debug('[WS] pong', data)
+        } else if (event === 'exception') {
+          console.warn('[WS] 服务端异常', data)
         }
       } catch (e) {
         // ignore parse errors
@@ -193,4 +192,3 @@ export function useWebSocket() {
     markRead,
   }
 }
-
